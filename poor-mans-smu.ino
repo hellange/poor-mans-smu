@@ -68,31 +68,35 @@ GD.Vertex2ii(x+320, y+50);
 
   GD.ColorRGB(0,40,0);
       GD.cmd_text(x+56, y+51 ,   1, 0, "+ 01.501        V");
-
-     // GD.ColorRGB(10,255,10);
-      //GD.ColorRGB(0,255,150);
        GD.ColorRGB(0,240,110);
 
   boldText(x+50,y+45, "+ 01.501        V");
   
 
 
-    GD.cmd_number(x+425, y+47, 1, 3, random(0, 299));
+  GD.cmd_number(x+425, y+47, 1, 3, random(0, 299));
 
-
-  //GD.ColorRGB(0,255,150);
-
-  GD.cmd_text(x+50, y+146, 31, 0, "SET   01.500 0 V");
+  GD.cmd_text(x+50, y+150, 31, 0, "SET   01.500 0 V");
 
   //GD.ColorRGB(240,255,240);
-  GD.cmd_text(x+486, y+150, 30, 0, "DEV 0.");
-  GD.cmd_number(x+575, y+150, 30, 2,  random(0, 10));
-  GD.cmd_text(x+615, y+150, 30, 0, "%");
+  GD.cmd_text(x+486, y+155, 30, 0, "DEV 0.");
+  GD.cmd_number(x+575, y+155, 30, 2,  random(0, 10));
+  GD.cmd_text(x+615, y+155, 30, 0, "%");
 
 
 }
 
+void button(int x, int y, char* text){
 
+GD.Begin(RECTS);
+GD.ColorA(255);
+GD.ColorRGB(220,220,200);
+GD.LineWidth(10 * 16); // corner radius
+GD.Vertex2ii(x,y);
+GD.Vertex2ii(x+70, y+35);
+GD.ColorRGB(0,0,0); // yellow_orange shaddow
+GD.cmd_text(x+5,y,30,0, text);
+}
 
 void currentPanel(int x, int y) {
 
@@ -136,9 +140,9 @@ GD.Vertex2ii(x+340, y+30);
   GD.cmd_number(x+390, y+32, 1, 3, random(0, 199));
 
   GD.ColorA(200);
-  GD.cmd_text(x+50, y+130, 31, 0, "LIM   1.000 0 A");
+  GD.cmd_text(x+50, y+135, 31, 0, "LIM   1.000 0 A");
 
-  GD.cmd_text(x+486, y+135, 30, 0, "PWR 5.00%");
+  GD.cmd_text(x+486, y+140, 30, 0, "PWR 5.00%");
 
 }
 
@@ -176,9 +180,9 @@ drawBall(430,240,false);
 drawBall(460,240,false);
 
 
+button(60, 155,"SET");
 
-
-
+button(60, 400,"LIM");
  
 
 }
