@@ -125,7 +125,7 @@ GD.Vertex2ii(x+340, y+30);
 
 
 
-  GD.cmd_number(x+390, y+36, 1, 3, random(0, 199));
+  GD.cmd_number(x+390, y+32, 1, 3, random(0, 199));
 
  //GD.ColorRGB(0,150,255);
   GD.ColorA(200);
