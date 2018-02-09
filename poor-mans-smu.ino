@@ -45,11 +45,11 @@ void voltagePanel(int x, int y) {
 GD.Begin(LINE_STRIP);
 GD.LineWidth(32);
 GD.ColorRGB(0,255,150);
-GD.Vertex2ii(x+10, y+40); 
+GD.Vertex2ii(x+10, y+30); 
 GD.Vertex2ii(x+790, y+30);
-GD.Vertex2ii(x+790, y+200);
-GD.Vertex2ii(x+10, y+200);
-GD.Vertex2ii(x+10, y+40);
+GD.Vertex2ii(x+790, y+210);
+GD.Vertex2ii(x+10, y+210);
+GD.Vertex2ii(x+10, y+30);
 
 GD.Begin(RECTS);
 GD.ColorA(255);
@@ -62,7 +62,7 @@ GD.Vertex2ii(x+320, y+50);
     GD.ColorA(255);
 
   GD.ColorRGB(200,255,200);
-      GD.cmd_text(x+56, y+20 ,   30, 0, "SOURCE VOLTAGE");
+      GD.cmd_text(x+56, y+15 ,   30, 0, "SOURCE VOLTAGE");
 
 
 
@@ -105,8 +105,8 @@ void currentPanel(int x, int y) {
 
 GD.Vertex2ii(x+10, y+20); 
 GD.Vertex2ii(x+790, y+20);
-GD.Vertex2ii(x+790, y+190);
-GD.Vertex2ii(x+10, y+190);
+GD.Vertex2ii(x+790, y+200);
+GD.Vertex2ii(x+10, y+200);
 GD.Vertex2ii(x+10, y+20);
 
 
