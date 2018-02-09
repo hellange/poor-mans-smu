@@ -61,7 +61,7 @@ GD.Vertex2ii(x+320, y+50);
 
     GD.ColorA(255);
 
-  GD.ColorRGB(220,255,220);
+  GD.ColorRGB(200,255,200);
       GD.cmd_text(x+56, y+20 ,   30, 0, "SOURCE VOLTAGE");
 
 
@@ -93,11 +93,14 @@ GD.Vertex2ii(x+320, y+50);
 }
 
 
+
 void currentPanel(int x, int y) {
+
+  
     GD.Begin(LINE_STRIP);
   GD.LineWidth(32);
 
-  GD.ColorRGB(50,50,0);
+  GD.ColorRGB(50,50,0); // yellow
   GD.ColorA(230);
 
 GD.Vertex2ii(x+10, y+20); 
@@ -108,26 +111,30 @@ GD.Vertex2ii(x+10, y+20);
 
 
 GD.Begin(RECTS);
-  GD.ColorA(255);
+GD.ColorA(255);
 GD.ColorRGB(00,00,00);
-//GD.LineWidth(10 * 16); // corner radius 20.0 pixels
 GD.Vertex2ii(x+56, y);
 GD.Vertex2ii(x+340, y+30);
 
-  GD.ColorRGB(220,255,220);
-      GD.cmd_text(x+56, y ,   30, 0, "MEASURE CURRENT");
+  GD.ColorRGB(232,202,158);
+  
+  GD.cmd_text(x+56, y ,   30, 0, "MEASURE CURRENT");
 
 
-  GD.ColorRGB(50,50,0);
+  GD.ColorRGB(50,50,0); // yellow_orange shaddow
+  //GD.ColorRGB(0,50,50); // blue shaddow
+
   GD.cmd_text(x+56, y+36 ,   1, 0, "+ 0.020         A");
-  GD.ColorRGB(232,202,58);
+  
+  GD.ColorRGB(232,202,58); // yellow_orange
+  //GD.ColorRGB(20,170,255); // blue
+
   boldText(x+50, y+30, "+ 0.020         A");
 
 
 
   GD.cmd_number(x+390, y+32, 1, 3, random(0, 199));
 
- //GD.ColorRGB(0,150,255);
   GD.ColorA(200);
   GD.cmd_text(x+50, y+130, 31, 0, "LIM   1.000 0 A");
 
@@ -135,6 +142,19 @@ GD.Vertex2ii(x+340, y+30);
 
 }
 
+void drawBall(int x, int y, bool set) {
+  GD.PointSize(16 * 10); // means 30 pixels
+  GD.ColorRGB(255,255,255);
+  GD.Begin(POINTS);
+  GD.Vertex2ii(x, y);
+  GD.PointSize(16 * 7); // means 30 pixels
+  if (set == true) {
+      GD.ColorRGB(255,255,255); 
+  } else {
+      GD.ColorRGB(0,0,0); 
+  }
+  GD.Vertex2ii(x, y);
+}
 void drawMainText() {
 
  
@@ -147,13 +167,19 @@ void drawMainText() {
 int x = 0;
 int y = 0;
 voltagePanel(x,y);
-currentPanel(x,y+230);
+currentPanel(x,y+260);
 
-  
-  GD.ColorRGB(255,255,100);
-  GD.ColorA(50);
-  GD.cmd_text(10, 440, 28, 0, "Poor Mans Source Measure Unit");
-  GD.cmd_text(10, 460, 27, 0, "by Helge Langehaug");
+drawBall(340,240,false);
+drawBall(370,240,false);
+drawBall(400,240,true);
+drawBall(430,240,false);
+drawBall(460,240,false);
+
+
+
+
+
+ 
 
 }
 
