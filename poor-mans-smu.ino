@@ -38,12 +38,40 @@ void boldText(int x, int y, char* text) {
     GD.cmd_text(x+3, y+3 ,   1, 0, text);
 }
 
+void boldNumber(int x, int y, int digits, int number) {
+  GD.cmd_number(x, y ,   1, digits, number);
+    GD.cmd_number(x+3, y ,   1, digits, number);
+    GD.cmd_number(x, y+3 ,   1, digits, number);
+    GD.cmd_number(x+3, y+3 ,   1, digits, number);
+}
+
 
 int COLOR_VOLT = 0x00F06E;
 int COLOR_VOLTAGE_SHADDOW = 0x003C00;
 int COLOR_CURRENT = 0xE8CA3A; // yellow
 int COLOR_CURRENT_SHADDOW = 0x323200; // yellow shaddow
 //GD.ColorRGB(20,170,255); // light blueish
+
+void displayVoltage(int x, int y, float rawMv) {
+  int v = getV(rawMv);
+  int uv = getuV(rawMv);
+  int mv = getmV(rawMv);
+
+  GD.ColorRGB(COLOR_VOLTAGE_SHADDOW);
+  GD.cmd_number(x+80+6, y+48 ,   1, 2, getV(rawMv));
+  GD.cmd_text(x+183+6, y+48 ,   1, 0, ".");
+  GD.cmd_number(x+205+6, y+48 ,   1, 3, getmV(rawMv));
+
+  GD.ColorRGB(COLOR_VOLT);
+  boldText(x+17,y+42, "+");
+  boldNumber(x+80,y+42, 2, getV(rawMv));
+  boldText(x+183,y+42, ".");
+  boldNumber(x+205,y+42, 3, getmV(rawMv));
+
+  GD.cmd_number(x+374, y+44, 1, 3, random(0, 299));
+  //GD.cmd_number(x+374, y+44, 1, 3, getuV(rawMv));
+  GD.cmd_text(x+547, y+44 ,  1, 0, "V");  
+}
 
 void voltagePanel(int x, int y) {
   GD.ColorA(70);
@@ -67,20 +95,8 @@ void voltagePanel(int x, int y) {
   GD.ColorRGB(200,255,200);
   GD.cmd_text(x+56, y+16 ,   29, 0, "SOURCE VOLTAGE");
 
-  // main value
-  GD.ColorRGB(COLOR_VOLTAGE_SHADDOW);
-  GD.cmd_text(x+80+6, y+48 ,   1, 0, "00");
-  GD.cmd_text(x+183+6, y+48 ,   1, 0, ".");
-  GD.cmd_text(x+205+6, y+48 ,   1, 0, "500");
-
-  GD.ColorRGB(COLOR_VOLT);
-
-  boldText(x+17,y+42, "+");
-  boldText(x+80,y+42, "00");
-  boldText(x+183,y+42, ".");
-  boldText(x+205,y+42, "500");
-  GD.cmd_number(x+374, y+44, 1, 3, random(0, 299));
-  GD.cmd_text(x+547, y+44 ,  1, 0, "V");
+  float rawMv = 1501.001;
+  displayVoltage(x,y , rawMv);
 
   // various other values
   GD.cmd_text(x+20, y+150, 31, 0, "SET   01.500 0 V");
@@ -107,8 +123,6 @@ void voltagePanel(int x, int y) {
   GD.LineWidth(10);
   GD.Vertex2ii(x+620, y+125); 
   GD.Vertex2ii(x+780, y+125);
-  
-
 }
 //
 //void button(int x, int y, char* text){
@@ -123,10 +137,19 @@ void voltagePanel(int x, int y) {
 //GD.cmd_text(x+5,y,30,0, text);
 //}
 
+int getV(float mv) {
+  return mv / 1000;
+}
+int getmV(float mv) {
+  return (mv - getV(mv)*1000);
+}
+int getuV(float mv) {
+  return (mv - getmV(mv)) * 1000;
+}
 
-static void transButton(int x, int y, int sz, byte label)
+static void transButton(int x, int y, int sz, char* label)
 {
-GD.Tag(label);
+//GD.Tag(label);
 GD.Begin(RECTS);
 GD.ColorA(255);
 GD.ColorRGB(200,200,200);
@@ -141,7 +164,7 @@ GD.Vertex2ii(x - sz, y - sz);
 GD.Vertex2ii(x + sz, y + sz);
 GD.ColorA(0xff);
 GD.ColorRGB(0,0,0);
-GD.cmd_number(x, y, 31, OPT_CENTER, label);
+GD.cmd_text(x, y, 31, OPT_CENTER, label);
 }
 
 
@@ -173,7 +196,7 @@ void currentPanel(int x, int y) {
   GD.cmd_text(x+153+6, y+36 ,   1, 0, "020");
 
   GD.ColorRGB(COLOR_CURRENT);
-
+  
   boldText(x+17,y+30, "+");
   boldText(x+80, y+30, "0");
   boldText(x+130, y+30, ".");
@@ -184,7 +207,6 @@ void currentPanel(int x, int y) {
 
   GD.ColorA(200);
   GD.cmd_text(x+20, y+135, 31, 0, "LIM   1.000 0 A");
-  GD.cmd_text(x+456, y+140, 30, 0, "PWR 5.00%");
 }
 
 void drawBall(int x, int y, bool set) {
@@ -207,6 +229,73 @@ void scrollIndication(int x, int y) {
   drawBall(x+60,y,true);
   drawBall(x+90,y,false);
   drawBall(x+120,y,false);
+}
+
+void showDial() {
+
+int screenWidth = 800;
+int screenHeight = 480;
+int width = 520;
+int height = 450;
+int margin = 10;
+
+int startx, starty, endx, endy;
+startx=(screenWidth-width) / 2;
+starty=(screenHeight-height) / 2;
+endx=screenWidth - (screenWidth-width) / 2;
+endy=screenHeight - (screenHeight-height) / 2;
+
+GD.ColorRGB(0x000000);
+GD.Begin(RECTS);
+GD.Vertex2ii(startx, starty); 
+GD.Vertex2ii(endx, endy);
+
+GD.ColorRGB(0xaaaaaa);
+GD.Begin(LINE_STRIP);
+GD.LineWidth(32);
+GD.Vertex2ii(startx, starty); 
+GD.Vertex2ii(startx+width, starty); 
+GD.Vertex2ii(startx+width, starty+height); 
+GD.Vertex2ii(startx, starty+height); 
+GD.Vertex2ii(startx, starty); 
+
+int x=220;
+int y=150;
+int spacing = 82;
+transButton(x+0, y+0,18, "1"); 
+transButton(x+spacing, y+0, 18, "2");
+transButton(x+spacing*2, y+0, 18, "3");
+transButton(x+spacing*3, y+0, 18, " ");
+transButton(x+spacing*4, y+0, 18, "Back");
+
+transButton(x+0, y+spacing, 18, "4"); 
+transButton(x+spacing, y+spacing, 18, "5"); 
+transButton(x+spacing*2, y+spacing, 18, "6");
+transButton(x+spacing*3, y+spacing, 18, "m");
+transButton(x+spacing*4, y+spacing, 18, "Clear");
+
+transButton(x+0, y+spacing*2, 18, "7"); 
+transButton(x+spacing, y+spacing*2, 18, "8"); 
+transButton(x+spacing*2, y+spacing*2, 18, "9");
+transButton(x+spacing*3, y+spacing*2, 18, "u");
+transButton(x+spacing*4, y+spacing*2, 18, "/10");
+
+transButton(x+0, y+spacing*3, 18, "0"); 
+transButton(x+spacing, y+spacing*3, 18, "+/-"); 
+transButton(x+spacing*2, y+spacing*3, 18, ".");
+transButton(x+spacing*3, y+spacing*3, 18, " ");
+transButton(x+spacing*4, y+spacing*3, 18, "x10");
+
+// entry display
+GD.ColorRGB(0xaaaaaa);
+GD.Begin(LINE_STRIP);
+GD.LineWidth(16);
+GD.Vertex2ii(startx+20, starty+20); 
+GD.Vertex2ii(startx+width-20, starty+20); 
+GD.Vertex2ii(startx+width-20, starty+80); 
+GD.Vertex2ii(startx+20, starty+80); 
+GD.Vertex2ii(startx+20, starty+20); 
+
 }
 
 void drawMainText() {
@@ -239,53 +328,7 @@ GD.cmd_button(350,143,90,58,30,0,"AUTO");
 GD.cmd_button(350,393,90,58,30,0,"AUTO");
 
 
-
-/*** dial **/
-/*
-int screenWidth = 800;
-int screenHeight = 480;
-int width = 400;
-int height = 400;
-int margin = 10;
-
-int startx, starty, endx, endy;
-startx=(screenWidth-width) / 2;
-starty=(screenHeight-height) / 2;
-endx=screenWidth - (screenWidth-width) / 2;
-endy=screenHeight - (screenHeight-height) / 2;
-
-GD.ColorRGB(0x000000);
-GD.Begin(RECTS);
-GD.Vertex2ii(startx, starty); 
-GD.Vertex2ii(endx, endy);
-
-GD.ColorRGB(0xaaaaaa);
-GD.Begin(LINE_STRIP);
-GD.Vertex2ii(startx, starty); 
-GD.Vertex2ii(startx+width, starty); 
-GD.Vertex2ii(startx+width, starty+height); 
-GD.Vertex2ii(startx, starty+height); 
-GD.Vertex2ii(startx, starty); 
-
-
-
-x=280;
-y=120;
-int spacing = 100;
-transButton(x+0, y+0,20, 1); 
-transButton(x+spacing, y+0, 20, 2);
-transButton(x+spacing*2, y+0, 20, 3);
-transButton(x+0, y+spacing, 20, 4); 
-transButton(x+spacing, y+spacing, 20, 5); 
-transButton(x+spacing*2, y+spacing, 20, 6);
-transButton(x+0, y+spacing*2, 20, 7); 
-transButton(x+spacing, y+spacing*2, 20, 8); 
-transButton(x+spacing*2, y+spacing*2, 20, 9);
-*/
-
-
-
-
+//showDial();
 
 }
 
@@ -301,10 +344,10 @@ void loop()
 
 
 
+
   unsigned long currentMillis = millis();
   if (currentMillis - previousMillis >= interval) {
     previousMillis = currentMillis;
-    //GD.ClearColorRGB(0x205000);  // greenish
     GD.ClearColorRGB(0x000000); // black
 
     GD.Clear();
@@ -312,6 +355,19 @@ void loop()
     if (currentMillis - previousMillisSlow >= 10000) {
       previousMillisSlow = currentMillis;
     }
-    GD.swap();   
+    GD.swap(); 
+
+    GD.get_inputs();
+
+  Serial.print(GD.inputs.x);
+  Serial.print(" ");
+  Serial.print(GD.inputs.y);
+  Serial.print(",");
+  
+ 
+  Serial.println("");
+
+
+
   }
 }
