@@ -69,18 +69,18 @@ void voltagePanel(int x, int y) {
 
   // main value
   GD.ColorRGB(COLOR_VOLTAGE_SHADDOW);
-  GD.cmd_text(x+80+6, y+48 ,   1, 0, "01");
-  GD.cmd_text(x+175+6, y+48 ,   1, 0, ".");
-  GD.cmd_text(x+205+6, y+48 ,   1, 0, "501");
+  GD.cmd_text(x+80+6, y+48 ,   1, 0, "00");
+  GD.cmd_text(x+183+6, y+48 ,   1, 0, ".");
+  GD.cmd_text(x+205+6, y+48 ,   1, 0, "500");
 
   GD.ColorRGB(COLOR_VOLT);
 
   boldText(x+17,y+42, "+");
-  boldText(x+80,y+42, "01");
-  boldText(x+175,y+42, ".");
-  boldText(x+205,y+42, "501");
-  GD.cmd_number(x+377, y+44, 1, 3, random(0, 299));
-  GD.cmd_text(x+550, y+44 ,  1, 0, "V");
+  boldText(x+80,y+42, "00");
+  boldText(x+183,y+42, ".");
+  boldText(x+205,y+42, "500");
+  GD.cmd_number(x+374, y+44, 1, 3, random(0, 299));
+  GD.cmd_text(x+547, y+44 ,  1, 0, "V");
 
   // various other values
   GD.cmd_text(x+20, y+150, 31, 0, "SET   01.500 0 V");
@@ -88,7 +88,7 @@ void voltagePanel(int x, int y) {
   GD.ColorRGB(200,255,200);
   GD.cmd_text(x+486, y+147, 27, 0, "Average");
   GD.ColorRGB(COLOR_VOLT);
-  GD.cmd_text(x+456+30, y+163, 30, 0, "0.501 095V");
+  GD.cmd_text(x+456+30, y+163, 30, 0, "0.500 075V");
 
   GD.ColorRGB(200,255,200);
   GD.cmd_text(x+667, y+147, 27, 0, "Deviation");
@@ -169,18 +169,18 @@ void currentPanel(int x, int y) {
   // main value
   GD.ColorRGB(COLOR_CURRENT_SHADDOW);
   GD.cmd_text(x+80+6, y+36 ,   1, 0, "0");
-  GD.cmd_text(x+135+6, y+36 ,   1, 0, ".");
-  GD.cmd_text(x+165+6, y+36 ,   1, 0, "020");
+  GD.cmd_text(x+130+6, y+36 ,   1, 0, ".");
+  GD.cmd_text(x+153+6, y+36 ,   1, 0, "020");
 
   GD.ColorRGB(COLOR_CURRENT);
 
   boldText(x+17,y+30, "+");
   boldText(x+80, y+30, "0");
-  boldText(x+135, y+30, ".");
-  boldText(x+165, y+30, "020");
+  boldText(x+130, y+30, ".");
+  boldText(x+153, y+30, "020");
 
-  GD.cmd_text(x+510, y+32 ,  1, 0, "A");
-  GD.cmd_number(x+337, y+32, 1, 3, random(0, 199));
+  GD.cmd_text(x+495, y+32 ,  1, 0, "A");
+  GD.cmd_number(x+322, y+32, 1, 3, random(0, 199));
 
   GD.ColorA(200);
   GD.cmd_text(x+20, y+135, 31, 0, "LIM   1.000 0 A");
