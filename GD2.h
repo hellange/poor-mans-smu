@@ -4,8 +4,6 @@
  *
  */
 
-
-
 #if defined(RASPBERRY_PI) || defined(DUMPDEV)
 #include "wiring.h"
 #endif

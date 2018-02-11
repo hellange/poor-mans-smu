@@ -149,7 +149,6 @@ int getuV(float mv) {
 
 static void transButton(int x, int y, int sz, char* label)
 {
-//GD.Tag(label);
 GD.Begin(RECTS);
 GD.ColorA(255);
 GD.ColorRGB(200,200,200);
@@ -262,26 +261,40 @@ GD.Vertex2ii(startx, starty);
 int x=220;
 int y=150;
 int spacing = 82;
+GD.Tag(1);
 transButton(x+0, y+0,18, "1"); 
+GD.Tag(2);
 transButton(x+spacing, y+0, 18, "2");
+GD.Tag(3);
 transButton(x+spacing*2, y+0, 18, "3");
-transButton(x+spacing*3, y+0, 18, " ");
+GD.Tag(12);
+transButton(x+spacing*3, y+0, 18, "V");
 transButton(x+spacing*4, y+0, 18, "Back");
 
+GD.Tag(4);
 transButton(x+0, y+spacing, 18, "4"); 
+GD.Tag(5);
 transButton(x+spacing, y+spacing, 18, "5"); 
+GD.Tag(6);
 transButton(x+spacing*2, y+spacing, 18, "6");
+GD.Tag(12);
 transButton(x+spacing*3, y+spacing, 18, "m");
 transButton(x+spacing*4, y+spacing, 18, "Clear");
 
+GD.Tag(7);
 transButton(x+0, y+spacing*2, 18, "7"); 
+GD.Tag(8);
 transButton(x+spacing, y+spacing*2, 18, "8"); 
+GD.Tag(9);
 transButton(x+spacing*2, y+spacing*2, 18, "9");
+GD.Tag(13);
 transButton(x+spacing*3, y+spacing*2, 18, "u");
 transButton(x+spacing*4, y+spacing*2, 18, "/10");
 
+GD.Tag(0);
 transButton(x+0, y+spacing*3, 18, "0"); 
-transButton(x+spacing, y+spacing*3, 18, "+/-"); 
+transButton(x+spacing, y+spacing*3, 18, "+/-");
+GD.Tag(10); 
 transButton(x+spacing*2, y+spacing*3, 18, ".");
 transButton(x+spacing*3, y+spacing*3, 18, " ");
 transButton(x+spacing*4, y+spacing*3, 18, "x10");
@@ -328,7 +341,7 @@ GD.cmd_button(350,143,90,58,30,0,"AUTO");
 GD.cmd_button(350,393,90,58,30,0,"AUTO");
 
 
-//showDial();
+showDial();
 
 }
 
@@ -337,14 +350,32 @@ unsigned long previousMillisSlow = 0;
 
 const long interval = 100; 
 
+  int voltageInput[100];
+  int digits;
+  bool keydepressed = true;
+  char *voltDecade = "V ";
 
 void loop()
 {
 //GD.wr(REG_PWM_DUTY, 20);
 
-
-
-
+GD.get_inputs();
+    if (GD.inputs.tag != 0 && keydepressed==true) {
+      keydepressed = false;
+      voltageInput[digits] = GD.inputs.tag;
+      if (GD.inputs.tag <11) {
+        digits ++;
+      }
+      if (GD.inputs.tag== 13) {
+          voltDecade = "uV";
+        }
+        if (GD.inputs.tag== 12) {
+          voltDecade = "mV";
+        }
+    } 
+    if (GD.inputs.tag == 0) {
+      keydepressed = true;
+    }
   unsigned long currentMillis = millis();
   if (currentMillis - previousMillis >= interval) {
     previousMillis = currentMillis;
@@ -355,18 +386,38 @@ void loop()
     if (currentMillis - previousMillisSlow >= 10000) {
       previousMillisSlow = currentMillis;
     }
+
+    
+
+      for (int i=0;i<digits;i++) {
+        GD.ColorRGB(COLOR_VOLT);
+        if (voltageInput[i] < 10) {
+          GD.cmd_number(i*25+180, 42, 31, 0, voltageInput[i]);
+        }
+        if (voltageInput[i]== 10) {
+          GD.cmd_text(i*25+180, 42, 31, 0, ".");
+        }
+        
+        if (i==digits-1) {
+          GD.cmd_text((i+1)*25+180, 42, 31, 0, voltDecade);
+        }
+      }
+
+
+      
     GD.swap(); 
 
-    GD.get_inputs();
 
+/*
   Serial.print(GD.inputs.x);
   Serial.print(" ");
   Serial.print(GD.inputs.y);
   Serial.print(",");
+  Serial.println(GD.inputs.tag);
   
  
   Serial.println("");
-
+*/
 
 
   }
