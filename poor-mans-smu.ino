@@ -39,8 +39,13 @@ void boldText(int x, int y, char* text) {
 }
 
 
+int COLOR_VOLT = 0x00F06E;
+int COLOR_VOLTAGE_SHADDOW = 0x003C00;
+int COLOR_CURRENT = 0xE8CA3A; // yellow
+int COLOR_CURRENT_SHADDOW = 0x323200; // yellow shaddow
+//GD.ColorRGB(20,170,255); // light blueish
+
 void voltagePanel(int x, int y) {
-  //y=y+20;
   GD.ColorA(70);
   GD.Begin(LINE_STRIP);
   GD.LineWidth(32);
@@ -50,42 +55,45 @@ void voltagePanel(int x, int y) {
   GD.Vertex2ii(x+790, y+210);
   GD.Vertex2ii(x+10, y+210);
   GD.Vertex2ii(x+10, y+30);
-  GD.Begin(RECTS);
+
+  // clear area behind heading
   GD.ColorA(255);
+  GD.Begin(RECTS);
   GD.ColorRGB(00,00,00);
-  //GD.LineWidth(10 * 16); // corner radius 20.0 pixels
   GD.Vertex2ii(x+56, y+20);
   GD.Vertex2ii(x+260, y+50);
 
-  GD.ColorA(255);
+  // heading
   GD.ColorRGB(200,255,200);
   GD.cmd_text(x+56, y+16 ,   29, 0, "SOURCE VOLTAGE");
 
-  GD.ColorRGB(0,60,0);
-  GD.cmd_text(x+86, y+48 ,   1, 0, "01.501        V");
-  GD.ColorRGB(0,240,110);
-  boldText(x+17,y+42, "+");
-  boldText(x+80,y+42, "01.501        V");
-  
-  GD.cmd_number(x+377, y+44, 1, 3, random(0, 299));
+  // main value
+  GD.ColorRGB(COLOR_VOLTAGE_SHADDOW);
+  GD.cmd_text(x+80+6, y+48 ,   1, 0, "01");
+  GD.cmd_text(x+175+6, y+48 ,   1, 0, ".");
+  GD.cmd_text(x+205+6, y+48 ,   1, 0, "501");
 
+  GD.ColorRGB(COLOR_VOLT);
+
+  boldText(x+17,y+42, "+");
+  boldText(x+80,y+42, "01");
+  boldText(x+175,y+42, ".");
+  boldText(x+205,y+42, "501");
+  GD.cmd_number(x+377, y+44, 1, 3, random(0, 299));
+  GD.cmd_text(x+550, y+44 ,  1, 0, "V");
+
+  // various other values
   GD.cmd_text(x+20, y+150, 31, 0, "SET   01.500 0 V");
 
-  //GD.ColorRGB(240,255,240);
-  
-  //GD.cmd_text(x+486, y+152, 30, 0, "DEV 0.");
-  //GD.cmd_number(x+575, y+152, 30, 2,  random(0, 10));
-  //GD.cmd_text(x+615, y+152, 30, 0, "%");
-
   GD.ColorRGB(200,255,200);
-  GD.cmd_text(x+456+30, y+147, 27, 0, "Average");
-  GD.ColorRGB(0+30,240,110);
+  GD.cmd_text(x+486, y+147, 27, 0, "Average");
+  GD.ColorRGB(COLOR_VOLT);
   GD.cmd_text(x+456+30, y+163, 30, 0, "0.501 095V");
 
   GD.ColorRGB(200,255,200);
   GD.cmd_text(x+667, y+147, 27, 0, "Deviation");
-  GD.ColorRGB(0+30,240,110);
-  GD.cmd_text(x+667, y+163, 30, 0, "0.01%");
+  GD.ColorRGB(COLOR_VOLT);
+  GD.cmd_text(x+667, y+163, 30, 0, "0.005%");
   
   GD.ColorRGB(200,255,200);
   GD.cmd_text(x+680, y+36, 26, 0, "Last 1 min");
@@ -154,16 +162,25 @@ void currentPanel(int x, int y) {
   GD.Vertex2ii(x+56, y);
   GD.Vertex2ii(x+280, y+30);
 
+  // heading
   GD.ColorRGB(232,202,158);
   GD.cmd_text(x+56, y+5 ,   29, 0, "MEASURE CURRENT");
-  
-  GD.ColorRGB(50,50,0); // yellow_orange shaddow
-  //GD.ColorRGB(0,50,50); // blue shaddow
-  GD.cmd_text(x+26, y+36 ,   1, 0, "+ 0.020         A");
-  GD.ColorRGB(232,202,58); // yellow_orange
-  //GD.ColorRGB(20,170,255); // blue
-  boldText(x+20, y+30, "+ 0.020         A");
-  GD.cmd_number(x+360, y+32, 1, 3, random(0, 199));
+
+  // main value
+  GD.ColorRGB(COLOR_CURRENT_SHADDOW);
+  GD.cmd_text(x+80+6, y+36 ,   1, 0, "0");
+  GD.cmd_text(x+135+6, y+36 ,   1, 0, ".");
+  GD.cmd_text(x+165+6, y+36 ,   1, 0, "020");
+
+  GD.ColorRGB(COLOR_CURRENT);
+
+  boldText(x+17,y+30, "+");
+  boldText(x+80, y+30, "0");
+  boldText(x+135, y+30, ".");
+  boldText(x+165, y+30, "020");
+
+  GD.cmd_text(x+510, y+32 ,  1, 0, "A");
+  GD.cmd_number(x+337, y+32, 1, 3, random(0, 199));
 
   GD.ColorA(200);
   GD.cmd_text(x+20, y+135, 31, 0, "LIM   1.000 0 A");
