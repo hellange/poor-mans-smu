@@ -189,8 +189,11 @@ public:
   void VertexTranslateY(uint32_t y);
   void Nop(void);
 
-  // Higher-level graphics commands
+  // Hack for higher x that 512
+  int16_t above512pixelMagic(int16_t);
 
+  // Higher-level graphics commands
+  
   void cmd_append(uint32_t ptr, uint32_t num);
   void cmd_bgcolor(uint32_t c);
   void cmd_button(int16_t x, int16_t y, uint16_t w, uint16_t h, byte font, uint16_t options, const char *s);

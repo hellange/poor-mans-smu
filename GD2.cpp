@@ -509,28 +509,7 @@ void GDClass::Vertex2f(int16_t x, int16_t y) {
 }
 void GDClass::Vertex2ii(int16_t x, int16_t y, byte handle, byte cell) {
 
-  // In order to draw bitmap on x coordinates higher that 512
-  // we use VertexTranslateX which according to documentation:
-  // "Specifies the offset added to vertex X coordinates. 
-  //  This command allows drawing to be shifted on the screen"
-  // Not sure if this is the right approach, but it seems to work
-
-  if (x < 0) {
-    // For negative x we shift instead of setting x
-    GD.VertexTranslateX(x * 16);
-    x = 0; 
-  } else if (x >= 512) {
-    // for high values we start to use shift
-    // and reduces the x value accordingly
-    GD.VertexTranslateX(512 * 16);
-    x = x - 512;
-  } else {
-    GD.VertexTranslateX(0);
-  }
-
-
-
-
+  x = above512pixelMagic(x);
   
   // cI((2UL << 30) | ((x & 511L) << 21) | ((y & 511L) << 12) | ((handle & 31L) << 7) | ((cell & 127L) << 0));
   union {
@@ -813,7 +792,31 @@ void GDClass::cmd_stop(void) {
 void GDClass::cmd_swap(void) {
   cFFFFFF(0x01);
 }
+
+// In order to draw bitmap on x coordinates higher that 512
+// we use VertexTranslateX which according to documentation:
+// "Specifies the offset added to vertex X coordinates. 
+// This command allows drawing to be shifted on the screen"
+// Not sure if this is the right approach, but it seems to work
+int16_t GDClass::above512pixelMagic(int16_t x) {
+     if (x < 0) {
+    // For negative x we shift instead of setting x
+    GD.VertexTranslateX(x * 16);
+    x = 0; 
+  } else if (x >= 512) {
+    // for high values we start to use shift
+    // and reduces the x value accordingly
+    GD.VertexTranslateX(512 * 16);
+    x = x - 512;
+  } else {
+    GD.VertexTranslateX(0);
+  }
+  return x;
+}
 void GDClass::cmd_text(int16_t x, int16_t y, byte font, uint16_t options, const char *s) {
+
+  x = GD.above512pixelMagic(x);
+  
   cFFFFFF(0x0c);
   ch(x);
   ch(y);

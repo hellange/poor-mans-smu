@@ -124,18 +124,6 @@ void voltagePanel(int x, int y) {
   GD.Vertex2ii(x+620, y+125); 
   GD.Vertex2ii(x+780, y+125);
 }
-//
-//void button(int x, int y, char* text){
-//
-//GD.Begin(RECTS);
-//GD.ColorA(255);
-//GD.ColorRGB(220,220,200);
-//GD.LineWidth(10 * 16); // corner radius
-//GD.Vertex2ii(x,y);
-//GD.Vertex2ii(x+70, y+35);
-//GD.ColorRGB(0,0,0); // yellow_orange shaddow
-//GD.cmd_text(x+5,y,30,0, text);
-//}
 
 int getV(float mv) {
   return mv / 1000;
@@ -267,7 +255,8 @@ GD.Tag(2);
 transButton(x+spacing, y+0, 18, "2");
 GD.Tag(3);
 transButton(x+spacing*2, y+0, 18, "3");
-GD.Tag(12);
+GD.Tag(11
+);
 transButton(x+spacing*3, y+0, 18, "V");
 transButton(x+spacing*4, y+0, 18, "Back");
 
@@ -360,7 +349,8 @@ void loop()
 //GD.wr(REG_PWM_DUTY, 20);
 
 GD.get_inputs();
-    if (GD.inputs.tag != 0 && keydepressed==true) {
+    if (GD.inputs.tag != 0 && keydepressed==true && digits<10
+    ) {
       keydepressed = false;
       voltageInput[digits] = GD.inputs.tag;
       if (GD.inputs.tag <11) {
@@ -371,6 +361,9 @@ GD.get_inputs();
         }
         if (GD.inputs.tag== 12) {
           voltDecade = "mV";
+        }
+        if (GD.inputs.tag== 11) {
+          voltDecade = "V";
         }
     } 
     if (GD.inputs.tag == 0) {
