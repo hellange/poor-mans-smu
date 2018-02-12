@@ -45,6 +45,7 @@ void boldNumber(int x, int y, int digits, int number) {
     GD.cmd_number(x+3, y+3 ,   1, digits, number);
 }
 
+bool dialog = false;
 
 int COLOR_VOLT = 0x00F06E;
 int COLOR_VOLTAGE_SHADDOW = 0x003C00;
@@ -135,10 +136,11 @@ int getuV(float mv) {
   return (mv - getmV(mv)) * 1000;
 }
 
-static void transButton(int x, int y, int sz, char* label)
+
+static void transButton(int x, int y, int sz, char* label, int fontsize)
 {
 GD.Begin(RECTS);
-GD.ColorA(255);
+GD.ColorA(200);
 GD.ColorRGB(200,200,200);
 GD.LineWidth(16 * 20);
 GD.Vertex2ii(x - sz, y - sz);
@@ -151,7 +153,9 @@ GD.Vertex2ii(x - sz, y - sz);
 GD.Vertex2ii(x + sz, y + sz);
 GD.ColorA(0xff);
 GD.ColorRGB(0,0,0);
-GD.cmd_text(x, y, 31, OPT_CENTER, label);
+GD.cmd_text(x, y, fontsize, OPT_CENTER, label);
+GD.ColorA(255);
+
 }
 
 
@@ -218,12 +222,43 @@ void scrollIndication(int x, int y) {
   drawBall(x+120,y,false);
 }
 
+#define KEYBOARD_1 1
+#define KEYBOARD_2 2
+#define KEYBOARD_3 3
+#define KEYBOARD_4 4
+#define KEYBOARD_5 5
+#define KEYBOARD_6 6
+#define KEYBOARD_7 7
+#define KEYBOARD_8 8
+#define KEYBOARD_9 9
+#define KEYBOARD_0 10
+
+#define KEYBOARD_COMMA 11
+#define KEYBOARD_UV 12
+#define KEYBOARD_MV 13
+#define KEYBOARD_V 14
+#define KEYBOARD_BACK 15
+#define KEYBOARD_CLR 16
+
+#define KEYBOARD_OK 17
+#define KEYBOARD_CANCEL 18
+
+#define BUTTON_VOLT_SET 100
+
+
+
+
+ int voltageInput[100];
+  int digits;
+  bool keydepressed = true;
+  char *voltDecade = "V ";
+  
 void showDial() {
 
 int screenWidth = 800;
 int screenHeight = 480;
-int width = 520;
-int height = 450;
+int width = 530;
+int height = 470;
 int margin = 10;
 
 int startx, starty, endx, endy;
@@ -246,47 +281,55 @@ GD.Vertex2ii(startx+width, starty+height);
 GD.Vertex2ii(startx, starty+height); 
 GD.Vertex2ii(startx, starty); 
 
-int x=220;
-int y=150;
+int x=190;
+int y=175;
 int spacing = 82;
 GD.Tag(1);
-transButton(x+0, y+0,18, "1"); 
+transButton(x+0, y+0,18, "1", 31); 
 GD.Tag(2);
-transButton(x+spacing, y+0, 18, "2");
+transButton(x+spacing, y+0, 18, "2", 31);
 GD.Tag(3);
-transButton(x+spacing*2, y+0, 18, "3");
-GD.Tag(11
-);
-transButton(x+spacing*3, y+0, 18, "V");
-transButton(x+spacing*4, y+0, 18, "Back");
+transButton(x+spacing*2, y+0, 18, "3", 31);
+GD.Tag(KEYBOARD_V);
+transButton(x+spacing*3, y+0, 18, "V", 31);
+GD.Tag(KEYBOARD_BACK);
+transButton(x+spacing*4, y+0, 18, "<", 31);
 
 GD.Tag(4);
-transButton(x+0, y+spacing, 18, "4"); 
+transButton(x+0, y+spacing, 18, "4", 31); 
 GD.Tag(5);
-transButton(x+spacing, y+spacing, 18, "5"); 
+transButton(x+spacing, y+spacing, 18, "5", 31); 
 GD.Tag(6);
-transButton(x+spacing*2, y+spacing, 18, "6");
-GD.Tag(12);
-transButton(x+spacing*3, y+spacing, 18, "m");
-transButton(x+spacing*4, y+spacing, 18, "Clear");
+transButton(x+spacing*2, y+spacing, 18, "6", 31);
+GD.Tag(KEYBOARD_MV);
+transButton(x+spacing*3, y+spacing, 18, "mV", 30);
+GD.Tag(KEYBOARD_CLR);
+transButton(x+spacing*4, y+spacing, 18, "Clr", 30);
 
 GD.Tag(7);
-transButton(x+0, y+spacing*2, 18, "7"); 
+transButton(x+0, y+spacing*2, 18, "7", 31); 
 GD.Tag(8);
-transButton(x+spacing, y+spacing*2, 18, "8"); 
+transButton(x+spacing, y+spacing*2, 18, "8", 31); 
 GD.Tag(9);
-transButton(x+spacing*2, y+spacing*2, 18, "9");
-GD.Tag(13);
-transButton(x+spacing*3, y+spacing*2, 18, "u");
-transButton(x+spacing*4, y+spacing*2, 18, "/10");
+transButton(x+spacing*2, y+spacing*2, 18, "9", 31);
+GD.Tag(KEYBOARD_UV);
+transButton(x+spacing*3, y+spacing*2, 18, "uV", 30);
+transButton(x+spacing*4, y+spacing*2, 18, "/10", 30);
 
-GD.Tag(0);
-transButton(x+0, y+spacing*3, 18, "0"); 
-transButton(x+spacing, y+spacing*3, 18, "+/-");
-GD.Tag(10); 
-transButton(x+spacing*2, y+spacing*3, 18, ".");
-transButton(x+spacing*3, y+spacing*3, 18, " ");
-transButton(x+spacing*4, y+spacing*3, 18, "x10");
+GD.Tag(KEYBOARD_0);
+transButton(x+0, y+spacing*3, 18, "0",31); 
+transButton(x+spacing, y+spacing*3, 18, "+/-",30);
+GD.Tag(KEYBOARD_COMMA); 
+transButton(x+spacing*2, y+spacing*3, 18, ".",31);
+transButton(x+spacing*3, y+spacing*3, 18, " ", 31);
+transButton(x+spacing*4, y+spacing*3, 18, "x10", 30);
+
+GD.Tag(KEYBOARD_CANCEL);
+transButton(x+spacing*5, y+spacing*2, 18, "Cancel", 28);
+GD.Tag(KEYBOARD_OK);
+transButton(x+spacing*5, y+spacing*3, 18, "OK", 31);
+
+
 
 // entry display
 GD.ColorRGB(0xaaaaaa);
@@ -294,9 +337,92 @@ GD.Begin(LINE_STRIP);
 GD.LineWidth(16);
 GD.Vertex2ii(startx+20, starty+20); 
 GD.Vertex2ii(startx+width-20, starty+20); 
-GD.Vertex2ii(startx+width-20, starty+80); 
-GD.Vertex2ii(startx+20, starty+80); 
+GD.Vertex2ii(startx+width-20, starty+110); 
+GD.Vertex2ii(startx+20, starty+110); 
 GD.Vertex2ii(startx+20, starty+20); 
+
+
+  GD.get_inputs();
+  
+
+
+  if (GD.inputs.tag == KEYBOARD_CANCEL && dialog==true) {
+    dialog = false;
+  }
+
+  if (GD.inputs.tag == KEYBOARD_OK && dialog==true) {
+    dialog = false;
+  }
+  
+  if (GD.inputs.tag != 0 && keydepressed==true) {
+    keydepressed = false;
+    if (digits > 0 && GD.inputs.tag == KEYBOARD_OK) {
+    }
+    if (digits == 0 && GD.inputs.tag == KEYBOARD_COMMA) {
+      voltageInput[digits++] = 0;
+    }
+    if (GD.inputs.tag == KEYBOARD_COMMA) {
+      bool alreadyHasComma = false;
+      for (int i=0;i<digits;i++) {
+        if (voltageInput[i] == KEYBOARD_COMMA) {
+          alreadyHasComma = true;
+          break;
+        }
+      }
+      if (!alreadyHasComma) {
+        voltageInput[digits++] = GD.inputs.tag;
+      }
+
+    }
+    if (GD.inputs.tag >= KEYBOARD_1 && GD.inputs.tag <= KEYBOARD_9 && digits<8) {
+      voltageInput[digits++] = GD.inputs.tag;
+    }
+    if (GD.inputs.tag == KEYBOARD_0 && digits<8) {
+      voltageInput[digits++] = 0;
+    }
+    if (GD.inputs.tag== KEYBOARD_UV) {
+        voltDecade = "uV";
+      }
+      if (GD.inputs.tag== KEYBOARD_MV) {
+        voltDecade = "mV";
+      }
+      if (GD.inputs.tag== KEYBOARD_V) {
+        voltDecade = "V";
+      }
+      if (GD.inputs.tag== KEYBOARD_BACK) {
+        if (digits>0) {
+          digits --;
+        }
+      }
+      if (GD.inputs.tag== KEYBOARD_CLR) {
+        digits = 0;
+      }
+  } 
+  if (GD.inputs.tag == 0) {
+    keydepressed = true;
+  }
+
+  
+  /* Show input values */
+  int posx = 170;
+  int posy = 18;
+  for (int i=0;i<digits;i++) {
+    GD.ColorRGB(COLOR_VOLT);
+    if (voltageInput[i] < KEYBOARD_COMMA) {
+      GD.cmd_number(posx, posy, 1, 0, voltageInput[i]);
+      posx=posx+50;
+    }
+    if (voltageInput[i]== KEYBOARD_COMMA) {
+      GD.cmd_text(posx, posy, 1, 0, ".");
+      posx=posx+20;
+    }
+    
+    if (i==digits-1) {
+      GD.cmd_text(posx+10, posy,1, 0, voltDecade);
+    }
+  }
+
+  
 
 }
 
@@ -309,28 +435,27 @@ void drawMainText() {
   GD.cmd_romfont(1, 34);
 
 
-int x = 0;
-int y = 0;
-voltagePanel(x,y);
-currentPanel(x,y+260);
-
-//scrollIndication(340,20);
-scrollIndication(340,250);
-
-
-GD.cmd_fgcolor(0xaaaa90);
-//GD.cmd_bgcolor(0x040404);
-
-//GD.ColorRGB(255,255,255);
-
-GD.cmd_button(20,143,90,58,30,0,"SET");
-GD.cmd_button(20,393,90,58,30,0,"LIM");
-
-GD.cmd_button(350,143,90,58,30,0,"AUTO");
-GD.cmd_button(350,393,90,58,30,0,"AUTO");
-
-
-showDial();
+  int x = 0;
+  int y = 0;
+  voltagePanel(x,y);
+  currentPanel(x,y+260);
+  
+  //scrollIndication(340,20);
+  scrollIndication(340,250);
+  
+  
+  GD.cmd_fgcolor(0xaaaa90);
+  //GD.cmd_bgcolor(0x040404);
+  
+  //GD.ColorRGB(255,255,255);
+  
+  GD.Tag(BUTTON_VOLT_SET);
+  GD.cmd_button(20,143,90,58,30,0,"SET");
+  
+  GD.cmd_button(20,393,90,58,30,0,"LIM");
+  
+  GD.cmd_button(350,143,90,58,30,0,"AUTO");
+  GD.cmd_button(350,393,90,58,30,0,"AUTO");
 
 }
 
@@ -339,79 +464,71 @@ unsigned long previousMillisSlow = 0;
 
 const long interval = 100; 
 
-  int voltageInput[100];
-  int digits;
-  bool keydepressed = true;
-  char *voltDecade = "V ";
+ 
+
+
+
 
 void loop()
 {
-//GD.wr(REG_PWM_DUTY, 20);
-
-GD.get_inputs();
-    if (GD.inputs.tag != 0 && keydepressed==true && digits<10
-    ) {
-      keydepressed = false;
-      voltageInput[digits] = GD.inputs.tag;
-      if (GD.inputs.tag <11) {
-        digits ++;
-      }
-      if (GD.inputs.tag== 13) {
-          voltDecade = "uV";
-        }
-        if (GD.inputs.tag== 12) {
-          voltDecade = "mV";
-        }
-        if (GD.inputs.tag== 11) {
-          voltDecade = "V";
-        }
-    } 
-    if (GD.inputs.tag == 0) {
-      keydepressed = true;
-    }
-  unsigned long currentMillis = millis();
-  if (currentMillis - previousMillis >= interval) {
-    previousMillis = currentMillis;
-    GD.ClearColorRGB(0x000000); // black
-
-    GD.Clear();
-    drawMainText();
-    if (currentMillis - previousMillisSlow >= 10000) {
-      previousMillisSlow = currentMillis;
-    }
-
-    
-
-      for (int i=0;i<digits;i++) {
-        GD.ColorRGB(COLOR_VOLT);
-        if (voltageInput[i] < 10) {
-          GD.cmd_number(i*25+180, 42, 31, 0, voltageInput[i]);
-        }
-        if (voltageInput[i]== 10) {
-          GD.cmd_text(i*25+180, 42, 31, 0, ".");
-        }
-        
-        if (i==digits-1) {
-          GD.cmd_text((i+1)*25+180, 42, 31, 0, voltDecade);
-        }
-      }
+  //GD.wr(REG_PWM_DUTY, 20);
 
 
-      
-    GD.swap(); 
+unsigned long currentMillis = millis();
+if (currentMillis - previousMillis >= interval) {
+  previousMillis = currentMillis;
+  GD.ClearColorRGB(0x000000); // black
 
+  GD.Clear();
+  drawMainText();
 
-/*
-  Serial.print(GD.inputs.x);
-  Serial.print(" ");
-  Serial.print(GD.inputs.y);
-  Serial.print(",");
-  Serial.println(GD.inputs.tag);
   
- 
-  Serial.println("");
-*/
+  GD.get_inputs();
+  if (GD.inputs.tag == BUTTON_VOLT_SET && dialog==false) {
+    dialog = true;
+  }
+  
+  if (dialog) {
+    showDial();
+  }
+
+  
+  if (currentMillis - previousMillisSlow >= 10000) {
+    previousMillisSlow = currentMillis;
+  }
+
+  
 
 
+  /* calculate mv */
+   int dec = 0;
+   float sum = 0;
+   for (int i=0;i<digits;i++) {
+     if (voltageInput[i] == KEYBOARD_COMMA) {
+       dec=1;
+       i++;
+     }
+     if (dec==0) {
+       if (sum==0){ // first
+         sum = voltageInput[i];
+       } else {
+         sum = sum*10 + voltageInput[i];
+       }
+     } else {
+        float decValue = (float)voltageInput[i]/
+        pow(10,dec);
+        sum = sum + decValue;
+        dec++;
+     }
+   }
+   if (voltDecade == "uV") {
+     sum=sum*1000;
+   }
+   if (voltDecade == "V") {
+     sum=sum/1000;
+   }
+     Serial.println(sum,10);
+
+    GD.swap(); 
   }
 }
