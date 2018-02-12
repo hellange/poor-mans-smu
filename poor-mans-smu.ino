@@ -240,19 +240,27 @@ void scrollIndication(int x, int y) {
 #define KEYBOARD_BACK 15
 #define KEYBOARD_CLR 16
 
-#define KEYBOARD_OK 17
-#define KEYBOARD_CANCEL 18
+#define KEYBOARD_PLUSMINUS 17
+#define KEYBOARD_DIVIDE10 18
+#define KEYBOARD_TIMES10 19
+
+#define KEYBOARD_OK 50
+#define KEYBOARD_CANCEL 51
+
+
 
 #define BUTTON_VOLT_SET 100
 
 
 
 
- int voltageInput[100];
+  /* Part of showDial */
+  int voltageInput[100];
   int digits;
   bool keydepressed = true;
   char *voltDecade = "V ";
-  
+  bool negative = false;
+
 void showDial() {
 
 int screenWidth = 800;
@@ -314,14 +322,17 @@ GD.Tag(9);
 transButton(x+spacing*2, y+spacing*2, 18, "9", 31);
 GD.Tag(KEYBOARD_UV);
 transButton(x+spacing*3, y+spacing*2, 18, "uV", 30);
+GD.Tag(KEYBOARD_DIVIDE10);
 transButton(x+spacing*4, y+spacing*2, 18, "/10", 30);
 
 GD.Tag(KEYBOARD_0);
 transButton(x+0, y+spacing*3, 18, "0",31); 
+GD.Tag(KEYBOARD_PLUSMINUS);
 transButton(x+spacing, y+spacing*3, 18, "+/-",30);
 GD.Tag(KEYBOARD_COMMA); 
 transButton(x+spacing*2, y+spacing*3, 18, ".",31);
 transButton(x+spacing*3, y+spacing*3, 18, " ", 31);
+GD.Tag(KEYBOARD_TIMES10);
 transButton(x+spacing*4, y+spacing*3, 18, "x10", 30);
 
 GD.Tag(KEYBOARD_CANCEL);
@@ -381,23 +392,27 @@ GD.Vertex2ii(startx+20, starty+20);
       voltageInput[digits++] = 0;
     }
     if (GD.inputs.tag== KEYBOARD_UV) {
-        voltDecade = "uV";
+      voltDecade = "uV";
+    }
+    if (GD.inputs.tag== KEYBOARD_MV) {
+      voltDecade = "mV";
+    }
+    if (GD.inputs.tag== KEYBOARD_V) {
+      voltDecade = "V";
+    }
+    if (GD.inputs.tag== KEYBOARD_BACK) {
+      if (digits>0) {
+        digits --;
       }
-      if (GD.inputs.tag== KEYBOARD_MV) {
-        voltDecade = "mV";
-      }
-      if (GD.inputs.tag== KEYBOARD_V) {
-        voltDecade = "V";
-      }
-      if (GD.inputs.tag== KEYBOARD_BACK) {
-        if (digits>0) {
-          digits --;
-        }
-      }
-      if (GD.inputs.tag== KEYBOARD_CLR) {
-        digits = 0;
-      }
+    }
+    if (GD.inputs.tag== KEYBOARD_CLR) {
+      digits = 0;
+    }
+    if (GD.inputs.tag== KEYBOARD_PLUSMINUS) {
+      negative = !negative;
+    }
   } 
+  
   if (GD.inputs.tag == 0) {
     keydepressed = true;
   }
@@ -406,8 +421,14 @@ GD.Vertex2ii(startx+20, starty+20);
   /* Show input values */
   int posx = 170;
   int posy = 18;
+  GD.ColorRGB(COLOR_VOLT);
+  if (negative == true) {
+      GD.cmd_text(posx, posy, 1, 0, "-");
+  } else {
+      GD.cmd_text(posx, posy, 1, 0, "+");
+  }
+  posx=posx+50;
   for (int i=0;i<digits;i++) {
-    GD.ColorRGB(COLOR_VOLT);
     if (voltageInput[i] < KEYBOARD_COMMA) {
       GD.cmd_number(posx, posy, 1, 0, voltageInput[i]);
       posx=posx+50;
