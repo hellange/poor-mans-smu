@@ -41,14 +41,18 @@ class DialClass {
   char* voltDecade = "  ";
   bool negative = false;
   bool dialog = false;
+  double mv;
   
 public:
-  double toMv();
+  void open();
   void clear();
   void handleKeypad();
+  float getMv();
+private:
+  double toMv();
+  bool validate(double mv);
   void transButton(int x, int y, int sz, char* label, int fontsize);
-  void open();
-
+  void showError(char* text);
 };
 
 extern DialClass DIAL;

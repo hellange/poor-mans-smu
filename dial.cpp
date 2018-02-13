@@ -7,6 +7,10 @@ void DialClass::open() {
   voltDecade = "V";
 }
 
+float DialClass::getMv() {
+  return mv;
+}
+
 void DialClass::handleKeypad() {
 
 
@@ -15,7 +19,7 @@ if (dialog==false) {
 }
 int screenWidth = 800;
 int screenHeight = 480;
-int width = 530;
+int width = 570;
 int height = 470;
 int margin = 10;
 
@@ -96,13 +100,14 @@ transButton(x+spacing*5, y+spacing*3, 18, "OK", 31);
 GD.ColorRGB(0xaaaaaa);
 GD.Begin(LINE_STRIP);
 GD.LineWidth(16);
-GD.Vertex2ii(startx+20, starty+20); 
-GD.Vertex2ii(startx+width-20, starty+20); 
-GD.Vertex2ii(startx+width-20, starty+110); 
-GD.Vertex2ii(startx+20, starty+110); 
-GD.Vertex2ii(startx+20, starty+20); 
+GD.Vertex2ii(startx+10, starty+10); 
+GD.Vertex2ii(startx+width-10, starty+10); 
+GD.Vertex2ii(startx+width-10, starty+100); 
+GD.Vertex2ii(startx+10, starty+100); 
+GD.Vertex2ii(startx+10, starty+10); 
 
-
+  int maxDigits = 6;
+  
   GD.get_inputs();
   
 
@@ -138,7 +143,7 @@ GD.Vertex2ii(startx+20, starty+20);
     if (GD.inputs.tag >= KEYBOARD_1 && GD.inputs.tag <= KEYBOARD_9 && digits<8) {
       dialEntries[digits++] = GD.inputs.tag;
     }
-    if (GD.inputs.tag == KEYBOARD_0 && digits<8) {
+    if (GD.inputs.tag == KEYBOARD_0 && digits < maxDigits ) {
       dialEntries[digits++] = 0;
     }
     if (GD.inputs.tag== KEYBOARD_UV) {
@@ -167,11 +172,18 @@ GD.Vertex2ii(startx+20, starty+20);
     keydepressed = true;
   }
 
+  mv = toMv();
+  bool validated = validate(mv);
+
   
   /* Show input values */
-  int posx = 170;
-  int posy = 18;
-  GD.ColorRGB(COLOR_VOLT);
+  int posx = 135;
+  int posy = 8;
+  if (validated) {
+      GD.ColorRGB(COLOR_VOLT);
+  } else {
+      GD.ColorRGB(0xff0000);
+  }
   if (negative == true) {
       GD.cmd_text(posx, posy, 1, 0, "-");
   } else {
@@ -192,8 +204,14 @@ GD.Vertex2ii(startx+20, starty+20);
       GD.cmd_text(posx+10, posy,1, 0, voltDecade);
     }
   }
+
+
 }
 
+void DialClass::showError(char* text) {
+  GD.ColorRGB(0xff0000);
+  GD.cmd_text(160,105, 29, 0, text);
+}
 
 void DialClass::transButton(int x, int y, int sz, char* label, int fontsize)
 {
@@ -219,6 +237,62 @@ GD.ColorA(255);
 
 void DialClass::clear() {
   digits = 0;
+}
+
+bool DialClass::validate(double mv) {
+
+  char buf[3+10];
+  int whole, decimalValue;
+  sprintf(buf, "%.*f", 3, mv);
+  sscanf(buf, "%d.%d", &whole, &decimalValue);
+
+  int decimals = 0;
+  for (int i=0;i<digits;i++) {
+    if (dialEntries[i] == KEYBOARD_COMMA) {
+      decimals = digits -1 - i;
+      break;
+    }
+  }
+ 
+  
+  if (voltDecade == "V") {
+    if (mv > 30000 || mv<-30000) {
+      showError("Values above 30V not allowed");
+      return false;
+    }
+    // not more precise than 1mV resolution
+    if (decimals > 3) {
+      showError("Max resolution in V range is 1mV");
+      return false;
+    }
+  }
+
+  if (voltDecade == "mV") {
+    // not above 30V
+    if (mv > 30000 || mv<-30000) {
+      showError("Max voltage is 30V");
+      return false;
+    }
+
+    // not more precise than 10uV resolution
+    if (decimals > 1) {
+      showError("Max resolution in mV range is 10uV");
+      return false;
+    }
+  }
+ 
+  if (voltDecade == "uV") {
+    // not more precise than 10uV resolution
+    if (decimals > 2) {
+      showError("Max resolution in uV range is 10uV");
+      return false;
+    }
+    if (whole > 999) {
+      showError("Max voltage in uV range is 999mV");
+      return false;
+    }
+  }  
+  return true;
 }
 
 double DialClass::toMv() {
