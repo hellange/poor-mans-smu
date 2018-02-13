@@ -53,6 +53,7 @@ private:
   bool validate(double mv);
   void transButton(int x, int y, int sz, char* label, int fontsize);
   void showError(char* text);
+  void showInputValues(bool valid);
 };
 
 extern DialClass DIAL;

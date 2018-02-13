@@ -12,106 +12,104 @@ float DialClass::getMv() {
 }
 
 void DialClass::handleKeypad() {
-
-
-if (dialog==false) {
-  return;
-}
-int screenWidth = 800;
-int screenHeight = 480;
-int width = 570;
-int height = 470;
-int margin = 10;
-
-int startx, starty, endx, endy;
-startx=(screenWidth-width) / 2;
-starty=(screenHeight-height) / 2;
-endx=screenWidth - (screenWidth-width) / 2;
-endy=screenHeight - (screenHeight-height) / 2;
-
-GD.ColorRGB(0x000000);
-GD.Begin(RECTS);
-GD.Vertex2ii(startx, starty); 
-GD.Vertex2ii(endx, endy);
-
-GD.ColorRGB(0xaaaaaa);
-GD.Begin(LINE_STRIP);
-GD.LineWidth(32);
-GD.Vertex2ii(startx, starty); 
-GD.Vertex2ii(startx+width, starty); 
-GD.Vertex2ii(startx+width, starty+height); 
-GD.Vertex2ii(startx, starty+height); 
-GD.Vertex2ii(startx, starty); 
-
-int x=190;
-int y=175;
-int spacing = 82;
-GD.Tag(1);
-transButton(x+0, y+0,18, "1", 31); 
-GD.Tag(2);
-transButton(x+spacing, y+0, 18, "2", 31);
-GD.Tag(3);
-transButton(x+spacing*2, y+0, 18, "3", 31);
-GD.Tag(KEYBOARD_V);
-transButton(x+spacing*3, y+0, 18, "V", 31);
-GD.Tag(KEYBOARD_BACK);
-transButton(x+spacing*4, y+0, 18, "<", 31);
-
-GD.Tag(4);
-transButton(x+0, y+spacing, 18, "4", 31); 
-GD.Tag(5);
-transButton(x+spacing, y+spacing, 18, "5", 31); 
-GD.Tag(6);
-transButton(x+spacing*2, y+spacing, 18, "6", 31);
-GD.Tag(KEYBOARD_MV);
-transButton(x+spacing*3, y+spacing, 18, "mV", 30);
-GD.Tag(KEYBOARD_CLR);
-transButton(x+spacing*4, y+spacing, 18, "Clr", 30);
-
-GD.Tag(7);
-transButton(x+0, y+spacing*2, 18, "7", 31); 
-GD.Tag(8);
-transButton(x+spacing, y+spacing*2, 18, "8", 31); 
-GD.Tag(9);
-transButton(x+spacing*2, y+spacing*2, 18, "9", 31);
-GD.Tag(KEYBOARD_UV);
-transButton(x+spacing*3, y+spacing*2, 18, "uV", 30);
-GD.Tag(KEYBOARD_DIVIDE10);
-transButton(x+spacing*4, y+spacing*2, 18, "/10", 30);
-
-GD.Tag(KEYBOARD_0);
-transButton(x+0, y+spacing*3, 18, "0",31); 
-GD.Tag(KEYBOARD_PLUSMINUS);
-transButton(x+spacing, y+spacing*3, 18, "+/-",30);
-GD.Tag(KEYBOARD_COMMA); 
-transButton(x+spacing*2, y+spacing*3, 18, ".",31);
-transButton(x+spacing*3, y+spacing*3, 18, " ", 31);
-GD.Tag(KEYBOARD_TIMES10);
-transButton(x+spacing*4, y+spacing*3, 18, "x10", 30);
-
-GD.Tag(KEYBOARD_CANCEL);
-transButton(x+spacing*5, y+spacing*2, 18, "Cancel", 28);
-GD.Tag(KEYBOARD_OK);
-transButton(x+spacing*5, y+spacing*3, 18, "OK", 31);
-
-
-
-// entry display
-GD.ColorRGB(0xaaaaaa);
-GD.Begin(LINE_STRIP);
-GD.LineWidth(16);
-GD.Vertex2ii(startx+10, starty+10); 
-GD.Vertex2ii(startx+width-10, starty+10); 
-GD.Vertex2ii(startx+width-10, starty+100); 
-GD.Vertex2ii(startx+10, starty+100); 
-GD.Vertex2ii(startx+10, starty+10); 
-
+  if (dialog==false) {
+    return;
+  }
+  int screenWidth = 800;
+  int screenHeight = 480;
+  int width = 570;
+  int height = 470;
+  int margin = 10;
+  
+  int startx, starty, endx, endy;
+  startx=(screenWidth-width) / 2;
+  starty=(screenHeight-height) / 2;
+  endx=screenWidth - (screenWidth-width) / 2;
+  endy=screenHeight - (screenHeight-height) / 2;
+  
+  // dialog black background
+  GD.ColorRGB(0x000000);
+  GD.Begin(RECTS);
+  GD.Vertex2ii(startx, starty); 
+  GD.Vertex2ii(endx, endy);
+  
+  // border
+  GD.ColorRGB(0xaaaaaa);
+  GD.Begin(LINE_STRIP);
+  GD.LineWidth(32);
+  GD.Vertex2ii(startx, starty); 
+  GD.Vertex2ii(startx+width, starty); 
+  GD.Vertex2ii(startx+width, starty+height); 
+  GD.Vertex2ii(startx, starty+height); 
+  GD.Vertex2ii(startx, starty); 
+  
+  
+  // digit entry display
+  GD.ColorRGB(0xaaaaaa);
+  GD.Begin(LINE_STRIP);
+  GD.LineWidth(16);
+  GD.Vertex2ii(startx+10, starty+10); 
+  GD.Vertex2ii(startx+width-10, starty+10); 
+  GD.Vertex2ii(startx+width-10, starty+100); 
+  GD.Vertex2ii(startx+10, starty+100); 
+  GD.Vertex2ii(startx+10, starty+10); 
+  
+  // keypad
+  int x=190;
+  int y=175;
+  int spacing = 82;
+  GD.Tag(1);
+  transButton(x+0, y+0,18, "1", 31); 
+  GD.Tag(2);
+  transButton(x+spacing, y+0, 18, "2", 31);
+  GD.Tag(3);
+  transButton(x+spacing*2, y+0, 18, "3", 31);
+  GD.Tag(KEYBOARD_V);
+  transButton(x+spacing*3, y+0, 18, "V", 31);
+  GD.Tag(KEYBOARD_BACK);
+  transButton(x+spacing*4, y+0, 18, "<", 31);
+  
+  GD.Tag(4);
+  transButton(x+0, y+spacing, 18, "4", 31); 
+  GD.Tag(5);
+  transButton(x+spacing, y+spacing, 18, "5", 31); 
+  GD.Tag(6);
+  transButton(x+spacing*2, y+spacing, 18, "6", 31);
+  GD.Tag(KEYBOARD_MV);
+  transButton(x+spacing*3, y+spacing, 18, "mV", 30);
+  GD.Tag(KEYBOARD_CLR);
+  transButton(x+spacing*4, y+spacing, 18, "Clr", 30);
+  
+  GD.Tag(7);
+  transButton(x+0, y+spacing*2, 18, "7", 31); 
+  GD.Tag(8);
+  transButton(x+spacing, y+spacing*2, 18, "8", 31); 
+  GD.Tag(9);
+  transButton(x+spacing*2, y+spacing*2, 18, "9", 31);
+  GD.Tag(KEYBOARD_UV);
+  transButton(x+spacing*3, y+spacing*2, 18, "uV", 30);
+  GD.Tag(KEYBOARD_DIVIDE10);
+  transButton(x+spacing*4, y+spacing*2, 18, "/10", 30);
+  
+  GD.Tag(KEYBOARD_0);
+  transButton(x+0, y+spacing*3, 18, "0",31); 
+  GD.Tag(KEYBOARD_PLUSMINUS);
+  transButton(x+spacing, y+spacing*3, 18, "+/-",30);
+  GD.Tag(KEYBOARD_COMMA); 
+  transButton(x+spacing*2, y+spacing*3, 18, ".",31);
+  transButton(x+spacing*3, y+spacing*3, 18, " ", 31);
+  GD.Tag(KEYBOARD_TIMES10);
+  transButton(x+spacing*4, y+spacing*3, 18, "x10", 30);
+  
+  GD.Tag(KEYBOARD_CANCEL);
+  transButton(x+spacing*5, y+spacing*2, 18, "Cancel", 28);
+  GD.Tag(KEYBOARD_OK);
+  transButton(x+spacing*5, y+spacing*3, 18, "OK", 31);
+  
   int maxDigits = 6;
   
   GD.get_inputs();
-  
-
-
+ 
   if (GD.inputs.tag == KEYBOARD_CANCEL && dialog==true) {
     dialog = false;
   }
@@ -174,12 +172,14 @@ GD.Vertex2ii(startx+10, starty+10);
 
   mv = toMv();
   bool validated = validate(mv);
+  showInputValues(validated);
+}
 
-  
-  /* Show input values */
+void DialClass::showInputValues(bool valid) {
+    /* Show input values */
   int posx = 135;
   int posy = 8;
-  if (validated) {
+  if (valid) {
       GD.ColorRGB(COLOR_VOLT);
   } else {
       GD.ColorRGB(0xff0000);
@@ -204,8 +204,6 @@ GD.Vertex2ii(startx+10, starty+10);
       GD.cmd_text(posx+10, posy,1, 0, voltDecade);
     }
   }
-
-
 }
 
 void DialClass::showError(char* text) {
