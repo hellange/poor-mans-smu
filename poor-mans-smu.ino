@@ -276,7 +276,9 @@ if (currentMillis - previousMillis >= interval) {
   }
 
    float sum = DIAL.toMv();
-   Serial.println(sum,10);
+   Serial.printf( "Entered: %.6f mV", sum);
+   Serial.println("");
+
 
     GD.swap(); 
   }

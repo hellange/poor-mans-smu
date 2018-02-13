@@ -38,12 +38,12 @@ class DialClass {
   int dialEntries[100];
   int digits;
   bool keydepressed = true;
-  char *voltDecade = "V ";
+  char* voltDecade = "  ";
   bool negative = false;
   bool dialog = false;
   
 public:
-  float toMv();
+  double toMv();
   void clear();
   void handleKeypad();
   void transButton(int x, int y, int sz, char* label, int fontsize);

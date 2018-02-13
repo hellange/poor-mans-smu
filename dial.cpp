@@ -4,9 +4,11 @@
 
 void DialClass::open() {
   dialog=true;  
+  voltDecade = "V";
 }
 
 void DialClass::handleKeypad() {
+
 
 if (dialog==false) {
   return;
@@ -219,10 +221,10 @@ void DialClass::clear() {
   digits = 0;
 }
 
-float DialClass::toMv() {
+double DialClass::toMv() {
 /* calculate mv */
  int dec = 0;
- float sum = 0;
+ double sum = 0;
  for (int i=0;i<digits;i++) {
    if (dialEntries[i] == KEYBOARD_COMMA) {
      dec=1;
@@ -235,15 +237,15 @@ float DialClass::toMv() {
        sum = sum*10 + dialEntries[i];
      }
    } else {
-      float decValue = (float)dialEntries[i]/pow(10,dec);
+      double decValue = dialEntries[i]/pow(10,dec);
       sum = sum + decValue;
       dec++;
    }
  }
- if (voltDecade == "uV") {
+ if (voltDecade == "V") {
    sum=sum*1000;
  }
- if (voltDecade == "V") {
+ if (voltDecade == "uV") {
    sum=sum/1000;
  }
  return sum;
