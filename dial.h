@@ -35,8 +35,16 @@
 
 class DialClass {
 
-  int dialEntries[100];
-  int digits;
+  int screenWidth = 800;
+  int screenHeight = 480;
+
+  // Store memory for entered digits and symbols
+  int dialEntries[15];
+  // current number of digits in display
+  int digits; 
+
+  bool error;
+  
   bool keydepressed = true;
   char* voltDecade = "  ";
   bool negative = false;
@@ -53,6 +61,7 @@ private:
   bool validate(double mv);
   void transButton(int x, int y, int sz, char* label, int fontsize);
   void showError(char* text);
+  void showWarning(char* text);
   void showInputValues(bool valid);
 };
 

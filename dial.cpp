@@ -28,6 +28,7 @@ void DialClass::handleKeypad() {
   endy=screenHeight - (screenHeight-height) / 2;
   
   // dialog black background
+  GD.ColorA(210);
   GD.ColorRGB(0x000000);
   GD.Begin(RECTS);
   GD.Vertex2ii(startx, starty); 
@@ -109,80 +110,86 @@ void DialClass::handleKeypad() {
   int maxDigits = 6;
   
   GD.get_inputs();
+  
+  if (GD.inputs.tag== KEYBOARD_BACK) {
+    if (digits>0) {
+      digits --;
+    }
+  }
  
   if (GD.inputs.tag == KEYBOARD_CANCEL && dialog==true) {
+      dialog = false;
+    }
+  else if (GD.inputs.tag == KEYBOARD_OK && dialog==true && error==false) {
     dialog = false;
   }
 
-  if (GD.inputs.tag == KEYBOARD_OK && dialog==true) {
-    dialog = false;
-  }
-  
-  if (GD.inputs.tag != 0 && keydepressed==true) {
-    keydepressed = false;
-    if (digits > 0 && GD.inputs.tag == KEYBOARD_OK) {
-    }
-    if (digits == 0 && GD.inputs.tag == KEYBOARD_COMMA) {
-      dialEntries[digits++] = 0;
-    }
-    if (GD.inputs.tag == KEYBOARD_COMMA) {
-      bool alreadyHasComma = false;
-      for (int i=0;i<digits;i++) {
-        if (dialEntries[i] == KEYBOARD_COMMA) {
-          alreadyHasComma = true;
-          break;
-        }
+ 
+  if ( 1 == 1) {  // for now, allow to enter digits also when in error
+  //if (error == false) {
+    if (GD.inputs.tag != 0 && keydepressed==true) {
+      keydepressed = false;
+     // if (digits > 0 && GD.inputs.tag == KEYBOARD_OK) {
+     // }
+      if (digits == 0 && GD.inputs.tag == KEYBOARD_COMMA) {
+        dialEntries[digits++] = 0;
       }
-      if (!alreadyHasComma) {
+      if (GD.inputs.tag == KEYBOARD_COMMA) {
+        bool alreadyHasComma = false;
+        for (int i=0;i<digits;i++) {
+          if (dialEntries[i] == KEYBOARD_COMMA) {
+            alreadyHasComma = true;
+            break;
+          }
+        }
+        if (!alreadyHasComma) {
+          dialEntries[digits++] = GD.inputs.tag;
+        }
+  
+      }
+      if (GD.inputs.tag >= KEYBOARD_1 && GD.inputs.tag <= KEYBOARD_9 && digits<8) {
         dialEntries[digits++] = GD.inputs.tag;
       }
-
-    }
-    if (GD.inputs.tag >= KEYBOARD_1 && GD.inputs.tag <= KEYBOARD_9 && digits<8) {
-      dialEntries[digits++] = GD.inputs.tag;
-    }
-    if (GD.inputs.tag == KEYBOARD_0 && digits < maxDigits ) {
-      dialEntries[digits++] = 0;
-    }
-    if (GD.inputs.tag== KEYBOARD_UV) {
-      voltDecade = "uV";
-    }
-    if (GD.inputs.tag== KEYBOARD_MV) {
-      voltDecade = "mV";
-    }
-    if (GD.inputs.tag== KEYBOARD_V) {
-      voltDecade = "V";
-    }
-    if (GD.inputs.tag== KEYBOARD_BACK) {
-      if (digits>0) {
-        digits --;
+      if (GD.inputs.tag == KEYBOARD_0 && digits < maxDigits ) {
+        dialEntries[digits++] = 0;
       }
-    }
-    if (GD.inputs.tag== KEYBOARD_CLR) {
-      digits = 0;
-    }
-    if (GD.inputs.tag== KEYBOARD_PLUSMINUS) {
-      negative = !negative;
-    }
-  } 
+      if (GD.inputs.tag== KEYBOARD_UV) {
+        voltDecade = "uV";
+      }
+      if (GD.inputs.tag== KEYBOARD_MV) {
+        voltDecade = "mV";
+      }
+      if (GD.inputs.tag== KEYBOARD_V) {
+        voltDecade = "V";
+      }
   
+      if (GD.inputs.tag== KEYBOARD_CLR) {
+        digits = 0;
+      }
+      if (GD.inputs.tag== KEYBOARD_PLUSMINUS) {
+        negative = !negative;
+      }
+    } 
+  }
   if (GD.inputs.tag == 0) {
     keydepressed = true;
   }
 
+  GD.ColorA(255);
+
   mv = toMv();
-  bool validated = validate(mv);
-  showInputValues(validated);
+  error = !validate(mv);
+  showInputValues(error);
 }
 
-void DialClass::showInputValues(bool valid) {
+void DialClass::showInputValues(bool error) {
     /* Show input values */
   int posx = 135;
   int posy = 8;
-  if (valid) {
-      GD.ColorRGB(COLOR_VOLT);
+  if (error) {
+      GD.ColorRGB(0xFF0000);
   } else {
-      GD.ColorRGB(0xff0000);
+      GD.ColorRGB(COLOR_VOLT);
   }
   if (negative == true) {
       GD.cmd_text(posx, posy, 1, 0, "-");
@@ -207,8 +214,18 @@ void DialClass::showInputValues(bool valid) {
 }
 
 void DialClass::showError(char* text) {
+  error = true;
   GD.ColorRGB(0xff0000);
-  GD.cmd_text(160,105, 29, 0, text);
+  GD.cmd_text(160,107, 29, 0, text);
+}
+
+void DialClass::showWarning(char* text) {
+  // check if error already exists... do we need a priority or just differ between warning and error ?
+  if (!error) {
+    error = true;
+    GD.ColorRGB(COLOR_VOLT);
+    GD.cmd_text(160,107, 29, 0, text);
+  }
 }
 
 void DialClass::transButton(int x, int y, int sz, char* label, int fontsize)
@@ -234,59 +251,73 @@ GD.ColorA(255);
 
 
 void DialClass::clear() {
+  error = false;
   digits = 0;
 }
 
 bool DialClass::validate(double mv) {
 
+  // get millovolt number value and decimal value
   char buf[3+10];
-  int whole, decimalValue;
+  int numberValue, decimalValue;
   sprintf(buf, "%.*f", 3, mv);
-  sscanf(buf, "%d.%d", &whole, &decimalValue);
+  sscanf(buf, "%d.%d", &numberValue, &decimalValue);
 
-  int decimals = 0;
+  // get number of decimals in the display
+  int decimalsAfterComma = -1;
   for (int i=0;i<digits;i++) {
     if (dialEntries[i] == KEYBOARD_COMMA) {
-      decimals = digits -1 - i;
+      decimalsAfterComma = digits -1 - i;
       break;
     }
   }
- 
+
+  if (digits < 1) {
+    showWarning("Please enter value");
+  }
+  if (decimalsAfterComma == 0){
+    showWarning("Please enter a decimal after comma");
+  }
+  // Note that in the check below, mv is mv, independent
+  // on which voltDecade is being show in the dislay
+//  if (digits < 1) {
+//    showError("");
+//    return error;
+//  }
   
   if (voltDecade == "V") {
-    if (mv > 30000 || mv<-30000) {
-      showError("Values above 30V not allowed");
+    if (abs(mv) > 30000) {
+      showError("Max voltage is 30V");
       return false;
     }
-    // not more precise than 1mV resolution
-    if (decimals > 3) {
+    if (decimalsAfterComma > 3) {
       showError("Max resolution in V range is 1mV");
       return false;
     }
   }
 
   if (voltDecade == "mV") {
-    // not above 30V
-    if (mv > 30000 || mv<-30000) {
+    if (abs(mv) > 30000) {
       showError("Max voltage is 30V");
       return false;
     }
-
-    // not more precise than 10uV resolution
-    if (decimals > 1) {
+    if (decimalsAfterComma > 1) {
       showError("Max resolution in mV range is 10uV");
       return false;
     }
   }
  
   if (voltDecade == "uV") {
-    // not more precise than 10uV resolution
-    if (decimals > 2) {
-      showError("Max resolution in uV range is 10uV");
+    if (numberValue > 999) {
+      showError("Max voltage in uV range is 999mV");
       return false;
     }
-    if (whole > 999) {
-      showError("Max voltage in uV range is 999mV");
+    if (decimalsAfterComma > 0) {
+      showError("nV not allowed");
+      return false;
+    }
+    if (mv < 0.001 && digits > 0) {
+      showError("Max resolution in uV range is 1uV");
       return false;
     }
   }  

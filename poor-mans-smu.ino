@@ -174,7 +174,6 @@ void currentPanel(int x, int y) {
   GD.cmd_text(x+495, y+32 ,  1, 0, "A");
   GD.cmd_number(x+322, y+32, 1, 3, random(0, 199));
 
-  GD.ColorA(200);
   GD.cmd_text(x+20, y+135, 31, 0, "LIM   1.000 0 A");
 }
 
