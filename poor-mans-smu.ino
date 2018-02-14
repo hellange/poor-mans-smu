@@ -56,11 +56,11 @@ void voltagePanel(int x, int y) {
   GD.ColorRGB(200,255,200);
   GD.cmd_text(x+56, y+16 ,   29, 0, "SOURCE VOLTAGE");
 
-  float rawMv = 1501.001;
-  VOLT_DISPLAY.render(x,y , rawMv);
+  float rawMv = 1501.0 +  random(0, 199) / 1000.0;
+  VOLT_DISPLAY.renderMeasured(x,y , rawMv);
+  VOLT_DISPLAY.renderSet(x+120, y+150, rawMv);
 
   // various other values
-  GD.cmd_text(x+20, y+150, 31, 0, "SET   01.500 0 V");
 
   GD.ColorRGB(200,255,200);
   GD.cmd_text(x+486, y+147, 27, 0, "Average");
@@ -107,10 +107,9 @@ void currentPanel(int x, int y) {
   GD.ColorRGB(232,202,158);
   GD.cmd_text(x+56, y+5, 29, 0, "MEASURE CURRENT");
 
-  float rawMa = 56;
-  CURRENT_DISPLAY.render(x, y, rawMa);
-
-  GD.cmd_text(x+20, y+135, 31, 0, "LIM   1.000 0 A");
+  float rawMa = 56.0 +  random(0, 199) / 1000.0;
+  CURRENT_DISPLAY.renderMeasured(x, y, rawMa);
+  CURRENT_DISPLAY.renderSet(x+120, y+135, rawMa);
 }
 
 void drawBall(int x, int y, bool set) {
@@ -135,20 +134,9 @@ void scrollIndication(int x, int y) {
   drawBall(x+120,y,false);
 }
 
-
-
-/* replace by class */
-
-
-
 void drawMainText() {
-
-
-  //GD.ColorRGB(90,89,120);
-
-  // put FT81x font 35 in slot 1
-  GD.cmd_romfont(1, 34);
-
+  
+  GD.cmd_romfont(1, 34); // put FT81x font 34 in slot 1
 
   int x = 0;
   int y = 0;
@@ -157,8 +145,7 @@ void drawMainText() {
   
   //scrollIndication(340,20);
   scrollIndication(340,250);
-  
-  
+    
   GD.cmd_fgcolor(0xaaaa90);
   //GD.cmd_bgcolor(0x040404);
   

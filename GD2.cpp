@@ -701,6 +701,9 @@ void GDClass::cmd_regwrite(uint32_t ptr, uint32_t val) {
   cI(val);
 }
 void GDClass::cmd_number(int16_t x, int16_t y, byte font, uint16_t options, uint32_t n) {
+
+  x = GD.above512pixelMagic(x);
+
   cFFFFFF(0x2e);
   ch(x);
   ch(y);
