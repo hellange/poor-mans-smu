@@ -56,9 +56,9 @@ void voltagePanel(int x, int y) {
   GD.ColorRGB(200,255,200);
   GD.cmd_text(x+56, y+16 ,   29, 0, "SOURCE VOLTAGE");
 
-  float rawMv = 1501.0 +  random(0, 199) / 1000.0;
-  VOLT_DISPLAY.renderMeasured(x,y , rawMv);
-  VOLT_DISPLAY.renderSet(x+120, y+150, rawMv);
+  float rawMv = 10501.0 +  random(0, 199) / 1000.0;
+  VOLT_DISPLAY.renderMeasured(x + 17,y , rawMv);
+  VOLT_DISPLAY.renderSet(x + 120, y+150, DIAL.getMv());
 
   // various other values
 
@@ -108,8 +108,8 @@ void currentPanel(int x, int y) {
   GD.cmd_text(x+56, y+5, 29, 0, "MEASURE CURRENT");
 
   float rawMa = 56.0 +  random(0, 199) / 1000.0;
-  CURRENT_DISPLAY.renderMeasured(x, y, rawMa);
-  CURRENT_DISPLAY.renderSet(x+120, y+135, rawMa);
+  CURRENT_DISPLAY.renderMeasured(x + 17, y, rawMa);
+  CURRENT_DISPLAY.renderSet(x+120, y+135, 200.0);
 }
 
 void drawBall(int x, int y, bool set) {
