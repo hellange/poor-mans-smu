@@ -44,6 +44,7 @@ class DialClass {
   int digits; 
 
   bool error;
+  bool warning;
   
   bool keydepressed = true;
   char* voltDecade = "  ";
@@ -58,11 +59,12 @@ public:
   float getMv();
 private:
   double toMv();
-  bool validate(double mv);
+  void validate(double mv);
   void transButton(int x, int y, int sz, char* label, int fontsize);
   void showError(char* text);
   void showWarning(char* text);
-  void showInputValues(bool valid);
+  void renderInput(bool valid);
+  void renderKeypad();
 };
 
 extern DialClass DIAL;

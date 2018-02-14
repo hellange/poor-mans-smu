@@ -4,11 +4,18 @@
 
 void DialClass::open() {
   dialog=true;  
-  voltDecade = "V";
+  clear();
 }
 
 float DialClass::getMv() {
   return mv;
+}
+
+void DialClass::clear() {
+  error = false;
+  warning = false;
+  digits = 0;
+  voltDecade = "V";
 }
 
 void DialClass::handleKeypad() {
@@ -55,57 +62,10 @@ void DialClass::handleKeypad() {
   GD.Vertex2ii(startx+10, starty+100); 
   GD.Vertex2ii(startx+10, starty+10); 
   
-  // keypad
-  int x=190;
-  int y=175;
-  int spacing = 82;
-  GD.Tag(1);
-  transButton(x+0, y+0,18, "1", 31); 
-  GD.Tag(2);
-  transButton(x+spacing, y+0, 18, "2", 31);
-  GD.Tag(3);
-  transButton(x+spacing*2, y+0, 18, "3", 31);
-  GD.Tag(KEYBOARD_V);
-  transButton(x+spacing*3, y+0, 18, "V", 31);
-  GD.Tag(KEYBOARD_BACK);
-  transButton(x+spacing*4, y+0, 18, "<", 31);
   
-  GD.Tag(4);
-  transButton(x+0, y+spacing, 18, "4", 31); 
-  GD.Tag(5);
-  transButton(x+spacing, y+spacing, 18, "5", 31); 
-  GD.Tag(6);
-  transButton(x+spacing*2, y+spacing, 18, "6", 31);
-  GD.Tag(KEYBOARD_MV);
-  transButton(x+spacing*3, y+spacing, 18, "mV", 30);
-  GD.Tag(KEYBOARD_CLR);
-  transButton(x+spacing*4, y+spacing, 18, "Clr", 30);
-  
-  GD.Tag(7);
-  transButton(x+0, y+spacing*2, 18, "7", 31); 
-  GD.Tag(8);
-  transButton(x+spacing, y+spacing*2, 18, "8", 31); 
-  GD.Tag(9);
-  transButton(x+spacing*2, y+spacing*2, 18, "9", 31);
-  GD.Tag(KEYBOARD_UV);
-  transButton(x+spacing*3, y+spacing*2, 18, "uV", 30);
-  GD.Tag(KEYBOARD_DIVIDE10);
-  transButton(x+spacing*4, y+spacing*2, 18, "/10", 30);
-  
-  GD.Tag(KEYBOARD_0);
-  transButton(x+0, y+spacing*3, 18, "0",31); 
-  GD.Tag(KEYBOARD_PLUSMINUS);
-  transButton(x+spacing, y+spacing*3, 18, "+/-",30);
-  GD.Tag(KEYBOARD_COMMA); 
-  transButton(x+spacing*2, y+spacing*3, 18, ".",31);
-  transButton(x+spacing*3, y+spacing*3, 18, " ", 31);
-  GD.Tag(KEYBOARD_TIMES10);
-  transButton(x+spacing*4, y+spacing*3, 18, "x10", 30);
-  
-  GD.Tag(KEYBOARD_CANCEL);
-  transButton(x+spacing*5, y+spacing*2, 18, "Cancel", 28);
-  GD.Tag(KEYBOARD_OK);
-  transButton(x+spacing*5, y+spacing*3, 18, "OK", 31);
+
+
+
   
   int maxDigits = 6;
   
@@ -178,15 +138,73 @@ void DialClass::handleKeypad() {
   GD.ColorA(255);
 
   mv = toMv();
-  error = !validate(mv);
-  showInputValues(error);
+  validate(mv);
+  renderInput(error);
+
+  renderKeypad();
 }
 
-void DialClass::showInputValues(bool error) {
+void DialClass::renderKeypad() {
+    // keypad
+  int x=190;
+  int y=175;
+  int spacing = 82;
+  GD.Tag(1);
+  transButton(x+0, y+0,18, "1", 31); 
+  GD.Tag(2);
+  transButton(x+spacing, y+0, 18, "2", 31);
+  GD.Tag(3);
+  transButton(x+spacing*2, y+0, 18, "3", 31);
+  GD.Tag(KEYBOARD_V);
+  transButton(x+spacing*3, y+0, 18, "V", 31);
+  GD.Tag(KEYBOARD_BACK);
+  transButton(x+spacing*4, y+0, 18, "<", 31);
+  
+  GD.Tag(4);
+  transButton(x+0, y+spacing, 18, "4", 31); 
+  GD.Tag(5);
+  transButton(x+spacing, y+spacing, 18, "5", 31); 
+  GD.Tag(6);
+  transButton(x+spacing*2, y+spacing, 18, "6", 31);
+  GD.Tag(KEYBOARD_MV);
+  transButton(x+spacing*3, y+spacing, 18, "mV", 30);
+  GD.Tag(KEYBOARD_CLR);
+  transButton(x+spacing*4, y+spacing, 18, "Clr", 30);
+  
+  GD.Tag(7);
+  transButton(x+0, y+spacing*2, 18, "7", 31); 
+  GD.Tag(8);
+  transButton(x+spacing, y+spacing*2, 18, "8", 31); 
+  GD.Tag(9);
+  transButton(x+spacing*2, y+spacing*2, 18, "9", 31);
+  GD.Tag(KEYBOARD_UV);
+  transButton(x+spacing*3, y+spacing*2, 18, "uV", 30);
+  GD.Tag(KEYBOARD_DIVIDE10);
+  transButton(x+spacing*4, y+spacing*2, 18, "/10", 30);
+  
+  GD.Tag(KEYBOARD_0);
+  transButton(x+0, y+spacing*3, 18, "0",31); 
+  GD.Tag(KEYBOARD_PLUSMINUS);
+  transButton(x+spacing, y+spacing*3, 18, "+/-",30);
+  GD.Tag(KEYBOARD_COMMA); 
+  transButton(x+spacing*2, y+spacing*3, 18, ".",31);
+  transButton(x+spacing*3, y+spacing*3, 18, " ", 31);
+  GD.Tag(KEYBOARD_TIMES10);
+  transButton(x+spacing*4, y+spacing*3, 18, "x10", 30);
+  
+  GD.Tag(KEYBOARD_CANCEL);
+  transButton(x+spacing*5, y+spacing*2, 18, "Cancel", 28);
+  if (!error && !warning) {
+    GD.Tag(KEYBOARD_OK);
+    transButton(x+spacing*5, y+spacing*3, 18, "OK", 31);
+  }
+}
+
+void DialClass::renderInput(bool indicateError) {
     /* Show input values */
   int posx = 135;
   int posy = 8;
-  if (error) {
+  if (indicateError) {
       GD.ColorRGB(0xFF0000);
   } else {
       GD.ColorRGB(COLOR_VOLT);
@@ -220,12 +238,9 @@ void DialClass::showError(char* text) {
 }
 
 void DialClass::showWarning(char* text) {
-  // check if error already exists... do we need a priority or just differ between warning and error ?
-  if (!error) {
-    error = true;
-    GD.ColorRGB(COLOR_VOLT);
-    GD.cmd_text(160,107, 29, 0, text);
-  }
+  warning = true;
+  GD.ColorRGB(COLOR_VOLT);
+  GD.cmd_text(160,107, 29, 0, text);
 }
 
 void DialClass::transButton(int x, int y, int sz, char* label, int fontsize)
@@ -249,13 +264,7 @@ GD.ColorA(255);
 
 }
 
-
-void DialClass::clear() {
-  error = false;
-  digits = 0;
-}
-
-bool DialClass::validate(double mv) {
+void DialClass::validate(double mv) {
 
   // get millovolt number value and decimal value
   char buf[3+10];
@@ -274,54 +283,55 @@ bool DialClass::validate(double mv) {
 
   if (digits < 1) {
     showWarning("Please enter value");
+    return;
   }
   if (decimalsAfterComma == 0){
     showWarning("Please enter a decimal after comma");
+    return;
   }
   // Note that in the check below, mv is mv, independent
   // on which voltDecade is being show in the dislay
-//  if (digits < 1) {
-//    showError("");
-//    return error;
-//  }
   
   if (voltDecade == "V") {
     if (abs(mv) > 30000) {
       showError("Max voltage is 30V");
-      return false;
+      return;
     }
-    if (decimalsAfterComma > 3) {
+    else if (decimalsAfterComma > 3) {
       showError("Max resolution in V range is 1mV");
-      return false;
+      return;
     }
   }
 
-  if (voltDecade == "mV") {
+  else if (voltDecade == "mV") {
     if (abs(mv) > 30000) {
       showError("Max voltage is 30V");
-      return false;
+      return;
     }
-    if (decimalsAfterComma > 1) {
+    else if (decimalsAfterComma > 1) {
       showError("Max resolution in mV range is 10uV");
-      return false;
+      return;
     }
   }
  
-  if (voltDecade == "uV") {
+  else if (voltDecade == "uV") {
     if (numberValue > 999) {
       showError("Max voltage in uV range is 999mV");
-      return false;
+      return;
+
     }
-    if (decimalsAfterComma > 0) {
+    else if (decimalsAfterComma > 0) {
       showError("nV not allowed");
-      return false;
+      return;
+
     }
-    if (mv < 0.001 && digits > 0) {
+    else if (mv < 0.001 && digits > 0) {
       showError("Max resolution in uV range is 1uV");
-      return false;
+      return;
     }
   }  
-  return true;
+  error = false;
+  warning = false;
 }
 
 double DialClass::toMv() {
