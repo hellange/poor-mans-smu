@@ -62,12 +62,7 @@ void DialClass::handleKeypad() {
   GD.Vertex2ii(startx+10, starty+100); 
   GD.Vertex2ii(startx+10, starty+10); 
   
-  
-
-
-
-  
-  int maxDigits = 6;
+  int maxDigits = 7;
   
   GD.get_inputs();
   
@@ -107,7 +102,7 @@ void DialClass::handleKeypad() {
         }
   
       }
-      if (GD.inputs.tag >= KEYBOARD_1 && GD.inputs.tag <= KEYBOARD_9 && digits<8) {
+      if (GD.inputs.tag >= KEYBOARD_1 && GD.inputs.tag <= KEYBOARD_9 && digits < maxDigits) {
         dialEntries[digits++] = GD.inputs.tag;
       }
       if (GD.inputs.tag == KEYBOARD_0 && digits < maxDigits ) {
@@ -318,12 +313,10 @@ void DialClass::validate(double mv) {
     if (numberValue > 999) {
       showError("Max voltage in uV range is 999mV");
       return;
-
     }
     else if (decimalsAfterComma > 0) {
       showError("nV not allowed");
       return;
-
     }
     else if (mv < 0.001 && digits > 0) {
       showError("Max resolution in uV range is 1uV");
