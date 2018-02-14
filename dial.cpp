@@ -12,6 +12,9 @@ float DialClass::getMv() {
   return mv;
 }
 
+bool DialClass::isDialogOpen() {
+  return dialog;
+}
 void DialClass::clear() {
   error = false;
   warning = false;
@@ -19,7 +22,7 @@ void DialClass::clear() {
   voltDecade = "V";
 }
 
-void DialClass::handleKeypad() {
+void DialClass::handleKeypadDialog() {
   if (dialog==false) {
     return;
   }
@@ -63,11 +66,22 @@ void DialClass::handleKeypad() {
   GD.Vertex2ii(startx+10, starty+100); 
   GD.Vertex2ii(startx+10, starty+10); 
 
+  //checkKeypress();
+  
+  GD.ColorA(255);
 
-  
-  int maxDigits = 7;
-  
-  GD.get_inputs();
+  mv = toMv();
+  validate(mv);
+  renderInput(error);
+
+  renderKeypad();
+}
+
+bool DialClass::checkKeypress() {
+
+    int maxDigits = 7;
+
+    GD.get_inputs();
   
   if (GD.inputs.tag== KEYBOARD_BACK) {
     if (digits>0) {
@@ -132,16 +146,7 @@ void DialClass::handleKeypad() {
   if (GD.inputs.tag == 0) {
     keydepressed = true;
   }
-
-  GD.ColorA(255);
-
-  mv = toMv();
-  validate(mv);
-  renderInput(error);
-
-  renderKeypad();
 }
-
 void DialClass::renderKeypad() {
     // keypad
   int x=190;
@@ -307,7 +312,7 @@ void DialClass::validate(double mv) {
       return;
     }
     else if (decimalsAfterComma > 1) {
-      showError("Max resolution in mV range is 10uV");
+      showError("Max resolution in mV range is 100uV");
       return;
     }
   }
@@ -319,10 +324,6 @@ void DialClass::validate(double mv) {
     }
     else if (decimalsAfterComma > 0) {
       showError("nV not allowed");
-      return;
-    }
-    else if (mv < 0.001 && digits > 0) {
-      showError("Max resolution in uV range is 1uV");
       return;
     }
   }  

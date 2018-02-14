@@ -51,7 +51,9 @@ class DialClass {
 public:
   void open();
   void clear();
-  void handleKeypad();
+  bool isDialogOpen();
+  void handleKeypadDialog();
+  bool checkKeypress();
   float getMv();
 private:
   double toMv();

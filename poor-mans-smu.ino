@@ -60,8 +60,11 @@ void voltagePanel(int x, int y) {
   VOLT_DISPLAY.renderMeasured(x + 17,y , rawMv);
   VOLT_DISPLAY.renderSet(x + 120, y+150, DIAL.getMv());
 
-  // various other values
+  // various other values, dummies for now...
+  renderVariousDummyFields(x,y);
+}
 
+void renderVariousDummyFields(int x, int y) {
   GD.ColorRGB(200,255,200);
   GD.cmd_text(x+486, y+147, 27, 0, "Average");
   GD.ColorRGB(COLOR_VOLT);
@@ -134,7 +137,7 @@ void scrollIndication(int x, int y) {
   drawBall(x+120,y,false);
 }
 
-void drawMainText() {
+void renderDisplay() {
   
   GD.cmd_romfont(1, 34); // put FT81x font 34 in slot 1
 
@@ -156,26 +159,29 @@ void drawMainText() {
 
 unsigned long previousMillis = 0; 
 unsigned long previousMillisSlow = 0; 
-const long interval = 100; 
+const long interval = 50; 
 
 void loop()
 {
   //GD.wr(REG_PWM_DUTY, 20);
 
   unsigned long currentMillis = millis();
+
   if (currentMillis - previousMillis >= interval) {
     previousMillis = currentMillis;
-    
     GD.ClearColorRGB(0x000000); // black
     GD.Clear();
-    drawMainText();
+    renderDisplay();
+    
     GD.get_inputs();
     if (GD.inputs.tag == BUTTON_VOLT_SET) {
-      DIAL.clear();
       DIAL.open();
     }
-    DIAL.handleKeypad();
-  
+    if (DIAL.isDialogOpen()) {
+      DIAL.handleKeypadDialog();
+      DIAL.checkKeypress();
+    }
+    
     if (currentMillis - previousMillisSlow >= 10000) {
       previousMillisSlow = currentMillis;
     }
