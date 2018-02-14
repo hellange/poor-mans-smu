@@ -14,13 +14,13 @@ void VoltDisplayClass::renderMeasured(int x, int y, float rawMv) {
   GD.cmd_number(x+205+6-17, y+48 , 1, 3, mv);
 
   GD.ColorRGB(COLOR_VOLT);
-  boldText(x+17-17,y+42, "+");
-  boldNumber(x+80-17,y+42, 2, v);
-  boldText(x+183-17-1,y+42, ".");
-  boldNumber(x+205-17,y+42, 3, mv);
+  boldText(x,y+42, "+");
+  boldNumber(x+63,y+42, 2, v);
+  boldText(x+167,y+42, ".");
+  boldNumber(x+188,y+42, 3, mv);
 
-  GD.cmd_number(x+374-17, y+44, 1, 3, uv);
-  GD.cmd_text(x+547-17, y+44 ,  1, 0, "V");  
+  GD.cmd_number(x+357, y+44, 1, 3, uv);
+  GD.cmd_text(x+530, y+44 ,  1, 0, "V");  
 }
 
 void VoltDisplayClass::renderSet(int x, int y, float rawMv) {
@@ -33,11 +33,11 @@ void VoltDisplayClass::renderSet(int x, int y, float rawMv) {
   } else {
       GD.cmd_text(x, y, 31, 3, "+");
   }
-  GD.cmd_number(x+60+25, y, 31, 3, mv);
-  GD.cmd_text(x+50+25-2, y, 31, 0, ".");
-  GD.cmd_number(x+140+25, y, 31, 1, uv / 100); // need to do it like this to show only first digit in a three digit value
+  GD.cmd_number(x+85, y, 31, 3, mv);
+  GD.cmd_text(x+73, y, 31, 0, ".");
+  GD.cmd_number(x+165, y, 31, 1, uv / 100); // need to do it like this to show only first digit in a three digit value
   GD.cmd_number(x+25, y, 31, 2, v);
-  GD.cmd_text(x+170+25, y, 31, 0, "V");
+  GD.cmd_text(x+195, y, 31, 0, "V");
 }
 
 void VoltDisplayClass::boldText(int x, int y, char* text) {

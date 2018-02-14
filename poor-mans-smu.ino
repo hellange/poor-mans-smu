@@ -65,7 +65,7 @@ void voltagePanel(int x, int y) {
   GD.ColorRGB(200,255,200);
   GD.cmd_text(x+486, y+147, 27, 0, "Average");
   GD.ColorRGB(COLOR_VOLT);
-  GD.cmd_text(x+456+30, y+163, 30, 0, "0.500 075V");
+  GD.cmd_text(x+486, y+163, 30, 0, "0.500 075V");
 
   GD.ColorRGB(200,255,200);
   GD.cmd_text(x+667, y+147, 27, 0, "Deviation");
@@ -119,9 +119,9 @@ void drawBall(int x, int y, bool set) {
   GD.Vertex2ii(x, y);
   GD.PointSize(16 * 6);  
   if (set == true) {
-      GD.ColorRGB(255,255,255); 
+    GD.ColorRGB(255,255,255); 
   } else {
-      GD.ColorRGB(0,0,0); 
+    GD.ColorRGB(0,0,0); 
   }
   GD.Vertex2ii(x, y);
 }
@@ -143,64 +143,46 @@ void drawMainText() {
   voltagePanel(x,y);
   currentPanel(x,y+260);
   
-  //scrollIndication(340,20);
   scrollIndication(340,250);
     
-  GD.cmd_fgcolor(0xaaaa90);
-  //GD.cmd_bgcolor(0x040404);
-  
-  //GD.ColorRGB(255,255,255);
-  
+  GD.cmd_fgcolor(0xaaaa90);  
   GD.Tag(BUTTON_VOLT_SET);
-  GD.cmd_button(20,143,90,58,30,0,"SET");
-  
+  GD.cmd_button(20,143,90,58,30,0,"SET");  
   GD.cmd_button(20,393,90,58,30,0,"LIM");
-  
+
   GD.cmd_button(350,143,90,58,30,0,"AUTO");
   GD.cmd_button(350,393,90,58,30,0,"AUTO");
-
 }
 
 unsigned long previousMillis = 0; 
 unsigned long previousMillisSlow = 0; 
-
 const long interval = 100; 
-
- 
-
-
-
 
 void loop()
 {
   //GD.wr(REG_PWM_DUTY, 20);
 
-
-unsigned long currentMillis = millis();
-if (currentMillis - previousMillis >= interval) {
-  previousMillis = currentMillis;
-  GD.ClearColorRGB(0x000000); // black
-
-  GD.Clear();
-  drawMainText();
-
+  unsigned long currentMillis = millis();
+  if (currentMillis - previousMillis >= interval) {
+    previousMillis = currentMillis;
+    
+    GD.ClearColorRGB(0x000000); // black
+    GD.Clear();
+    drawMainText();
+    GD.get_inputs();
+    if (GD.inputs.tag == BUTTON_VOLT_SET) {
+      DIAL.clear();
+      DIAL.open();
+    }
+    DIAL.handleKeypad();
   
-  GD.get_inputs();
-  if (GD.inputs.tag == BUTTON_VOLT_SET) {
-    DIAL.clear();
-    DIAL.open();
-  }
-
-  DIAL.handleKeypad();
-
-  if (currentMillis - previousMillisSlow >= 10000) {
-    previousMillisSlow = currentMillis;
-  }
-
-   float sum = DIAL.getMv();
-   Serial.printf( "Entered: %.6f mV", sum);
-   Serial.println("");
-
+    if (currentMillis - previousMillisSlow >= 10000) {
+      previousMillisSlow = currentMillis;
+    }
+  
+    float sum = DIAL.getMv();
+    Serial.printf( "Entered: %.6f mV", sum);
+    Serial.println("");
 
     GD.swap(); 
   }
