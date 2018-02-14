@@ -1,5 +1,6 @@
 #include "dial.h"
-#include "math.h" 
+#include "math.h"
+#include "colors.h"
 #include "GD2.h"
 
 void DialClass::open() {
@@ -61,6 +62,8 @@ void DialClass::handleKeypad() {
   GD.Vertex2ii(startx+width-10, starty+100); 
   GD.Vertex2ii(startx+10, starty+100); 
   GD.Vertex2ii(startx+10, starty+10); 
+
+
   
   int maxDigits = 7;
   

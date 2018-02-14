@@ -18,9 +18,12 @@
 
 #include <SPI.h>
 #include "GD2.h"
-#include "dial.h"
 #include "Wire.h" 
+#include "colors.h"
+#include "volt_display.h"
+#include "current_display.h"
 
+#include "dial.h"
 
 void setup()
 {
@@ -29,46 +32,6 @@ void setup()
   Serial.println("Initializing WeatherNG graphics controller FT81x...");
   GD.begin(0);
   Serial.println("Done!");
-
-
-}
-
-void boldText(int x, int y, char* text) {
-  GD.cmd_text(x, y ,   1, 0, text);
-    GD.cmd_text(x+3, y ,   1, 0, text);
-    GD.cmd_text(x, y+3 ,   1, 0, text);
-    GD.cmd_text(x+3, y+3 ,   1, 0, text);
-}
-
-void boldNumber(int x, int y, int digits, int number) {
-  GD.cmd_number(x, y ,   1, digits, number);
-    GD.cmd_number(x+3, y ,   1, digits, number);
-    GD.cmd_number(x, y+3 ,   1, digits, number);
-    GD.cmd_number(x+3, y+3 ,   1, digits, number);
-}
-
-
-
-
-void displayVoltage(int x, int y, float rawMv) {
-  int v = getV(rawMv);
-  int uv = getuV(rawMv);
-  int mv = getmV(rawMv);
-
-  GD.ColorRGB(COLOR_VOLTAGE_SHADDOW);
-  GD.cmd_number(x+80+6, y+48 ,   1, 2, getV(rawMv));
-  GD.cmd_text(x+183+6, y+48 ,   1, 0, ".");
-  GD.cmd_number(x+205+6, y+48 ,   1, 3, getmV(rawMv));
-
-  GD.ColorRGB(COLOR_VOLT);
-  boldText(x+17,y+42, "+");
-  boldNumber(x+80,y+42, 2, getV(rawMv));
-  boldText(x+183,y+42, ".");
-  boldNumber(x+205,y+42, 3, getmV(rawMv));
-
-  GD.cmd_number(x+374, y+44, 1, 3, random(0, 299));
-  //GD.cmd_number(x+374, y+44, 1, 3, getuV(rawMv));
-  GD.cmd_text(x+547, y+44 ,  1, 0, "V");  
 }
 
 void voltagePanel(int x, int y) {
@@ -94,7 +57,7 @@ void voltagePanel(int x, int y) {
   GD.cmd_text(x+56, y+16 ,   29, 0, "SOURCE VOLTAGE");
 
   float rawMv = 1501.001;
-  displayVoltage(x,y , rawMv);
+  VOLT_DISPLAY.render(x,y , rawMv);
 
   // various other values
   GD.cmd_text(x+20, y+150, 31, 0, "SET   01.500 0 V");
@@ -123,20 +86,6 @@ void voltagePanel(int x, int y) {
   GD.Vertex2ii(x+780, y+125);
 }
 
-int getV(float mv) {
-  return mv / 1000;
-}
-int getmV(float mv) {
-  return (mv - getV(mv)*1000);
-}
-int getuV(float mv) {
-  return (mv - getmV(mv)) * 1000;
-}
-
-
-
-
-
 void currentPanel(int x, int y) {
   GD.Begin(LINE_STRIP);
   GD.LineWidth(32);
@@ -156,23 +105,10 @@ void currentPanel(int x, int y) {
 
   // heading
   GD.ColorRGB(232,202,158);
-  GD.cmd_text(x+56, y+5 ,   29, 0, "MEASURE CURRENT");
+  GD.cmd_text(x+56, y+5, 29, 0, "MEASURE CURRENT");
 
-  // main value
-  GD.ColorRGB(COLOR_CURRENT_SHADDOW);
-  GD.cmd_text(x+80+6, y+36 ,   1, 0, "0");
-  GD.cmd_text(x+130+6, y+36 ,   1, 0, ".");
-  GD.cmd_text(x+153+6, y+36 ,   1, 0, "020");
-
-  GD.ColorRGB(COLOR_CURRENT);
-  
-  boldText(x+17,y+30, "+");
-  boldText(x+80, y+30, "0");
-  boldText(x+130, y+30, ".");
-  boldText(x+153, y+30, "020");
-
-  GD.cmd_text(x+495, y+32 ,  1, 0, "A");
-  GD.cmd_number(x+322, y+32, 1, 3, random(0, 199));
+  float rawMa = 56;
+  CURRENT_DISPLAY.render(x, y, rawMa);
 
   GD.cmd_text(x+20, y+135, 31, 0, "LIM   1.000 0 A");
 }
