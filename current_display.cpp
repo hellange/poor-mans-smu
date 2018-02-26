@@ -6,6 +6,13 @@
 
 void CurrentDisplayClass::renderMeasured(int x, int y, float rawMa) {
 
+  if (rawMa < 0.0f) {
+    rawMa = 0.0f - rawMa;
+    *sign = '-';
+  } else {
+    *sign = '+';
+  }
+  
   int a = rawMa / 1000;
   int ma = (rawMa - a * 1000);
   int ua = (rawMa - ma) * 1000;
@@ -17,7 +24,7 @@ void CurrentDisplayClass::renderMeasured(int x, int y, float rawMa) {
   
   GD.ColorRGB(COLOR_CURRENT);
   
-  VOLT_DISPLAY.boldText(x,y+30, "+");
+  VOLT_DISPLAY.boldText(x,y+30, sign);
   VOLT_DISPLAY.boldNumber(x+63, y+30, 1, a);
   VOLT_DISPLAY.boldText(x+113, y+30, ".");
   VOLT_DISPLAY.boldNumber(x+136, y+30, 3, ma);

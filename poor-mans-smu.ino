@@ -10,7 +10,6 @@
  *  FT81x graphics driver is initially copied (2016) from 
  *  jamesbowman / gd2-lib
  *  (https://github.com/jamesbowman/gd2-lib.git)
- *  Reduced and modified to
  *  -compile om 8266
  *  -support 800x480 pixels for all graphics
  * 
@@ -18,10 +17,14 @@
 
 #include <SPI.h>
 #include "GD2.h"
-#include "Wire.h" 
 #include "colors.h"
 #include "volt_display.h"
 #include "current_display.h"
+#include "Dac.h"
+
+float DACVout;  // TODO: Dont use global
+
+
 
 #include "dial.h"
 
@@ -29,9 +32,11 @@ void setup()
 {
   //wdt_disable();
   Serial.begin(9600);
+  DAC.init();
   Serial.println("Initializing WeatherNG graphics controller FT81x...");
   GD.begin(0);
   Serial.println("Done!");
+  
 }
 
 void voltagePanel(int x, int y) {
@@ -56,7 +61,8 @@ void voltagePanel(int x, int y) {
   GD.ColorRGB(200,255,200);
   GD.cmd_text(x+56, y+16 ,   29, 0, "SOURCE VOLTAGE");
 
-  float rawMv = 10501.0 +  random(0, 199) / 1000.0;
+  //float rawMv = 10501.0 +  random(0, 199) / 1000.0;
+  float rawMv = DACVout; // TODO: Dont use global
   VOLT_DISPLAY.renderMeasured(x + 17,y , rawMv);
   VOLT_DISPLAY.renderSet(x + 120, y+150, DIAL.getMv());
 
@@ -161,11 +167,21 @@ unsigned long previousMillis = 0;
 unsigned long previousMillisSlow = 0; 
 const long interval = 50; 
 
+  float avgVout; //TODO: fix global...
+  int smoothingSamples = 2;//TODO: fix global...
+  int count = 0;
+  float average = 0;
+
 void loop()
 {
   //GD.wr(REG_PWM_DUTY, 20);
 
   unsigned long currentMillis = millis();
+
+// restore SPI
+SPI.setDataMode(SPI_MODE0);
+//SPI.setClockDivider(SPI_CLOCK_DIV2);
+GD.resume();
 
   if (currentMillis - previousMillis >= interval) {
     previousMillis = currentMillis;
@@ -187,9 +203,48 @@ void loop()
     }
   
     float sum = DIAL.getMv();
-    Serial.printf( "Entered: %.6f mV", sum);
-    Serial.println("");
+    //Serial.printf( "Entered: %.6f mV", sum);
+    //Serial.println("");
+//    Serial.print("Entered:");
+//    Serial.print(sum, 3);
+//    Serial.println("mV");
 
-    GD.swap(); 
+    GD.swap();
+    
+   GD.__end();
+
+
+// change SPI
+SPI.setDataMode(SPI_MODE1);
+    if(DAC.checkDataAvilable() == true) {
+      float Vout = DAC.convertToMv();
+      
+
+      if (count < 2) {
+        average = average + Vout;
+        count ++;
+      } else {
+        DACVout = average / 2.0f;
+        average = 0.0f;
+        count = 0;
+      }
+      Serial.print("Vout in mV : ");  
+      Serial.print(Vout, 3);
+      Serial.print(", avg in mV : ");  
+      Serial.println(DACVout, 3);
+
+      //DACVout = Vout;
+      
+      //avgVout = DAC.smoothing(avgVout, smoothingSamples, Vout);
+      //Serial.print("AvgOut in mV : ");  
+      //Serial.println(avgVout, 3);
+      //DACVout = avgVout;
+
+      
+
+            delay(75);
+    }
+
+
   }
 }

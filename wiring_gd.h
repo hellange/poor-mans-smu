@@ -4,8 +4,9 @@
 
 // spi chip select modemcu with arduino ide
 //https://github.com/esp8266/Arduino/issues/1429
-#define CS 15
+//#define CS 15
 
+#define CS 9 // arduino
 
 
 class GDTransport {

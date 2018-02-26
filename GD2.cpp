@@ -24,6 +24,8 @@
 
 byte ft8xx_model;
 
+
+
 #if defined(ARDUINO)
 #include "wiring_gd.h"
 #endif
