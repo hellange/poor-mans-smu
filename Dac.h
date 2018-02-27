@@ -13,8 +13,8 @@ class DacClass {
   volatile byte LSB;
   volatile byte *SPI_RX_Buff_Ptr;
   Protocentral_ADS1220 ADS1220;
-  int nrBeforeAveraging;
-
+  int nrBeforeSmoothing;
+   
 public:
   float smoothing(float average, int size, float value);
   float convertToMv();

@@ -82,9 +82,7 @@ void renderVariousDummyFields(int x, int y) {
   GD.cmd_text(x+667, y+163, 30, 0, "0.005%");
   
   GD.ColorRGB(200,255,200);
-  GD.cmd_text(x+680, y+36, 26, 0, "Last 1 min");
-  GD.cmd_text(x+620, y+55, 26, 0, "+5uV");
-  GD.cmd_text(x+620, y+128, 26, 0, "-7uV");
+  
   GD.Begin(LINE_STRIP);
   GD.LineWidth(10);
   GD.Vertex2ii(x+620, y+70); 
@@ -168,10 +166,15 @@ unsigned long previousMillisSlow = 0;
 const long interval = 50; 
 
   float avgVout; //TODO: fix global...
-  int smoothingSamples = 2;//TODO: fix global...
-  int count = 0;
-  float average = 0;
+  int smoothingSamples = 4;//TODO: fix global...
 
+
+  float minimum;
+  float maximum;
+  int endPtr = 0;
+    const int nrOfTrendPoints = 75;
+
+  float value[nrOfTrendPoints];
 void loop()
 {
   //GD.wr(REG_PWM_DUTY, 20);
@@ -183,12 +186,77 @@ SPI.setDataMode(SPI_MODE0);
 //SPI.setClockDivider(SPI_CLOCK_DIV2);
 GD.resume();
 
+  
+
+
+
+
+  
+
   if (currentMillis - previousMillis >= interval) {
     previousMillis = currentMillis;
     GD.ClearColorRGB(0x000000); // black
     GD.Clear();
     renderDisplay();
+
+  GD.ColorA(255);
+    GD.ColorRGB(255,255,255);
+
+  
+
+    //int v, mv, uv;
+    float span = maximum - minimum;
+    //VOLT_DISPLAT.separate(&v, &mv, &uv, span);
+
+    int minmV = minimum;
+    int maxmV = maximum;
+    if (minimum < 0.0f) {
+      minmV = (int)(- minimum * 1000.0f);
+    }
+        if (maximum < 0.0f) {
+      maxmV = (int)(- maximum * 1000.0f);
+    }
+
+    GD.cmd_text(680, 36, 26, 0, "mV");
+    GD.cmd_number(620, 55, 26, 6, minmV);
+    GD.cmd_number(620, 128, 26, 6, maxmV);
+
+  //GD.cmd_number(x+153+6-17, y+36 ,   1, 3, ma);
+
+    int i = endPtr;
+        GD.Begin(LINE_STRIP);
+        GD.LineWidth(10);
+                  Serial.print("RENDER:");
+    for (int pos=0; pos<nrOfTrendPoints;pos++) {
+ 
+     
+        float height = 60 * (value[i] / span);
+        GD.Vertex2ii(pos*2+630, 90 - height); 
+
+//        GD.PointSize(16 * 2); 
+//  GD.ColorRGB(255,255,255);
+//  GD.Begin(POINTS);
+//  GD.Vertex2ii(pos*10+630, 120+value[i]*2000.0f);
+
+//
+//          Serial.print(i);
+//          Serial.print("=");
+//          Serial.print(value[i],3);
+//          Serial.print(",");
+
+
+      i=i+1;
+      if (i>nrOfTrendPoints - 1) {
+        i=0;
+      }  
+     
+
+    }
+          Serial.println("");
+
     
+     
+
     GD.get_inputs();
     if (GD.inputs.tag == BUTTON_VOLT_SET) {
       DIAL.open();
@@ -218,31 +286,55 @@ GD.resume();
 SPI.setDataMode(SPI_MODE1);
     if(DAC.checkDataAvilable() == true) {
       float Vout = DAC.convertToMv();
-      
-
-      if (count < 2) {
-        average = average + Vout;
-        count ++;
-      } else {
-        DACVout = average / 2.0f;
-        average = 0.0f;
-        count = 0;
-      }
+     
       Serial.print("Vout in mV : ");  
-      Serial.print(Vout, 3);
-      Serial.print(", avg in mV : ");  
-      Serial.println(DACVout, 3);
+      Serial.println(Vout, 3);
 
-      //DACVout = Vout;
+      DACVout = Vout;
       
       //avgVout = DAC.smoothing(avgVout, smoothingSamples, Vout);
       //Serial.print("AvgOut in mV : ");  
       //Serial.println(avgVout, 3);
       //DACVout = avgVout;
 
-      
 
-            delay(75);
+
+      value[endPtr] = DACVout;
+
+  
+      endPtr ++;
+      if (endPtr > nrOfTrendPoints - 1) {
+        endPtr = 0;
+      } 
+      minimum = value[0];
+      maximum = value[0];
+
+for (int i=0;i<nrOfTrendPoints;i++) {
+  if (value[i]<minimum) {
+    minimum = value[i];
+  }
+    if (value[i]>maximum) {
+    maximum = value[i];
+  }
+
+       
+
+  
+}
+
+  Serial.println(maximum,3);
+         Serial.println(minimum,3);
+         
+//      for (int i=0;i<nrOfTrendPoints;i++) {
+//        Serial.print(value[i],3);
+//        Serial.print(",");
+//      }
+//      Serial.println(endPtr);
+
+
+  
+
+       delay(60);
     }
 
 

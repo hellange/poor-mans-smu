@@ -27,10 +27,10 @@ bool DacClass::checkDataAvilable() {
   }
 }
 float DacClass::smoothing(float average, int size, float value) {
-  if (nrBeforeAveraging > size){
+  if (nrBeforeSmoothing > size){
        return (size * average + value ) / (size + 1);
   } else {
-    nrBeforeAveraging ++;
+    nrBeforeSmoothing ++;
     return value;
   }
 }

@@ -2,6 +2,13 @@
 #include "GD2.h"
 #include "colors.h"
 
+
+void VoltDisplayClass::separate(int *v, int *mv, int *uv, float rawMv) {
+  *v = (int)(rawMv / 1000.0f);
+  *mv = (int)(rawMv - *v * 1000.0f);
+  *uv = (int)((rawMv - *mv) * 1000.0f);
+}
+
 void VoltDisplayClass::renderMeasured(int x, int y, float rawMv) {
   if (rawMv < 0.0f) {
     rawMv = 0.0f - rawMv;
@@ -10,10 +17,9 @@ void VoltDisplayClass::renderMeasured(int x, int y, float rawMv) {
     *sign = '+';
   }
 
-
-  int v = (int)(rawMv / 1000.0f);
-  int mv = (int)(rawMv - v * 1000.0f);
-  int uv = (int)((rawMv - mv) * 1000.0f);
+  int v, mv, uv;
+  separate(&v, &mv, &uv, rawMv);
+  
 
   GD.ColorRGB(COLOR_VOLTAGE_SHADDOW);
   GD.cmd_number(x+80+6-17, y+48 , 1, 2, v);
