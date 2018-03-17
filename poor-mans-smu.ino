@@ -205,33 +205,66 @@ GD.resume();
   
 
     //int v, mv, uv;
-    float span = maximum - minimum;
     //VOLT_DISPLAT.separate(&v, &mv, &uv, span);
+ 
+    int minmV, minuV;
+    int maxmV, maxuV;
+ int a,b;
+ bool max_neg, min_neg;
 
-    int minmV = minimum;
-    int maxmV = maximum;
-    if (minimum < 0.0f) {
-      minmV = (int)(- minimum * 1000.0f);
-    }
-        if (maximum < 0.0f) {
-      maxmV = (int)(- maximum * 1000.0f);
-    }
+//    if (minimum < 0.0f) {
+//      minmV = (int)(- minimum * 1000.0f);
+//    } else {
+//      minmV = (int)( minimum * 1000.0f);
+//    }
+//    if (maximum < 0.0f) {
+//      maxmV = (int)(- maximum * 1000.0f);
+//    } else {
+//      maxmV = (int)( maximum * 1000.0f);
+//    }
+ 
+  VOLT_DISPLAY.separate(&a, &minmV, &minuV, &min_neg, minimum);
+    VOLT_DISPLAY.separate(&a, &maxmV, &maxuV, &max_neg, maximum);
+
+
+        float span = maximum - minimum;
+
+       Serial.print("minV=");
+
+       Serial.println(minmV,3);
+              Serial.print("maxV=");
+
+       Serial.println(maxmV,3);
 
     GD.cmd_text(680, 36, 26, 0, "mV");
-    GD.cmd_number(620, 55, 26, 6, minmV);
-    GD.cmd_number(620, 128, 26, 6, maxmV);
 
+    if(min_neg) {
+      GD.cmd_text(610, 128, 26, 0, "-");
+    }
+    if(max_neg) {
+      GD.cmd_text(610, 55, 26, 0,  "-");
+    }
+    
+    GD.cmd_number(620, 128, 26, 3, minmV);
+    GD.cmd_number(620, 55, 26, 3, maxmV);
+
+    GD.cmd_number(650, 128, 26, 3, minuV);
+    GD.cmd_number(650, 55, 26, 3, maxuV);
+    
   //GD.cmd_number(x+153+6-17, y+36 ,   1, 3, ma);
 
     int i = endPtr;
         GD.Begin(LINE_STRIP);
         GD.LineWidth(10);
-                  Serial.print("RENDER:");
+                  //Serial.print("RENDER:");
     for (int pos=0; pos<nrOfTrendPoints;pos++) {
  
      
-        float height = 60 * (value[i] / span);
-        GD.Vertex2ii(pos*2+630, 90 - height); 
+        float height = 45.0f * ( (maximum - value[i]) / span);
+
+
+
+        GD.Vertex2ii(pos*2+630, 75 + height); 
 
 //        GD.PointSize(16 * 2); 
 //  GD.ColorRGB(255,255,255);
@@ -309,6 +342,7 @@ SPI.setDataMode(SPI_MODE1);
       minimum = value[0];
       maximum = value[0];
 
+// Calculate max and min
 for (int i=0;i<nrOfTrendPoints;i++) {
   if (value[i]<minimum) {
     minimum = value[i];
@@ -316,10 +350,6 @@ for (int i=0;i<nrOfTrendPoints;i++) {
     if (value[i]>maximum) {
     maximum = value[i];
   }
-
-       
-
-  
 }
 
   Serial.println(maximum,3);

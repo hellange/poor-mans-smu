@@ -3,7 +3,12 @@
 #include "colors.h"
 
 
-void VoltDisplayClass::separate(int *v, int *mv, int *uv, float rawMv) {
+void VoltDisplayClass::separate(int *v, int *mv, int *uv, bool *neg, float rawMv) {
+  *neg=false;
+  if (rawMv < 0.0f) {
+    rawMv = 0.0f - rawMv;
+    *neg=true;
+  }
   *v = (int)(rawMv / 1000.0f);
   *mv = (int)(rawMv - *v * 1000.0f);
   *uv = (int)((rawMv - *mv) * 1000.0f);
@@ -18,7 +23,8 @@ void VoltDisplayClass::renderMeasured(int x, int y, float rawMv) {
   }
 
   int v, mv, uv;
-  separate(&v, &mv, &uv, rawMv);
+  bool neg;
+  separate(&v, &mv, &uv, &neg, rawMv);
   
 
   GD.ColorRGB(COLOR_VOLTAGE_SHADDOW);
