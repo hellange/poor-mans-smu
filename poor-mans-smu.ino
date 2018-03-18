@@ -199,42 +199,68 @@ GD.resume();
     GD.Clear();
     renderDisplay();
 
-  GD.ColorA(255);
+    GD.ColorA(255);
     GD.ColorRGB(255,255,255);
 
-  
+    int minV, minmV, minuV;
+    int maxV, maxmV, maxuV;
+    bool max_neg, min_neg;
 
-    //int v, mv, uv;
-    //VOLT_DISPLAT.separate(&v, &mv, &uv, span);
- 
-    int minmV, minuV;
-    int maxmV, maxuV;
- int a,b;
- bool max_neg, min_neg;
+    float span = maximum - minimum;
 
-//    if (minimum < 0.0f) {
-//      minmV = (int)(- minimum * 1000.0f);
-//    } else {
-//      minmV = (int)( minimum * 1000.0f);
+          Serial.print("minimum: ");  
+      Serial.print(minimum, 3);
+          Serial.print(", maximum: ");  
+      Serial.print(maximum, 3);
+      
+    // set a mimimum span so very small changes in uV
+    // dont show up as full span. Dont need to look
+    // more noisy that it is... Adjustable ?
+    
+    
+    float minVisibleSpan = 0.020f;
+      float diff = maximum - minimum;
+
+    //TODO: Problem comparing -0.0f
+    if (diff == 0.0f) {
+      maximum = 0.050f;
+      minimum = -0.050f;
+    }
+    else if (diff < minVisibleSpan * 2) {
+      maximum = maximum * ( minVisibleSpan * 2 / diff);
+      minimum = minimum * ( minVisibleSpan * 2 / diff);
+    }
+//    if (maximum - minimum < minVisibleSpan * 2) {
+//      if (abs(minimum) < minVisibleSpan) {
+//        if (minimum < 0.0f  && minimum != -0.0f) {
+//          minimum = -minVisibleSpan;
+//        } else {
+//          minimum = minVisibleSpan;
+//        }
+//      }
+//
+//      if (abs(maximum) < minVisibleSpan) {
+//        if (maximum > 0.0f || maximum == -0.0f) {
+//           maximum = minVisibleSpan;
+//        } else {
+//           maximum = -minVisibleSpan;
+//        }
+//      }
 //    }
-//    if (maximum < 0.0f) {
-//      maxmV = (int)(- maximum * 1000.0f);
-//    } else {
-//      maxmV = (int)( maximum * 1000.0f);
-//    }
- 
-  VOLT_DISPLAY.separate(&a, &minmV, &minuV, &min_neg, minimum);
-    VOLT_DISPLAY.separate(&a, &maxmV, &maxuV, &max_neg, maximum);
+
+    
+    float uispan = maximum - minimum;
+
+          Serial.print(", AFTER minimum: ");  
+      Serial.print(minimum, 6);
+          Serial.print(", maximum: ");  
+      Serial.println(maximum, 6);
+    VOLT_DISPLAY.separate(&minV, &minmV, &minuV, &min_neg, minimum);
+    VOLT_DISPLAY.separate(&maxV, &maxmV, &maxuV, &max_neg, maximum);
 
 
-        float span = maximum - minimum;
+    
 
-       Serial.print("minV=");
-
-       Serial.println(minmV,3);
-              Serial.print("maxV=");
-
-       Serial.println(maxmV,3);
 
     GD.cmd_text(680, 36, 26, 0, "mV");
 
@@ -244,52 +270,31 @@ GD.resume();
     if(max_neg) {
       GD.cmd_text(610, 55, 26, 0,  "-");
     }
-    
-    GD.cmd_number(620, 128, 26, 3, minmV);
-    GD.cmd_number(620, 55, 26, 3, maxmV);
 
-    GD.cmd_number(650, 128, 26, 3, minuV);
-    GD.cmd_number(650, 55, 26, 3, maxuV);
+    GD.cmd_number(620, 128, 26, 2, minV);
+    GD.cmd_number(620, 55, 26, 2, maxV);
     
-  //GD.cmd_number(x+153+6-17, y+36 ,   1, 3, ma);
+    GD.cmd_number(640, 128, 26, 3, minmV);
+    GD.cmd_number(640, 55, 26, 3, maxmV);
 
+    GD.cmd_number(670, 128, 26, 3, minuV);
+    GD.cmd_number(670, 55, 26, 3, maxuV);
+
+    // Draw trend graph
     int i = endPtr;
-        GD.Begin(LINE_STRIP);
-        GD.LineWidth(10);
-                  //Serial.print("RENDER:");
-    for (int pos=0; pos<nrOfTrendPoints;pos++) {
+    GD.Begin(LINE_STRIP);
+    GD.LineWidth(10);
  
-     
-        float height = 45.0f * ( (maximum - value[i]) / span);
-
-
-
-        GD.Vertex2ii(pos*2+630, 75 + height); 
-
-//        GD.PointSize(16 * 2); 
-//  GD.ColorRGB(255,255,255);
-//  GD.Begin(POINTS);
-//  GD.Vertex2ii(pos*10+630, 120+value[i]*2000.0f);
-
-//
-//          Serial.print(i);
-//          Serial.print("=");
-//          Serial.print(value[i],3);
-//          Serial.print(",");
-
-
+    for (int pos=0; pos<nrOfTrendPoints;pos++) { 
+      float height = 45.0f * ( (maximum - value[i]) / uispan);
+      GD.Vertex2ii(pos*2+630, 75 + height); 
       i=i+1;
       if (i>nrOfTrendPoints - 1) {
         i=0;
       }  
-     
-
     }
-          Serial.println("");
 
     
-     
-
     GD.get_inputs();
     if (GD.inputs.tag == BUTTON_VOLT_SET) {
       DIAL.open();
@@ -304,19 +309,12 @@ GD.resume();
     }
   
     float sum = DIAL.getMv();
-    //Serial.printf( "Entered: %.6f mV", sum);
-    //Serial.println("");
-//    Serial.print("Entered:");
-//    Serial.print(sum, 3);
-//    Serial.println("mV");
 
-    GD.swap();
-    
-   GD.__end();
+    GD.swap();    
+    GD.__end();
 
-
-// change SPI
-SPI.setDataMode(SPI_MODE1);
+    // change SPI mode for adc
+    SPI.setDataMode(SPI_MODE1);
     if(DAC.checkDataAvilable() == true) {
       float Vout = DAC.convertToMv();
      
@@ -330,11 +328,8 @@ SPI.setDataMode(SPI_MODE1);
       //Serial.println(avgVout, 3);
       //DACVout = avgVout;
 
-
-
       value[endPtr] = DACVout;
 
-  
       endPtr ++;
       if (endPtr > nrOfTrendPoints - 1) {
         endPtr = 0;
@@ -342,18 +337,18 @@ SPI.setDataMode(SPI_MODE1);
       minimum = value[0];
       maximum = value[0];
 
-// Calculate max and min
-for (int i=0;i<nrOfTrendPoints;i++) {
-  if (value[i]<minimum) {
-    minimum = value[i];
-  }
-    if (value[i]>maximum) {
-    maximum = value[i];
-  }
-}
+      // Calculate max and min
+      for (int i=0;i<nrOfTrendPoints;i++) {
+        if (value[i]<minimum) {
+          minimum = value[i];
+        }
+          if (value[i]>maximum) {
+          maximum = value[i];
+        }
+      }
 
-  Serial.println(maximum,3);
-         Serial.println(minimum,3);
+      //Serial.println(maximum,3);
+      //Serial.println(minimum,3);
          
 //      for (int i=0;i<nrOfTrendPoints;i++) {
 //        Serial.print(value[i],3);
