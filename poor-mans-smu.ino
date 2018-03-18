@@ -218,49 +218,22 @@ GD.resume();
     // more noisy that it is... Adjustable ?
     
     
-    float minVisibleSpan = 0.020f;
-      float diff = maximum - minimum;
-
-    //TODO: Problem comparing -0.0f
-    if (diff == 0.0f) {
-      maximum = 0.050f;
-      minimum = -0.050f;
+    float minVisibleSpan = 0.050f;
+    float diff = maximum - minimum;
+    if (diff < minVisibleSpan) {
+      maximum = maximum + ((minVisibleSpan - diff)/2.0f);
+      minimum = minimum - ((minVisibleSpan - diff)/2.0f);
     }
-    else if (diff < minVisibleSpan * 2) {
-      maximum = maximum * ( minVisibleSpan * 2 / diff);
-      minimum = minimum * ( minVisibleSpan * 2 / diff);
-    }
-//    if (maximum - minimum < minVisibleSpan * 2) {
-//      if (abs(minimum) < minVisibleSpan) {
-//        if (minimum < 0.0f  && minimum != -0.0f) {
-//          minimum = -minVisibleSpan;
-//        } else {
-//          minimum = minVisibleSpan;
-//        }
-//      }
-//
-//      if (abs(maximum) < minVisibleSpan) {
-//        if (maximum > 0.0f || maximum == -0.0f) {
-//           maximum = minVisibleSpan;
-//        } else {
-//           maximum = -minVisibleSpan;
-//        }
-//      }
-//    }
-
     
     float uispan = maximum - minimum;
 
-          Serial.print(", AFTER minimum: ");  
-      Serial.print(minimum, 6);
-          Serial.print(", maximum: ");  
-      Serial.println(maximum, 6);
+//    Serial.print(", AFTER minimum: ");  
+//    Serial.print(minimum, 6);
+//    Serial.print(", maximum: ");  
+//    Serial.println(maximum, 6);
+   
     VOLT_DISPLAY.separate(&minV, &minmV, &minuV, &min_neg, minimum);
     VOLT_DISPLAY.separate(&maxV, &maxmV, &maxuV, &max_neg, maximum);
-
-
-    
-
 
     GD.cmd_text(680, 36, 26, 0, "mV");
 
