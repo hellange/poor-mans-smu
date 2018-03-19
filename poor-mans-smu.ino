@@ -169,13 +169,6 @@ const long interval = 50;
   float avgVout; //TODO: fix global...
   int smoothingSamples = 4;//TODO: fix global...
 
-
-  //float minimum;
-  //float maximum;
-  //int endPtr = 0;
-    //const int nrOfTrendPoints = 75;
-
-  //float value[nrOfTrendPoints];
 void loop()
 {
   //GD.wr(REG_PWM_DUTY, 20);

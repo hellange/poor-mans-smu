@@ -28,7 +28,7 @@ void StatsClass::renderTrend(int x, int y) {
     // set a mimimum span so very small changes in uV
     // dont show up as full span. Dont need to look
     // more noisy that it is... Adjustable ?
-    float minVisibleSpan = 0.050f;
+    float minVisibleSpan = 0.100f;
     
     float diff = maximum - minimum;
     visibleMax = maximum;
