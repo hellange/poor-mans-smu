@@ -68,15 +68,36 @@ void voltagePanel(int x, int y) {
   VOLT_DISPLAY.renderSet(x + 120, y+150, DIAL.getMv());
 
   // various other values, dummies for now...
-  renderVariousDummyFields(x,y);
+  //renderVariousDummyFields(x,y);
 }
 
-void renderVariousDummyFields(int x, int y) {
+void renderVariousDummyFields(int x, int y, float averageVolt) {
+
+  int v, mV, uV;
+  bool neg;
+  if (averageVolt < 0.0f) {
+    neg = true;
+  }
+  VOLT_DISPLAY.separate(&v, &mV, &uV, &neg, averageVolt);
+
+  
   GD.ColorRGB(200,255,200);
   GD.cmd_text(x+486, y+147, 27, 0, "Average");
   GD.ColorRGB(COLOR_VOLT);
-  GD.cmd_text(x+486, y+163, 30, 0, "0.500 075V");
 
+
+  if(neg) {
+    GD.cmd_text(x+486 - 20, y+163, 30, 0, "-");
+  }
+  GD.cmd_number(x+486 + 0, y+163, 30, 2, v);
+  GD.cmd_text(x+486 + 32, y+163, 30, 0, ".");
+  GD.cmd_number(x+486 + 40, y+163, 30, 3, mV);
+  GD.cmd_number(x+486 + 96, y+163, 30, 3, uV);
+  //GD.cmd_text(x+486, y+163, 30, 0, "0.500 075V");
+
+
+  
+  
   GD.ColorRGB(200,255,200);
   GD.cmd_text(x+667, y+147, 27, 0, "Deviation");
   GD.ColorRGB(COLOR_VOLT);
@@ -142,6 +163,9 @@ void scrollIndication(int x, int y) {
   drawBall(x+120,y,false);
 }
 
+  float avgVout; //TODO: fix global...
+  int smoothingSamples = 10;//TODO: fix global...
+
 void renderDisplay() {
   
   GD.cmd_romfont(1, 34); // put FT81x font 34 in slot 1
@@ -150,6 +174,8 @@ void renderDisplay() {
   int y = 0;
   voltagePanel(x,y);
   currentPanel(x,y+260);
+
+  renderVariousDummyFields(x,y, avgVout);
   
   scrollIndication(340,250);
     
@@ -166,8 +192,6 @@ unsigned long previousMillis = 0;
 unsigned long previousMillisSlow = 0; 
 const long interval = 50; 
 
-  float avgVout; //TODO: fix global...
-  int smoothingSamples = 4;//TODO: fix global...
 
 void loop()
 {
@@ -199,17 +223,19 @@ GD.resume();
 
     VOLT_DISPLAY.separate(&v, &mV, &uV, &neg, STATS.visibleMin);
     if(neg) {
-      GD.cmd_text(610, 128, 26, 0, "-");
+      GD.cmd_text(613, 128, 26, 0, "-");
     }
     GD.cmd_number(620, 128, 26, 2, v);
+    GD.cmd_text(637, 128, 26, 0, ".");
     GD.cmd_number(640, 128, 26, 3, mV);
     GD.cmd_number(670, 128, 26, 3, uV);
 
     VOLT_DISPLAY.separate(&v, &mV, &uV, &neg, STATS.visibleMax);
     if(neg) {
-      GD.cmd_text(610, 55, 26, 0,  "-");
+      GD.cmd_text(613, 55, 26, 0,  "-");
     }
     GD.cmd_number(620, 55, 26, 2, v);
+    GD.cmd_text(637, 55, 26, 0,  ".");
     GD.cmd_number(640, 55, 26, 3, mV);
     GD.cmd_number(670, 55, 26, 3, uV);
 
@@ -249,14 +275,14 @@ GD.resume();
 
       DACVout = Vout;
       
-      //avgVout = DAC.smoothing(avgVout, smoothingSamples, Vout);
+      avgVout = DAC.smoothing(avgVout, smoothingSamples, Vout);
       //Serial.print("AvgOut in mV : ");  
       //Serial.println(avgVout, 3);
       //DACVout = avgVout;
 
       STATS.addSample(DACVout);
 
-       delay(60);
+       delay(70);
     }
 
 
