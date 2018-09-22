@@ -24,6 +24,7 @@
 #define KEYBOARD_CANCEL 51
 
 #define BUTTON_VOLT_SET 100
+#define BUTTON_CUR_SET 110
 
 
 
@@ -49,9 +50,10 @@ class DialClass {
   double mv;
   
 public:
-  void open();
+  void open(int type, void (*closedFn)(int type));
   void clear();
   bool isDialogOpen();
+  int  type();
   void handleKeypadDialog();
   bool checkKeypress();
   float getMv();

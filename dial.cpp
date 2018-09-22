@@ -3,17 +3,30 @@
 #include "colors.h"
 #include "GD2.h"
 
-void DialClass::open() {
+int vol_cur_type;
+void (*closedFn)(int type);
+
+// type: volt or current  to be implemented
+void DialClass::open(int type, void (*callbackFn)(int type) ) {
+  closedFn = callbackFn;
+  vol_cur_type = type;
   dialog=true;  
   clear();
 }
 
 float DialClass::getMv() {
-  return mv;
+  if (negative) {
+    return -mv;
+  } else {
+    return mv;
+  }
 }
 
 bool DialClass::isDialogOpen() {
   return dialog;
+}
+int DialClass::type() {
+  return vol_cur_type;
 }
 void DialClass::clear() {
   error = false;
@@ -90,9 +103,11 @@ bool DialClass::checkKeypress() {
   }
  
   if (GD.inputs.tag == KEYBOARD_CANCEL && dialog==true) {
+    closedFn(vol_cur_type);
       dialog = false;
     }
   else if (GD.inputs.tag == KEYBOARD_OK && dialog==true && error==false) {
+    closedFn(vol_cur_type);
     dialog = false;
   }
 

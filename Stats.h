@@ -1,12 +1,12 @@
 class StatsClass {
-#define nrOfTrendPoints 75
 private:
   int endPtr = 0;
-  float value[nrOfTrendPoints];
+  float value[200];
   float uispan;
+  int nrOfTrendPoints;
 
 public:
-  void renderTrend(int x, int y);
+  void renderTrend(int x, int y, int samples, bool small);
   void addSample(float rawMv);
   float minimum;
   float maximum;
@@ -16,3 +16,5 @@ public:
 };
 
 extern StatsClass STATS;
+
+
