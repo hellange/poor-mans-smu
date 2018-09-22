@@ -45,6 +45,7 @@ class DialClass {
   
   bool keydepressed = true;
   char* voltDecade = "  ";
+  char* curDecade = "  ";
   bool negative = false;
   bool dialog = false;
   double mv;

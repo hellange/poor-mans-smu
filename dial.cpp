@@ -167,6 +167,15 @@ void DialClass::renderKeypad() {
   int x=190;
   int y=175;
   int spacing = 82;
+
+  char *symb = "V";
+  char *symb_m = "mV";
+  char *symb_u = "uV";
+  if (!vol_cur_type == BUTTON_VOLT_SET) {
+    *symb = "A";
+    *symb_m = "mA";
+    *symb_u = "uA";
+  }
   GD.Tag(1);
   transButton(x+0, y+0,18, "1", 31); 
   GD.Tag(2);
@@ -174,7 +183,7 @@ void DialClass::renderKeypad() {
   GD.Tag(3);
   transButton(x+spacing*2, y+0, 18, "3", 31);
   GD.Tag(KEYBOARD_V);
-  transButton(x+spacing*3, y+0, 18, "V", 31);
+  transButton(x+spacing*3, y+0, 18, symb, 31);
   GD.Tag(KEYBOARD_BACK);
   transButton(x+spacing*4, y+0, 18, "<", 31);
   
@@ -185,7 +194,7 @@ void DialClass::renderKeypad() {
   GD.Tag(6);
   transButton(x+spacing*2, y+spacing, 18, "6", 31);
   GD.Tag(KEYBOARD_MV);
-  transButton(x+spacing*3, y+spacing, 18, "mV", 30);
+  transButton(x+spacing*3, y+spacing, 18, symb_m, 30);
   GD.Tag(KEYBOARD_CLR);
   transButton(x+spacing*4, y+spacing, 18, "Clr", 30);
   
@@ -196,7 +205,7 @@ void DialClass::renderKeypad() {
   GD.Tag(9);
   transButton(x+spacing*2, y+spacing*2, 18, "9", 31);
   GD.Tag(KEYBOARD_UV);
-  transButton(x+spacing*3, y+spacing*2, 18, "uV", 30);
+  transButton(x+spacing*3, y+spacing*2, 18, symb_u, 30);
   GD.Tag(KEYBOARD_DIVIDE10);
   transButton(x+spacing*4, y+spacing*2, 18, "/10", 30);
   
@@ -244,7 +253,17 @@ void DialClass::renderInput(bool indicateError) {
     }
     
     if (i==digits-1) {
-      GD.cmd_text(posx+10, posy,1, 0, voltDecade);
+      if (vol_cur_type == BUTTON_VOLT_SET) {
+              GD.cmd_text(posx+10, posy,1, 0, voltDecade);
+      } else {
+           curDecade = "A";
+          if (voltDecade == "uV") {
+            curDecade = "uA";
+          } else if (voltDecade == "mV") {
+            curDecade = "mA";
+          }
+          GD.cmd_text(posx+10, posy,1, 0, curDecade);
+      }
     }
   }
 }

@@ -173,6 +173,7 @@ void voltagePanel(int x, int y) {
   //float rawMv = 10501.0 +  random(0, 199) / 1000.0;
   //float rawMv = DACVout; // TODO: Dont use global
           float rawMv = SMU[0].MeasureVoltage() * 1000.0;
+          STATS.addSample(rawMv);
 
   VOLT_DISPLAY.renderMeasured(x + 17,y , rawMv);
   VOLT_DISPLAY.renderSet(x + 120, y+150, setMv);
@@ -323,7 +324,7 @@ void renderDisplay() {
   int x = 0;
   int y = 0;
   voltagePanel(x,y);
-  //renderVoltageTrend();
+  renderVoltageTrend();
   renderVariousDummyFields(x,y, avgVout);
 
   currentPanel(x,y+260);
@@ -349,45 +350,21 @@ const long interval = 50;
 
 void protograph(int x, int y) {
       STATS.renderTrend(100, y+20, 200, false);
-
 }
 
 
 
 void loop()
 {
-
-
-    //if (SMU[0].fltSetCommitCurrentSource(0.020,_SOURCE_AND_SINK)) printError(_PRINT_ERROR_CURRENT_SOURCE_SETTING);
-    //    if (SMU[0].fltSetCommitVoltageSource(1.234)) printError(_PRINT_ERROR_VOLTAGE_SOURCE_SETTING);
-
-/*
-   if (!DIAL.isDialogOpen()) {
-    if (DIAL.type() == BUTTON_VOLT_SET && oldSetMv != DIAL.getMv()) {
-       if (SMU[0].fltSetCommitVoltageSource(DIAL.getMv() / 1000.0)) printError(_PRINT_ERROR_VOLTAGE_SOURCE_SETTING);
-       oldSetMv = DIAL.getMv();
-    }
-    if (DIAL.type() == BUTTON_CUR_SET && oldSetMv != DIAL.getMv()) {
-       if (SMU[0].fltSetCommitCurrentSource(DIAL.getMv() / 1000.0,_SOURCE_AND_SINK)) printError(_PRINT_ERROR_CURRENT_SOURCE_SETTING);
-       oldSetMv = DIAL.getMv();
-    }
-   }
-*/
-
-  
   //GD.wr(REG_PWM_DUTY, 20);
 
   unsigned long currentMillis = millis();
 
-// restore SPI
-SPI.setDataMode(SPI_MODE0);
-//SPI.setClockDivider(SPI_CLOCK_DIV2);
-GD.resume();
+  // restore SPI
+  SPI.setDataMode(SPI_MODE0);
+  //SPI.setClockDivider(SPI_CLOCK_DIV2);
+  GD.resume();
 
-
-
-
- 
   if (currentMillis - previousMillis >= interval) {
     previousMillis = currentMillis;
     GD.ClearColorRGB(0x000000); // black
@@ -413,6 +390,7 @@ GD.resume();
 
     GD.swap();    
     GD.__end();
+
 
    /*
     // change SPI mode for other spi devices ! Needed because the gd2 lib uses spi
@@ -444,8 +422,7 @@ GD.resume();
 void set(int vol_cur_type) {
      Serial.print("SET type:");
      Serial.println(vol_cur_type);
-          Serial.println(DIAL.type() );
-
+     Serial.println(DIAL.type() );
  
     if (DIAL.type() == BUTTON_VOLT_SET) {
        if (SMU[0].fltSetCommitVoltageSource(DIAL.getMv() / 1000.0)) printError(_PRINT_ERROR_VOLTAGE_SOURCE_SETTING);
