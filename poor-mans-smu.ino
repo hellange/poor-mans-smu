@@ -20,9 +20,9 @@
 #include "colors.h"
 #include "volt_display.h"
 #include "current_display.h"
-#include "Dac.h"
+//#include "Dac.h"
 #include "Stats.h"
-
+#include "digit_util.h"
 
 
 #include "Arduino.h"
@@ -126,7 +126,7 @@ void setup()
 {
   //wdt_disable();
   Serial.begin(9600);
-  DAC.init();
+  //DAC.init(); // Not using any separate DAC. Using easySMU instead
   Serial.println("Initializing WeatherNG graphics controller FT81x...");
   GD.begin(0);
   Serial.println("Done!");
@@ -139,8 +139,10 @@ void setup()
     digitalWrite(QUIKEVAL_MUX_MODE_PIN, LOW);
   
     SMU[0].ReadCalibration();
-    SMU[0].fltSetCommitCurrentSource(0.030,0);
-    SMU[0].fltSetCommitVoltageSource(0);
+    setMv = 0.0;
+    setMa = 10.0;
+    SMU[0].fltSetCommitCurrentSource(setMa / 1000.0,_SOURCE_AND_SINK);
+    SMU[0].fltSetCommitVoltageSource(setMv / 1000.0);
     SMU[0].EnableOutput();
 
 
@@ -178,41 +180,63 @@ void voltagePanel(int x, int y) {
   VOLT_DISPLAY.renderMeasured(x + 17,y , rawMv);
   VOLT_DISPLAY.renderSet(x + 120, y+150, setMv);
 
-  // various other values, dummies for now...
-  //renderVariousDummyFields(x,y);
+  renderVDeviation(x,y, rawMv, setMv);
 }
 
-void renderVariousDummyFields(int x, int y, float averageVolt) {
+void renderVDeviation(int x, int y, float rawMv, float setMv) {
+
+  //TODO: Seems like the calculations are not correct.
+  //      Is it problems with limited calculation precision on Arduino ?
+  //      2.000set and 2.0002 should give 0.05%. Does not. ????
+  //      Or are we fooled by an error in rendering digits (separate volt into uV,mV,V)... ?
+  
+   float devPercent = 100.0 * ((setMv - rawMv) / setMv);
+
+  GD.ColorRGB(200,255,200);
+  GD.cmd_text(x+667, y+147, 27, 0, "Deviation");
+
+  if (setMv != 0.0) {
+    if ((abs)(devPercent) < 1.0) {
+      GD.ColorRGB(COLOR_VOLT);
+      GD.cmd_text(x+667, y+163, 30, 0, "0.");
+      GD.cmd_number(x+667+30, y+163, 30, 3, (abs)(devPercent * 1000.0));
+      GD.cmd_text(x+667+30+50, y+163, 30, 0, "%");
+    } else if ((abs)(devPercent) >= 10.0){
+      GD.ColorRGB(255,0,0); // RED
+      GD.cmd_text(x+667, y+163, 30, 0, ">=10%");
+    } else if ((abs)(devPercent) >= 1.0){
+      GD.ColorRGB(COLOR_VOLT);
+      GD.cmd_text(x+667, y+163, 30, 0, ">=1%");
+    }
+  }
+}
+
+
+void renderVariousDummyFields(int x, int y, float rawMv, float setMv) {
 
   int v, mV, uV;
-  bool neg;
-  if (averageVolt < 0.0f) {
-    neg = true;
-  }
-  VOLT_DISPLAY.separate(&v, &mV, &uV, &neg, averageVolt);
+
 
   
   GD.ColorRGB(200,255,200);
   GD.cmd_text(x+486, y+147, 27, 0, "Average");
   GD.ColorRGB(COLOR_VOLT);
 
+//  bool neg;
+//  if (averageVolt < 0.0f) {
+//    neg = true;
+//  }
+//  DIGIT_UTIL.separate(&v, &mV, &uV, &neg, averageVolt);
+//  if(neg) {
+//    GD.cmd_text(x+486 - 20, y+163, 30, 0, "-");
+//  }
+//  GD.cmd_number(x+486 + 0, y+163, 30, 2, v);
+//  GD.cmd_text(x+486 + 32, y+163, 30, 0, ".");
+//  GD.cmd_number(x+486 + 40, y+163, 30, 3, mV);
+//  GD.cmd_number(x+486 + 96, y+163, 30, 3, uV);
+//  //GD.cmd_text(x+486, y+163, 30, 0, "0.500 075V");
 
-  if(neg) {
-    GD.cmd_text(x+486 - 20, y+163, 30, 0, "-");
-  }
-  GD.cmd_number(x+486 + 0, y+163, 30, 2, v);
-  GD.cmd_text(x+486 + 32, y+163, 30, 0, ".");
-  GD.cmd_number(x+486 + 40, y+163, 30, 3, mV);
-  GD.cmd_number(x+486 + 96, y+163, 30, 3, uV);
-  //GD.cmd_text(x+486, y+163, 30, 0, "0.500 075V");
-
-
-  
-  
-  GD.ColorRGB(200,255,200);
-  GD.cmd_text(x+667, y+147, 27, 0, "Deviation");
-  GD.ColorRGB(COLOR_VOLT);
-  GD.cmd_text(x+667, y+163, 30, 0, "0.005%");
+ 
   
   GD.ColorRGB(200,255,200);
   
@@ -237,7 +261,7 @@ void renderVoltageTrend() {
     Serial.print(", maximum: ");  
     Serial.print(STATS.visibleMax, 3);
 
-    VOLT_DISPLAY.separate(&v, &mV, &uV, &neg, STATS.visibleMin);
+    DIGIT_UTIL.separate(&v, &mV, &uV, &neg, STATS.visibleMin);
     if(neg) {
       GD.cmd_text(613, 128, 26, 0, "-");
     }
@@ -246,7 +270,7 @@ void renderVoltageTrend() {
     GD.cmd_number(640, 128, 26, 3, mV);
     GD.cmd_number(670, 128, 26, 3, uV);
 
-    VOLT_DISPLAY.separate(&v, &mV, &uV, &neg, STATS.visibleMax);
+    DIGIT_UTIL.separate(&v, &mV, &uV, &neg, STATS.visibleMax);
     if(neg) {
       GD.cmd_text(613, 55, 26, 0,  "-");
     }
@@ -255,7 +279,7 @@ void renderVoltageTrend() {
     GD.cmd_number(640, 55, 26, 3, mV);
     GD.cmd_number(670, 55, 26, 3, uV);
 
-    VOLT_DISPLAY.separate(&v, &mV, &uV, &neg, STATS.span);
+    DIGIT_UTIL.separate(&v, &mV, &uV, &neg, STATS.span);
     GD.cmd_text(660, 36, 26, 0, "Span ");
     GD.cmd_number(700, 36, 26, 2, v);
     GD.cmd_number(720, 36, 26, 3, mV);
@@ -325,7 +349,7 @@ void renderDisplay() {
   int y = 0;
   voltagePanel(x,y);
   renderVoltageTrend();
-  renderVariousDummyFields(x,y, avgVout);
+  //renderVariousDummyFields(x,y, avgVout);
 
   currentPanel(x,y+260);
   //protograph(x,y+260);
@@ -346,14 +370,13 @@ void renderDisplay() {
 
 unsigned long previousMillis = 0; 
 unsigned long previousMillisSlow = 0; 
-const long interval = 50; 
 
 void protograph(int x, int y) {
       STATS.renderTrend(100, y+20, 200, false);
 }
 
 
-
+const long interval = 50; 
 void loop()
 {
   //GD.wr(REG_PWM_DUTY, 20);

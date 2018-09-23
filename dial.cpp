@@ -171,10 +171,10 @@ void DialClass::renderKeypad() {
   char *symb = "V";
   char *symb_m = "mV";
   char *symb_u = "uV";
-  if (!vol_cur_type == BUTTON_VOLT_SET) {
-    *symb = "A";
-    *symb_m = "mA";
-    *symb_u = "uA";
+  if (vol_cur_type == BUTTON_CUR_SET) {
+    symb = "A";
+    symb_m = "mA";
+    symb_u = "uA";
   }
   GD.Tag(1);
   transButton(x+0, y+0,18, "1", 31); 
