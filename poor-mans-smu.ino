@@ -183,13 +183,7 @@ void voltagePanel(int x, int y) {
   renderVDeviation(x,y, rawMv, setMv);
 }
 
-void renderVDeviation(int x, int y, float rawMv, float setMv) {
-
-  //TODO: Seems like the calculations are not correct.
-  //      Is it problems with limited calculation precision on Arduino ?
-  //      2.000set and 2.0002 should give 0.05%. Does not. ????
-  //      Or are we fooled by an error in rendering digits (separate volt into uV,mV,V)... ?
-  
+void renderVDeviation(int x, int y, float rawMv, float setMv) {  
    float devPercent = 100.0 * ((setMv - rawMv) / setMv);
 
   GD.ColorRGB(200,255,200);
