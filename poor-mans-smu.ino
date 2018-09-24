@@ -107,6 +107,8 @@ EasySMU SMU[1] =
     EasySMU(I2C_Board0_EEPROM_ADDR0, I2C_Board0_LTC2655_LLL_ADDR0, I2C_Board0_LTC2485_Vout_LF_ADDR0, I2C_Board0_LTC2485_Iout_LH_ADDR0)
 };
 
+StatsClass V_STATS;
+//StatsClass C_STATS;
 
 
 float DACVout;  // TODO: Dont use global
@@ -139,6 +141,7 @@ void setup()
     SMU[0].fltSetCommitVoltageSource(setMv / 1000.0);
     SMU[0].EnableOutput();
 
+  GD.cmd_romfont(1, 34); // put FT81x font 34 in slot 1
 
   
   
@@ -169,7 +172,7 @@ void voltagePanel(int x, int y) {
   //float rawMv = 10501.0 +  random(0, 199) / 1000.0;
   //float rawMv = DACVout; // TODO: Dont use global
           float rawMv = SMU[0].MeasureVoltage() * 1000.0;
-          STATS.addSample(rawMv);
+          V_STATS.addSample(rawMv);
 
   VOLT_DISPLAY.renderMeasured(x + 17,y , rawMv);
   VOLT_DISPLAY.renderSet(x + 120, y+150, setMv);
@@ -243,6 +246,11 @@ void renderVariousDummyFields(int x, int y, float rawMv, float setMv) {
   GD.Vertex2ii(x+780, y+125);
 }
 void renderVoltageTrend() {
+//  TODO make flexible....
+
+    int x = 613;
+
+    
     GD.ColorA(255);
     GD.ColorRGB(255,255,255);
 
@@ -250,35 +258,35 @@ void renderVoltageTrend() {
     bool neg;
 
     Serial.print("minimum: ");  
-    Serial.print(STATS.visibleMin, 3);
+    Serial.print(V_STATS.visibleMin, 3);
     Serial.print(", maximum: ");  
-    Serial.print(STATS.visibleMax, 3);
+    Serial.print(V_STATS.visibleMax, 3);
 
-    DIGIT_UTIL.separate(&v, &mV, &uV, &neg, STATS.visibleMin);
+    DIGIT_UTIL.separate(&v, &mV, &uV, &neg, V_STATS.visibleMin);
     if(neg) {
-      GD.cmd_text(613, 128, 26, 0, "-");
+      GD.cmd_text(x, 128, 26, 0, "-");
     }
-    GD.cmd_number(620, 128, 26, 2, v);
-    GD.cmd_text(637, 128, 26, 0, ".");
-    GD.cmd_number(640, 128, 26, 3, mV);
-    GD.cmd_number(670, 128, 26, 3, uV);
+    GD.cmd_number(x+7, 128, 26, 2, v);
+    GD.cmd_text(x+24, 128, 26, 0, ".");
+    GD.cmd_number(x+27, 128, 26, 3, mV);
+    GD.cmd_number(x+57, 128, 26, 3, uV);
 
-    DIGIT_UTIL.separate(&v, &mV, &uV, &neg, STATS.visibleMax);
+    DIGIT_UTIL.separate(&v, &mV, &uV, &neg, V_STATS.visibleMax);
     if(neg) {
-      GD.cmd_text(613, 55, 26, 0,  "-");
+      GD.cmd_text(x, 55, 26, 0,  "-");
     }
-    GD.cmd_number(620, 55, 26, 2, v);
-    GD.cmd_text(637, 55, 26, 0,  ".");
-    GD.cmd_number(640, 55, 26, 3, mV);
-    GD.cmd_number(670, 55, 26, 3, uV);
+    GD.cmd_number(x+7, 55, 26, 2, v);
+    GD.cmd_text(x+24, 55, 26, 0,  ".");
+    GD.cmd_number(x+27, 55, 26, 3, mV);
+    GD.cmd_number(x+27, 55, 26, 3, uV);
 
-    DIGIT_UTIL.separate(&v, &mV, &uV, &neg, STATS.span);
-    GD.cmd_text(660, 36, 26, 0, "Span ");
-    GD.cmd_number(700, 36, 26, 2, v);
-    GD.cmd_number(720, 36, 26, 3, mV);
-    GD.cmd_number(750, 36, 26, 3, uV);
+    DIGIT_UTIL.separate(&v, &mV, &uV, &neg, V_STATS.span);
+    GD.cmd_text(x+47, 36, 26, 0, "Span ");
+    GD.cmd_number(x+87, 36, 26, 2, v);
+    GD.cmd_number(x+107, 36, 26, 3, mV);
+    GD.cmd_number(x+137, 36, 26, 3, uV);
     
-    STATS.renderTrend(630, 75, 75, true);
+    V_STATS.renderTrend(x+17, 75, 75, true);
 }
 
 void currentPanel(int x, int y) {
@@ -307,6 +315,9 @@ void currentPanel(int x, int y) {
 
   CURRENT_DISPLAY.renderMeasured(x + 17, y, rawMa);
   CURRENT_DISPLAY.renderSet(x+120, y+135, setMa);
+
+      //
+     // C_STATS.addSample(rawMa);
 
     renderDeviation(x+667,y+130, rawMa, setMa, COLOR_CURRENT);
 
@@ -339,7 +350,6 @@ void scrollIndication(int x, int y) {
 
 void renderDisplay() {
   
-  GD.cmd_romfont(1, 34); // put FT81x font 34 in slot 1
 
   int x = 0;
   int y = 0;
@@ -368,7 +378,7 @@ unsigned long previousMillis = 0;
 unsigned long previousMillisSlow = 0; 
 
 void protograph(int x, int y) {
-      STATS.renderTrend(100, y+20, 200, false);
+      V_STATS.renderTrend(100, y+20, 200, false);
 }
 
 
@@ -388,18 +398,23 @@ void loop()
     previousMillis = currentMillis;
     GD.ClearColorRGB(0x000000); // black
     GD.Clear();
-        renderDisplay();
 
-    GD.get_inputs();
+    renderDisplay();
+       //GD.get_inputs();
+
     if (GD.inputs.tag == BUTTON_VOLT_SET) {
-      DIAL.open(BUTTON_VOLT_SET, set);
+      DIAL.open(BUTTON_VOLT_SET, closeCallback);
     } else if (GD.inputs.tag == BUTTON_CUR_SET) {
-      DIAL.open(BUTTON_CUR_SET, set);
+      DIAL.open(BUTTON_CUR_SET, closeCallback);
     }
     if (DIAL.isDialogOpen()) {
+     // interval = 0;
       DIAL.handleKeypadDialog();
       DIAL.checkKeypress();
-    } 
+    }  else {
+       GD.get_inputs();
+       //interval = 50;
+    }
 
     if (currentMillis - previousMillisSlow >= 10000) {
       previousMillisSlow = currentMillis;
@@ -427,7 +442,7 @@ void loop()
       //Serial.println(avgVout, 3);
       //DACVout = avgVout;
 
-      STATS.addSample(DACVout);
+      V_STATS.addSample(DACVout);
 
        delay(100);
     }
@@ -438,11 +453,13 @@ void loop()
 
 
 
-void set(int vol_cur_type) {
+void closeCallback(int vol_cur_type, bool cancel) {
      Serial.print("SET type:");
      Serial.println(vol_cur_type);
      Serial.println(DIAL.type() );
- 
+    if (cancel) {
+      return;
+    }
     if (DIAL.type() == BUTTON_VOLT_SET) {
        if (SMU[0].fltSetCommitVoltageSource(DIAL.getMv() / 1000.0)) printError(_PRINT_ERROR_VOLTAGE_SOURCE_SETTING);
        setMv = DIAL.getMv();

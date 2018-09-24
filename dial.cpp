@@ -4,10 +4,10 @@
 #include "GD2.h"
 
 int vol_cur_type;
-void (*closedFn)(int type);
+void (*closedFn)(int type, bool cancel);
 
 // type: volt or current  to be implemented
-void DialClass::open(int type, void (*callbackFn)(int type) ) {
+void DialClass::open(int type, void (*callbackFn)(int type, bool cancel) ) {
   closedFn = callbackFn;
   vol_cur_type = type;
   dialog=true;  
@@ -103,11 +103,11 @@ bool DialClass::checkKeypress() {
   }
  
   if (GD.inputs.tag == KEYBOARD_CANCEL && dialog==true) {
-    closedFn(vol_cur_type);
+    closedFn(vol_cur_type, true);
       dialog = false;
     }
   else if (GD.inputs.tag == KEYBOARD_OK && dialog==true && error==false) {
-    closedFn(vol_cur_type);
+    closedFn(vol_cur_type, false);
     dialog = false;
   }
 

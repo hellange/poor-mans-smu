@@ -15,6 +15,5 @@ public:
   float span;
 };
 
-extern StatsClass STATS;
 
 

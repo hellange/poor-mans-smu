@@ -64,5 +64,4 @@ void StatsClass::renderTrend(int x, int y , int samples, bool small) {
 
 }
 
-StatsClass STATS;
 

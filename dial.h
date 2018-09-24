@@ -51,7 +51,7 @@ class DialClass {
   double mv;
   
 public:
-  void open(int type, void (*closedFn)(int type));
+  void open(int type, void (*closedFn)(int type, bool cancel));
   void clear();
   bool isDialogOpen();
   int  type();
