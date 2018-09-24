@@ -109,12 +109,6 @@ EasySMU SMU[1] =
 
 
 
-
-
-
-
-
-
 float DACVout;  // TODO: Dont use global
 
 float setMv;
@@ -184,23 +178,28 @@ void voltagePanel(int x, int y) {
 }
 
 void renderDeviation(int x, int y, float rawM, float setM, int color) {  
-   float devPercent = 100.0 * ((setM - rawM) / setM);
+   float devPercent = abs(100.0 * ((setM - rawM) / setM));
 
   GD.ColorRGB(200,255,200);
   GD.cmd_text(x, y, 27, 0, "Deviation");
 
   if (setM != 0.0) {
-    if ((abs)(devPercent) < 1.0) {
+    if (devPercent < 1.0) {
       GD.ColorRGB(color);
       GD.cmd_text(x, y+16, 30, 0, "0.");
-      GD.cmd_number(x+30, y+16, 30, 3, (abs)(devPercent * 1000.0));
+      GD.cmd_number(x+30, y+16, 30, 3, devPercent * 1000.0);
       GD.cmd_text(x+30+50, y+16, 30, 0, "%");
-    } else if ((abs)(devPercent) >= 10.0){
+    } else if (devPercent >= 10.0){
       GD.ColorRGB(255,0,0); // RED
       GD.cmd_text(x, y+16, 30, 0, ">=10%");
-    } else if ((abs)(devPercent) >= 1.0){
+    } else if (devPercent >= 1.0 && devPercent <10.0){
+      int whole = (int)devPercent;
       GD.ColorRGB(color);
-      GD.cmd_text(x, y+16, 30, 0, ">=1%");
+      //GD.cmd_text(x, y+16, 30, 0, "0.");
+      GD.cmd_number(x, y+16, 30, 1, whole );
+      GD.cmd_text(x+20, y+16, 30, 0, ".");
+      GD.cmd_number(x+30, y+16, 30, 2, (devPercent - (float)whole) * 100.0);
+      GD.cmd_text(x+65, y+16, 30, 0, "%");
     }
   }
 }
