@@ -180,27 +180,27 @@ void voltagePanel(int x, int y) {
   VOLT_DISPLAY.renderMeasured(x + 17,y , rawMv);
   VOLT_DISPLAY.renderSet(x + 120, y+150, setMv);
 
-  renderVDeviation(x,y, rawMv, setMv);
+  renderDeviation(x+667,y+147, rawMv, setMv, COLOR_VOLT);
 }
 
-void renderVDeviation(int x, int y, float rawMv, float setMv) {  
-   float devPercent = 100.0 * ((setMv - rawMv) / setMv);
+void renderDeviation(int x, int y, float rawM, float setM, int color) {  
+   float devPercent = 100.0 * ((setM - rawM) / setM);
 
   GD.ColorRGB(200,255,200);
-  GD.cmd_text(x+667, y+147, 27, 0, "Deviation");
+  GD.cmd_text(x, y, 27, 0, "Deviation");
 
-  if (setMv != 0.0) {
+  if (setM != 0.0) {
     if ((abs)(devPercent) < 1.0) {
-      GD.ColorRGB(COLOR_VOLT);
-      GD.cmd_text(x+667, y+163, 30, 0, "0.");
-      GD.cmd_number(x+667+30, y+163, 30, 3, (abs)(devPercent * 1000.0));
-      GD.cmd_text(x+667+30+50, y+163, 30, 0, "%");
+      GD.ColorRGB(color);
+      GD.cmd_text(x, y+16, 30, 0, "0.");
+      GD.cmd_number(x+30, y+16, 30, 3, (abs)(devPercent * 1000.0));
+      GD.cmd_text(x+30+50, y+16, 30, 0, "%");
     } else if ((abs)(devPercent) >= 10.0){
       GD.ColorRGB(255,0,0); // RED
-      GD.cmd_text(x+667, y+163, 30, 0, ">=10%");
+      GD.cmd_text(x, y+16, 30, 0, ">=10%");
     } else if ((abs)(devPercent) >= 1.0){
-      GD.ColorRGB(COLOR_VOLT);
-      GD.cmd_text(x+667, y+163, 30, 0, ">=1%");
+      GD.ColorRGB(color);
+      GD.cmd_text(x, y+16, 30, 0, ">=1%");
     }
   }
 }
@@ -308,6 +308,9 @@ void currentPanel(int x, int y) {
 
   CURRENT_DISPLAY.renderMeasured(x + 17, y, rawMa);
   CURRENT_DISPLAY.renderSet(x+120, y+135, setMa);
+
+    renderDeviation(x+667,y+130, rawMa, setMa, COLOR_CURRENT);
+
 }
 
 void drawBall(int x, int y, bool set) {
