@@ -278,7 +278,7 @@ void renderVoltageTrend() {
     GD.cmd_number(x+7, 55, 26, 2, v);
     GD.cmd_text(x+24, 55, 26, 0,  ".");
     GD.cmd_number(x+27, 55, 26, 3, mV);
-    GD.cmd_number(x+27, 55, 26, 3, uV);
+    GD.cmd_number(x+57, 55, 26, 3, uV);
 
     DIGIT_UTIL.separate(&v, &mV, &uV, &neg, V_STATS.span);
     GD.cmd_text(x+47, 36, 26, 0, "Span ");
@@ -393,14 +393,14 @@ void loop()
   SPI.setDataMode(SPI_MODE0);
   //SPI.setClockDivider(SPI_CLOCK_DIV2);
   GD.resume();
-
+  
   if (currentMillis - previousMillis >= interval) {
     previousMillis = currentMillis;
     GD.ClearColorRGB(0x000000); // black
+    GD.get_inputs();
     GD.Clear();
 
     renderDisplay();
-       //GD.get_inputs();
 
     if (GD.inputs.tag == BUTTON_VOLT_SET) {
       DIAL.open(BUTTON_VOLT_SET, closeCallback);
@@ -408,17 +408,13 @@ void loop()
       DIAL.open(BUTTON_CUR_SET, closeCallback);
     }
     if (DIAL.isDialogOpen()) {
-     // interval = 0;
-      DIAL.handleKeypadDialog();
       DIAL.checkKeypress();
-    }  else {
-       GD.get_inputs();
-       //interval = 50;
+      DIAL.handleKeypadDialog();
     }
 
-    if (currentMillis - previousMillisSlow >= 10000) {
-      previousMillisSlow = currentMillis;
-    }
+//    if (currentMillis - previousMillisSlow >= 10000) {
+//      previousMillisSlow = currentMillis;
+//    }
   
     float sum = DIAL.getMv();
 

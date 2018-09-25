@@ -94,7 +94,7 @@ bool DialClass::checkKeypress() {
 
     int maxDigits = 7;
 
-    GD.get_inputs();
+    //GD.get_inputs();
   
   if (GD.inputs.tag== KEYBOARD_BACK) {
     if (digits>0) {

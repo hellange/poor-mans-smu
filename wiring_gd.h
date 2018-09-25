@@ -19,8 +19,8 @@ public:
     digitalWrite(CS, HIGH);
     SPI.begin();
 
-    SPI.beginTransaction (SPISettings (100000, MSBFIRST, SPI_MODE0));
-    SPI.setClockDivider(SPI_CLOCK_DIV32);
+    SPI.beginTransaction (SPISettings (1000000, MSBFIRST, SPI_MODE0)); // 100000
+    //SPI.setClockDivider(SPI_CLOCK_DIV32);
 
 #ifdef TEENSYDUINO
     SPI.beginTransaction(SPISettings(3000000, MSBFIRST, SPI_MODE0));

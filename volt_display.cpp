@@ -47,10 +47,12 @@ void VoltDisplayClass::renderMeasured(int x, int y, float rawMv) {
 
 void VoltDisplayClass::renderSet(int x, int y, float rawMv) {
   
-  int v = rawMv / 1000;
-  int mv = (rawMv - v * 1000);
-  int uv = (rawMv - mv) * 1000;
-  if (rawMv < 0) {
+  int v, mv, uv;
+  bool neg;
+
+  DIGIT_UTIL.separate(&v, &mv, &uv, &neg, rawMv);
+
+  if (neg) {
       GD.cmd_text(x, y, 31, 3, "-");
   } else {
       GD.cmd_text(x, y, 31, 3, "+");
