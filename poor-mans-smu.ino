@@ -178,10 +178,10 @@ void voltagePanel(int x, int y) {
   VOLT_DISPLAY.renderMeasured(x + 17,y , rawMv);
   VOLT_DISPLAY.renderSet(x + 120, y+150, setMv);
 
-  renderDeviation(x+667,y+147, rawMv, setMv, COLOR_VOLT, false);
+  renderDeviation(x+667,y+147, rawMv, setMv, false);
 }
 
-void renderDeviation(int x, int y, float rawM, float setM, int color, bool cur) {
+void renderDeviation(int x, int y, float rawM, float setM, bool cur) {
    if (cur) {
       //Special handling: set current must currently be positive even if sink/negative.
       //                  This give error when comparing negative measured and positive set.
@@ -195,19 +195,23 @@ void renderDeviation(int x, int y, float rawM, float setM, int color, bool cur) 
   
   GD.ColorRGB(200,255,200);
   GD.cmd_text(x, y, 27, 0, "Deviation");
-
+  if (cur) {
+    GD.ColorRGB(COLOR_CURRENT);
+  } else {
+        GD.ColorRGB(COLOR_VOLT);
+  }
   if (setM != 0.0) {
     if (devPercent < 1.0) {
-      GD.ColorRGB(color);
       GD.cmd_text(x, y+16, 30, 0, "0.");
       GD.cmd_number(x+30, y+16, 30, 3, devPercent * 1000.0);
       GD.cmd_text(x+30+50, y+16, 30, 0, "%");
     } else if (devPercent >= 10.0){
-      GD.ColorRGB(255,0,0); // RED
+      if (!cur) {
+        GD.ColorRGB(255,0,0); // RED
+      }
       GD.cmd_text(x, y+16, 30, 0, ">=10%");
     } else if (devPercent >= 1.0 && devPercent <10.0){
       int whole = (int)devPercent;
-      GD.ColorRGB(color);
       //GD.cmd_text(x, y+16, 30, 0, "0.");
       GD.cmd_number(x, y+16, 30, 1, whole );
       GD.cmd_text(x+20, y+16, 30, 0, ".");
@@ -326,7 +330,7 @@ void currentPanel(int x, int y) {
       //
      // C_STATS.addSample(rawMa);
 
-    renderDeviation(x+667,y+130, rawMa, setMa, COLOR_CURRENT, true);
+    renderDeviation(x+667,y+130, rawMa, setMa, true);
 
 }
 
