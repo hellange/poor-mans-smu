@@ -178,12 +178,21 @@ void voltagePanel(int x, int y) {
   VOLT_DISPLAY.renderMeasured(x + 17,y , rawMv);
   VOLT_DISPLAY.renderSet(x + 120, y+150, setMv);
 
-  renderDeviation(x+667,y+147, rawMv, setMv, COLOR_VOLT);
+  renderDeviation(x+667,y+147, rawMv, setMv, COLOR_VOLT, false);
 }
 
-void renderDeviation(int x, int y, float rawM, float setM, int color) {  
+void renderDeviation(int x, int y, float rawM, float setM, int color, bool cur) {
+   if (cur) {
+      //Special handling: set current must currently be positive even if sink/negative.
+      //                  This give error when comparing negative measured and positive set.
+      //                  Use absolute values to give "correct" comparision...
+     setM = abs(setM);
+     rawM = abs(rawM);
+   }
    float devPercent = abs(100.0 * ((setM - rawM) / setM));
 
+
+  
   GD.ColorRGB(200,255,200);
   GD.cmd_text(x, y, 27, 0, "Deviation");
 
@@ -283,6 +292,8 @@ void renderVoltageTrend() {
     GD.LineWidth(10);
     GD.Vertex2ii(x+7, 125); 
     GD.Vertex2ii(x+167, 125);
+
+  
 }
 
 void currentPanel(int x, int y) {
@@ -315,7 +326,7 @@ void currentPanel(int x, int y) {
       //
      // C_STATS.addSample(rawMa);
 
-    renderDeviation(x+667,y+130, rawMa, setMa, COLOR_CURRENT);
+    renderDeviation(x+667,y+130, rawMa, setMa, COLOR_CURRENT, true);
 
 }
 
