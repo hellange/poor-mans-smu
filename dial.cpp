@@ -3,23 +3,9 @@
 #include "colors.h"
 #include "GD2.h"
 
-int vol_cur_type;
 void (*closedFn)(int type, bool cancel);
 
-  // Store memory for entered digits and symbols
-  int dialEntries[15];
-  // current number of digits in display
-  int digits; 
-
-  bool error;
-  bool warning;
-  
-  bool keydepressed = true;
-  char* voltDecade = "  ";
-  char* curDecade = "  ";
-  bool negative = false;
-  bool dialog = false;
-  double mv;
+ 
 
 // type: volt or current  to be implemented
 void DialClass::open(int type, void (*callbackFn)(int type, bool cancel) ) {
@@ -256,10 +242,14 @@ void DialClass::renderInput(bool indicateError) {
   } else {
       GD.ColorRGB(COLOR_VOLT);
   }
-  if (negative == true) {
-      GD.cmd_text(posx, posy, 1, 0, "-");
-  } else {
-      GD.cmd_text(posx, posy, 1, 0, "+");
+  
+  if (vol_cur_type == BUTTON_VOLT_SET) {
+    // Currently dont show sign for current. Positive value is used both for neg and pos (sink/source). Preliminary ?
+    if (negative == true) {
+        GD.cmd_text(posx, posy, 1, 0, "-");
+    } else {
+        GD.cmd_text(posx, posy, 1, 0, "+");
+    }
   }
   posx=posx+50;
   for (int i=0;i<digits;i++) {

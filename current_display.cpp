@@ -26,7 +26,10 @@ void CurrentDisplayClass::renderMeasured(int x, int y, float rawMa) {
   GD.ColorRGB(COLOR_CURRENT);
 
   if (a>0) {
-    VOLT_DISPLAY.boldText(x,y+30, sign);
+
+    // TODO: Preliminary dont show sign. Set current goes for both pos and neg (sing/source). Preliminary?
+    //VOLT_DISPLAY.boldText(x,y+30, sign);
+    
     VOLT_DISPLAY.boldNumber(x+63, y+30, 1, a);
     VOLT_DISPLAY.boldText(x+113, y+30, ".");
     VOLT_DISPLAY.boldNumber(x+136, y+30, 3, ma);
@@ -53,11 +56,12 @@ void CurrentDisplayClass::renderSet(int x, int y, float rawMa) {
 
   DIGIT_UTIL.separate(&a, &ma, &ua, &neg, rawMa);
 
-  if (neg) {
-      GD.cmd_text(x, y, 31, 3, "-");
-  } else {
-      GD.cmd_text(x, y, 31, 3, "+");
-  }
+    // Currently dont show sign for current. Positive value is used both for neg and pos (sink/source). Preliminary ?
+//    if (neg) {
+//        GD.cmd_text(x, y, 31, 3, "-");
+//    } else {
+//        GD.cmd_text(x, y, 31, 3, "+");
+//    }
   
   GD.cmd_number(x+25, y, 31, 1, a);
   GD.cmd_text(x+48, y, 31, 0, ".");
