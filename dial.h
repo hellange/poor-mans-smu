@@ -35,20 +35,7 @@ class DialClass {
   int screenWidth = 800;
   int screenHeight = 480;
 
-  // Store memory for entered digits and symbols
-  int dialEntries[15];
-  // current number of digits in display
-  int digits; 
 
-  bool error;
-  bool warning;
-  
-  bool keydepressed = true;
-  char* voltDecade = "  ";
-  char* curDecade = "  ";
-  bool negative = false;
-  bool dialog = false;
-  double mv;
   
 public:
   void open(int type, void (*closedFn)(int type, bool cancel));
