@@ -142,6 +142,7 @@ void setup()
     SMU[0].EnableOutput();
 
   GD.cmd_romfont(1, 34); // put FT81x font 34 in slot 1
+  //GD.wr(REG_PWM_DUTY, 10);
 
   
   
@@ -207,44 +208,28 @@ void renderDeviation(int x, int y, float rawM, float setM, int color) {
   }
 }
 
-
-void renderVariousDummyFields(int x, int y, float rawMv, float setMv) {
+/*
+void renderVariousDummyFields(int x, int y) {
 
   int v, mV, uV;
-
-
+  bool neg;
   
   GD.ColorRGB(200,255,200);
   GD.cmd_text(x+486, y+147, 27, 0, "Average");
   GD.ColorRGB(COLOR_VOLT);
 
-//  bool neg;
-//  if (averageVolt < 0.0f) {
-//    neg = true;
-//  }
-//  DIGIT_UTIL.separate(&v, &mV, &uV, &neg, averageVolt);
-//  if(neg) {
-//    GD.cmd_text(x+486 - 20, y+163, 30, 0, "-");
-//  }
-//  GD.cmd_number(x+486 + 0, y+163, 30, 2, v);
-//  GD.cmd_text(x+486 + 32, y+163, 30, 0, ".");
-//  GD.cmd_number(x+486 + 40, y+163, 30, 3, mV);
-//  GD.cmd_number(x+486 + 96, y+163, 30, 3, uV);
-//  //GD.cmd_text(x+486, y+163, 30, 0, "0.500 075V");
-
- 
-  
-  GD.ColorRGB(200,255,200);
-  
-  GD.Begin(LINE_STRIP);
-  GD.LineWidth(10);
-  GD.Vertex2ii(x+620, y+70); 
-  GD.Vertex2ii(x+780, y+70); 
-  GD.Begin(LINE_STRIP);
-  GD.LineWidth(10);
-  GD.Vertex2ii(x+620, y+125); 
-  GD.Vertex2ii(x+780, y+125);
+  DIGIT_UTIL.separate(&v, &mV, &uV, &neg, averageVolt);
+  if(neg) {
+    GD.cmd_text(x+486 - 20, y+163, 30, 0, "-");
 }
+  GD.cmd_number(x+486 + 0, y+163, 30, 2, v);
+  GD.cmd_text(x+486 + 32, y+163, 30, 0, ".");
+  GD.cmd_number(x+486 + 40, y+163, 30, 3, mV);
+  GD.cmd_number(x+486 + 96, y+163, 30, 3, uV);
+//GD.cmd_text(x+486, y+163, 30, 0, "0.500 075V");
+}
+*/
+
 void renderVoltageTrend() {
 //  TODO make flexible....
 
@@ -287,6 +272,17 @@ void renderVoltageTrend() {
     GD.cmd_number(x+137, 36, 26, 3, uV);
     
     V_STATS.renderTrend(x+17, 75, 75, true);
+
+      GD.ColorRGB(200,255,200);
+  
+    GD.Begin(LINE_STRIP);
+    GD.LineWidth(10);
+    GD.Vertex2ii(x+7, 70); 
+    GD.Vertex2ii(x+167, 70); 
+    GD.Begin(LINE_STRIP);
+    GD.LineWidth(10);
+    GD.Vertex2ii(x+7, 125); 
+    GD.Vertex2ii(x+167, 125);
 }
 
 void currentPanel(int x, int y) {
@@ -349,17 +345,14 @@ void scrollIndication(int x, int y) {
   int smoothingSamples = 10;//TODO: fix global...
 
 void renderDisplay() {
-  
-
+ 
   int x = 0;
   int y = 0;
   voltagePanel(x,y);
   renderVoltageTrend();
-  //renderVariousDummyFields(x,y, avgVout);
+  //renderVariousDummyFields(x,y);
 
   currentPanel(x,y+260);
-  //protograph(x,y+260);
-
 
   scrollIndication(340,250);
     
@@ -376,12 +369,6 @@ void renderDisplay() {
 
 unsigned long previousMillis = 0; 
 unsigned long previousMillisSlow = 0; 
-
-void protograph(int x, int y) {
-      V_STATS.renderTrend(100, y+20, 200, false);
-}
-
-
 const long interval = 50; 
 void loop()
 {
@@ -411,13 +398,7 @@ void loop()
       DIAL.checkKeypress();
       DIAL.handleKeypadDialog();
     }
-
-//    if (currentMillis - previousMillisSlow >= 10000) {
-//      previousMillisSlow = currentMillis;
-//    }
   
-    float sum = DIAL.getMv();
-
     GD.swap();    
     GD.__end();
 
