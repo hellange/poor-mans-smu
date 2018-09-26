@@ -170,11 +170,10 @@ void voltagePanel(int x, int y) {
   GD.ColorRGB(200,255,200);
   GD.cmd_text(x+56, y+16 ,   29, 0, "SOURCE VOLTAGE");
 
-  //float rawMv = 10501.0 +  random(0, 199) / 1000.0;
   //float rawMv = DACVout; // TODO: Dont use global
-          float rawMv = SMU[0].MeasureVoltage() * 1000.0;
-          V_STATS.addSample(rawMv);
-
+  float rawMv = SMU[0].MeasureVoltage() * 1000.0;
+  V_STATS.addSample(rawMv);
+ 
   VOLT_DISPLAY.renderMeasured(x + 17,y , rawMv);
   VOLT_DISPLAY.renderSet(x + 120, y+150, setMv);
 
@@ -247,7 +246,7 @@ void renderVoltageTrend() {
 //  TODO make flexible....
 
     int x = 613;
-
+    int y = 26;
     
     GD.ColorA(255);
     GD.ColorRGB(255,255,255);
@@ -255,47 +254,72 @@ void renderVoltageTrend() {
     int v, mV, uV;
     bool neg;
 
-    Serial.print("minimum: ");  
-    Serial.print(V_STATS.visibleMin, 3);
-    Serial.print(", maximum: ");  
-    Serial.print(V_STATS.visibleMax, 3);
+//    Serial.print("minimum: ");  
+//    Serial.print(V_STATS.visibleMin, 3);
+//    Serial.print(", maximum: ");  
+//    Serial.print(V_STATS.visibleMax, 3);
 
-    DIGIT_UTIL.separate(&v, &mV, &uV, &neg, V_STATS.visibleMin);
-    if(neg) {
-      GD.cmd_text(x, 128, 26, 0, "-");
-    }
-    GD.cmd_number(x+7, 128, 26, 2, v);
-    GD.cmd_text(x+24, 128, 26, 0, ".");
-    GD.cmd_number(x+27, 128, 26, 3, mV);
-    GD.cmd_number(x+57, 128, 26, 3, uV);
+    GD.ColorRGB(200,255,200);
+
+//    DIGIT_UTIL.separate(&v, &mV, &uV, &neg, V_STATS.span);
+//    GD.cmd_text(x, y+10, 26, 0, "Span ");
+//    GD.cmd_number(x+40,y+10, 26, 2, v);
+//    GD.cmd_number(x+60, y+10, 26, 3, mV);
+//    GD.cmd_number(x+90, y+10, 26, 3, uV);
 
     DIGIT_UTIL.separate(&v, &mV, &uV, &neg, V_STATS.visibleMax);
+    GD.cmd_text(x, y+29, 26, 0,  "Max:");
+
     if(neg) {
-      GD.cmd_text(x, 55, 26, 0,  "-");
+      GD.cmd_text(x+25, y+29, 26, 0,  "-");
     }
-    GD.cmd_number(x+7, 55, 26, 2, v);
-    GD.cmd_text(x+24, 55, 26, 0,  ".");
-    GD.cmd_number(x+27, 55, 26, 3, mV);
-    GD.cmd_number(x+57, 55, 26, 3, uV);
+    GD.cmd_number(x+7+25, y+29, 26, 2, v);
+    GD.cmd_text(x+24+25, y+29, 26, 0,  ".");
+    GD.cmd_number(x+27+25, y+29, 26, 3, mV);
+    GD.cmd_number(x+57+25, y+29, 26, 3, uV);
 
-    DIGIT_UTIL.separate(&v, &mV, &uV, &neg, V_STATS.span);
-    GD.cmd_text(x+47, 36, 26, 0, "Span ");
-    GD.cmd_number(x+87, 36, 26, 2, v);
-    GD.cmd_number(x+107, 36, 26, 3, mV);
-    GD.cmd_number(x+137, 36, 26, 3, uV);
+    GD.Begin(LINE_STRIP);
+    GD.LineWidth(10);
+    GD.Vertex2ii(x+7, y+44); 
+    GD.Vertex2ii(x+167, y+44); 
     
-    V_STATS.renderTrend(x+17, 75, 75, true);
+    V_STATS.renderTrend(x+17, y+49, true);
 
-      GD.ColorRGB(200,255,200);
+    GD.Begin(RECTS);
+    GD.ColorA(200); // some transparance
+    GD.ColorRGB(0); 
+    GD.Vertex2ii(x+30, y+60);
+    GD.Vertex2ii(x+140, y+80);
+    GD.ColorA(255); // No transparent
+    GD.ColorRGB(COLOR_VOLT);
+    DIGIT_UTIL.separate(&v, &mV, &uV, &neg, V_STATS.span);
+    GD.cmd_text(x+25, y+63, 26, 0, "Span:");
+    GD.cmd_number(x+40+25,y+63, 26, 2, v);
+    GD.cmd_number(x+60+25, y+63, 26, 3, mV);
+    GD.cmd_number(x+90+25, y+63, 26, 3, uV);
+
+    GD.ColorRGB(200,255,200);
+   
+    GD.Begin(LINE_STRIP);
+    GD.LineWidth(10);
+    GD.Vertex2ii(x+7, y+99); 
+    GD.Vertex2ii(x+167, y+99);
+    
+    DIGIT_UTIL.separate(&v, &mV, &uV, &neg, V_STATS.visibleMin);
+    GD.cmd_text(x, y+102, 26, 0,  "Min:");
+    if(neg) {
+      GD.cmd_text(x+25, y+102+25, 26, 0, "-");
+    }
+    GD.cmd_number(x+7+25, y+102, 26, 2, v);
+    GD.cmd_text(x+24+25, y+102, 26, 0, ".");
+    GD.cmd_number(x+27+25, y+102, 26, 3, mV);
+    GD.cmd_number(x+57+25, y+102, 26, 3, uV);
+
+
+
   
-    GD.Begin(LINE_STRIP);
-    GD.LineWidth(10);
-    GD.Vertex2ii(x+7, 70); 
-    GD.Vertex2ii(x+167, 70); 
-    GD.Begin(LINE_STRIP);
-    GD.LineWidth(10);
-    GD.Vertex2ii(x+7, 125); 
-    GD.Vertex2ii(x+167, 125);
+ 
+   
 
   
 }
@@ -384,7 +408,7 @@ void renderDisplay() {
 
 unsigned long previousMillis = 0; 
 unsigned long previousMillisSlow = 0; 
-const long interval = 50; 
+const long interval = 10; // should it account for time taken to perform ADC sample ? 
 void loop()
 {
   //GD.wr(REG_PWM_DUTY, 20);
