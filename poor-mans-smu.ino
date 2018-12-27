@@ -31,6 +31,8 @@
 #include "LTC2485.h"
 #include "LTC2655.h"
 #include "EasySMU.h"
+#include "EasySMU2.h"
+
 //#include "PrintError.h"
 //#include "MasterAddressConstants.h"
 
@@ -101,6 +103,9 @@
 #define I2C_FT6206_ADDR0    0x38
 
 
+//EasySMU2 SMU[1] = {
+//      EasySMU2()
+//};
 
 EasySMU SMU[1] =
 {
@@ -127,7 +132,7 @@ void setup()
   GD.begin(0);
   Serial.println("Done!");
 
-
+ 
 
    i2c_enable(); //Set Linduino default I2C speed instead of Wire default settings.
   
@@ -141,6 +146,9 @@ void setup()
     SMU[0].fltSetCommitVoltageSource(setMv / 1000.0);
     SMU[0].EnableOutput();
 
+
+
+ 
   GD.cmd_romfont(1, 34); // put FT81x font 34 in slot 1
   //GD.wr(REG_PWM_DUTY, 10);
 
@@ -171,7 +179,9 @@ void voltagePanel(int x, int y) {
   GD.cmd_text(x+56, y+16 ,   29, 0, "SOURCE VOLTAGE");
 
   //float rawMv = DACVout; // TODO: Dont use global
+  //float rawMv = SMU[0].MeasureVoltage() * 1000.0;
   float rawMv = SMU[0].MeasureVoltage() * 1000.0;
+  //float rawMv = 56.233;
   V_STATS.addSample(rawMv);
  
   VOLT_DISPLAY.renderMeasured(x + 17,y , rawMv);
@@ -284,6 +294,7 @@ void renderVoltageTrend() {
     GD.Vertex2ii(x+167, y+44); 
     
     V_STATS.renderTrend(x+17, y+49, true);
+    //V_STATS.renderTrend(20, y+49+200, false);
 
     GD.Begin(RECTS);
     GD.ColorA(200); // some transparance
@@ -345,7 +356,7 @@ void currentPanel(int x, int y) {
   GD.ColorRGB(232,202,158);
   GD.cmd_text(x+56, y+5, 29, 0, "MEASURE CURRENT");
 
- // float rawMa = 56.0 +  random(0, 199) / 1000.0;
+  //float rawMa = 56.0 +  random(0, 199) / 1000.0;
             float rawMa = SMU[0].MeasureCurrent() * 1000.0;
 
   CURRENT_DISPLAY.renderMeasured(x + 17, y, rawMa);
@@ -408,7 +419,17 @@ void renderDisplay() {
 
 unsigned long previousMillis = 0; 
 unsigned long previousMillisSlow = 0; 
-const long interval = 10; // should it account for time taken to perform ADC sample ? 
+const long interval = 1; // should it account for time taken to perform ADC sample ?
+void loop2()
+{
+
+  GD.ClearColorRGB(0x103000);
+  GD.Clear();
+  GD.cmd_text(GD.w / 2, GD.h / 2, 31, OPT_CENTER, "Hello world 2");
+  GD.swap();  
+         delay(10000);
+
+}
 void loop()
 {
   //GD.wr(REG_PWM_DUTY, 20);
@@ -419,7 +440,14 @@ void loop()
   SPI.setDataMode(SPI_MODE0);
   //SPI.setClockDivider(SPI_CLOCK_DIV2);
   GD.resume();
-  
+
+      if (GD.inputs.tag == BUTTON_VOLT_SET) {
+      DIAL.open(BUTTON_VOLT_SET, closeCallback);
+    } else if (GD.inputs.tag == BUTTON_CUR_SET) {
+      DIAL.open(BUTTON_CUR_SET, closeCallback);
+    }
+
+    
   if (currentMillis - previousMillis >= interval) {
     previousMillis = currentMillis;
     GD.ClearColorRGB(0x000000); // black
@@ -427,12 +455,14 @@ void loop()
     GD.Clear();
 
     renderDisplay();
+      Serial.print("GD.inputs ");  
+      Serial.println(GD.inputs.tag);  
 
-    if (GD.inputs.tag == BUTTON_VOLT_SET) {
-      DIAL.open(BUTTON_VOLT_SET, closeCallback);
-    } else if (GD.inputs.tag == BUTTON_CUR_SET) {
-      DIAL.open(BUTTON_CUR_SET, closeCallback);
-    }
+//    if (GD.inputs.tag == BUTTON_VOLT_SET) {
+//      DIAL.open(BUTTON_VOLT_SET, closeCallback);
+//    } else if (GD.inputs.tag == BUTTON_CUR_SET) {
+//      DIAL.open(BUTTON_CUR_SET, closeCallback);
+//    }
     if (DIAL.isDialogOpen()) {
       DIAL.checkKeypress();
       DIAL.handleKeypadDialog();
@@ -463,6 +493,7 @@ void loop()
        delay(100);
     }
    */
+      //delay(5);
 
   }
 }

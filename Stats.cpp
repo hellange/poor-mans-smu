@@ -44,18 +44,18 @@ void StatsClass::renderTrend(int x, int y , bool small) {
 
     int multiplyBy = 1;
     if (!small) {
-      multiplyBy = 2;
+      multiplyBy = 7;
     }
     
     int i = endPtr;
     GD.Begin(LINE_STRIP);
-    GD.LineWidth(multiplyBy * 10);
+    GD.LineWidth(multiplyBy * 8);
  
     for (int pos=0; pos<nrOfTrendPoints;pos++) { 
 
       float height = 45.0f * ( (visibleMax - value[i]) / uispan);
       if (!small) {
-        height=height*multiplyBy;
+        height=height*multiplyBy/2;
       }
       GD.Vertex2ii(x + pos*(1+multiplyBy), y + height); 
       i=i+1;
