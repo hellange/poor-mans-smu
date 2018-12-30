@@ -26,11 +26,11 @@
 
 
 #include "Arduino.h"
-#include "LT_I2C.h"
+//#include "LT_I2C.h"
 #include "Wire.h"
-#include "LTC2485.h"
-#include "LTC2655.h"
-#include "EasySMU.h"
+//#include "LTC2485.h"
+//#include "LTC2655.h"
+//#include "EasySMU.h"
 #include "EasySMU2.h"
 
 //#include "PrintError.h"
@@ -102,15 +102,15 @@
 //!touchscreen I2C address
 #define I2C_FT6206_ADDR0    0x38
 
-
-//EasySMU2 SMU[1] = {
-//      EasySMU2()
-//};
-
-EasySMU SMU[1] =
-{
-    EasySMU(I2C_Board0_EEPROM_ADDR0, I2C_Board0_LTC2655_LLL_ADDR0, I2C_Board0_LTC2485_Vout_LF_ADDR0, I2C_Board0_LTC2485_Iout_LH_ADDR0)
+#define _SOURCE_AND_SINK 99
+EasySMU2 SMU[1] = {
+      EasySMU2()
 };
+
+//EasySMU SMU[1] =
+//{
+//    EasySMU(I2C_Board0_EEPROM_ADDR0, I2C_Board0_LTC2655_LLL_ADDR0, I2C_Board0_LTC2485_Vout_LF_ADDR0, I2C_Board0_LTC2485_Iout_LH_ADDR0)
+//};
 
 StatsClass V_STATS;
 //StatsClass C_STATS;
@@ -132,10 +132,8 @@ void setup()
   GD.begin(0);
   Serial.println("Done!");
 
- 
-
-   i2c_enable(); //Set Linduino default I2C speed instead of Wire default settings.
-  
+//   i2c_enable(); //Set Linduino default I2C speed instead of Wire default settings.
+  /*
     pinMode(QUIKEVAL_MUX_MODE_PIN, OUTPUT);   //Set Linduino MUX pin to disable the I2C MUX. Otherwise it can cause unpredictable behavior.
     digitalWrite(QUIKEVAL_MUX_MODE_PIN, LOW);
   
@@ -146,7 +144,7 @@ void setup()
     SMU[0].fltSetCommitVoltageSource(setMv / 1000.0);
     SMU[0].EnableOutput();
 
-
+*/
 
  
   GD.cmd_romfont(1, 34); // put FT81x font 34 in slot 1
@@ -187,21 +185,27 @@ void voltagePanel(int x, int y) {
   VOLT_DISPLAY.renderMeasured(x + 17,y , rawMv);
   VOLT_DISPLAY.renderSet(x + 120, y+150, setMv);
 
+  GD.ColorRGB(0,0,0);
+
+  GD.cmd_fgcolor(0xaaaa90);  
+  GD.Tag(BUTTON_VOLT_SET);
+  GD.cmd_button(x+20,y+143,90,58,30,0,"SET"); 
+  GD.cmd_button(x+350,y+143,90,58,30,0,"AUTO");
+  
+
   renderDeviation(x+667,y+147, rawMv, setMv, false);
 }
 
 void renderDeviation(int x, int y, float rawM, float setM, bool cur) {
-   if (cur) {
-      //Special handling: set current must currently be positive even if sink/negative.
-      //                  This give error when comparing negative measured and positive set.
-      //                  Use absolute values to give "correct" comparision...
+  if (cur) {
+     //Special handling: set current must currently be positive even if sink/negative.
+     //                  This give error when comparing negative measured and positive set.
+     //                  Use absolute values to give "correct" comparision...
      setM = abs(setM);
      rawM = abs(rawM);
-   }
-   float devPercent = abs(100.0 * ((setM - rawM) / setM));
+  }
+  float devPercent = abs(100.0 * ((setM - rawM) / setM));
 
-
-  
   GD.ColorRGB(200,255,200);
   GD.cmd_text(x, y, 27, 0, "Deviation");
   if (cur) {
@@ -230,27 +234,97 @@ void renderDeviation(int x, int y, float rawM, float setM, bool cur) {
   }
 }
 
-/*
-void renderVariousDummyFields(int x, int y) {
+void renderValue(int x,int y,float val) {
 
-  int v, mV, uV;
-  bool neg;
-  
-  GD.ColorRGB(200,255,200);
-  GD.cmd_text(x+486, y+147, 27, 0, "Average");
-  GD.ColorRGB(COLOR_VOLT);
+    //int font = 26;
+    //int fontWidth = 10;
+    int font = 28;
+    int fontWidth = 15;
+    //int font = 29;
+    //int fontWidth = 18;
+    //int font = 30;
+    //int fontWidth = 21;
+    //int font = 31;
+    //int fontWidth = 29;
+    
+    int v, mV, uV;
+    bool neg;
+    DIGIT_UTIL.separate(&v, &mV, &uV, &neg, val);
+    if(neg) {
+      GD.cmd_text(x, y, 28, 0,  "-");
+    }
 
-  DIGIT_UTIL.separate(&v, &mV, &uV, &neg, averageVolt);
-  if(neg) {
-    GD.cmd_text(x+486 - 20, y+163, 30, 0, "-");
+    
+    x=x+fontWidth;
+    if (v>0) {
+      GD.cmd_number(x, y, font, 2, v);
+      x = x + fontWidth*1.7;
+      GD.cmd_text(x, y, font, 0,  ".");
+      x = x + fontWidth/3;
+      GD.cmd_number(x, y, font, 3, mV);
+      x = x + fontWidth * 2.9;
+      GD.cmd_number(x, y, font, 3, uV);
+      x = x + fontWidth * 2.6;
+      GD.cmd_text(x, y, font, 0,  "V");
+    } else {
+      GD.cmd_number(x, y, font, 3, mV);
+      x = x + fontWidth*2.5;
+      GD.cmd_text(x, y, font, 0,  ".");
+      x = x + fontWidth/3;
+      GD.cmd_number(x, y, font, 3, uV);
+      x = x + fontWidth * 2.6;
+      GD.cmd_text(x, y, font, 0,  "mV");
+    }
+
 }
-  GD.cmd_number(x+486 + 0, y+163, 30, 2, v);
-  GD.cmd_text(x+486 + 32, y+163, 30, 0, ".");
-  GD.cmd_number(x+486 + 40, y+163, 30, 3, mV);
-  GD.cmd_number(x+486 + 96, y+163, 30, 3, uV);
-//GD.cmd_text(x+486, y+163, 30, 0, "0.500 075V");
+
+
+
+void renderGraph(int x,int y) {
+
+    GD.ColorRGB(255,255,255); // yellow
+
+    float span = V_STATS.visibleMax - V_STATS.visibleMin;
+    renderValue(x, y, V_STATS.visibleMax);
+    renderValue(x, y+50, V_STATS.visibleMax - (span/3.0));
+    renderValue(x, y+100, V_STATS.visibleMax- 2.0*(span/3.0));
+    renderValue(x, y+150, V_STATS.visibleMin);
+
+    y = y + 15;
+
+    V_STATS.renderTrend(x + 180, y, false);
+
+    int left = x + 150;
+    if (left > 800) {
+      return;
+    }
+    int right = x + 800;
+    if (right > 800) {
+      right = 800;
+    }
+
+    GD.LineWidth(6);
+
+    GD.Begin(LINE_STRIP);
+    GD.Vertex2ii(left, y); 
+    GD.Vertex2ii(right, y); 
+
+    GD.Begin(LINE_STRIP);
+    //GD.LineWidth(2);
+    GD.Vertex2ii(left, y+50); 
+    GD.Vertex2ii(right, y+50); 
+
+    GD.Begin(LINE_STRIP);
+    //GD.LineWidth(2);
+    GD.Vertex2ii(left, y+100); 
+    GD.Vertex2ii(right, y+100); 
+
+    GD.Begin(LINE_STRIP);
+    //GD.LineWidth(2);
+    GD.Vertex2ii(left, y+150); 
+    GD.Vertex2ii(right, y+150); 
+    
 }
-*/
 
 void renderVoltageTrend() {
 //  TODO make flexible....
@@ -277,16 +351,10 @@ void renderVoltageTrend() {
 //    GD.cmd_number(x+60, y+10, 26, 3, mV);
 //    GD.cmd_number(x+90, y+10, 26, 3, uV);
 
-    DIGIT_UTIL.separate(&v, &mV, &uV, &neg, V_STATS.visibleMax);
+    //DIGIT_UTIL.separate(&v, &mV, &uV, &neg, V_STATS.visibleMax);
+    
     GD.cmd_text(x, y+29, 26, 0,  "Max:");
-
-    if(neg) {
-      GD.cmd_text(x+25, y+29, 26, 0,  "-");
-    }
-    GD.cmd_number(x+7+25, y+29, 26, 2, v);
-    GD.cmd_text(x+24+25, y+29, 26, 0,  ".");
-    GD.cmd_number(x+27+25, y+29, 26, 3, mV);
-    GD.cmd_number(x+57+25, y+29, 26, 3, uV);
+    renderValue(x+25, y+29, V_STATS.visibleMax);
 
     GD.Begin(LINE_STRIP);
     GD.LineWidth(10);
@@ -294,7 +362,7 @@ void renderVoltageTrend() {
     GD.Vertex2ii(x+167, y+44); 
     
     V_STATS.renderTrend(x+17, y+49, true);
-    //V_STATS.renderTrend(20, y+49+200, false);
+
 
     GD.Begin(RECTS);
     GD.ColorA(200); // some transparance
@@ -303,12 +371,10 @@ void renderVoltageTrend() {
     GD.Vertex2ii(x+140, y+80);
     GD.ColorA(255); // No transparent
     GD.ColorRGB(COLOR_VOLT);
-    DIGIT_UTIL.separate(&v, &mV, &uV, &neg, V_STATS.span);
+    //DIGIT_UTIL.separate(&v, &mV, &uV, &neg, V_STATS.span);
     GD.cmd_text(x+25, y+63, 26, 0, "Span:");
-    GD.cmd_number(x+40+25,y+63, 26, 2, v);
-    GD.cmd_number(x+60+25, y+63, 26, 3, mV);
-    GD.cmd_number(x+90+25, y+63, 26, 3, uV);
-
+    renderValue(x+40+25, y+63, V_STATS.span);
+    
     GD.ColorRGB(200,255,200);
    
     GD.Begin(LINE_STRIP);
@@ -318,27 +384,14 @@ void renderVoltageTrend() {
     
     DIGIT_UTIL.separate(&v, &mV, &uV, &neg, V_STATS.visibleMin);
     GD.cmd_text(x, y+102, 26, 0,  "Min:");
-    if(neg) {
-      GD.cmd_text(x+25, y+102+25, 26, 0, "-");
-    }
-    GD.cmd_number(x+7+25, y+102, 26, 2, v);
-    GD.cmd_text(x+24+25, y+102, 26, 0, ".");
-    GD.cmd_number(x+27+25, y+102, 26, 3, mV);
-    GD.cmd_number(x+57+25, y+102, 26, 3, uV);
-
-
-
-  
- 
-   
-
-  
+    renderValue(x+25, y+102, V_STATS.visibleMin);
 }
 
 void currentPanel(int x, int y) {
   GD.Begin(LINE_STRIP);
   GD.LineWidth(32);
   GD.ColorRGB(50,50,0); // yellow
+  /*
   GD.ColorA(230);
   GD.Vertex2ii(x+10, y+20); 
   GD.Vertex2ii(x+790, y+20);
@@ -351,21 +404,28 @@ void currentPanel(int x, int y) {
   GD.ColorRGB(00,00,00);
   GD.Vertex2ii(x+56, y);
   GD.Vertex2ii(x+280, y+30);
-
+*/
   // heading
   GD.ColorRGB(232,202,158);
   GD.cmd_text(x+56, y+5, 29, 0, "MEASURE CURRENT");
 
   //float rawMa = 56.0 +  random(0, 199) / 1000.0;
-            float rawMa = SMU[0].MeasureCurrent() * 1000.0;
+  float rawMa = SMU[0].MeasureCurrent() * 1000.0;
 
   CURRENT_DISPLAY.renderMeasured(x + 17, y, rawMa);
   CURRENT_DISPLAY.renderSet(x+120, y+135, setMa);
 
-      //
-     // C_STATS.addSample(rawMa);
+  //
+  // C_STATS.addSample(rawMa);
 
-    renderDeviation(x+667,y+130, rawMa, setMa, true);
+  GD.ColorRGB(0,0,0);
+
+  GD.cmd_fgcolor(0xaaaa90);  
+  GD.Tag(BUTTON_VOLT_SET);
+  GD.cmd_button(x+20,y+130,90,58,30,0,"LIM"); 
+  GD.cmd_button(x+350,y+130,90,58,30,0,"AUTO");
+
+  renderDeviation(x+667,y+130, rawMa, setMa, true);
 
 }
 
@@ -394,27 +454,54 @@ void scrollIndication(int x, int y) {
   float avgVout; //TODO: fix global...
   int smoothingSamples = 10;//TODO: fix global...
 
+
+
+
+int scroll = 0;
+int scrollDir = 0;
+boolean gestureDetected = false;
+
 void renderDisplay() {
  
   int x = 0;
   int y = 0;
+
   voltagePanel(x,y);
   renderVoltageTrend();
-  //renderVariousDummyFields(x,y);
 
-  currentPanel(x,y+260);
+
+  if (scroll <= -800 && scrollDir == -1) {
+    Serial.println("reached left end");
+  }
+  else if (scroll >= 0 && scrollDir == 1) {
+    Serial.println("reached right end");
+  } else {
+      scroll = scroll + scrollDir * 100;
+
+  }
+  
+  
+  if (scroll <= -800) {
+    scrollDir = 0;
+  } else if (scroll >= 0) {
+    scrollDir = 0;
+  }
+  
+  currentPanel(scroll + 800,y+260);
+  renderGraph(scroll, 260);
+  
+  GD.Tag(101);
+  GD.Begin(RECTS);
+  GD.ColorRGB(00,00,00);
+  GD.Vertex2ii(0,260);
+  GD.Vertex2ii(800, 480);
+
+  
+
 
   scrollIndication(340,250);
     
-  GD.cmd_fgcolor(0xaaaa90);  
-  GD.Tag(BUTTON_VOLT_SET);
-  GD.cmd_button(20,143,90,58,30,0,"SET"); 
 
-  GD.Tag(BUTTON_CUR_SET);
-  GD.cmd_button(20,393,90,58,30,0,"LIM");
-
-  GD.cmd_button(350,143,90,58,30,0,"AUTO");
-  GD.cmd_button(350,393,90,58,30,0,"AUTO");
 }
 
 unsigned long previousMillis = 0; 
@@ -430,9 +517,12 @@ void loop2()
          delay(10000);
 
 }
+
+
+int oldTouchX = 0;
+int times = 0;
 void loop()
 {
-  //GD.wr(REG_PWM_DUTY, 20);
 
   unsigned long currentMillis = millis();
 
@@ -441,13 +531,12 @@ void loop()
   //SPI.setClockDivider(SPI_CLOCK_DIV2);
   GD.resume();
 
-      if (GD.inputs.tag == BUTTON_VOLT_SET) {
-      DIAL.open(BUTTON_VOLT_SET, closeCallback);
-    } else if (GD.inputs.tag == BUTTON_CUR_SET) {
-      DIAL.open(BUTTON_CUR_SET, closeCallback);
-    }
+  if (GD.inputs.tag == BUTTON_VOLT_SET) {
+    DIAL.open(BUTTON_VOLT_SET, closeCallback);
+  } else if (GD.inputs.tag == BUTTON_CUR_SET) {
+    DIAL.open(BUTTON_CUR_SET, closeCallback);
+  }
 
-    
   if (currentMillis - previousMillis >= interval) {
     previousMillis = currentMillis;
     GD.ClearColorRGB(0x000000); // black
@@ -455,8 +544,8 @@ void loop()
     GD.Clear();
 
     renderDisplay();
-      Serial.print("GD.inputs ");  
-      Serial.println(GD.inputs.tag);  
+    // Serial.print("GD.inputs ");  
+    // Serial.println(GD.inputs.tag);  
 
 //    if (GD.inputs.tag == BUTTON_VOLT_SET) {
 //      DIAL.open(BUTTON_VOLT_SET, closeCallback);
@@ -467,7 +556,39 @@ void loop()
       DIAL.checkKeypress();
       DIAL.handleKeypadDialog();
     }
+
+  GD.get_inputs();
+//Serial.println(GD.inputs.tag);
+  int touchX = GD.inputs.x;
+
+if (GD.inputs.tag == 101) {
+  if (gestureDetected == false && touchX > 0 && touchX - oldTouchX < -5 && scrollDir == 0) {
+    if (++times >= 2) {
+      //Serial.println("scroll left");
+      scrollDir = -1;
+      gestureDetected = true;
+      times = 0;
+    }
+  }
+  else if (gestureDetected == false && touchX > 0 && touchX - oldTouchX > 5 && scrollDir == 0) {
+    if (++times >= 2) {
+      //Serial.println("scroll right");
+      scrollDir = 1;
+      gestureDetected = true;
+      times = 0;
+    }
+  } else {
+    times = 0;
+  }
+  oldTouchX = GD.inputs.x;
+  Serial.println(GD.inputs.x);
   
+} else {
+  gestureDetected = false;
+  oldTouchX = 0;
+}
+
+
     GD.swap();    
     GD.__end();
 

@@ -2,6 +2,7 @@
 
 #include "EasySMU2.h"
 
+ float nowValue = 2.0;
 
  int8_t EasySMU2::fltSetCommitVoltageSource(float fVoltage) {
  }
@@ -10,7 +11,13 @@
  }
  
  float EasySMU2::MeasureVoltage(){
-  return 2 + random(0, 199) / 1000000.0;
+  int r = random(2);
+  if (r == 0) {
+    nowValue = nowValue + random(100) / 1000000.0;
+  } else if (r == 1) {
+    nowValue = nowValue - random(100) / 1000000.0;
+  }
+  return nowValue;
  }
  
  float EasySMU2::MeasureCurrent(){

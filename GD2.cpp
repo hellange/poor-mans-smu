@@ -556,6 +556,8 @@ void GDClass::cmd_bgcolor(uint32_t c) {
   cI(c);
 }
 void GDClass::cmd_button(int16_t x, int16_t y, uint16_t w, uint16_t h, byte font, uint16_t options, const char *s) {
+    x = above512pixelMagic(x);
+
   cFFFFFF(0x0d);
   ch(x);
   ch(y);

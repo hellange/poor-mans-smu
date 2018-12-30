@@ -28,36 +28,40 @@ void StatsClass::updateMinMax(float rawMv) {
 }
 
 void StatsClass::renderTrend(int x, int y , bool small) {  
+
     
+    int viewHeight;
+
+    if (x>800) {
+      return;
+    }
     visibleMax = maximum;
     visibleMin = minimum;
 
-//    // set a mimimum span so very small changes in uV sonw show up in full scale...
-//    float diff = maximum - minimum;
-//    float minVisibleSpan = 0.200f;
-//    if (diff < minVisibleSpan) {
-//      visibleMax = maximum + ((minVisibleSpan - diff)/2.0f);
-//      visibleMin = minimum - ((minVisibleSpan - diff)/2.0f);
-//    }
-    
     uispan = visibleMax - visibleMin;
 
+    GD.Begin(LINE_STRIP);
     int multiplyBy = 1;
     if (!small) {
       multiplyBy = 7;
+      GD.LineWidth(15);
+      viewHeight = 150;
+    } else {
+      GD.LineWidth(4);
+      viewHeight = 45;
     }
     
     int i = endPtr;
-    GD.Begin(LINE_STRIP);
-    GD.LineWidth(multiplyBy * 8);
  
     for (int pos=0; pos<nrOfTrendPoints;pos++) { 
 
-      float height = 45.0f * ( (visibleMax - value[i]) / uispan);
-      if (!small) {
-        height=height*multiplyBy/2;
+      float height = viewHeight * ( (visibleMax - value[i]) / uispan);
+
+      int xpos = x + pos*(1+multiplyBy);
+      if (xpos>800) {
+        return;
       }
-      GD.Vertex2ii(x + pos*(1+multiplyBy), y + height); 
+      GD.Vertex2ii(xpos, y + height); 
       i=i+1;
       if (i>nrOfTrendPoints - 1) {
         i=0;
