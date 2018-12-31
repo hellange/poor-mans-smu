@@ -33,6 +33,12 @@
 //#include "EasySMU.h"
 #include "EasySMU2.h"
 
+
+#define GEST_NONE 0
+#define GEST_MOVE_LEFT 1
+#define GEST_MOVE_RIGHT 2
+
+
 //#include "PrintError.h"
 //#include "MasterAddressConstants.h"
 
@@ -476,7 +482,8 @@ void scrollIndication(int x, int y) {
 
 int scroll = 0;
 int scrollDir = 0;
-boolean gestureDetected = false;
+
+int gestureDetected = GEST_NONE;
 
 void renderDisplay() {
  
@@ -486,6 +493,12 @@ void renderDisplay() {
   voltagePanel(x,y);
   renderVoltageTrend();
 
+  if (gestureDetected == GEST_MOVE_LEFT) {
+    scrollDir = -1;
+  } 
+  else if (gestureDetected == GEST_MOVE_RIGHT) {
+    scrollDir = 1;
+  } 
 
   if (scroll <= -800 && scrollDir == -1) {
     Serial.println("reached left end");
@@ -539,8 +552,40 @@ void loop2()
 }
 
 
+
+
 int oldTouchX = 0;
 int times = 0;
+void detectGestures() {
+  GD.get_inputs();
+  //Serial.println(GD.inputs.tag);
+  int touchX = GD.inputs.x;
+
+  if (GD.inputs.tag == 101) {
+    if (gestureDetected == GEST_NONE && touchX > 0 && touchX - oldTouchX < -20 && scrollDir == 0) {
+      if (++times >= 2) {
+        Serial.println("move left");
+        gestureDetected = GEST_MOVE_LEFT;
+        times = 0;
+      }
+    }
+    else if (gestureDetected == GEST_NONE && touchX > 0 && touchX - oldTouchX > 20 && scrollDir == 0) {
+      if (++times >= 2) {
+        Serial.println("move right");
+        gestureDetected = GEST_MOVE_RIGHT;
+        times = 0;
+      }
+    } else {
+      times = 0;
+    }
+    oldTouchX = GD.inputs.x;  
+  } else {
+    gestureDetected = GEST_NONE;
+  }
+
+}
+
+
 void loop()
 {
 
@@ -583,36 +628,7 @@ void loop()
       DIAL.handleKeypadDialog();
     }
 
-  GD.get_inputs();
-//Serial.println(GD.inputs.tag);
-  int touchX = GD.inputs.x;
-
-if (GD.inputs.tag == 101) {
-  if (gestureDetected == false && touchX > 0 && touchX - oldTouchX < -20 && scrollDir == 0) {
-    if (++times >= 2) {
-      //Serial.println("scroll left");
-      scrollDir = -1;
-      gestureDetected = true;
-      times = 0;
-    }
-  }
-  else if (gestureDetected == false && touchX > 0 && touchX - oldTouchX > 20 && scrollDir == 0) {
-    if (++times >= 2) {
-      //Serial.println("scroll right");
-      scrollDir = 1;
-      gestureDetected = true;
-      times = 0;
-    }
-  } else {
-    times = 0;
-  }
-  oldTouchX = GD.inputs.x;
-  Serial.println(GD.inputs.x);
-  
-} else {
-  gestureDetected = false;
-  oldTouchX = 0;
-}
+  detectGestures();
 
 
     GD.swap();    
