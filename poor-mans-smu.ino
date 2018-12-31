@@ -562,14 +562,14 @@ void detectGestures() {
   int touchX = GD.inputs.x;
 
   if (GD.inputs.tag == 101) {
-    if (gestureDetected == GEST_NONE && touchX > 0 && touchX - oldTouchX < -20 && scrollDir == 0) {
+    if (gestureDetected == GEST_NONE && touchX > 0 && touchX - oldTouchX < -15 && scrollDir == 0) {
       if (++times >= 2) {
         Serial.println("move left");
         gestureDetected = GEST_MOVE_LEFT;
         times = 0;
       }
     }
-    else if (gestureDetected == GEST_NONE && touchX > 0 && touchX - oldTouchX > 20 && scrollDir == 0) {
+    else if (gestureDetected == GEST_NONE && touchX > 0 && touchX - oldTouchX > 15 && scrollDir == 0) {
       if (++times >= 2) {
         Serial.println("move right");
         gestureDetected = GEST_MOVE_RIGHT;
