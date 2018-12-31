@@ -451,7 +451,7 @@ void showWidget(int widgetNo, int scroll) {
        currentPanel(scroll, 260);
   }
   else if (widgetNo == 2) {
-       currentPanel(scroll, 260);
+       voltagePanel(scroll, 260);
   }
 
 }
@@ -543,31 +543,31 @@ void loop2()
 
 
 
-int oldTouchX = 0;
-int times = 0;
+int gestOldX = 0;
+int gestDuration = 0;
 void detectGestures() {
   GD.get_inputs();
   //Serial.println(GD.inputs.tag);
   int touchX = GD.inputs.x;
-
+  int gestDistance = touchX - gestOldX;
   if (GD.inputs.tag == 101) {
-    if (gestureDetected == GEST_NONE && touchX > 0 && touchX - oldTouchX < -15 && scrollDir == 0) {
-      if (++times >= 2) {
+    if (gestureDetected == GEST_NONE && touchX > 0 && gestDistance < -15 && scrollDir == 0) {
+      if (++gestDuration >= 2) {
         Serial.println("move left");
         gestureDetected = GEST_MOVE_LEFT;
-        times = 0;
+        gestDuration = 0;
       }
     }
-    else if (gestureDetected == GEST_NONE && touchX > 0 && touchX - oldTouchX > 15 && scrollDir == 0) {
-      if (++times >= 2) {
+    else if (gestureDetected == GEST_NONE && touchX > 0 && gestDistance > 15 && scrollDir == 0) {
+      if (++gestDuration >= 2) {
         Serial.println("move right");
         gestureDetected = GEST_MOVE_RIGHT;
-        times = 0;
+        gestDuration = 0;
       }
     } else {
-      times = 0;
+      gestDuration = 0;
     }
-    oldTouchX = GD.inputs.x;  
+    gestOldX = GD.inputs.x;  
   } else {
     gestureDetected = GEST_NONE;
   }
@@ -585,6 +585,7 @@ void loop()
   //SPI.setClockDivider(SPI_CLOCK_DIV2);
   GD.resume();
 
+  detectGestures();
   if (!gestureDetected) {
     if (GD.inputs.tag == BUTTON_VOLT_SET) {
       DIAL.open(BUTTON_VOLT_SET, closeCallback);
@@ -593,10 +594,9 @@ void loop()
     }
   }
 
-
   if (currentMillis - previousMillis >= interval) {
     previousMillis = currentMillis;
-    //GD.ClearColorRGB(0x000000); // black
+
     GD.get_inputs();
     GD.Clear();
 
@@ -604,21 +604,11 @@ void loop()
       GD.ColorA(0x44);
     }
     renderDisplay();
-    // Serial.print("GD.inputs ");  
-    // Serial.println(GD.inputs.tag);  
 
-//    if (GD.inputs.tag == BUTTON_VOLT_SET) {
-//      DIAL.open(BUTTON_VOLT_SET, closeCallback);
-//    } else if (GD.inputs.tag == BUTTON_CUR_SET) {
-//      DIAL.open(BUTTON_CUR_SET, closeCallback);
-//    }
     if (DIAL.isDialogOpen()) {
       DIAL.checkKeypress();
       DIAL.handleKeypadDialog();
     }
-
-  detectGestures();
-
 
     GD.swap();    
     GD.__end();
