@@ -249,10 +249,14 @@ void voltagePanel(int x, int y) {
 
   GD.cmd_fgcolor(0xaaaa90);  
   GD.Tag(BUTTON_VOLT_SET);
-  GD.cmd_button(x+20,y+143,90,58,30,0,"SET"); 
+  GD.cmd_button(x+20,y+143,90,58,30,0,"SET");
+    GD.Tag(999);
+
   GD.cmd_button(x+350,y+143,90,58,30,0,"AUTO");
   
   renderDeviation(x+667,y+147, rawMv, setMv, false);
+
+  GD.ColorRGB(0xffffff);
 
   renderValue(x+620, 15 + y + 45, V_STATS.maximum, 1);
   renderValue(x+620, 15 + y + 70, V_STATS.maximum - V_STATS.minimum, 1);
@@ -416,7 +420,10 @@ void currentPanel(int x, int y) {
 
   GD.cmd_fgcolor(0xaaaa90);  
   GD.Tag(BUTTON_CUR_SET);
-  GD.cmd_button(x+20,y+130,90,58,30,0,"LIM"); 
+  GD.cmd_button(x+20,y+130,90,58,30,0,"LIM");
+  
+  GD.Tag(999);
+
   GD.cmd_button(x+350,y+130,90,58,30,0,"AUTO");
   
   renderDeviation(x+667,y+130, rawMa, setMa, true);
@@ -510,7 +517,6 @@ void renderDisplay() {
   GD.ColorRGB(00,00,00);
   GD.Vertex2ii(0,260);
   GD.Vertex2ii(800, 480);
-
 
   if (activeWidget >= 0) {
     if (scrollDir == 0) {
