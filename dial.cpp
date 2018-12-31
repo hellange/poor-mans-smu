@@ -54,7 +54,7 @@ void DialClass::handleKeypadDialog() {
   endy=screenHeight - (screenHeight-height) / 2;
   
   // dialog black background
-  GD.ColorA(210);
+  GD.ColorA(0xff);
   GD.ColorRGB(0x000000);
   GD.Begin(RECTS);
   GD.Vertex2ii(startx, starty); 

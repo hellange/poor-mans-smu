@@ -155,7 +155,8 @@ void setup()
 }
 
 void voltagePanel(int x, int y) {
-  GD.ColorA(70);
+  //GD.ColorA(70);
+  /*
   GD.Begin(LINE_STRIP);
   GD.LineWidth(32);
   GD.ColorRGB(0,255,150);
@@ -171,6 +172,7 @@ void voltagePanel(int x, int y) {
   GD.ColorRGB(00,00,00);
   GD.Vertex2ii(x+56, y+20);
   GD.Vertex2ii(x+260, y+50);
+  */
 
   // heading
   GD.ColorRGB(200,255,200);
@@ -234,18 +236,27 @@ void renderDeviation(int x, int y, float rawM, float setM, bool cur) {
   }
 }
 
-void renderValue(int x,int y,float val) {
+void renderValue(int x,int y,float val, int size = 0) {
 
-    //int font = 26;
-    //int fontWidth = 10;
-    int font = 28;
-    int fontWidth = 15;
-    //int font = 29;
-    //int fontWidth = 18;
-    //int font = 30;
-    //int fontWidth = 21;
-    //int font = 31;
-    //int fontWidth = 29;
+    int font = 26;
+    int fontWidth = 10; 
+    
+    if (size == 1) {
+       font = 28;
+       fontWidth = 15;
+    }
+    else if (size == 2) {
+       font = 29;
+       fontWidth = 18;
+    }
+    else if (size == 3) {
+       font = 30;
+       fontWidth = 21;
+    }
+    else if (size == 4) {
+       font = 31;
+       fontWidth = 29;
+    }
     
     int v, mV, uV;
     bool neg;
@@ -282,15 +293,17 @@ void renderValue(int x,int y,float val) {
 
 void renderGraph(int x,int y) {
 
-    GD.ColorRGB(255,255,255); // yellow
+    GD.ColorRGB(0xffffff); 
 
     float span = V_STATS.visibleMax - V_STATS.visibleMin;
-    renderValue(x, y, V_STATS.visibleMax);
-    renderValue(x, y+50, V_STATS.visibleMax - (span/3.0));
-    renderValue(x, y+100, V_STATS.visibleMax- 2.0*(span/3.0));
-    renderValue(x, y+150, V_STATS.visibleMin);
+    renderValue(x, y, V_STATS.visibleMax, 1);
+    renderValue(x, y+50, V_STATS.visibleMax - (span/3.0), 1);
+    renderValue(x, y+100, V_STATS.visibleMax- 2.0*(span/3.0), 1);
+    renderValue(x, y+150, V_STATS.visibleMin, 1);
 
     y = y + 15;
+
+    GD.ColorRGB(COLOR_VOLT); // yellow
 
     V_STATS.renderTrend(x + 180, y, false);
 
@@ -304,6 +317,7 @@ void renderGraph(int x,int y) {
     }
 
     GD.LineWidth(6);
+    GD.ColorRGB(0xffffff); 
 
     GD.Begin(LINE_STRIP);
     GD.Vertex2ii(left, y); 
@@ -332,7 +346,7 @@ void renderVoltageTrend() {
     int x = 613;
     int y = 26;
     
-    GD.ColorA(255);
+    //GD.ColorA(255);
     GD.ColorRGB(255,255,255);
 
     int v, mV, uV;
@@ -365,11 +379,11 @@ void renderVoltageTrend() {
 
 
     GD.Begin(RECTS);
-    GD.ColorA(200); // some transparance
+    //GD.ColorA(200); // some transparance
     GD.ColorRGB(0); 
     GD.Vertex2ii(x+30, y+60);
     GD.Vertex2ii(x+140, y+80);
-    GD.ColorA(255); // No transparent
+    //GD.ColorA(255); // No transparent
     GD.ColorRGB(COLOR_VOLT);
     //DIGIT_UTIL.separate(&v, &mV, &uV, &neg, V_STATS.span);
     GD.cmd_text(x+25, y+63, 26, 0, "Span:");
@@ -388,6 +402,9 @@ void renderVoltageTrend() {
 }
 
 void currentPanel(int x, int y) {
+  if (x >= 800) {
+    return;
+  }
   GD.Begin(LINE_STRIP);
   GD.LineWidth(32);
   GD.ColorRGB(50,50,0); // yellow
@@ -421,10 +438,10 @@ void currentPanel(int x, int y) {
   GD.ColorRGB(0,0,0);
 
   GD.cmd_fgcolor(0xaaaa90);  
-  GD.Tag(BUTTON_VOLT_SET);
+  GD.Tag(BUTTON_CUR_SET);
   GD.cmd_button(x+20,y+130,90,58,30,0,"LIM"); 
   GD.cmd_button(x+350,y+130,90,58,30,0,"AUTO");
-
+  
   renderDeviation(x+667,y+130, rawMa, setMa, true);
 
 }
@@ -486,15 +503,18 @@ void renderDisplay() {
   } else if (scroll >= 0) {
     scrollDir = 0;
   }
-  
-  currentPanel(scroll + 800,y+260);
-  renderGraph(scroll, 260);
-  
-  GD.Tag(101);
+
+    GD.Tag(101);
   GD.Begin(RECTS);
   GD.ColorRGB(00,00,00);
   GD.Vertex2ii(0,260);
   GD.Vertex2ii(800, 480);
+
+  
+  currentPanel(scroll + 800,y+260);
+  renderGraph(scroll, 260);
+  
+
 
   
 
@@ -531,18 +551,24 @@ void loop()
   //SPI.setClockDivider(SPI_CLOCK_DIV2);
   GD.resume();
 
-  if (GD.inputs.tag == BUTTON_VOLT_SET) {
-    DIAL.open(BUTTON_VOLT_SET, closeCallback);
-  } else if (GD.inputs.tag == BUTTON_CUR_SET) {
-    DIAL.open(BUTTON_CUR_SET, closeCallback);
+  if (!gestureDetected) {
+    if (GD.inputs.tag == BUTTON_VOLT_SET) {
+      DIAL.open(BUTTON_VOLT_SET, closeCallback);
+    } else if (GD.inputs.tag == BUTTON_CUR_SET) {
+      DIAL.open(BUTTON_CUR_SET, closeCallback);
+    }
   }
+
 
   if (currentMillis - previousMillis >= interval) {
     previousMillis = currentMillis;
-    GD.ClearColorRGB(0x000000); // black
+    //GD.ClearColorRGB(0x000000); // black
     GD.get_inputs();
     GD.Clear();
 
+    if (DIAL.isDialogOpen()) {
+      GD.ColorA(0x44);
+    }
     renderDisplay();
     // Serial.print("GD.inputs ");  
     // Serial.println(GD.inputs.tag);  
@@ -562,7 +588,7 @@ void loop()
   int touchX = GD.inputs.x;
 
 if (GD.inputs.tag == 101) {
-  if (gestureDetected == false && touchX > 0 && touchX - oldTouchX < -5 && scrollDir == 0) {
+  if (gestureDetected == false && touchX > 0 && touchX - oldTouchX < -20 && scrollDir == 0) {
     if (++times >= 2) {
       //Serial.println("scroll left");
       scrollDir = -1;
@@ -570,7 +596,7 @@ if (GD.inputs.tag == 101) {
       times = 0;
     }
   }
-  else if (gestureDetected == false && touchX > 0 && touchX - oldTouchX > 5 && scrollDir == 0) {
+  else if (gestureDetected == false && touchX > 0 && touchX - oldTouchX > 20 && scrollDir == 0) {
     if (++times >= 2) {
       //Serial.println("scroll right");
       scrollDir = 1;
