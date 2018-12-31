@@ -564,6 +564,7 @@ void detectGestures() {
     gestOldX = GD.inputs.x;  
   } else {
     gestureDetected = GEST_NONE;
+    gestDuration = 0;
   }
 
 }
