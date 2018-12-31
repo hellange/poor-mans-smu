@@ -1,19 +1,18 @@
-/************************************************
- *  Poor mans smu
+/****************************************************************
  *  
- *  more to come...
+ *  Initial GUI prototype for
+ *  P O O R  M A N ' s  S M U
+ *  
+ *  by Helge Langehaug (2018, 2019)
  *  
  *  
- *  
- *  External library:
- *  
- *  FT81x graphics driver is initially copied (2016) from 
+ *  FT81x graphics driver/library copied (2016) from 
  *  jamesbowman / gd2-lib
  *  (https://github.com/jamesbowman/gd2-lib.git)
- *  -compile om 8266
- *  -support 800x480 pixels for all graphics
+ *  Reduced and modified to work with 800x640 displays 
+ *  by Helge Langehaug
  * 
- ************************************************/
+ *****************************************************************/
 
 #include <SPI.h>
 #include "GD2.h"
@@ -452,14 +451,15 @@ void scrollIndication(int y, int activeWidget) {
 
 
 void showWidget(int widgetNo, int scroll) {
+  int yPos = 260;
   if (widgetNo == 0) {
-       renderGraph(scroll, 260);
+       renderGraph(scroll, yPos);
   } 
   else if (widgetNo == 1) {
-       currentPanel(scroll, 260);
+       currentPanel(scroll, yPos);
   }
   else if (widgetNo == 2) {
-       voltagePanel(scroll, 260);
+       voltagePanel(scroll, yPos);
   }
 
 }

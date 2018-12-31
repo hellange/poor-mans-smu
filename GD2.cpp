@@ -1,7 +1,11 @@
-// 
-// Gameduino2 code, minimized to include only what I use and to be possible
-// to compile for NodeMCU
-//
+/*
+ * Copyright (C) 2013-2016 by James Bowman <jamesb@excamera.com>
+ * Gameduino 2 library for Arduino, Arduino Due, Raspberry Pi.
+ *
+ * Minimized and modified to work with 800x640 display by Helge Langehaug (2017)
+ *
+ */
+
 #include <Arduino.h>
 #include "SPI.h"
 #if !defined(__SAM3X8E__)
