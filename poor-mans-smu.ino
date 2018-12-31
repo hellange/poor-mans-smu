@@ -236,13 +236,7 @@ void voltagePanel(int x, int y) {
   GD.ColorRGB(200,255,200);
   GD.cmd_text(x+56, y+16 ,   29, 0, "SOURCE VOLTAGE");
 
-  //float rawMv = DACVout; // TODO: Dont use global
-  //float rawMv = SMU[0].MeasureVoltage() * 1000.0;
-  float rawMv = SMU[0].MeasureVoltage() * 1000.0;
-  //float rawMv = 56.233;
-  V_STATS.addSample(rawMv);
- 
-  VOLT_DISPLAY.renderMeasured(x + 17,y , rawMv);
+  VOLT_DISPLAY.renderMeasured(x + 17,y , V_STATS.rawMv);
   VOLT_DISPLAY.renderSet(x + 120, y+150, setMv);
 
   GD.ColorRGB(0,0,0);
@@ -250,11 +244,11 @@ void voltagePanel(int x, int y) {
   GD.cmd_fgcolor(0xaaaa90);  
   GD.Tag(BUTTON_VOLT_SET);
   GD.cmd_button(x+20,y+143,90,58,30,0,"SET");
-    GD.Tag(999);
+  GD.Tag(999);
 
   GD.cmd_button(x+350,y+143,90,58,30,0,"AUTO");
   
-  renderDeviation(x+667,y+147, rawMv, setMv, false);
+  renderDeviation(x+667,y+147, V_STATS.rawMv, setMv, false);
 
   GD.ColorRGB(0xffffff);
 
@@ -485,18 +479,16 @@ void renderDisplay() {
 
   if (gestureDetected == GEST_MOVE_LEFT) {
     if (activeWidget == 2) {
-          Serial.println("reached right end");
-
+      Serial.println("reached right end");
     } else {
-       scrollDir = -1;
+      scrollDir = -1;
     }
   } 
   else if (gestureDetected == GEST_MOVE_RIGHT) {
- if (activeWidget == 0) {
-          Serial.println("reached left end");
-
+    if (activeWidget == 0) {
+      Serial.println("reached left end");
     } else {
-       scrollDir = 1;
+      scrollDir = 1;
     }
   } 
   
@@ -608,6 +600,10 @@ void loop()
     if (DIAL.isDialogOpen()) {
       GD.ColorA(0x44);
     }
+
+    float rawMv = SMU[0].MeasureVoltage() * 1000.0;
+    V_STATS.addSample(rawMv);
+  
     renderDisplay();
 
     if (DIAL.isDialogOpen()) {

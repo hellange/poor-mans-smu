@@ -9,6 +9,7 @@ private:
 public:
   void renderTrend(int x, int y);
   void addSample(float rawMv);
+  float rawMv;
   float minimum;
   float maximum;
   float visibleMax;

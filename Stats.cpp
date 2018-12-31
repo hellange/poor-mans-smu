@@ -1,8 +1,9 @@
 #include "Stats.h"
 #include "GD2.h"
 
-void StatsClass::addSample(float rawMv) {
-      value[endPtr] = rawMv;
+void StatsClass::addSample(float rawMv_) {
+      value[endPtr] = rawMv_;
+      rawMv = rawMv_; 
 
       endPtr ++;
       if (endPtr > nrOfTrendPoints - 1) {
@@ -10,7 +11,7 @@ void StatsClass::addSample(float rawMv) {
       } 
       minimum = 100000.0;  // +100V
       maximum = -100000.0; // -100V
-      updateMinMax(rawMv);
+      updateMinMax(rawMv_);
     
       span = maximum - minimum;
 }
@@ -80,7 +81,6 @@ void StatsClass::renderTrend(int x, int y) {
       GD.Vertex2ii(x, y + (viewHeight)/2 + 5); 
       GD.Vertex2ii(x, y + bottom - 2);
       GD.Vertex2ii(x+5, y + bottom); 
-
 
 }
 
