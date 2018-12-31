@@ -271,8 +271,7 @@ void renderValue(int x,int y,float val, int size = 0) {
       GD.cmd_text(x, y, 28, 0,  "-");
     }
 
-    
-    x=x+fontWidth;
+    x = x + fontWidth;
     if (v>0) {
       GD.cmd_number(x, y, font, 2, v);
       x = x + fontWidth*1.7;
@@ -295,55 +294,36 @@ void renderValue(int x,int y,float val, int size = 0) {
 
 }
 
-
-
 void renderGraph(int x,int y) {
 
     GD.ColorRGB(0xffffff); 
 
-    float span = V_STATS.visibleMax - V_STATS.visibleMin;
-    renderValue(x, y, V_STATS.visibleMax, 1);
-    renderValue(x, y+50, V_STATS.visibleMax - (span/3.0), 1);
-    renderValue(x, y+100, V_STATS.visibleMax- 2.0*(span/3.0), 1);
-    renderValue(x, y+150, V_STATS.visibleMin, 1);
+    float span = V_STATS.maximum - V_STATS.minimum;
+    int lines = 4;
+    int height = 150;
 
-    y = y + 15;
-
-    GD.ColorRGB(COLOR_VOLT); // yellow
-
-    V_STATS.renderTrend(x + 180, y, false);
-
-    int left = x + 150;
-    if (left > 800) {
-      return;
-    }
-    int right = x + 800;
-    if (right > 800) {
-      right = 800;
+    GD.ColorRGB(0xffffff);
+    GD.LineWidth(4);
+    for (int i=0;i<lines;i++) {
+       renderValue(x, 15 + y + i*height/(lines-1), V_STATS.visibleMax - (i * span/(lines-1)), 0);
     }
 
-    GD.LineWidth(6);
-    GD.ColorRGB(0xffffff); 
+    int farRight = x + 790;
+    if (farRight > 790) {
+      farRight = 790;
+    }
+    GD.LineWidth(3);
+     for (int i=0;i<lines;i++) {
+       GD.Begin(LINE_STRIP);
+       GD.Vertex2ii(x+100, y+20+i*height/(lines-1)); 
+       GD.Vertex2ii(farRight, y+20+i*height/(lines-1)); 
+    }
+   
+    GD.ColorRGB(COLOR_VOLT);
 
-    GD.Begin(LINE_STRIP);
-    GD.Vertex2ii(left, y); 
-    GD.Vertex2ii(right, y); 
+    renderValue(x+70, 15 + y + height/2, span, 0);
+    V_STATS.renderTrend(x + 180, y+20, false);
 
-    GD.Begin(LINE_STRIP);
-    //GD.LineWidth(2);
-    GD.Vertex2ii(left, y+50); 
-    GD.Vertex2ii(right, y+50); 
-
-    GD.Begin(LINE_STRIP);
-    //GD.LineWidth(2);
-    GD.Vertex2ii(left, y+100); 
-    GD.Vertex2ii(right, y+100); 
-
-    GD.Begin(LINE_STRIP);
-    //GD.LineWidth(2);
-    GD.Vertex2ii(left, y+150); 
-    GD.Vertex2ii(right, y+150); 
-    
 }
 
 void renderVoltageTrend() {
@@ -414,20 +394,7 @@ void currentPanel(int x, int y) {
   GD.Begin(LINE_STRIP);
   GD.LineWidth(32);
   GD.ColorRGB(50,50,0); // yellow
-  /*
-  GD.ColorA(230);
-  GD.Vertex2ii(x+10, y+20); 
-  GD.Vertex2ii(x+790, y+20);
-  GD.Vertex2ii(x+790, y+200);
-  GD.Vertex2ii(x+10, y+200);
-  GD.Vertex2ii(x+10, y+20);
-
-  GD.Begin(RECTS);
-  GD.ColorA(255);
-  GD.ColorRGB(00,00,00);
-  GD.Vertex2ii(x+56, y);
-  GD.Vertex2ii(x+280, y+30);
-*/
+ 
   // heading
   GD.ColorRGB(232,202,158);
   GD.cmd_text(x+56, y+5, 29, 0, "MEASURE CURRENT");
@@ -437,10 +404,7 @@ void currentPanel(int x, int y) {
 
   CURRENT_DISPLAY.renderMeasured(x + 17, y, rawMa);
   CURRENT_DISPLAY.renderSet(x+120, y+135, setMa);
-
-  //
-  // C_STATS.addSample(rawMa);
-
+  
   GD.ColorRGB(0,0,0);
 
   GD.cmd_fgcolor(0xaaaa90);  
@@ -466,12 +430,12 @@ void drawBall(int x, int y, bool set) {
   GD.Vertex2ii(x, y);
 }
 
-void scrollIndication(int x, int y) {
-  drawBall(x,y,false);
-  drawBall(x+30,y,false);
-  drawBall(x+60,y,true);
-  drawBall(x+90,y,false);
-  drawBall(x+120,y,false);
+void scrollIndication(int y, int activeWidget) {
+  int noOfWidgets = 3;
+  int x = 400 - 30 * noOfWidgets/2;
+  for (int i = 0; i < noOfWidgets; i++) {
+    drawBall(x+ i*30,y,activeWidget == i);
+  }
 }
 
   float avgVout; //TODO: fix global...
@@ -479,12 +443,24 @@ void scrollIndication(int x, int y) {
 
 
 
+void showWidget(int widgetNo, int scroll) {
+  if (widgetNo == 0) {
+       renderGraph(scroll, 260);
+  } 
+  else if (widgetNo == 1) {
+       currentPanel(scroll, 260);
+  }
+  else if (widgetNo == 2) {
+       currentPanel(scroll, 260);
+  }
+
+}
 
 int scroll = 0;
 int scrollDir = 0;
 
 int gestureDetected = GEST_NONE;
-
+int activeWidget = 0;
 void renderDisplay() {
  
   int x = 0;
@@ -494,48 +470,61 @@ void renderDisplay() {
   renderVoltageTrend();
 
   if (gestureDetected == GEST_MOVE_LEFT) {
-    scrollDir = -1;
+    if (activeWidget == 2) {
+          Serial.println("reached right end");
+
+    } else {
+       scrollDir = -1;
+    }
   } 
   else if (gestureDetected == GEST_MOVE_RIGHT) {
-    scrollDir = 1;
+ if (activeWidget == 0) {
+          Serial.println("reached left end");
+
+    } else {
+       scrollDir = 1;
+    }
   } 
-
-  if (scroll <= -800 && scrollDir == -1) {
-    Serial.println("reached left end");
-  }
-  else if (scroll >= 0 && scrollDir == 1) {
-    Serial.println("reached right end");
-  } else {
-      scroll = scroll + scrollDir * 100;
-
-  }
   
+  scroll = scroll + scrollDir * 100;
   
-  if (scroll <= -800) {
+  if (scroll <= -800 && scrollDir != 0) {
+    activeWidget ++;
     scrollDir = 0;
-  } else if (scroll >= 0) {
+    scroll = 0;
+  } else if (scroll >= 800 && scrollDir != 0) {
+    activeWidget --;
     scrollDir = 0;
+    scroll = 0;
   }
 
-    GD.Tag(101);
+  GD.Tag(101);
   GD.Begin(RECTS);
   GD.ColorRGB(00,00,00);
   GD.Vertex2ii(0,260);
   GD.Vertex2ii(800, 480);
 
-  
-  currentPanel(scroll + 800,y+260);
-  renderGraph(scroll, 260);
-  
 
-
-  
-
-
-  scrollIndication(340,250);
+  if (activeWidget >= 0) {
+    if (scrollDir == 0) {
+      showWidget(activeWidget, 0);
+    }
+    else if (scrollDir == -1) {
+      showWidget(activeWidget, scroll); 
+      showWidget(activeWidget + 1, scroll + 800);
+    } 
+    else if (scrollDir == 1) {
+      showWidget(activeWidget - 1, scroll - 800);
+      showWidget(activeWidget, scroll + 0);
+    } 
     
+  }
+  
+  scrollIndication(250, activeWidget);
 
 }
+
+
 
 unsigned long previousMillis = 0; 
 unsigned long previousMillisSlow = 0; 

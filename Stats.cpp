@@ -37,8 +37,17 @@ void StatsClass::renderTrend(int x, int y , bool small) {
     }
     visibleMax = maximum;
     visibleMin = minimum;
+    // dont show spans smaller that a given value
+    float minimumVisibleSpan = 1.0;
+    float span = maximum - minimum;
+    if (span < minimumVisibleSpan) {
+      visibleMax = visibleMax + (minimumVisibleSpan-span)/2.0;
+      visibleMin = visibleMin - (minimumVisibleSpan-span)/2.0;
+    }
 
     uispan = visibleMax - visibleMin;
+
+    
 
     GD.Begin(LINE_STRIP);
     int multiplyBy = 1;
@@ -67,6 +76,20 @@ void StatsClass::renderTrend(int x, int y , bool small) {
         i=0;
       }  
     }
+
+    float top = viewHeight * ( (visibleMax - maximum) / uispan);
+    float bottom = viewHeight * ( (visibleMax - minimum) / uispan);
+      GD.Begin(LINE_STRIP);
+      GD.ColorRGB(0xffff00);
+
+      GD.Vertex2ii(x+5, y + top); 
+      GD.Vertex2ii(x, y + top + 2); 
+      GD.Vertex2ii(x, y + (viewHeight)/2 - 5); 
+      GD.Vertex2ii(x-5, y + (viewHeight)/2 ); 
+      GD.Vertex2ii(x, y + (viewHeight)/2 + 5); 
+      GD.Vertex2ii(x, y + bottom - 2);
+      GD.Vertex2ii(x+5, y + bottom); 
+
 
 }
 
