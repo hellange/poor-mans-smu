@@ -7,7 +7,7 @@ void StatsClass::addSample(float rawMv_) {
       rawMv = rawMv_; 
 
       samplesBeforeStore ++;
-      if (samplesBeforeStore++ < 5) {
+      if (samplesBeforeStore++ < 50) {
         return;
       } else {
         samplesBeforeStore = 0;
