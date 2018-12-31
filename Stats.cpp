@@ -1,9 +1,20 @@
 #include "Stats.h"
 #include "GD2.h"
 
+int samplesBeforeStore = 10000;
+
 void StatsClass::addSample(float rawMv_) {
-      value[endPtr] = rawMv_;
       rawMv = rawMv_; 
+
+      samplesBeforeStore ++;
+      if (samplesBeforeStore++ < 5) {
+        return;
+      } else {
+        samplesBeforeStore = 0;
+      }
+      
+      value[endPtr] = rawMv_;
+
 
       endPtr ++;
       if (endPtr > nrOfTrendPoints - 1) {

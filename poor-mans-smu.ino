@@ -137,19 +137,19 @@ void setup()
   GD.begin(0);
   Serial.println("Done!");
 
-//   i2c_enable(); //Set Linduino default I2C speed instead of Wire default settings.
-  /*
-    pinMode(QUIKEVAL_MUX_MODE_PIN, OUTPUT);   //Set Linduino MUX pin to disable the I2C MUX. Otherwise it can cause unpredictable behavior.
-    digitalWrite(QUIKEVAL_MUX_MODE_PIN, LOW);
+    //i2c_enable(); //Set Linduino default I2C speed instead of Wire default settings.
+    //pinMode(QUIKEVAL_MUX_MODE_PIN, OUTPUT);   //Set Linduino MUX pin to disable the I2C MUX. Otherwise it can cause unpredictable behavior.
+    //digitalWrite(QUIKEVAL_MUX_MODE_PIN, LOW);
   
-    SMU[0].ReadCalibration();
+    //SMU[0].ReadCalibration();
+    
     setMv = 0.0;
     setMa = 10.0;
     SMU[0].fltSetCommitCurrentSource(setMa / 1000.0,_SOURCE_AND_SINK);
     SMU[0].fltSetCommitVoltageSource(setMv / 1000.0);
-    SMU[0].EnableOutput();
+    //SMU[0].EnableOutput();
 
-*/
+
 
  
   GD.cmd_romfont(1, 34); // put FT81x font 34 in slot 1
@@ -184,7 +184,7 @@ void renderValue(int x,int y,float val, int size = 0) {
     bool neg;
     DIGIT_UTIL.separate(&v, &mV, &uV, &neg, val);
     if(neg) {
-      GD.cmd_text(x, y, 28, 0,  "-");
+      GD.cmd_text(x, y, font, 0,  "-");
     }
 
     x = x + fontWidth;
@@ -571,7 +571,6 @@ void detectGestures() {
 unsigned long previousMillis = 0; 
 unsigned long previousMillisSlow = 0; 
 const long interval = 1; // should it account for time taken to perform ADC sample ?
-
 void loop()
 {
 
