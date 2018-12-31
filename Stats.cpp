@@ -27,8 +27,7 @@ void StatsClass::updateMinMax(float rawMv) {
       }
 }
 
-void StatsClass::renderTrend(int x, int y , bool small) {  
-
+void StatsClass::renderTrend(int x, int y) {  
     
     int viewHeight;
 
@@ -46,26 +45,17 @@ void StatsClass::renderTrend(int x, int y , bool small) {
     }
 
     uispan = visibleMax - visibleMin;
-
     
+    int multiplyBy = 7;
+    viewHeight = 150;
 
     GD.Begin(LINE_STRIP);
-    int multiplyBy = 1;
-    if (!small) {
-      multiplyBy = 7;
-      GD.LineWidth(15);
-      viewHeight = 150;
-    } else {
-      GD.LineWidth(4);
-      viewHeight = 45;
-    }
-    
+    GD.LineWidth(30);
+
     int i = endPtr;
  
     for (int pos=0; pos<nrOfTrendPoints;pos++) { 
-
       float height = viewHeight * ( (visibleMax - value[i]) / uispan);
-
       int xpos = x + pos*(1+multiplyBy);
       if (xpos>800) {
         return;
@@ -80,6 +70,7 @@ void StatsClass::renderTrend(int x, int y , bool small) {
     float top = viewHeight * ( (visibleMax - maximum) / uispan);
     float bottom = viewHeight * ( (visibleMax - minimum) / uispan);
       GD.Begin(LINE_STRIP);
+      GD.LineWidth(20);
       GD.ColorRGB(0xffff00);
 
       GD.Vertex2ii(x+5, y + top); 

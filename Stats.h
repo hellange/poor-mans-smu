@@ -7,7 +7,7 @@ private:
   void updateMinMax(float rawMv);
 
 public:
-  void renderTrend(int x, int y, bool small);
+  void renderTrend(int x, int y);
   void addSample(float rawMv);
   float minimum;
   float maximum;

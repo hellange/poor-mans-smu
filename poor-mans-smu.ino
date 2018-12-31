@@ -156,91 +156,8 @@ void setup()
   GD.cmd_romfont(1, 34); // put FT81x font 34 in slot 1
   //GD.wr(REG_PWM_DUTY, 10);
 
-  
-  
 }
 
-void voltagePanel(int x, int y) {
-  //GD.ColorA(70);
-  /*
-  GD.Begin(LINE_STRIP);
-  GD.LineWidth(32);
-  GD.ColorRGB(0,255,150);
-  GD.Vertex2ii(x+10, y+30); 
-  GD.Vertex2ii(x+790, y+30);
-  GD.Vertex2ii(x+790, y+210);
-  GD.Vertex2ii(x+10, y+210);
-  GD.Vertex2ii(x+10, y+30);
-
-  // clear area behind heading
-  GD.ColorA(255);
-  GD.Begin(RECTS);
-  GD.ColorRGB(00,00,00);
-  GD.Vertex2ii(x+56, y+20);
-  GD.Vertex2ii(x+260, y+50);
-  */
-
-  // heading
-  GD.ColorRGB(200,255,200);
-  GD.cmd_text(x+56, y+16 ,   29, 0, "SOURCE VOLTAGE");
-
-  //float rawMv = DACVout; // TODO: Dont use global
-  //float rawMv = SMU[0].MeasureVoltage() * 1000.0;
-  float rawMv = SMU[0].MeasureVoltage() * 1000.0;
-  //float rawMv = 56.233;
-  V_STATS.addSample(rawMv);
- 
-  VOLT_DISPLAY.renderMeasured(x + 17,y , rawMv);
-  VOLT_DISPLAY.renderSet(x + 120, y+150, setMv);
-
-  GD.ColorRGB(0,0,0);
-
-  GD.cmd_fgcolor(0xaaaa90);  
-  GD.Tag(BUTTON_VOLT_SET);
-  GD.cmd_button(x+20,y+143,90,58,30,0,"SET"); 
-  GD.cmd_button(x+350,y+143,90,58,30,0,"AUTO");
-  
-
-  renderDeviation(x+667,y+147, rawMv, setMv, false);
-}
-
-void renderDeviation(int x, int y, float rawM, float setM, bool cur) {
-  if (cur) {
-     //Special handling: set current must currently be positive even if sink/negative.
-     //                  This give error when comparing negative measured and positive set.
-     //                  Use absolute values to give "correct" comparision...
-     setM = abs(setM);
-     rawM = abs(rawM);
-  }
-  float devPercent = abs(100.0 * ((setM - rawM) / setM));
-
-  GD.ColorRGB(200,255,200);
-  GD.cmd_text(x, y, 27, 0, "Deviation");
-  if (cur) {
-    GD.ColorRGB(COLOR_CURRENT);
-  } else {
-        GD.ColorRGB(COLOR_VOLT);
-  }
-  if (setM != 0.0) {
-    if (devPercent < 1.0) {
-      GD.cmd_text(x, y+16, 30, 0, "0.");
-      GD.cmd_number(x+30, y+16, 30, 3, devPercent * 1000.0);
-      GD.cmd_text(x+30+50, y+16, 30, 0, "%");
-    } else if (devPercent >= 10.0){
-      if (!cur) {
-        GD.ColorRGB(255,0,0); // RED
-      }
-      GD.cmd_text(x, y+16, 30, 0, ">=10%");
-    } else if (devPercent >= 1.0 && devPercent <10.0){
-      int whole = (int)devPercent;
-      //GD.cmd_text(x, y+16, 30, 0, "0.");
-      GD.cmd_number(x, y+16, 30, 1, whole );
-      GD.cmd_text(x+20, y+16, 30, 0, ".");
-      GD.cmd_number(x+30, y+16, 30, 2, (devPercent - (float)whole) * 100.0);
-      GD.cmd_text(x+65, y+16, 30, 0, "%");
-    }
-  }
-}
 
 void renderValue(int x,int y,float val, int size = 0) {
 
@@ -294,6 +211,95 @@ void renderValue(int x,int y,float val, int size = 0) {
 
 }
 
+
+void voltagePanel(int x, int y) {
+  //GD.ColorA(70);
+  /*
+  GD.Begin(LINE_STRIP);
+  GD.LineWidth(32);
+  GD.ColorRGB(0,255,150);
+  GD.Vertex2ii(x+10, y+30); 
+  GD.Vertex2ii(x+790, y+30);
+  GD.Vertex2ii(x+790, y+210);
+  GD.Vertex2ii(x+10, y+210);
+  GD.Vertex2ii(x+10, y+30);
+
+  // clear area behind heading
+  GD.ColorA(255);
+  GD.Begin(RECTS);
+  GD.ColorRGB(00,00,00);
+  GD.Vertex2ii(x+56, y+20);
+  GD.Vertex2ii(x+260, y+50);
+  */
+
+  // heading
+  GD.ColorRGB(200,255,200);
+  GD.cmd_text(x+56, y+16 ,   29, 0, "SOURCE VOLTAGE");
+
+  //float rawMv = DACVout; // TODO: Dont use global
+  //float rawMv = SMU[0].MeasureVoltage() * 1000.0;
+  float rawMv = SMU[0].MeasureVoltage() * 1000.0;
+  //float rawMv = 56.233;
+  V_STATS.addSample(rawMv);
+ 
+  VOLT_DISPLAY.renderMeasured(x + 17,y , rawMv);
+  VOLT_DISPLAY.renderSet(x + 120, y+150, setMv);
+
+  GD.ColorRGB(0,0,0);
+
+  GD.cmd_fgcolor(0xaaaa90);  
+  GD.Tag(BUTTON_VOLT_SET);
+  GD.cmd_button(x+20,y+143,90,58,30,0,"SET"); 
+  GD.cmd_button(x+350,y+143,90,58,30,0,"AUTO");
+  
+  renderDeviation(x+667,y+147, rawMv, setMv, false);
+
+  renderValue(x+620, 15 + y + 45, V_STATS.maximum, 1);
+  renderValue(x+620, 15 + y + 70, V_STATS.maximum - V_STATS.minimum, 1);
+  renderValue(x+620, 15 + y + 95, V_STATS.minimum, 1);
+
+}
+
+void renderDeviation(int x, int y, float rawM, float setM, bool cur) {
+  if (cur) {
+     //Special handling: set current must currently be positive even if sink/negative.
+     //                  This give error when comparing negative measured and positive set.
+     //                  Use absolute values to give "correct" comparision...
+     setM = abs(setM);
+     rawM = abs(rawM);
+  }
+  float devPercent = abs(100.0 * ((setM - rawM) / setM));
+
+  GD.ColorRGB(200,255,200);
+  GD.cmd_text(x, y, 27, 0, "Deviation");
+  if (cur) {
+    GD.ColorRGB(COLOR_CURRENT);
+  } else {
+    GD.ColorRGB(COLOR_VOLT);
+  }
+  if (setM != 0.0) {
+    if (devPercent < 1.0) {
+      GD.cmd_text(x, y+16, 30, 0, "0.");
+      GD.cmd_number(x+30, y+16, 30, 3, devPercent * 1000.0);
+      GD.cmd_text(x+30+50, y+16, 30, 0, "%");
+    } else if (devPercent >= 10.0){
+      if (!cur) {
+        GD.ColorRGB(255,0,0); // RED
+      }
+      GD.cmd_text(x, y+16, 30, 0, ">=10%");
+    } else if (devPercent >= 1.0 && devPercent <10.0){
+      int whole = (int)devPercent;
+      //GD.cmd_text(x, y+16, 30, 0, "0.");
+      GD.cmd_number(x, y+16, 30, 1, whole );
+      GD.cmd_text(x+20, y+16, 30, 0, ".");
+      GD.cmd_number(x+30, y+16, 30, 2, (devPercent - (float)whole) * 100.0);
+      GD.cmd_text(x+65, y+16, 30, 0, "%");
+    }
+  }
+}
+
+
+
 void renderGraph(int x,int y) {
 
     GD.ColorRGB(0xffffff); 
@@ -303,7 +309,6 @@ void renderGraph(int x,int y) {
     int height = 150;
 
     GD.ColorRGB(0xffffff);
-    GD.LineWidth(4);
     for (int i=0;i<lines;i++) {
        renderValue(x, 15 + y + i*height/(lines-1), V_STATS.visibleMax - (i * span/(lines-1)), 0);
     }
@@ -312,20 +317,22 @@ void renderGraph(int x,int y) {
     if (farRight > 790) {
       farRight = 790;
     }
-    GD.LineWidth(3);
-     for (int i=0;i<lines;i++) {
-       GD.Begin(LINE_STRIP);
-       GD.Vertex2ii(x+100, y+20+i*height/(lines-1)); 
-       GD.Vertex2ii(farRight, y+20+i*height/(lines-1)); 
+    GD.LineWidth(8);
+    for (int i=0;i<lines;i++) {
+      int yaxis = 23 + y + i*height/(lines - 1);
+      GD.Begin(LINE_STRIP);
+      GD.Vertex2ii(x+100, yaxis); 
+      GD.Vertex2ii(farRight, yaxis); 
     }
    
     GD.ColorRGB(COLOR_VOLT);
 
     renderValue(x+70, 15 + y + height/2, span, 0);
-    V_STATS.renderTrend(x + 180, y+20, false);
+    V_STATS.renderTrend(x + 180, y+23);
 
 }
 
+/*
 void renderVoltageTrend() {
 //  TODO make flexible....
 
@@ -386,7 +393,7 @@ void renderVoltageTrend() {
     GD.cmd_text(x, y+102, 26, 0,  "Min:");
     renderValue(x+25, y+102, V_STATS.visibleMin);
 }
-
+*/
 void currentPanel(int x, int y) {
   if (x >= 800) {
     return;
@@ -467,7 +474,7 @@ void renderDisplay() {
   int y = 0;
 
   voltagePanel(x,y);
-  renderVoltageTrend();
+  //renderVoltageTrend();
 
   if (gestureDetected == GEST_MOVE_LEFT) {
     if (activeWidget == 2) {
@@ -526,19 +533,6 @@ void renderDisplay() {
 
 
 
-unsigned long previousMillis = 0; 
-unsigned long previousMillisSlow = 0; 
-const long interval = 1; // should it account for time taken to perform ADC sample ?
-void loop2()
-{
-
-  GD.ClearColorRGB(0x103000);
-  GD.Clear();
-  GD.cmd_text(GD.w / 2, GD.h / 2, 31, OPT_CENTER, "Hello world 2");
-  GD.swap();  
-         delay(10000);
-
-}
 
 
 
@@ -574,6 +568,10 @@ void detectGestures() {
 
 }
 
+
+unsigned long previousMillis = 0; 
+unsigned long previousMillisSlow = 0; 
+const long interval = 1; // should it account for time taken to perform ADC sample ?
 
 void loop()
 {
