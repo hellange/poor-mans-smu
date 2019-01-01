@@ -10,7 +10,7 @@
 #include <Arduino.h>
 #include "SPI.h"
 #if !defined(__SAM3X8E__)
-//#include "EEPROM.h"
+#include "EEPROM.h"
 #endif
 #define VERBOSE       2
 #include "GD2.h"

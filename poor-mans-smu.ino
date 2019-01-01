@@ -25,7 +25,7 @@
 
 #include "Arduino.h"
 #include "Wire.h"
-#include "EasySMU2.h"
+#include "SMU_HAL_dummy.h"
 
 #define GEST_NONE 0
 #define GEST_MOVE_LEFT 1
@@ -46,8 +46,8 @@
 //!touchscreen I2C address
 #define I2C_FT6206_ADDR0    0x38
  
-EasySMU2 SMU[1] = {
-  EasySMU2()
+SMU_HAL_dummy SMU[1] = {
+  SMU_HAL_dummy()
 };
 
 
@@ -330,7 +330,7 @@ void renderVoltageTrend() {
     renderValue(x+25, y+102, V_STATS.visibleMin);
 }
 */
-void currentPanel(int x, int y) {
+void currentPanel(int x, int y, boolean overflow) {
   if (x >= 800) {
     return;
   }
@@ -338,14 +338,15 @@ void currentPanel(int x, int y) {
   GD.LineWidth(32);
   GD.ColorRGB(50,50,0); // yellow
  
-  // heading
-  GD.ColorRGB(232,202,158);
+  GD.ColorRGB(COLOR_CURRENT);
+  //GD.ColorRGB(232,202,158);
+ 
   GD.cmd_text(x+56, y+5, 29, 0, "MEASURE CURRENT");
 
   //float rawMa = 56.0 +  random(0, 199) / 1000.0;
   float rawMa = rawMa_glob; // SMU[0].MeasureCurrent() * 1000.0;
 
-  CURRENT_DISPLAY.renderMeasured(x + 17, y, rawMa);
+  CURRENT_DISPLAY.renderMeasured(x + 17, y, rawMa, overflow);
   CURRENT_DISPLAY.renderSet(x+120, y+135, setMa);
   
   GD.ColorRGB(0,0,0);
@@ -358,8 +359,6 @@ void currentPanel(int x, int y) {
 
   GD.cmd_button(x+350,y+130,90,58,30,0,"AUTO");
   
-  renderDeviation(x+667,y+130, rawMa, setMa, true);
-
 }
 
 void drawBall(int x, int y, bool set) {
@@ -395,7 +394,7 @@ void showWidget(int widgetNo, int scroll) {
        renderGraph(scroll, yPos);
   } 
   else if (widgetNo == 1) {
-       currentPanel(scroll, yPos);
+       currentPanel(scroll, yPos, SMU[0].Overflow());
   }
   else if (widgetNo == 2) {
        voltagePanel(scroll, yPos);

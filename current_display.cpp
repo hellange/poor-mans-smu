@@ -3,7 +3,7 @@
 #include "colors.h"
 #include "digit_util.h"
 
-void CurrentDisplayClass::renderMeasured(int x, int y, float rawMa) {
+void CurrentDisplayClass::renderMeasured(int x, int y, float rawMa, boolean overflow) {
 
   if (rawMa < 0.0f) {
     rawMa = 0.0f - rawMa;
@@ -21,7 +21,12 @@ void CurrentDisplayClass::renderMeasured(int x, int y, float rawMa) {
 //  GD.cmd_text(x+130+6-17, y+36 ,   1, 0, ".");
 //  GD.cmd_number(x+153+6-17, y+36 ,   1, 3, ma);
   
-  GD.ColorRGB(COLOR_CURRENT);
+  if (overflow) {
+    GD.ColorRGB(0xFF4500); //0xdd1120
+    
+  } else {
+    GD.ColorRGB(COLOR_CURRENT);
+  }
 
   if (a>0) {
 
@@ -61,6 +66,8 @@ void CurrentDisplayClass::renderSet(int x, int y, float rawMa) {
 //        GD.cmd_text(x, y, 31, 3, "+");
 //    }
   
+  GD.ColorRGB(COLOR_CURRENT);
+
   GD.cmd_number(x+25, y, 31, 1, a);
   GD.cmd_text(x+48, y, 31, 0, ".");
   GD.cmd_number(x+60, y, 31, 3, ma);
