@@ -25,11 +25,11 @@
 
 
 #include "Arduino.h"
-//#include "LT_I2C.h"
+#include "LT_I2C.h"
 #include "Wire.h"
-//#include "LTC2485.h"
-//#include "LTC2655.h"
-//#include "EasySMU.h"
+#include "LTC2485.h"
+#include "LTC2655.h"
+#include "EasySMU.h"
 #include "EasySMU2.h"
 
 
@@ -108,18 +108,25 @@
 #define I2C_FT6206_ADDR0    0x38
 
 #define _SOURCE_AND_SINK 99
-EasySMU2 SMU[1] = {
-      EasySMU2()
-};
 
-//EasySMU SMU[1] =
-//{
-//    EasySMU(I2C_Board0_EEPROM_ADDR0, I2C_Board0_LTC2655_LLL_ADDR0, I2C_Board0_LTC2485_Vout_LF_ADDR0, I2C_Board0_LTC2485_Iout_LH_ADDR0)
-//};
+// If not using the EasySMU board, comment out the next line. You will then use a dummy converter with some random noise added
+//#define EASYSMU
+
+#if EASYSMU
+EasySMU SMU[1] =
+{
+  EasySMU(I2C_Board0_EEPROM_ADDR0, I2C_Board0_LTC2655_LLL_ADDR0, I2C_Board0_LTC2485_Vout_LF_ADDR0, I2C_Board0_LTC2485_Iout_LH_ADDR0)
+};
+#else
+EasySMU2 SMU[1] = {
+  EasySMU2()
+};
+#endif
+
 
 StatsClass V_STATS;
 //StatsClass C_STATS;
-
+float rawMa_glob; // TODO: store in stats for analysis just as voltage
 
 float DACVout;  // TODO: Dont use global
 
@@ -137,18 +144,23 @@ void setup()
   GD.begin(0);
   Serial.println("Done!");
 
-    //i2c_enable(); //Set Linduino default I2C speed instead of Wire default settings.
-    //pinMode(QUIKEVAL_MUX_MODE_PIN, OUTPUT);   //Set Linduino MUX pin to disable the I2C MUX. Otherwise it can cause unpredictable behavior.
-    //digitalWrite(QUIKEVAL_MUX_MODE_PIN, LOW);
-  
-    //SMU[0].ReadCalibration();
+    #ifdef EASYSMU
+      i2c_enable(); //Set Linduino default I2C speed instead of Wire default settings.
+      pinMode(QUIKEVAL_MUX_MODE_PIN, OUTPUT);   //Set Linduino MUX pin to disable the I2C MUX. Otherwise it can cause unpredictable behavior.
+      digitalWrite(QUIKEVAL_MUX_MODE_PIN, LOW);
+      SMU[0].ReadCalibration();
+    #endif
+
     
     setMv = 0.0;
     setMa = 10.0;
     SMU[0].fltSetCommitCurrentSource(setMa / 1000.0,_SOURCE_AND_SINK);
     SMU[0].fltSetCommitVoltageSource(setMv / 1000.0);
-    //SMU[0].EnableOutput();
-
+    
+    
+    #ifdef EASYSMU
+    SMU[0].EnableOutput();
+    #endif
 
 
  
@@ -301,13 +313,13 @@ void renderGraph(int x,int y) {
 
     GD.ColorRGB(0xffffff); 
 
-    float span = V_STATS.maximum - V_STATS.minimum;
     int lines = 4;
     int height = 150;
+    float visibleSpan = V_STATS.visibleMax - V_STATS.visibleMin;
 
     GD.ColorRGB(0xffffff);
     for (int i=0;i<lines;i++) {
-       renderValue(x, 15 + y + i*height/(lines-1), V_STATS.visibleMax - (i * span/(lines-1)), 0);
+       renderValue(x, 15 + y + i*height/(lines-1), V_STATS.visibleMax - (i * visibleSpan/(lines-1)), 0);
     }
 
     int farRight = x + 790;
@@ -324,7 +336,7 @@ void renderGraph(int x,int y) {
    
     GD.ColorRGB(COLOR_VOLT);
 
-    renderValue(x+70, 15 + y + height/2, span, 0);
+    renderValue(x+70, 15 + y + height/2, V_STATS.maximum - V_STATS.minimum, 0);
     V_STATS.renderTrend(x + 180, y+23);
 
 }
@@ -404,7 +416,7 @@ void currentPanel(int x, int y) {
   GD.cmd_text(x+56, y+5, 29, 0, "MEASURE CURRENT");
 
   //float rawMa = 56.0 +  random(0, 199) / 1000.0;
-  float rawMa = SMU[0].MeasureCurrent() * 1000.0;
+  float rawMa = rawMa_glob; // SMU[0].MeasureCurrent() * 1000.0;
 
   CURRENT_DISPLAY.renderMeasured(x + 17, y, rawMa);
   CURRENT_DISPLAY.renderSet(x+120, y+135, setMa);
@@ -600,21 +612,14 @@ void loop()
       GD.ColorA(0x44);
     }
 
-    float rawMv = SMU[0].MeasureVoltage() * 1000.0;
-    V_STATS.addSample(rawMv);
+    
   
-    renderDisplay();
-
-    if (DIAL.isDialogOpen()) {
-      DIAL.checkKeypress();
-      DIAL.handleKeypadDialog();
-    }
-
-    GD.swap();    
-    GD.__end();
+   
 
 
-   /*
+
+
+   #ifdef ADS1220
     // change SPI mode for other spi devices ! Needed because the gd2 lib uses spi
     SPI.setDataMode(SPI_MODE1);
     if(DAC.checkDataAvilable() == true) {
@@ -632,11 +637,32 @@ void loop()
 
       V_STATS.addSample(DACVout);
 
-       delay(100);
     }
-   */
-      //delay(5);
+   #else
+     // Dont sample voltage and current while scrolling because polling is slow.
+     // TODO: Remove this limitation when sampling is based on interrupts.
+     if (scrollDir == 0) {
+       float rawMv = SMU[0].MeasureVoltage() * 1000.0;
+       V_STATS.addSample(rawMv);
 
+       // TODO: Store somewhere for analysis, just as voltage
+       rawMa_glob = SMU[0].MeasureCurrent() * 1000.0;
+     }
+
+
+   #endif
+
+
+    renderDisplay();
+
+    if (DIAL.isDialogOpen()) {
+      DIAL.checkKeypress();
+      DIAL.handleKeypadDialog();
+    }
+
+    
+    GD.swap();    
+    GD.__end();
   }
 }
 

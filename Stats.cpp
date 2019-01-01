@@ -1,16 +1,17 @@
 #include "Stats.h"
 #include "GD2.h"
 
-int samplesBeforeStore = 10000;
+int samplesCollected = 10000;
+int maxSamplesBeforeStore = 1;
 
 void StatsClass::addSample(float rawMv_) {
       rawMv = rawMv_; 
 
-      samplesBeforeStore ++;
-      if (samplesBeforeStore++ < 50) {
+      samplesCollected ++;
+      if (samplesCollected++ < maxSamplesBeforeStore) {
         return;
       } else {
-        samplesBeforeStore = 0;
+        samplesCollected = 0;
       }
       
       value[endPtr] = rawMv_;
@@ -43,13 +44,10 @@ void StatsClass::renderTrend(int x, int y) {
     
     int viewHeight;
 
-    if (x>800) {
-      return;
-    }
     visibleMax = maximum;
     visibleMin = minimum;
-    // dont show spans smaller that a given value
-    float minimumVisibleSpan = 1.0;
+    // set a minimum full span view så very small value changes will not appear too noisy
+    float minimumVisibleSpan = 0.500; 
     float span = maximum - minimum;
     if (span < minimumVisibleSpan) {
       visibleMax = visibleMax + (minimumVisibleSpan-span)/2.0;
