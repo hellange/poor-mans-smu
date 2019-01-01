@@ -267,10 +267,10 @@ void DialClass::renderInput(bool indicateError) {
       if (vol_cur_type == BUTTON_VOLT_SET) {
               GD.cmd_text(posx+10, posy,1, 0, voltDecade);
       } else {
-           strncpy(curDecade,"A",1);
-          if (strncmp(voltDecade,"uV",2)) {
+           strncpy(curDecade,"A ",2);
+          if (strncmp(voltDecade,"uV",2) == 0) {
             strncpy(curDecade,"uA",2);
-          } else if (strncmp(voltDecade,"mV",2)) {
+          } else if (strncmp(voltDecade,"mV",2) == 0) {
             strncpy(curDecade,"mA",2);
           }
           GD.cmd_text(posx+10, posy,1, 0, curDecade);
@@ -340,7 +340,7 @@ void DialClass::validate(double mv) {
   // Note that in the check below, mv is mv, independent
   // on which voltDecade is being show in the dislay
   
-  if (strncmp(voltDecade,"V",1)) {
+  if (strncmp(voltDecade,"V",1) == 0) {
     if (abs(mv) > 30000) {
       showError("Max voltage is 30V");
       return;
@@ -351,7 +351,7 @@ void DialClass::validate(double mv) {
     }
   }
 
-  else if (strncmp(voltDecade,"mV",2)) {
+  else if (strncmp(voltDecade,"mV",2) == 0) {
     if (abs(mv) > 30000) {
       showError("Max voltage is 30V");
       return;
@@ -362,7 +362,7 @@ void DialClass::validate(double mv) {
     }
   }
  
-  else if (strncmp(voltDecade,"uV",2)) {
+  else if (strncmp(voltDecade,"uV",2) == 0) {
     if (numberValue > 999) {
       showError("Max voltage in uV range is 999mV");
       return;
@@ -397,10 +397,10 @@ double DialClass::toMv() {
       dec++;
    }
  }
- if (strncmp(voltDecade,"V",1)) {
+ if (strncmp(voltDecade,"V",1) == 0) {
    sum=sum*1000;
  }
- if (strncmp(voltDecade,"uV",2)) {
+ if (strncmp(voltDecade,"uV",2) == 0) {
    sum=sum/1000;
  }
  return sum;
