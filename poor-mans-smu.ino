@@ -23,20 +23,15 @@
 #include "Stats.h"
 #include "digit_util.h"
 
-
 #include "Arduino.h"
-#include "LT_I2C.h"
 #include "Wire.h"
-#include "LTC2485.h"
-#include "LTC2655.h"
-#include "EasySMU.h"
 #include "EasySMU2.h"
-
 
 #define GEST_NONE 0
 #define GEST_MOVE_LEFT 1
 #define GEST_MOVE_RIGHT 2
 
+#define _SOURCE_AND_SINK 111
 
 //#include "PrintError.h"
 //#include "MasterAddressConstants.h"
@@ -47,81 +42,13 @@
 #define _PRINT_ERROR_NO_CALIBRATION_DATA_FOUND 3
 #define _PRINT_ERROR_FACTORY_CALIBRATION_RESTORE_FAILED_CATASTROPHICALLY
 
-//EEPROM functions take 8-bit address, which is inconsistent with all other code
-#define I2C_Board0_EEPROM_ADDR0    (0x51<<1)
-#define I2C_Board0_LTC2485_Iout_LH_ADDR0    0x15
-#define I2C_Board0_LTC2485_Iout_LH_Global    0x76
-#define I2C_Board0_LTC2485_Vout_LF_ADDR0    0x14
-#define I2C_Board0_LTC2485_Vout_LF_Global    0x76
-#define I2C_Board0_LTC2655_LLL_ADDR0    0x11
-#define I2C_Board0_LTC2655_LLL_Global    0x72
-#define I2C_Board1_EEPROM_ADDR0    (0x59<<1)
-#define I2C_Board1_LTC2485_Iout_LH_ADDR0    0x1D
-#define I2C_Board1_LTC2485_Iout_LH_Global    0x7E
-#define I2C_Board1_LTC2485_Vout_LF_ADDR0    0x1C
-#define I2C_Board1_LTC2485_Vout_LF_Global    0x7E
-#define I2C_Board1_LTC2655_LLL_ADDR0    0x19
-#define I2C_Board1_LTC2655_LLL_Global    0x7A
-#define I2C_Board2_EEPROM_ADDR0    (0x41<<1)
-#define I2C_Board2_LTC2485_Iout_LH_ADDR0    0x05
-#define I2C_Board2_LTC2485_Iout_LH_Global    0x66
-#define I2C_Board2_LTC2485_Vout_LF_ADDR0    0x04
-#define I2C_Board2_LTC2485_Vout_LF_Global    0x66
-#define I2C_Board2_LTC2655_LLL_ADDR0    0x01
-#define I2C_Board2_LTC2655_LLL_Global    0x62
-#define I2C_Board3_EEPROM_ADDR0    (0x49<<1)
-#define I2C_Board3_LTC2485_Iout_LH_ADDR0    0x0D
-#define I2C_Board3_LTC2485_Iout_LH_Global    0x6E
-#define I2C_Board3_LTC2485_Vout_LF_ADDR0    0x0C
-#define I2C_Board3_LTC2485_Vout_LF_Global    0x6E
-#define I2C_Board3_LTC2655_LLL_ADDR0    0x09
-#define I2C_Board3_LTC2655_LLL_Global    0x6A
-#define I2C_Board4_EEPROM_ADDR0    (0x71<<1)
-#define I2C_Board4_LTC2485_Iout_LH_ADDR0    0x35
-#define I2C_Board4_LTC2485_Iout_LH_Global    0x56
-#define I2C_Board4_LTC2485_Vout_LF_ADDR0    0x34
-#define I2C_Board4_LTC2485_Vout_LF_Global    0x56
-#define I2C_Board4_LTC2655_LLL_ADDR0    0x31
-#define I2C_Board4_LTC2655_LLL_Global    0x52
-#define I2C_Board5_EEPROM_ADDR0    (0x79<<1)
-#define I2C_Board5_LTC2485_Iout_LH_ADDR0    0x3D
-#define I2C_Board5_LTC2485_Iout_LH_Global    0x5E
-#define I2C_Board5_LTC2485_Vout_LF_ADDR0    0x3C
-#define I2C_Board5_LTC2485_Vout_LF_Global    0x5E
-#define I2C_Board5_LTC2655_LLL_ADDR0    0x39
-#define I2C_Board5_LTC2655_LLL_Global    0x5A
-#define I2C_Board6_EEPROM_ADDR0    (0x61<<1)
-#define I2C_Board6_LTC2485_Iout_LH_ADDR0    0x25
-#define I2C_Board6_LTC2485_Iout_LH_Global    0x46
-#define I2C_Board6_LTC2485_Vout_LF_ADDR0    0x24
-#define I2C_Board6_LTC2485_Vout_LF_Global    0x46
-#define I2C_Board6_LTC2655_LLL_ADDR0    0x21
-#define I2C_Board6_LTC2655_LLL_Global    0x42
-#define I2C_Board7_EEPROM_ADDR0    (0x69<<1)
-#define I2C_Board7_LTC2485_Iout_LH_ADDR0    0x2D
-#define I2C_Board7_LTC2485_Iout_LH_Global    0x4E
-#define I2C_Board7_LTC2485_Vout_LF_ADDR0    0x2C
-#define I2C_Board7_LTC2485_Vout_LF_Global    0x4E
-#define I2C_Board7_LTC2655_LLL_ADDR0    0x29
-#define I2C_Board7_LTC2655_LLL_Global    0x4A
+
 //!touchscreen I2C address
 #define I2C_FT6206_ADDR0    0x38
-
-#define _SOURCE_AND_SINK 99
-
-// If not using the EasySMU board, comment out the next line. You will then use a dummy converter with some random noise added
-#define EASYSMU
-
-#ifdef EASYSMU
-EasySMU SMU[1] =
-{
-  EasySMU(I2C_Board0_EEPROM_ADDR0, I2C_Board0_LTC2655_LLL_ADDR0, I2C_Board0_LTC2485_Vout_LF_ADDR0, I2C_Board0_LTC2485_Iout_LH_ADDR0)
-};
-#else
+ 
 EasySMU2 SMU[1] = {
   EasySMU2()
 };
-#endif
 
 
 StatsClass V_STATS;
@@ -154,7 +81,7 @@ void setup()
     
     setMv = 0.0;
     setMa = 10.0;
-    SMU[0].fltSetCommitCurrentSource(setMa / 1000.0,_SOURCE_AND_SINK);
+    SMU[0].fltSetCommitCurrentSource(setMa / 1000.0, _SOURCE_AND_SINK); 
     SMU[0].fltSetCommitVoltageSource(setMv / 1000.0);
     
     
@@ -255,7 +182,7 @@ void voltagePanel(int x, int y) {
   GD.cmd_fgcolor(0xaaaa90);  
   GD.Tag(BUTTON_VOLT_SET);
   GD.cmd_button(x+20,y+143,90,58,30,0,"SET");
-  GD.Tag(999);
+  GD.Tag(123);
 
   GD.cmd_button(x+350,y+143,90,58,30,0,"AUTO");
   
@@ -427,7 +354,7 @@ void currentPanel(int x, int y) {
   GD.Tag(BUTTON_CUR_SET);
   GD.cmd_button(x+20,y+130,90,58,30,0,"LIM");
   
-  GD.Tag(999);
+  GD.Tag(123);
 
   GD.cmd_button(x+350,y+130,90,58,30,0,"AUTO");
   
@@ -680,7 +607,7 @@ void closeCallback(int vol_cur_type, bool cancel) {
        setMv = DIAL.getMv();
     }
     if (DIAL.type() == BUTTON_CUR_SET) {
-       if (SMU[0].fltSetCommitCurrentSource(DIAL.getMv() / 1000.0,_SOURCE_AND_SINK)) printError(_PRINT_ERROR_CURRENT_SOURCE_SETTING);
+       if (SMU[0].fltSetCommitCurrentSource(DIAL.getMv() / 1000.0, _SOURCE_AND_SINK)) printError(_PRINT_ERROR_CURRENT_SOURCE_SETTING);
        setMa = DIAL.getMv();
     }
      

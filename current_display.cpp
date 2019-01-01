@@ -1,16 +1,15 @@
 #include "current_display.h"
-#include "digit_util.h"
-
 #include "GD2.h"
 #include "colors.h"
+#include "digit_util.h"
 
 void CurrentDisplayClass::renderMeasured(int x, int y, float rawMa) {
 
   if (rawMa < 0.0f) {
     rawMa = 0.0f - rawMa;
-    *sign = '-';
+    sign[0] = '-';
   } else {
-    *sign = '+';
+    sign[0] = '+';
   }
   
   int a = rawMa / 1000;
@@ -69,7 +68,7 @@ void CurrentDisplayClass::renderSet(int x, int y, float rawMa) {
   GD.cmd_text(x+170, y, 31, 0, "A");
 }
 
-void CurrentDisplayClass::boldText(int x, int y, char* text) {
+void CurrentDisplayClass::boldText(int x, int y, const char* text) {
   GD.cmd_text(x, y, 1, 0, text);
   GD.cmd_text(x+3, y, 1, 0, text);
   GD.cmd_text(x, y+3, 1, 0, text);
@@ -77,12 +76,10 @@ void CurrentDisplayClass::boldText(int x, int y, char* text) {
 }
 
 void CurrentDisplayClass::boldNumber(int x, int y, int digits, int number) {
-  //GD.cmd_number(x, y , 1, digits, number);
-
+  GD.cmd_number(x, y , 1, digits, number);
   GD.cmd_number(x+3, y , 1, digits, number);
-
-  //GD.cmd_number(x, y+3 , 1, digits, number);
-  //GD.cmd_number(x+3, y+3 , 1, digits, number);
+  GD.cmd_number(x, y+3 , 1, digits, number);
+  GD.cmd_number(x+3, y+3 , 1, digits, number);
 }
 
 CurrentDisplayClass CURRENT_DISPLAY;

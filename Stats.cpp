@@ -2,7 +2,7 @@
 #include "GD2.h"
 
 int samplesCollected = 10000;
-int maxSamplesBeforeStore = 1;
+int maxSamplesBeforeStore = 100;
 
 void StatsClass::addSample(float rawMv_) {
       rawMv = rawMv_; 

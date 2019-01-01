@@ -34,7 +34,7 @@ void DialClass::clear() {
   error = false;
   warning = false;
   digits = 0;
-  voltDecade = "V";
+  strncpy(voltDecade, "V" ,2);
 }
 
 void DialClass::handleKeypadDialog() {
@@ -45,7 +45,7 @@ void DialClass::handleKeypadDialog() {
   int screenHeight = 480;
   int width = 570;
   int height = 470;
-  int margin = 10;
+  //int margin = 10;
   
   int startx, starty, endx, endy;
   startx=(screenWidth-width) / 2;
@@ -92,7 +92,7 @@ void DialClass::handleKeypadDialog() {
   renderKeypad();
 }
 
-bool DialClass::checkKeypress() {
+void DialClass::checkKeypress() {
 
     int maxDigits = 7;
 
@@ -143,13 +143,14 @@ bool DialClass::checkKeypress() {
         dialEntries[digits++] = 0;
       }
       if (GD.inputs.tag== KEYBOARD_UV) {
-        voltDecade = "uV";
+          strncpy(voltDecade, "uV" ,2);
+
       }
       if (GD.inputs.tag== KEYBOARD_MV) {
-        voltDecade = "mV";
+  strncpy(voltDecade, "mV" ,2);
       }
       if (GD.inputs.tag== KEYBOARD_V) {
-        voltDecade = "V";
+  strncpy(voltDecade, "V" ,2);
       }
   
       if (GD.inputs.tag== KEYBOARD_CLR) {
@@ -174,13 +175,13 @@ void DialClass::renderKeypad() {
   int y=175;
   int spacing = 82;
 
-  char *symb = "V";
-  char *symb_m = "mV";
-  char *symb_u = "uV";
+  char symb[3] = "V";
+  char symb_m[3] = "mV";
+  char symb_u[3] = "uV";
   if (vol_cur_type == BUTTON_CUR_SET) {
-    symb = "A";
-    symb_m = "mA";
-    symb_u = "uA";
+    strncpy(symb,"A",1);
+    strncpy(symb_m,"mA",2);
+    strncpy(symb_u,"uA",2);
   }
   GD.Tag(1);
   transButton(x+0, y+0,18, "1", 31); 
@@ -266,11 +267,11 @@ void DialClass::renderInput(bool indicateError) {
       if (vol_cur_type == BUTTON_VOLT_SET) {
               GD.cmd_text(posx+10, posy,1, 0, voltDecade);
       } else {
-           curDecade = "A";
-          if (voltDecade == "uV") {
-            curDecade = "uA";
-          } else if (voltDecade == "mV") {
-            curDecade = "mA";
+           strncpy(curDecade,"A",1);
+          if (strncmp(voltDecade,"uV",2)) {
+            strncpy(curDecade,"uA",2);
+          } else if (strncmp(voltDecade,"mV",2)) {
+            strncpy(curDecade,"mA",2);
           }
           GD.cmd_text(posx+10, posy,1, 0, curDecade);
       }
@@ -278,19 +279,19 @@ void DialClass::renderInput(bool indicateError) {
   }
 }
 
-void DialClass::showError(char* text) {
+void DialClass::showError(const char* text) {
   error = true;
   GD.ColorRGB(0xff0000);
   GD.cmd_text(160,107, 29, 0, text);
 }
 
-void DialClass::showWarning(char* text) {
+void DialClass::showWarning(const char* text) {
   warning = true;
   GD.ColorRGB(COLOR_VOLT);
   GD.cmd_text(160,107, 29, 0, text);
 }
 
-void DialClass::transButton(int x, int y, int sz, char* label, int fontsize)
+void DialClass::transButton(int x, int y, int sz, const char* label, int fontsize)
 {
 GD.Begin(RECTS);
 GD.ColorA(200);
@@ -339,7 +340,7 @@ void DialClass::validate(double mv) {
   // Note that in the check below, mv is mv, independent
   // on which voltDecade is being show in the dislay
   
-  if (voltDecade == "V") {
+  if (strncmp(voltDecade,"V",1)) {
     if (abs(mv) > 30000) {
       showError("Max voltage is 30V");
       return;
@@ -350,7 +351,7 @@ void DialClass::validate(double mv) {
     }
   }
 
-  else if (voltDecade == "mV") {
+  else if (strncmp(voltDecade,"mV",2)) {
     if (abs(mv) > 30000) {
       showError("Max voltage is 30V");
       return;
@@ -361,7 +362,7 @@ void DialClass::validate(double mv) {
     }
   }
  
-  else if (voltDecade == "uV") {
+  else if (strncmp(voltDecade,"uV",2)) {
     if (numberValue > 999) {
       showError("Max voltage in uV range is 999mV");
       return;
@@ -396,10 +397,10 @@ double DialClass::toMv() {
       dec++;
    }
  }
- if (voltDecade == "V") {
+ if (strncmp(voltDecade,"V",1)) {
    sum=sum*1000;
  }
- if (voltDecade == "uV") {
+ if (strncmp(voltDecade,"uV",2)) {
    sum=sum/1000;
  }
  return sum;

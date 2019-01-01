@@ -6,11 +6,11 @@
  float nowValueI = 0.056;
 
  int8_t EasySMU2::fltSetCommitVoltageSource(float fVoltage) {
-   nowValueV = fVoltage;
+   return nowValueV = fVoltage;
  }
  
  int8_t EasySMU2::fltSetCommitCurrentSource(float fCurrent, int8_t up_down_both) {
-  nowValueI = fCurrent;                         
+  return nowValueI = fCurrent;                         
  }
  
  float EasySMU2::MeasureVoltage(){

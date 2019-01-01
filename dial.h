@@ -1,3 +1,4 @@
+
 #define KEYBOARD_1 1
 #define KEYBOARD_2 2
 #define KEYBOARD_3 3
@@ -44,8 +45,8 @@ class DialClass {
   bool warning;
   
   bool keydepressed = true;
-  char* voltDecade = "  ";
-  char* curDecade = "  ";
+  char voltDecade[3] = "  ";
+  char curDecade[3] = "  ";
   bool negative = false;
   bool dialog = false;
   double mv;
@@ -59,14 +60,14 @@ public:
   bool isDialogOpen();
   int  type();
   void handleKeypadDialog();
-  bool checkKeypress();
+  void checkKeypress();
   float getMv();
 private:
   double toMv();
   void validate(double mv);
-  void transButton(int x, int y, int sz, char* label, int fontsize);
-  void showError(char* text);
-  void showWarning(char* text);
+  void transButton(int x, int y, int sz, const char* label, int fontsize);
+  void showError(const char* text);
+  void showWarning(const char* text);
   void renderInput(bool valid);
   void renderKeypad();
 };

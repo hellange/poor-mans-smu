@@ -3,14 +3,12 @@
 #include "colors.h"
 #include "digit_util.h"
 
-
-
 void VoltDisplayClass::renderMeasured(int x, int y, float rawMv) {
   if (rawMv < 0.0f) {
     rawMv = 0.0f - rawMv;
-    *sign = '-';
+    sign[0] = '-';
   } else {
-    *sign = '+';
+    sign[0] = '+';
   }
 
   int v, mv, uv;
@@ -64,7 +62,7 @@ void VoltDisplayClass::renderSet(int x, int y, float rawMv) {
   GD.cmd_text(x+195, y, 31, 0, "V");
 }
 
-void VoltDisplayClass::boldText(int x, int y, char* text) {
+void VoltDisplayClass::boldText(int x, int y, const char* text) {
   GD.cmd_text(x, y, 1, 0, text);
   GD.cmd_text(x+3, y, 1, 0, text);
   GD.cmd_text(x, y+3, 1, 0, text);

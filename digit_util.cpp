@@ -15,4 +15,5 @@ void DigitUtilClass::separate(int *v, int *mv, int *uv, bool *neg, float rawMv) 
   *uv = (rawMv - (int)rawMv) * 1000.0f;
 
 }
+DigitUtilClass DIGIT_UTIL;
 
