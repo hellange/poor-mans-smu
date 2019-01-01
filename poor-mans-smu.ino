@@ -110,9 +110,9 @@
 #define _SOURCE_AND_SINK 99
 
 // If not using the EasySMU board, comment out the next line. You will then use a dummy converter with some random noise added
-//#define EASYSMU
+#define EASYSMU
 
-#if EASYSMU
+#ifdef EASYSMU
 EasySMU SMU[1] =
 {
   EasySMU(I2C_Board0_EEPROM_ADDR0, I2C_Board0_LTC2655_LLL_ADDR0, I2C_Board0_LTC2485_Vout_LF_ADDR0, I2C_Board0_LTC2485_Iout_LH_ADDR0)
