@@ -92,60 +92,11 @@ void setup()
   GD.cmd_romfont(1, 34); // put FT81x font 34 in slot 1
   //GD.wr(REG_PWM_DUTY, 10);
 
-}
-
-
-void renderValue(int x,int y,float val, int size = 0) {
-
-    int font = 26;
-    int fontWidth = 10; 
-    
-    if (size == 1) {
-       font = 28;
-       fontWidth = 15;
-    }
-    else if (size == 2) {
-       font = 29;
-       fontWidth = 18;
-    }
-    else if (size == 3) {
-       font = 30;
-       fontWidth = 21;
-    }
-    else if (size == 4) {
-       font = 31;
-       fontWidth = 29;
-    }
-    
-    int v, mV, uV;
-    bool neg;
-    DIGIT_UTIL.separate(&v, &mV, &uV, &neg, val);
-    if(neg) {
-      GD.cmd_text(x, y, font, 0,  "-");
-    }
-
-    x = x + fontWidth;
-    if (v>0) {
-      GD.cmd_number(x, y, font, 2, v);
-      x = x + fontWidth*1.7;
-      GD.cmd_text(x, y, font, 0,  ".");
-      x = x + fontWidth/3;
-      GD.cmd_number(x, y, font, 3, mV);
-      x = x + fontWidth * 2.9;
-      GD.cmd_number(x, y, font, 3, uV);
-      x = x + fontWidth * 2.6;
-      GD.cmd_text(x, y, font, 0,  "V");
-    } else {
-      GD.cmd_number(x, y, font, 3, mV);
-      x = x + fontWidth*2.5;
-      GD.cmd_text(x, y, font, 0,  ".");
-      x = x + fontWidth/3;
-      GD.cmd_number(x, y, font, 3, uV);
-      x = x + fontWidth * 2.6;
-      GD.cmd_text(x, y, font, 0,  "mV");
-    }
+   V_STATS.init();
 
 }
+
+
 
 
 void voltagePanel(int x, int y) {
@@ -188,9 +139,9 @@ void voltagePanel(int x, int y) {
 
   GD.ColorRGB(0xffffff);
 
-  renderValue(x+620, 15 + y + 45, V_STATS.maximum, 1);
-  renderValue(x+620, 15 + y + 70, V_STATS.maximum - V_STATS.minimum, 1);
-  renderValue(x+620, 15 + y + 95, V_STATS.minimum, 1);
+  DIGIT_UTIL.renderValue(x+620, 15 + y + 45, V_STATS.maximum, 1);
+  DIGIT_UTIL.renderValue(x+620, 15 + y + 70, V_STATS.maximum - V_STATS.minimum, 1);
+  DIGIT_UTIL.renderValue(x+620, 15 + y + 95, V_STATS.minimum, 1);
 
 }
 
@@ -244,7 +195,7 @@ void renderGraph(int x,int y) {
 
     GD.ColorRGB(0xffffff);
     for (int i=0;i<lines;i++) {
-       renderValue(x, 15 + y + i*height/(lines-1), V_STATS.visibleMax - (i * visibleSpan/(lines-1)), 0);
+       DIGIT_UTIL.renderValue(x, 15 + y + i*height/(lines-1), V_STATS.visibleMax - (i * visibleSpan/(lines-1)), 0);
     }
 
     int farRight = x + 790;
@@ -261,7 +212,7 @@ void renderGraph(int x,int y) {
    
     GD.ColorRGB(COLOR_VOLT);
 
-    renderValue(x+70, 15 + y + height/2, V_STATS.maximum - V_STATS.minimum, 0);
+    //renderValue(x+70, 15 + y + height/2, V_STATS.maximum - V_STATS.minimum, 0);
     V_STATS.renderTrend(x + 180, y+23);
 
 }
@@ -446,6 +397,8 @@ void renderDisplay() {
   GD.Vertex2ii(0,260);
   GD.Vertex2ii(800, 480);
 
+
+
   if (activeWidget >= 0) {
     if (scrollDir == 0) {
       showWidget(activeWidget, 0);
@@ -478,15 +431,15 @@ void detectGestures() {
   //Serial.println(GD.inputs.tag);
   int touchX = GD.inputs.x;
   int gestDistance = touchX - gestOldX;
-  if (GD.inputs.tag == 101) {
-    if (gestureDetected == GEST_NONE && touchX > 0 && gestDistance < -15 && scrollDir == 0) {
+  if (GD.inputs.tag == 101 && gestureDetected == GEST_NONE) {
+    if (touchX > 0 && gestDistance < -10 && scrollDir == 0) {
       if (++gestDuration >= 2) {
         Serial.println("move left");
         gestureDetected = GEST_MOVE_LEFT;
         gestDuration = 0;
       }
     }
-    else if (gestureDetected == GEST_NONE && touchX > 0 && gestDistance > 15 && scrollDir == 0) {
+    else if (touchX > 0 && gestDistance > 10 && scrollDir == 0) {
       if (++gestDuration >= 2) {
         Serial.println("move right");
         gestureDetected = GEST_MOVE_RIGHT;

@@ -1,6 +1,6 @@
 
 class StatsClass {
-  #define MAX_SAMPLES_BEFORE_STORE 10
+  #define MAX_SAMPLES_BEFORE_STORE 5
 
 private:
   int endPtr = 0;
@@ -12,8 +12,8 @@ private:
   int maxSamplesBeforeStore = MAX_SAMPLES_BEFORE_STORE;
   int prelimSamplesCounter = 0;
   float prelimBuffer[MAX_SAMPLES_BEFORE_STORE];
-
 public:
+  void init();
   void renderTrend(int x, int y);
   void addSample(float rawMv);
   float rawMv;

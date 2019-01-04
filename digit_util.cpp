@@ -1,4 +1,5 @@
 #include "digit_util.h"
+#include "GD2.h"
 
 // TODO: A possible error in this function.
 //       I often see the uV area jump from low (0-100) to high (900-999) without
@@ -15,5 +16,58 @@ void DigitUtilClass::separate(int *v, int *mv, int *uv, bool *neg, float rawMv) 
   *uv = (rawMv - (int)rawMv) * 1000.0f;
 
 }
+
+void DigitUtilClass::renderValue(int x,int y,float val, int size = 0) {
+
+    int font = 26;
+    int fontWidth = 10; 
+    
+    if (size == 1) {
+       font = 28;
+       fontWidth = 15;
+    }
+    else if (size == 2) {
+       font = 29;
+       fontWidth = 18;
+    }
+    else if (size == 3) {
+       font = 30;
+       fontWidth = 21;
+    }
+    else if (size == 4) {
+       font = 31;
+       fontWidth = 29;
+    }
+    
+    int v, mV, uV;
+    bool neg;
+    DIGIT_UTIL.separate(&v, &mV, &uV, &neg, val);
+    if(neg) {
+      GD.cmd_text(x, y, font, 0,  "-");
+    }
+
+    x = x + fontWidth;
+    if (v>0) {
+      GD.cmd_number(x, y, font, 2, v);
+      x = x + fontWidth*1.7;
+      GD.cmd_text(x, y, font, 0,  ".");
+      x = x + fontWidth/3;
+      GD.cmd_number(x, y, font, 3, mV);
+      x = x + fontWidth * 2.9;
+      GD.cmd_number(x, y, font, 3, uV);
+      x = x + fontWidth * 2.6;
+      GD.cmd_text(x, y, font, 0,  "V");
+    } else {
+      GD.cmd_number(x, y, font, 3, mV);
+      x = x + fontWidth*2.5;
+      GD.cmd_text(x, y, font, 0,  ".");
+      x = x + fontWidth/3;
+      GD.cmd_number(x, y, font, 3, uV);
+      x = x + fontWidth * 2.6;
+      GD.cmd_text(x, y, font, 0,  "mV");
+    }
+
+}
+
 DigitUtilClass DIGIT_UTIL;
 

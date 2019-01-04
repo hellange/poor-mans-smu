@@ -1,8 +1,12 @@
 #include "Stats.h"
 #include "GD2.h"
+#include "digit_util.h"
 
-
-
+void StatsClass::init() {
+      for (int pos=0; pos<nrOfTrendPoints;pos++) { 
+        value[pos] = 1000000;
+      }
+}
 void StatsClass::addSample(float rawMv_) {
       rawMv = rawMv_; 
       prelimBuffer[prelimSamplesCounter++] = rawMv_;
@@ -68,7 +72,7 @@ void StatsClass::renderTrend(int x, int y) {
     if (maximum >= visibleMaxSlow) {
        visibleMaxSlow = maximum;
     } else {
-       visibleMaxSlow = visibleMaxSlow - (visibleMaxSlow - maximum)/3.0;
+       visibleMaxSlow = visibleMaxSlow - (visibleMaxSlow - maximum)/5.0;
       if (visibleMaxSlow >= maximum) {
          visibleMax = visibleMaxSlow;
       }
@@ -78,7 +82,7 @@ void StatsClass::renderTrend(int x, int y) {
     if (minimum <= visibleMinSlow) {
        visibleMinSlow = minimum;
     } else {
-       visibleMinSlow = visibleMinSlow + (minimum - visibleMinSlow)/3.0;   
+       visibleMinSlow = visibleMinSlow + (minimum - visibleMinSlow)/5.0;   
        if (visibleMinSlow < minimum) {
           visibleMin = visibleMinSlow;
        }         
@@ -95,6 +99,7 @@ void StatsClass::renderTrend(int x, int y) {
     uispan = visibleMax - visibleMin;
 
     int pixelsPrSample = 7;
+    
     viewHeight = 150;
 
     GD.Begin(LINE_STRIP);
@@ -102,7 +107,6 @@ void StatsClass::renderTrend(int x, int y) {
 
     int i = endPtr;
 
- 
 
     // main graph
     for (int pos=0; pos<nrOfTrendPoints;pos++) { 
@@ -111,7 +115,9 @@ void StatsClass::renderTrend(int x, int y) {
       if (xpos>800) {
         return;
       }
-      GD.Vertex2ii(xpos, y + height); 
+      if (value[i] < 1000000){
+        GD.Vertex2ii(xpos, y + height); 
+      }
       i=i+1;
       if (i>nrOfTrendPoints - 1) {
         i=0;
@@ -121,8 +127,10 @@ void StatsClass::renderTrend(int x, int y) {
     i = endPtr;
 
     // max min indicator
-    GD.ColorA(150);
+
     GD.LineWidth(50);
+    GD.ColorA(150);
+
     for (int pos=0; pos<nrOfTrendPoints;pos++) { 
       float min = viewHeight * ( (visibleMax - valueExt[i][0]) / uispan);
       float max = viewHeight * ( (visibleMax - valueExt[i][1]) / uispan);
@@ -130,10 +138,18 @@ void StatsClass::renderTrend(int x, int y) {
       if (xpos>800) {
         return;
       }
-      GD.Begin(LINE_STRIP);
-      GD.Vertex2ii(xpos, y + min); 
-      GD.Vertex2ii(xpos, y + max); 
+      if (value[i] < 1000000){
+        GD.Begin(LINE_STRIP);
+        // red color if difference between mean value and extremes are > 1%
+        if (valueExt[i][0] < value[i]*0.99 || valueExt[i][1] > value[i]*1.01){
+           GD.ColorRGB(0xff0000); // red
+        } else {
+           GD.ColorRGB(0x00F94E); // COLOR_VOLT
+        }
 
+        GD.Vertex2ii(xpos, y + min); 
+        GD.Vertex2ii(xpos, y + max); 
+      }
       i=i+1;
       if (i>nrOfTrendPoints - 1) {
         i=0;
@@ -144,6 +160,8 @@ void StatsClass::renderTrend(int x, int y) {
     float top = viewHeight * ( (visibleMax - maximum) / uispan);
     float bottom = viewHeight * ( (visibleMax - minimum) / uispan);
       GD.Begin(LINE_STRIP);
+      GD.ColorA(255);
+
       GD.LineWidth(20);
       GD.ColorRGB(0xffff00);
 
@@ -153,7 +171,9 @@ void StatsClass::renderTrend(int x, int y) {
       GD.Vertex2ii(x-5, y + (viewHeight)/2 ); 
       GD.Vertex2ii(x, y + (viewHeight)/2 + 5); 
       GD.Vertex2ii(x, y + bottom - 2);
-      GD.Vertex2ii(x+5, y + bottom); 
+      GD.Vertex2ii(x+5, y + bottom);
+      
+      DIGIT_UTIL.renderValue(x-100, y - 8 + (viewHeight)/2, maximum - minimum, 0); 
 }
 
 
