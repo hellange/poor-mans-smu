@@ -1,10 +1,17 @@
+
 class StatsClass {
+  #define MAX_SAMPLES_BEFORE_STORE 10
+
 private:
   int endPtr = 0;
-  float value[100];
+  float value[75];
+  float valueExt[75][2];  // max min value for each
   float uispan;
   int nrOfTrendPoints = 75;
-  void updateMinMax(float rawMv);
+  void updateMinMax();
+  int maxSamplesBeforeStore = MAX_SAMPLES_BEFORE_STORE;
+  int prelimSamplesCounter = 0;
+  float prelimBuffer[MAX_SAMPLES_BEFORE_STORE];
 
 public:
   void renderTrend(int x, int y);

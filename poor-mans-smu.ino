@@ -33,8 +33,6 @@
 
 #define _SOURCE_AND_SINK 111
 
-//#include "PrintError.h"
-//#include "MasterAddressConstants.h"
 
 #define _PRINT_ERROR_VOLTAGE_SOURCE_SETTING 0
 #define _PRINT_ERROR_CURRENT_SOURCE_SETTING 1
@@ -514,12 +512,17 @@ void loop()
 
   unsigned long currentMillis = millis();
 
+  #ifdef ADDITIONAL_SPI_DEVICES
+  // change SPI mode for other spi devices ! Needed because the gd2 lib "occupies" the spi
+  SPI.setDataMode(SPI_MODE1); //...or whatever it requires
+  #endif
+
+   
   // restore SPI
   SPI.setDataMode(SPI_MODE0);
   //SPI.setClockDivider(SPI_CLOCK_DIV2);
   GD.resume();
 
-  detectGestures();
   if (!gestureDetected) {
     if (GD.inputs.tag == BUTTON_VOLT_SET) {
       DIAL.open(BUTTON_VOLT_SET, closeCallback);
@@ -532,52 +535,23 @@ void loop()
     previousMillis = currentMillis;
 
     GD.get_inputs();
+      detectGestures();
+
     GD.Clear();
 
     if (DIAL.isDialogOpen()) {
       GD.ColorA(0x44);
     }
-
-    
-  
-   
-
-
-
-
-   #ifdef ADS1220
-    // change SPI mode for other spi devices ! Needed because the gd2 lib uses spi
-    SPI.setDataMode(SPI_MODE1);
-    if(DAC.checkDataAvilable() == true) {
-      float Vout = DAC.convertToMv();
      
-      Serial.print("Vout in mV : ");  
-      Serial.println(Vout, 3);
-
-      DACVout = Vout;
-      
-      avgVout = DAC.smoothing(avgVout, smoothingSamples, Vout);
-      //Serial.print("AvgOut in mV : ");  
-      //Serial.println(avgVout, 3);
-      //DACVout = avgVout;
-
-      V_STATS.addSample(DACVout);
-
-    }
-   #else
-     // Dont sample voltage and current while scrolling because polling is slow.
-     // TODO: Remove this limitation when sampling is based on interrupts.
-     if (scrollDir == 0) {
+    // Dont sample voltage and current while scrolling because polling is slow.
+    // TODO: Remove this limitation when sampling is based on interrupts.
+    if (scrollDir == 0) {
        float rawMv = SMU[0].MeasureVoltage() * 1000.0;
        V_STATS.addSample(rawMv);
 
        // TODO: Store somewhere for analysis, just as voltage
        rawMa_glob = SMU[0].MeasureCurrent() * 1000.0;
-     }
-
-
-   #endif
-
+    }
 
     renderDisplay();
 
@@ -586,7 +560,6 @@ void loop()
       DIAL.handleKeypadDialog();
     }
 
-    
     GD.swap();    
     GD.__end();
   }
