@@ -49,6 +49,10 @@ SMU_HAL_dummy SMU[1] = {
 };
 
 
+
+int scroll = 0;
+int scrollDir = 0;
+
 StatsClass V_STATS;
 //StatsClass C_STATS;
 float rawMa_glob; // TODO: store in stats for analysis just as voltage
@@ -185,35 +189,51 @@ void renderDeviation(int x, int y, float rawM, float setM, bool cur) {
 
 
 
-void renderGraph(int x,int y) {
+void renderGraph(int x,int y, bool scrolling) {
 
     GD.ColorRGB(0xffffff); 
 
-    int lines = 4;
+    int lines = 11;
     int height = 150;
     float visibleSpan = V_STATS.visibleMax - V_STATS.visibleMin;
-
+    float distanceBetweenLines = visibleSpan/(lines-1);
+    
     GD.ColorRGB(0xffffff);
     for (int i=0;i<lines;i++) {
-       DIGIT_UTIL.renderValue(x, 15 + y + i*height/(lines-1), V_STATS.visibleMax - (i * visibleSpan/(lines-1)), 0);
+      if (i==0 || i ==lines-1) {
+            GD.ColorRGB(COLOR_VOLT);
+
+      } else {
+            GD.ColorRGB(0xffffff);
+
+      }
+      DIGIT_UTIL.renderValue(x, 15 + y + i*height/(lines-1), V_STATS.visibleMax - distanceBetweenLines*i, 0);
+
     }
 
-    int farRight = x + 790;
-    if (farRight > 790) {
-      farRight = 790;
+
+    int farRight = x + 780;
+    if (farRight > 780) {
+      farRight = 780;
     }
     GD.LineWidth(8);
     for (int i=0;i<lines;i++) {
       int yaxis = 23 + y + i*height/(lines - 1);
       GD.Begin(LINE_STRIP);
-      GD.Vertex2ii(x+100, yaxis); 
+            if (i == 0 || i==5 || i==10) {
+               GD.ColorRGB(0xffffff);
+            } else {
+               GD.ColorRGB(0x444444);
+            }
+
+      GD.Vertex2ii(x+90+(i==5?100:0), yaxis); 
       GD.Vertex2ii(farRight, yaxis); 
     }
    
     GD.ColorRGB(COLOR_VOLT);
 
     //renderValue(x+70, 15 + y + height/2, V_STATS.maximum - V_STATS.minimum, 0);
-    V_STATS.renderTrend(x + 180, y+23);
+    V_STATS.renderTrend(x + 185, y+23, scrolling);
 
 }
 
@@ -340,7 +360,10 @@ void scrollIndication(int y, int activeWidget) {
 void showWidget(int widgetNo, int scroll) {
   int yPos = 260;
   if (widgetNo == 0) {
-       renderGraph(scroll, yPos);
+      if (!DIAL.isDialogOpen()){
+        // dont render if dialog is open because then there are too much GPU commands 
+        renderGraph(scroll, yPos, scrollDir != 0);
+      }
   } 
   else if (widgetNo == 1) {
        currentPanel(scroll, yPos, SMU[0].Overflow());
@@ -351,11 +374,10 @@ void showWidget(int widgetNo, int scroll) {
 
 }
 
-int scroll = 0;
-int scrollDir = 0;
 
 int gestureDetected = GEST_NONE;
 int activeWidget = 0;
+int scrollSpeed = 75;
 void renderDisplay() {
  
   int x = 0;
@@ -379,7 +401,7 @@ void renderDisplay() {
     }
   } 
   
-  scroll = scroll + scrollDir * 100;
+  scroll = scroll + scrollDir * scrollSpeed;
   
   if (scroll <= -800 && scrollDir != 0) {
     activeWidget ++;
@@ -413,6 +435,7 @@ void renderDisplay() {
     } 
     
   }
+  
   
   scrollIndication(250, activeWidget);
 

@@ -58,10 +58,13 @@ void StatsClass::updateMinMax() {
 
 
 float visibleMaxSlow = -100000, visibleMinSlow = 100000;
-void StatsClass::renderTrend(int x, int y) {  
-    
+void StatsClass::renderTrend(int x, int y, bool limitDetails) {  
     int viewHeight;
     GD.ColorA(255);
+
+// Add by 1000 to reduce decimal roudning problems.... should have stored value in uV and uA instead of mV and mA....
+maximum = (int)(maximum *1000.0);
+minimum = (int)(minimum *1000.0);
 
     // initially, let's say highest value in graph corresponds to highest value in sample set
     visibleMax = maximum;
@@ -72,7 +75,7 @@ void StatsClass::renderTrend(int x, int y) {
     if (maximum >= visibleMaxSlow) {
        visibleMaxSlow = maximum;
     } else {
-       visibleMaxSlow = visibleMaxSlow - (visibleMaxSlow - maximum)/5.0;
+       visibleMaxSlow = visibleMaxSlow - (visibleMaxSlow - maximum)/3.0;
       if (visibleMaxSlow >= maximum) {
          visibleMax = visibleMaxSlow;
       }
@@ -82,23 +85,61 @@ void StatsClass::renderTrend(int x, int y) {
     if (minimum <= visibleMinSlow) {
        visibleMinSlow = minimum;
     } else {
-       visibleMinSlow = visibleMinSlow + (minimum - visibleMinSlow)/5.0;   
+       visibleMinSlow = visibleMinSlow + (minimum - visibleMinSlow)/3.0;   
        if (visibleMinSlow < minimum) {
           visibleMin = visibleMinSlow;
        }         
-    }    
+    }  
+
+
+ 
+/*
+    // round the max and min to get more "round" values for top and bottom in graph
+    int visibleMaxInt;
+    int visibleMinInt;
+    float roundDecimals = 10.0;
+    visibleMaxInt = (int)(visibleMax * roundDecimals);
+    visibleMax = ((float)(visibleMaxInt +1))/roundDecimals;
+    
+    visibleMinInt = (int)(visibleMin * roundDecimals);
+    visibleMin = ((float)(visibleMinInt-1))/roundDecimals;
+*/
 
     // set a minimum full span view so very small value changes will not appear too noisy
+    float minimumVisibleSpan = 750; //0.750; 
+    float span = maximum - minimum;
+    if (span < minimumVisibleSpan) {
+      visibleMax = visibleMax + (minimumVisibleSpan-span)/2.0;
+      visibleMin = visibleMin - (minimumVisibleSpan-span)/2.0;
+    }
+    
+
+  //  Add by 1000 to reduce decimal roudning problems.... should have stored value in uV and uA instead of mV and mA....
+  maximum = maximum/1000.0;
+  minimum = minimum/1000.0;
+
+  // round the max and min to get more "round" values for top and bottom in graph
+  visibleMax = ((int)(visibleMax/10.0) + 1) * 10;     
+  visibleMax = visibleMax/1000.0;
+  visibleMin = ((int)(visibleMin/10.0)) * 10;     
+  visibleMin = visibleMin/1000.0;
+
+
+    // set a minimum full span view so very small value changes will not appear too noisy
+    /*
     float minimumVisibleSpan = 0.750; 
     float span = maximum - minimum;
     if (span < minimumVisibleSpan) {
       visibleMax = visibleMax + (minimumVisibleSpan-span)/2.0;
       visibleMin = visibleMin - (minimumVisibleSpan-span)/2.0;
     }
+    */
+
+
 
     uispan = visibleMax - visibleMin;
 
-    int pixelsPrSample = 7;
+    int pixelsPrSample = 6;
     
     viewHeight = 150;
 
@@ -126,54 +167,69 @@ void StatsClass::renderTrend(int x, int y) {
 
     i = endPtr;
 
-    // max min indicator
+    // max min graphing
+    if (!limitDetails) {
 
-    GD.LineWidth(50);
-    GD.ColorA(150);
-
-    for (int pos=0; pos<nrOfTrendPoints;pos++) { 
-      float min = viewHeight * ( (visibleMax - valueExt[i][0]) / uispan);
-      float max = viewHeight * ( (visibleMax - valueExt[i][1]) / uispan);
-      int xpos = x + pos*(1+pixelsPrSample);
-      if (xpos>800) {
-        return;
-      }
-      if (value[i] < 1000000){
-        GD.Begin(LINE_STRIP);
-        // red color if difference between mean value and extremes are > 1%
-        if (valueExt[i][0] < value[i]*0.99 || valueExt[i][1] > value[i]*1.01){
-           GD.ColorRGB(0xff0000); // red
-        } else {
-           GD.ColorRGB(0x00F94E); // COLOR_VOLT
+      GD.LineWidth(40);
+      GD.ColorA(150);
+  
+      for (int pos=0; pos<nrOfTrendPoints;pos++) { 
+        float min = viewHeight * ( (visibleMax - valueExt[i][0]) / uispan);
+        float max = viewHeight * ( (visibleMax - valueExt[i][1]) / uispan);
+        int xpos = x + pos*(1+pixelsPrSample);
+        if (xpos>800) {
+          return;
         }
-
-        GD.Vertex2ii(xpos, y + min); 
-        GD.Vertex2ii(xpos, y + max); 
+        if (value[i] < 1000000){
+          GD.Begin(LINE_STRIP);
+          // red color if difference between mean value and extremes are > 1%
+          if (valueExt[i][0] < value[i]*0.99 || valueExt[i][1] > value[i]*1.01){
+             GD.ColorRGB(0xff0000); // red
+          } else {
+             GD.ColorRGB(0x00F94E); // COLOR_VOLT
+          }
+  
+          GD.Vertex2ii(xpos, y + min); 
+          GD.Vertex2ii(xpos, y + max); 
+        }
+        i=i+1;
+        if (i>nrOfTrendPoints - 1) {
+          i=0;
+        }  
       }
-      i=i+1;
-      if (i>nrOfTrendPoints - 1) {
-        i=0;
-      }  
     }
     
 
     float top = viewHeight * ( (visibleMax - maximum) / uispan);
     float bottom = viewHeight * ( (visibleMax - minimum) / uispan);
-      GD.Begin(LINE_STRIP);
-      GD.ColorA(255);
 
-      GD.LineWidth(20);
-      GD.ColorRGB(0xffff00);
+    GD.ColorRGB(0xffff00);
+    GD.ColorA(255);
 
-      GD.Vertex2ii(x+5, y + top); 
-      GD.Vertex2ii(x, y + top + 2); 
-      GD.Vertex2ii(x, y + (viewHeight)/2 - 5); 
-      GD.Vertex2ii(x-5, y + (viewHeight)/2 ); 
-      GD.Vertex2ii(x, y + (viewHeight)/2 + 5); 
-      GD.Vertex2ii(x, y + bottom - 2);
-      GD.Vertex2ii(x+5, y + bottom);
-      
-      DIGIT_UTIL.renderValue(x-100, y - 8 + (viewHeight)/2, maximum - minimum, 0); 
+    DIGIT_UTIL.renderValue(x-10, y + top - 18, maximum, 0); 
+
+    GD.Begin(LINE_STRIP);
+    GD.LineWidth(20);
+
+    GD.Vertex2ii(x+5, y + top); 
+    GD.Vertex2ii(x, y + top + 2); 
+    GD.Vertex2ii(x, y + (viewHeight)/2 - 5); 
+    GD.Vertex2ii(x-5, y + (viewHeight)/2 ); 
+    GD.Vertex2ii(x, y + (viewHeight)/2 + 5); 
+    GD.Vertex2ii(x, y + bottom - 2);
+    GD.Vertex2ii(x+5, y + bottom);
+
+    // if close to bottom, put it at the bottom, trying to avoid "flicker" when minimum close to the bottom
+    if (viewHeight - bottom > 5) {
+      DIGIT_UTIL.renderValue(x-10, y + bottom + 5, minimum, 0); 
+    } else {
+       DIGIT_UTIL.renderValue(x-10,  y + viewHeight + 5, minimum, 0); 
+    }
+
+    float actualSpan = maximum - minimum;
+    //x=x-(actualSpan>=1000?2:0);
+    GD.cmd_text(x-70+6, y - 25 + 12 + (viewHeight)/2, 26, 0, "Span");
+    DIGIT_UTIL.renderValue(x-98, y +4 + (viewHeight)/2, actualSpan, 0); 
 }
 
 
