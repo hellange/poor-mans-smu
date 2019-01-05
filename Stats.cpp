@@ -107,8 +107,6 @@ void StatsClass::renderTrend(int x, int y, bool limitDetails) {
     y = y + 23;
   
     int viewHeight;
-    GD.ColorRGB(type==DigitUtilClass::typeVoltage?COLOR_VOLT:COLOR_CURRENT);
-    GD.ColorA(255);
 
     // Add by 1000 to reduce decimal roudning problems.... should have stored value in uV and uA instead of mV and mA....
     maximum = (int)(maximum *1000.0);
@@ -165,6 +163,9 @@ void StatsClass::renderTrend(int x, int y, bool limitDetails) {
 
     GD.Begin(LINE_STRIP);
     GD.LineWidth(30);
+    GD.ColorRGB(type==DigitUtilClass::typeVoltage?COLOR_VOLT:COLOR_CURRENT);
+ 
+    GD.ColorA(255);
 
     int i = endPtr;
 
@@ -193,7 +194,7 @@ void StatsClass::renderTrend(int x, int y, bool limitDetails) {
       // max min graphing
       GD.LineWidth(40);
       GD.ColorA(150);
-  
+
       for (int pos=0; pos<nrOfTrendPoints;pos++) { 
         float min = viewHeight * ( (visibleMax - valueExt[i][0]) / uispan);
         float max = viewHeight * ( (visibleMax - valueExt[i][1]) / uispan);
@@ -207,7 +208,7 @@ void StatsClass::renderTrend(int x, int y, bool limitDetails) {
           if (valueExt[i][0] < value[i]*0.99 || valueExt[i][1] > value[i]*1.01){
              GD.ColorRGB(0xff0000); // red
           } else {
-             GD.ColorRGB(0x00F94E); // COLOR_VOLT
+             GD.ColorRGB(type==DigitUtilClass::typeVoltage?COLOR_VOLT:COLOR_CURRENT);
           }
   
           GD.Vertex2ii(xpos, y + min); 
