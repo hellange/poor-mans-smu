@@ -14,10 +14,9 @@ void DigitUtilClass::separate(int *v, int *mv, int *uv, bool *neg, float rawMv) 
   *mv = (int)(rawMv - *v * 1000.0f);
   //*uv = (int)((rawMv - *mv) * 1000.0f);
   *uv = (rawMv - (int)rawMv) * 1000.0f;
-
 }
 
-void DigitUtilClass::renderValue(int x,int y,float val, int size = 0) {
+void DigitUtilClass::renderValue(int x,int y,float val, int size = 0, int type = 0) {
 
     int font = 26;
     int fontWidth = 10; 
@@ -56,7 +55,7 @@ void DigitUtilClass::renderValue(int x,int y,float val, int size = 0) {
       x = x + fontWidth * 2.9;
       GD.cmd_number(x, y, font, 3, uV);
       x = x + fontWidth * 2.6;
-      GD.cmd_text(x, y, font, 0,  "V");
+      GD.cmd_text(x, y, font, 0,  type == typeVoltage ? "V" : "A");
     } else {
       GD.cmd_number(x, y, font, 3, mV);
       x = x + fontWidth*2.5;
@@ -64,7 +63,7 @@ void DigitUtilClass::renderValue(int x,int y,float val, int size = 0) {
       x = x + fontWidth/3;
       GD.cmd_number(x, y, font, 3, uV);
       x = x + fontWidth * 2.6;
-      GD.cmd_text(x, y, font, 0,  "mV");
+      GD.cmd_text(x, y, font, 0,  type == typeVoltage ? "mV" : "mA");
     }
 
 }

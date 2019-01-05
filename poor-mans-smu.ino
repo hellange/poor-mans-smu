@@ -19,7 +19,6 @@
 #include "colors.h"
 #include "volt_display.h"
 #include "current_display.h"
-//#include "Dac.h"
 #include "Stats.h"
 #include "digit_util.h"
 
@@ -54,7 +53,7 @@ int scroll = 0;
 int scrollDir = 0;
 
 StatsClass V_STATS;
-//StatsClass C_STATS;
+StatsClass C_STATS;
 float rawMa_glob; // TODO: store in stats for analysis just as voltage
 
 float DACVout;  // TODO: Dont use global
@@ -96,7 +95,8 @@ void setup()
   GD.cmd_romfont(1, 34); // put FT81x font 34 in slot 1
   //GD.wr(REG_PWM_DUTY, 10);
 
-   V_STATS.init();
+   V_STATS.init(DigitUtilClass::typeVoltage);
+   C_STATS.init(DigitUtilClass::typeCurrent);
 
 }
 
@@ -127,7 +127,7 @@ void voltagePanel(int x, int y) {
   GD.ColorRGB(200,255,200);
   GD.cmd_text(x+56, y+16 ,   29, 0, "SOURCE VOLTAGE");
 
-  VOLT_DISPLAY.renderMeasured(x + 17,y , V_STATS.rawMv);
+  VOLT_DISPLAY.renderMeasured(x + 17,y , V_STATS.rawValue);
   VOLT_DISPLAY.renderSet(x + 120, y+150, setMv);
 
   GD.ColorRGB(0,0,0);
@@ -139,13 +139,13 @@ void voltagePanel(int x, int y) {
 
   GD.cmd_button(x+350,y+143,90,58,30,0,"AUTO");
   
-  renderDeviation(x+667,y+147, V_STATS.rawMv, setMv, false);
+  renderDeviation(x+667,y+147, V_STATS.rawValue, setMv, false);
 
   GD.ColorRGB(0xffffff);
 
-  DIGIT_UTIL.renderValue(x+620, 15 + y + 45, V_STATS.maximum, 1);
-  DIGIT_UTIL.renderValue(x+620, 15 + y + 70, V_STATS.maximum - V_STATS.minimum, 1);
-  DIGIT_UTIL.renderValue(x+620, 15 + y + 95, V_STATS.minimum, 1);
+  DIGIT_UTIL.renderValue(x+620, 15 + y + 45, V_STATS.maximum, 1, DigitUtilClass::typeVoltage);
+  DIGIT_UTIL.renderValue(x+620, 15 + y + 70, V_STATS.maximum - V_STATS.minimum, 1, DigitUtilClass::typeVoltage);
+  DIGIT_UTIL.renderValue(x+620, 15 + y + 95, V_STATS.minimum, 1, DigitUtilClass::typeVoltage);
 
 }
 
@@ -189,116 +189,13 @@ void renderDeviation(int x, int y, float rawM, float setM, bool cur) {
 
 
 
-void renderGraph(int x,int y, bool scrolling) {
-
-    GD.ColorRGB(0xffffff); 
-
-    int lines = 11;
-    int height = 150;
-    float visibleSpan = V_STATS.visibleMax - V_STATS.visibleMin;
-    float distanceBetweenLines = visibleSpan/(lines-1);
-    
-    GD.ColorRGB(0xffffff);
-    for (int i=0;i<lines;i++) {
-      if (i==0 || i ==lines-1) {
-            GD.ColorRGB(COLOR_VOLT);
-
-      } else {
-            GD.ColorRGB(0xffffff);
-
-      }
-      DIGIT_UTIL.renderValue(x, 15 + y + i*height/(lines-1), V_STATS.visibleMax - distanceBetweenLines*i, 0);
-
-    }
-
-
-    int farRight = x + 780;
-    if (farRight > 780) {
-      farRight = 780;
-    }
-    GD.LineWidth(8);
-    for (int i=0;i<lines;i++) {
-      int yaxis = 23 + y + i*height/(lines - 1);
-      GD.Begin(LINE_STRIP);
-            if (i == 0 || i==5 || i==10) {
-               GD.ColorRGB(0xffffff);
-            } else {
-               GD.ColorRGB(0x444444);
-            }
-
-      GD.Vertex2ii(x+90+(i==5?100:0), yaxis); 
-      GD.Vertex2ii(farRight, yaxis); 
-    }
-   
-    GD.ColorRGB(COLOR_VOLT);
-
-    //renderValue(x+70, 15 + y + height/2, V_STATS.maximum - V_STATS.minimum, 0);
-    V_STATS.renderTrend(x + 185, y+23, scrolling);
-
+void renderVoltageGraph(int x,int y, bool scrolling) {
+  V_STATS.renderTrend(x, y, scrolling);
+}
+void renderCurrentGraph(int x,int y, bool scrolling) {
+  C_STATS.renderTrend(x, y, scrolling);
 }
 
-/*
-void renderVoltageTrend() {
-//  TODO make flexible....
-
-    int x = 613;
-    int y = 26;
-    
-    //GD.ColorA(255);
-    GD.ColorRGB(255,255,255);
-
-    int v, mV, uV;
-    bool neg;
-
-//    Serial.print("minimum: ");  
-//    Serial.print(V_STATS.visibleMin, 3);
-//    Serial.print(", maximum: ");  
-//    Serial.print(V_STATS.visibleMax, 3);
-
-    GD.ColorRGB(200,255,200);
-
-//    DIGIT_UTIL.separate(&v, &mV, &uV, &neg, V_STATS.span);
-//    GD.cmd_text(x, y+10, 26, 0, "Span ");
-//    GD.cmd_number(x+40,y+10, 26, 2, v);
-//    GD.cmd_number(x+60, y+10, 26, 3, mV);
-//    GD.cmd_number(x+90, y+10, 26, 3, uV);
-
-    //DIGIT_UTIL.separate(&v, &mV, &uV, &neg, V_STATS.visibleMax);
-    
-    GD.cmd_text(x, y+29, 26, 0,  "Max:");
-    renderValue(x+25, y+29, V_STATS.visibleMax);
-
-    GD.Begin(LINE_STRIP);
-    GD.LineWidth(10);
-    GD.Vertex2ii(x+7, y+44); 
-    GD.Vertex2ii(x+167, y+44); 
-    
-    V_STATS.renderTrend(x+17, y+49, true);
-
-
-    GD.Begin(RECTS);
-    //GD.ColorA(200); // some transparance
-    GD.ColorRGB(0); 
-    GD.Vertex2ii(x+30, y+60);
-    GD.Vertex2ii(x+140, y+80);
-    //GD.ColorA(255); // No transparent
-    GD.ColorRGB(COLOR_VOLT);
-    //DIGIT_UTIL.separate(&v, &mV, &uV, &neg, V_STATS.span);
-    GD.cmd_text(x+25, y+63, 26, 0, "Span:");
-    renderValue(x+40+25, y+63, V_STATS.span);
-    
-    GD.ColorRGB(200,255,200);
-   
-    GD.Begin(LINE_STRIP);
-    GD.LineWidth(10);
-    GD.Vertex2ii(x+7, y+99); 
-    GD.Vertex2ii(x+167, y+99);
-    
-    DIGIT_UTIL.separate(&v, &mV, &uV, &neg, V_STATS.visibleMin);
-    GD.cmd_text(x, y+102, 26, 0,  "Min:");
-    renderValue(x+25, y+102, V_STATS.visibleMin);
-}
-*/
 void currentPanel(int x, int y, boolean overflow) {
   if (x >= 800) {
     return;
@@ -310,12 +207,9 @@ void currentPanel(int x, int y, boolean overflow) {
   GD.ColorRGB(COLOR_CURRENT);
   //GD.ColorRGB(232,202,158);
  
-  GD.cmd_text(x+56, y+5, 29, 0, "MEASURE CURRENT");
+  GD.cmd_text(x+56, y, 29, 0, "MEASURE CURRENT");
 
-  //float rawMa = 56.0 +  random(0, 199) / 1000.0;
-  float rawMa = rawMa_glob; // SMU[0].MeasureCurrent() * 1000.0;
-
-  CURRENT_DISPLAY.renderMeasured(x + 17, y, rawMa, overflow);
+  CURRENT_DISPLAY.renderMeasured(x + 17, y, C_STATS.rawValue, overflow);
   CURRENT_DISPLAY.renderSet(x+120, y+135, setMa);
   
   GD.ColorRGB(0,0,0);
@@ -359,18 +253,20 @@ void scrollIndication(int y, int activeWidget) {
 
 void showWidget(int widgetNo, int scroll) {
   int yPos = 260;
-  if (widgetNo == 0) {
+  if (widgetNo == 2) {
       if (!DIAL.isDialogOpen()){
         // dont render if dialog is open because then there are too much GPU commands 
-        renderGraph(scroll, yPos, scrollDir != 0);
+        renderVoltageGraph(scroll, yPos, scrollDir != 0);
       }
-  } 
-  else if (widgetNo == 1) {
+  } else if (widgetNo == 1) {
+    if (!DIAL.isDialogOpen()){
+       renderCurrentGraph(scroll, yPos, scrollDir != 0);
+    }
+  }
+  else if (widgetNo ==0) {
        currentPanel(scroll, yPos, SMU[0].Overflow());
   }
-  else if (widgetNo == 2) {
-       voltagePanel(scroll, yPos);
-  }
+  
 
 }
 
@@ -437,7 +333,7 @@ void renderDisplay() {
   }
   
   
-  scrollIndication(250, activeWidget);
+  scrollIndication(240, activeWidget);
 
 }
 
@@ -522,11 +418,8 @@ void loop()
     // Dont sample voltage and current while scrolling because polling is slow.
     // TODO: Remove this limitation when sampling is based on interrupts.
     if (scrollDir == 0) {
-       float rawMv = SMU[0].MeasureVoltage() * 1000.0;
-       V_STATS.addSample(rawMv);
-
-       // TODO: Store somewhere for analysis, just as voltage
-       rawMa_glob = SMU[0].MeasureCurrent() * 1000.0;
+       V_STATS.addSample(SMU[0].MeasureVoltage() * 1000.0);
+       C_STATS.addSample(SMU[0].MeasureCurrent() * 1000.0);
     }
 
     renderDisplay();
