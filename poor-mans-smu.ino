@@ -61,6 +61,9 @@ float DACVout;  // TODO: Dont use global
 float setMv;
 float setMa;
 
+int noOfWidgets = 4;
+
+
 #include "dial.h"
 
 void setup()
@@ -196,6 +199,11 @@ void renderCurrentGraph(int x,int y, bool scrolling) {
   C_STATS.renderTrend(x, y, scrolling);
 }
 
+void renderHistogram(int x,int y, bool scrolling) {
+  V_STATS.renderHistogram(x,y,scrolling);
+}
+
+
 void currentPanel(int x, int y, boolean overflow) {
   if (x >= 800) {
     return;
@@ -239,7 +247,6 @@ void drawBall(int x, int y, bool set) {
 }
 
 void scrollIndication(int y, int activeWidget) {
-  int noOfWidgets = 3;
   int x = 400 - 30 * noOfWidgets/2;
   for (int i = 0; i < noOfWidgets; i++) {
     drawBall(x+ i*30,y,activeWidget == i);
@@ -253,22 +260,24 @@ void scrollIndication(int y, int activeWidget) {
 
 void showWidget(int widgetNo, int scroll) {
   int yPos = 260;
-  if (widgetNo == 2) {
+    if (widgetNo ==0) {
+       currentPanel(scroll, yPos, SMU[0].Overflow());
+  }else if (widgetNo == 1) {
+    if (!DIAL.isDialogOpen()){
+       renderCurrentGraph(scroll, yPos, scrollDir != 0);
+    }
+  } else if (widgetNo == 2) {
       if (!DIAL.isDialogOpen()){
         // dont render if dialog is open because then there are too much GPU commands 
         renderVoltageGraph(scroll, yPos, scrollDir != 0);
       }
-  } else if (widgetNo == 1) {
-    if (!DIAL.isDialogOpen()){
-       renderCurrentGraph(scroll, yPos, scrollDir != 0);
-    }
+  } else if (widgetNo == 3) {
+    renderHistogram(scroll, yPos, scrollDir !=0);
   }
-  else if (widgetNo ==0) {
-       currentPanel(scroll, yPos, SMU[0].Overflow());
-  }
-  
 
 }
+
+
 
 
 int gestureDetected = GEST_NONE;
@@ -283,7 +292,7 @@ void renderDisplay() {
   //renderVoltageTrend();
 
   if (gestureDetected == GEST_MOVE_LEFT) {
-    if (activeWidget == 2) {
+    if (activeWidget == noOfWidgets -1) {
       Serial.println("reached right end");
     } else {
       scrollDir = -1;

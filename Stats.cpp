@@ -59,6 +59,72 @@ void StatsClass::updateMinMax() {
 }
 
 
+void StatsClass::renderHistogram(int x, int y, bool limitDetails) {   
+    GD.ColorRGB(type==DigitUtilClass::typeVoltage?COLOR_VOLT:COLOR_CURRENT);
+    GD.ColorA(255);
+    GD.cmd_text(x+56, y, 29, 0, type==DigitUtilClass::typeVoltage?"VOLTAGE HISTOGRAM":"CURRENT HISTOGRAM");
+
+    uispan = visibleMax - visibleMin;
+
+    int noOfbins = noOfBins;
+    float bins[noOfBins];
+    float binLimits[noOfBins + 1];
+    float binMax = 0;
+    float span = maximum - minimum;
+    
+    for (int i=0;i<noOfbins;i++){
+      bins[i] = 0;
+      binLimits[i] = minimum + (span/noOfbins)*i;
+    }
+    binLimits[noOfbins] = maximum *2;  // make sure last bin is large enough...
+
+    for (int pos=0; pos<nrOfTrendPoints;pos++) { 
+      if (value[pos] == undefinedValue) {
+        break;
+      }
+      for(int i=0;i<noOfbins;i++){
+        if (value[pos] >= binLimits[i] && value[pos] < binLimits[i+1]){
+          bins[i]++; 
+          if (bins[i]>=binMax) {
+            binMax = bins[i];
+          }
+        }
+      }
+    }
+    y=y+170;
+    GD.LineWidth(30);
+    GD.ColorA(255);
+    // main graph
+    int barWidth = 600 / noOfBins;
+    for (int i=0;i<noOfbins;i++) { 
+      int xpos = 100 + x + i * barWidth;
+      if (xpos>800) {
+        return;
+      }
+      GD.Begin(RECTS);
+      GD.ColorRGB(type==DigitUtilClass::typeVoltage?COLOR_VOLT:COLOR_CURRENT);
+      GD.LineWidth(30);
+      float top = (bins[i]/binMax)*100;      
+      GD.Vertex2ii(xpos + 4, y); 
+      GD.Vertex2ii(xpos+barWidth - 4, y - top); 
+
+      GD.ColorRGB(0xffffff);
+      GD.cmd_number(xpos-2+barWidth/2, y-top-25, 26, 0, bins[i]);
+
+      if (i==0 || i==((noOfbins-1)/2) || i==noOfbins-1){
+        DIGIT_UTIL.renderValue(xpos-35, y+20, binLimits[i], 0, type);
+        GD.LineWidth(10);
+        GD.Begin(LINE_STRIP);
+        GD.Vertex2ii(xpos, y+7); 
+        GD.Vertex2ii(xpos, y+15); 
+
+      }
+
+    }
+
+}
+
+
 void StatsClass::renderTrend(int x, int y, bool limitDetails) {     
     GD.ColorRGB(type==DigitUtilClass::typeVoltage?COLOR_VOLT:COLOR_CURRENT);
 
@@ -205,11 +271,11 @@ void StatsClass::renderTrend(int x, int y, bool limitDetails) {
         if (value[i] < undefinedValue){
           GD.Begin(LINE_STRIP);
           // red color if difference between mean value and extremes are > 1%
-          if (valueExt[i][0] < value[i]*0.99 || valueExt[i][1] > value[i]*1.01){
-             GD.ColorRGB(0xff0000); // red
-          } else {
-             GD.ColorRGB(type==DigitUtilClass::typeVoltage?COLOR_VOLT:COLOR_CURRENT);
-          }
+          //if (valueExt[i][0] < value[i]*0.99 || valueExt[i][1] > value[i]*1.01){
+          //   GD.ColorRGB(0xff0000); // red
+          //} else {
+          //   GD.ColorRGB(type==DigitUtilClass::typeVoltage?COLOR_VOLT:COLOR_CURRENT);
+          //}
   
           GD.Vertex2ii(xpos, y + min); 
           GD.Vertex2ii(xpos, y + max); 

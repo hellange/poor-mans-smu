@@ -1,6 +1,6 @@
 
 class StatsClass {
-#define MAX_SAMPLES_BEFORE_STORE 5
+#define MAX_SAMPLES_BEFORE_STORE 10
 #define MAX_FULL_SAMPLES 85
 private:
   float undefinedValue = 1000000; // just a way to indicate that value is not set...
@@ -16,9 +16,12 @@ private:
   float visibleMaxSlow = -undefinedValue; 
   float visibleMinSlow = undefinedValue;
   int type;
+
+  const int noOfBins = 21;
 public:
   void init(int type);
   void renderTrend(int x, int y, bool limitDetails);
+  void renderHistogram(int x, int y, bool limitDetails);
   void addSample(float rawValue);
   float rawValue;
   float minimum;
