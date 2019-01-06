@@ -103,7 +103,7 @@ void StatsClass::renderHistogram(int x, int y, bool limitDetails) {
       }
       GD.Begin(RECTS);
       GD.ColorRGB(type==DigitUtilClass::typeVoltage?COLOR_VOLT:COLOR_CURRENT);
-      GD.LineWidth(30);
+      GD.LineWidth(40);
       float top = (bins[i]/binMax)*100;      
       GD.Vertex2ii(xpos + 4, y); 
       GD.Vertex2ii(xpos+barWidth - 4, y - top); 

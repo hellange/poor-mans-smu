@@ -21,17 +21,14 @@
 #include "current_display.h"
 #include "Stats.h"
 #include "digit_util.h"
+#include "tags.h"
 
 #include "Arduino.h"
 #include "Wire.h"
 #include "SMU_HAL_dummy.h"
 
-#define GEST_NONE 0
-#define GEST_MOVE_LEFT 1
-#define GEST_MOVE_RIGHT 2
 
 #define _SOURCE_AND_SINK 111
-
 
 #define _PRINT_ERROR_VOLTAGE_SOURCE_SETTING 0
 #define _PRINT_ERROR_CURRENT_SOURCE_SETTING 1
@@ -39,6 +36,12 @@
 #define _PRINT_ERROR_NO_CALIBRATION_DATA_FOUND 3
 #define _PRINT_ERROR_FACTORY_CALIBRATION_RESTORE_FAILED_CATASTROPHICALLY
 
+
+#define GEST_NONE 0
+#define GEST_MOVE_LEFT 1
+#define GEST_MOVE_RIGHT 2
+#define GEST_MOVE_DOWN 3
+#define LOWER_WIDGET_Y_POS 260
 
 //!touchscreen I2C address
 #define I2C_FT6206_ADDR0    0x38
@@ -138,8 +141,7 @@ void voltagePanel(int x, int y) {
   GD.cmd_fgcolor(0xaaaa90);  
   GD.Tag(BUTTON_VOLT_SET);
   GD.cmd_button(x+20,y+143,90,58,30,0,"SET");
-  GD.Tag(123);
-
+  GD.Tag(BUTTON_VOLT_AUTO);
   GD.cmd_button(x+350,y+143,90,58,30,0,"AUTO");
   
   renderDeviation(x+667,y+147, V_STATS.rawValue, setMv, false);
@@ -225,9 +227,7 @@ void currentPanel(int x, int y, boolean overflow) {
   GD.cmd_fgcolor(0xaaaa90);  
   GD.Tag(BUTTON_CUR_SET);
   GD.cmd_button(x+20,y+130,90,58,30,0,"LIM");
-  
-  GD.Tag(123);
-
+  GD.Tag(BUTTON_CUR_AUTO);
   GD.cmd_button(x+350,y+130,90,58,30,0,"AUTO");
   
 }
@@ -259,7 +259,7 @@ void scrollIndication(int y, int activeWidget) {
 
 
 void showWidget(int widgetNo, int scroll) {
-  int yPos = 260;
+  int yPos = LOWER_WIDGET_Y_POS;
     if (widgetNo ==0) {
        currentPanel(scroll, yPos, SMU[0].Overflow());
   }else if (widgetNo == 1) {
@@ -278,19 +278,10 @@ void showWidget(int widgetNo, int scroll) {
 }
 
 
-
-
 int gestureDetected = GEST_NONE;
 int activeWidget = 0;
 int scrollSpeed = 75;
-void renderDisplay() {
- 
-  int x = 0;
-  int y = 0;
-
-  voltagePanel(x,y);
-  //renderVoltageTrend();
-
+void handleWidgetScollPosition() {
   if (gestureDetected == GEST_MOVE_LEFT) {
     if (activeWidget == noOfWidgets -1) {
       Serial.println("reached right end");
@@ -307,7 +298,6 @@ void renderDisplay() {
   } 
   
   scroll = scroll + scrollDir * scrollSpeed;
-  
   if (scroll <= -800 && scrollDir != 0) {
     activeWidget ++;
     scrollDir = 0;
@@ -317,15 +307,46 @@ void renderDisplay() {
     scrollDir = 0;
     scroll = 0;
   }
+}
 
-  GD.Tag(101);
+boolean mainMenuActive = false;
+void handleMenuScrolldown(){
+  if (gestureDetected == GEST_MOVE_DOWN && mainMenuActive == false) {
+    mainMenuActive = true;
+  } 
+}
+
+
+void renderDisplay() {
+
+  int x = 0;
+  int y = 0;
+
+
+
+
+  
+  handleMenuScrolldown();
+
+  // register screen for gestures on top half
+  GD.Tag(GESTURE_AREA_HIGH);
   GD.Begin(RECTS);
-  GD.ColorRGB(00,00,00);
-  GD.Vertex2ii(0,260);
+  GD.ColorA(200);
+  GD.ColorRGB(0x000000);
+  GD.Vertex2ii(0,0);
+  GD.Vertex2ii(800, LOWER_WIDGET_Y_POS);
+  voltagePanel(x,y);
+
+  // register screen for gestures on lower half
+  GD.Tag(GESTURE_AREA_LOW);
+  GD.Begin(RECTS);
+  GD.ColorA(200);
+  GD.ColorRGB(0x000000);
+  GD.Vertex2ii(0,LOWER_WIDGET_Y_POS);
   GD.Vertex2ii(800, 480);
-
-
-
+  
+  handleWidgetScollPosition();
+  
   if (activeWidget >= 0) {
     if (scrollDir == 0) {
       showWidget(activeWidget, 0);
@@ -337,12 +358,25 @@ void renderDisplay() {
     else if (scrollDir == 1) {
       showWidget(activeWidget - 1, scroll - 800);
       showWidget(activeWidget, scroll + 0);
-    } 
-    
+    }   
   }
   
-  
   scrollIndication(240, activeWidget);
+
+
+
+  // main menu
+  if (mainMenuActive) {
+    GD.Begin(RECTS);
+    GD.ColorA(200);
+    GD.ColorRGB(0x0000ff);
+    GD.Vertex2ii(50,0);
+    GD.Vertex2ii(750, 400);
+  }
+
+
+
+  
 
 }
 
@@ -353,34 +387,55 @@ void renderDisplay() {
 
 
 int gestOldX = 0;
-int gestDuration = 0;
+int gestOldY = 0;
+int gestDurationX = 0;
+int gestDurationY = 0;
+
 void detectGestures() {
   GD.get_inputs();
   //Serial.println(GD.inputs.tag);
   int touchX = GD.inputs.x;
-  int gestDistance = touchX - gestOldX;
-  if (GD.inputs.tag == 101 && gestureDetected == GEST_NONE) {
-    if (touchX > 0 && gestDistance < -10 && scrollDir == 0) {
-      if (++gestDuration >= 2) {
+  int touchY = GD.inputs.y;
+  int gestDistanceX = touchX - gestOldX;
+  int gestDistanceY = touchY - gestOldY;
+
+  if ((GD.inputs.tag == GESTURE_AREA_LOW || GD.inputs.tag == GESTURE_AREA_HIGH) && gestureDetected == GEST_NONE) {
+    if (touchX > 0 && touchY > LOWER_WIDGET_Y_POS && gestDistanceX < -10 && scrollDir == 0) {
+      if (++gestDurationX >= 2) {
         Serial.println("move left");
+        Serial.flush();
         gestureDetected = GEST_MOVE_LEFT;
-        gestDuration = 0;
+        gestDurationX = 0;
       }
     }
-    else if (touchX > 0 && gestDistance > 10 && scrollDir == 0) {
-      if (++gestDuration >= 2) {
+    else if (touchX > 0 && touchY > LOWER_WIDGET_Y_POS && gestDistanceX > 10 && scrollDir == 0) {
+      if (++gestDurationX >= 2) {
         Serial.println("move right");
+        Serial.flush();
         gestureDetected = GEST_MOVE_RIGHT;
-        gestDuration = 0;
+        gestDurationX = 0;
       }
-    } else {
-      gestDuration = 0;
-    }
-    gestOldX = GD.inputs.x;  
+    } 
+    else if (touchY > 0 && touchY<100 && gestDistanceY > 10 && scrollDir == 0) {
+       if (++gestDurationY >= 2) {
+        Serial.println("move down from upper");
+        Serial.flush();
+        gestureDetected = GEST_MOVE_DOWN;
+        gestDurationY = 0;
+      }
+
+    } 
+    
   } else {
     gestureDetected = GEST_NONE;
-    gestDuration = 0;
+    gestDurationX = 0;
+    gestDurationY = 0;
   }
+
+
+    gestOldY = GD.inputs.y;  
+    gestOldX = GD.inputs.x;  
+ 
 
 }
 
