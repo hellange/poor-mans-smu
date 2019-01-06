@@ -311,8 +311,19 @@ void handleWidgetScrollPosition() {
   }
 }
 
+void bluredBackground() {
+    GD.Begin(RECTS);
+    GD.ColorA(150);
+    GD.ColorRGB(0x000000);
+    GD.Vertex2ii(0,0);
+    GD.Vertex2ii(800, 480);
+}
+
 boolean mainMenuActive = false;
 void handleMenuScrolldown(){
+
+
+  
   if (gestureDetected == GEST_MOVE_DOWN && mainMenuActive == false) {
     mainMenuActive = true;
     scrollMainMenuDir = 1;
@@ -321,6 +332,9 @@ void handleMenuScrolldown(){
   // main menu
   if (mainMenuActive) {
 
+    bluredBackground();
+
+  
     scrollMainMenu = scrollMainMenu + scrollMainMenuDir*25;
     if (scrollMainMenu > 300) {
       scrollMainMenu = 300;
@@ -396,10 +410,14 @@ void renderDisplay() {
   
   scrollIndication(240, activeWidget);
 
+  
+
+
+  
   handleMenuScrolldown();
 
 
- 
+
 
 
 
@@ -502,9 +520,7 @@ void loop()
 
     GD.Clear();
 
-    if (DIAL.isDialogOpen()) {
-      GD.ColorA(0x44);
-    }
+
      
     // Dont sample voltage and current while scrolling because polling is slow.
     // TODO: Remove this limitation when sampling is based on interrupts.
@@ -515,7 +531,9 @@ void loop()
 
     renderDisplay();
 
+    
     if (DIAL.isDialogOpen()) {
+      bluredBackground();
       DIAL.checkKeypress();
       DIAL.handleKeypadDialog();
     }

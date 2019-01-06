@@ -27,6 +27,7 @@ void CurrentDisplayClass::renderMeasured(int x, int y, float rawMa, boolean over
   } else {
     GD.ColorRGB(COLOR_CURRENT);
   }
+  GD.ColorA(255);
 
   if (a>0) {
 
