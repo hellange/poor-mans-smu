@@ -336,19 +336,30 @@ void handleMenuScrolldown(){
 
   
     scrollMainMenu = scrollMainMenu + scrollMainMenuDir*25;
-    if (scrollMainMenu > 300) {
-      scrollMainMenu = 300;
+    if (scrollMainMenu > 350) {
+      scrollMainMenu = 350;
       scrollMainMenuDir = 0;
     }
 
     GD.Begin(RECTS);
-    GD.ColorA(255);
-    GD.ColorRGB(0x222222);
+    GD.LineWidth(200);
+    GD.ColorA(200);
+    GD.ColorRGB(0xffffff);
     GD.Vertex2ii(50,0);
     GD.Vertex2ii(750, scrollMainMenu+40);
 
+    GD.Begin(RECTS);
+    GD.LineWidth(180);
+    GD.ColorA(200);
+    GD.ColorRGB(0x000000);
+    GD.Vertex2ii(50,0);
+    GD.Vertex2ii(750, scrollMainMenu+40);
+    GD.ColorRGB(0xffffff);
+
+    GD.ColorA(255);
+
     GD.Tag(MAIN_MENU_CLOSE);
-    GD.cmd_button(360,scrollMainMenu-40,90,70,30,0,"CLOSE");
+    GD.cmd_button(360,scrollMainMenu-20,80,50,28,0,"CLOSE");
    
     GD.get_inputs();
 
@@ -357,7 +368,7 @@ void handleMenuScrolldown(){
     }
   } 
   if (scrollMainMenuDir == -1){
-      scrollMainMenu = scrollMainMenu + scrollMainMenuDir*20;
+      scrollMainMenu = scrollMainMenu + scrollMainMenuDir*15;
       if (scrollMainMenu < 0) {
         scrollMainMenu = 0;
         mainMenuActive = false;
