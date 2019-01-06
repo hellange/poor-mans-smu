@@ -54,6 +54,8 @@ SMU_HAL_dummy SMU[1] = {
 
 int scroll = 0;
 int scrollDir = 0;
+int scrollMainMenu = 0;
+int scrollMainMenuDir = 0;
 
 StatsClass V_STATS;
 StatsClass C_STATS;
@@ -281,7 +283,7 @@ void showWidget(int widgetNo, int scroll) {
 int gestureDetected = GEST_NONE;
 int activeWidget = 0;
 int scrollSpeed = 75;
-void handleWidgetScollPosition() {
+void handleWidgetScrollPosition() {
   if (gestureDetected == GEST_MOVE_LEFT) {
     if (activeWidget == noOfWidgets -1) {
       Serial.println("reached right end");
@@ -313,7 +315,43 @@ boolean mainMenuActive = false;
 void handleMenuScrolldown(){
   if (gestureDetected == GEST_MOVE_DOWN && mainMenuActive == false) {
     mainMenuActive = true;
+    scrollMainMenuDir = 1;
   } 
+
+  // main menu
+  if (mainMenuActive) {
+
+    scrollMainMenu = scrollMainMenu + scrollMainMenuDir*25;
+    if (scrollMainMenu > 300) {
+      scrollMainMenu = 300;
+      scrollMainMenuDir = 0;
+    }
+
+    GD.Begin(RECTS);
+    GD.ColorA(255);
+    GD.ColorRGB(0x222222);
+    GD.Vertex2ii(50,0);
+    GD.Vertex2ii(750, scrollMainMenu+40);
+
+    GD.Tag(MAIN_MENU_CLOSE);
+    GD.cmd_button(360,scrollMainMenu-40,90,70,30,0,"CLOSE");
+   
+    GD.get_inputs();
+
+    if(GD.inputs.tag == MAIN_MENU_CLOSE && scrollMainMenuDir == 0) {
+      scrollMainMenuDir = -1;
+    }
+  } 
+  if (scrollMainMenuDir == -1){
+      scrollMainMenu = scrollMainMenu + scrollMainMenuDir*20;
+      if (scrollMainMenu < 0) {
+        scrollMainMenu = 0;
+        mainMenuActive = false;
+        scrollMainMenuDir = 0;
+      }
+  }
+
+  
 }
 
 
@@ -322,11 +360,6 @@ void renderDisplay() {
   int x = 0;
   int y = 0;
 
-
-
-
-  
-  handleMenuScrolldown();
 
   // register screen for gestures on top half
   GD.Tag(GESTURE_AREA_HIGH);
@@ -345,7 +378,7 @@ void renderDisplay() {
   GD.Vertex2ii(0,LOWER_WIDGET_Y_POS);
   GD.Vertex2ii(800, 480);
   
-  handleWidgetScollPosition();
+  handleWidgetScrollPosition();
   
   if (activeWidget >= 0) {
     if (scrollDir == 0) {
@@ -363,16 +396,10 @@ void renderDisplay() {
   
   scrollIndication(240, activeWidget);
 
+  handleMenuScrolldown();
 
 
-  // main menu
-  if (mainMenuActive) {
-    GD.Begin(RECTS);
-    GD.ColorA(200);
-    GD.ColorRGB(0x0000ff);
-    GD.Vertex2ii(50,0);
-    GD.Vertex2ii(750, 400);
-  }
+ 
 
 
 
@@ -416,7 +443,7 @@ void detectGestures() {
         gestDurationX = 0;
       }
     } 
-    else if (touchY > 0 && touchY<100 && gestDistanceY > 10 && scrollDir == 0) {
+    else if (touchY > 0 && touchY<150 && gestDistanceY > 10 && scrollDir == 0) {
        if (++gestDurationY >= 2) {
         Serial.println("move down from upper");
         Serial.flush();
