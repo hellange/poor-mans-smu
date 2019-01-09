@@ -21,6 +21,18 @@ bool DacClass::checkDataAvilable() {
     MSB = SPI_RX_Buff_Ptr[0];    
     data = SPI_RX_Buff_Ptr[1];
     LSB = SPI_RX_Buff_Ptr[2];
+
+    Serial.print("hex ");
+
+    Serial.print(MSB,BIN);
+        Serial.print(" ");
+
+    Serial.print(data,BIN);
+            Serial.print(" ");
+
+    Serial.println(LSB,BIN);
+
+    
     return true;
   } else {
     return false;
@@ -39,7 +51,7 @@ float DacClass::convertToMv() {
 
    long int bit32;
    long int bit24;
-   byte *config_reg;
+   //byte *config_reg;
   
     
   
@@ -68,14 +80,10 @@ float DacClass::convertToMv() {
     Serial.print(" ");
     Serial.println(config_reg[3],HEX);
     */
-    
-//    Serial.print(MSB,HEX);
-//    Serial.print(data,HEX);
-//    Serial.print(LSB,HEX);
-//    
-//    Serial.print(vout);
-//    Serial.print("    ");
-//    Serial.print(bit32,HEX);
+
+
+    Serial.print("bit 32  ");
+    Serial.println(bit32,HEX);
     
     return (float)((bit32*VFSR*1000)/FSR);     //In  mV
 }

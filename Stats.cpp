@@ -10,10 +10,30 @@ void StatsClass::init(int type_) {
      value[pos] = undefinedValue;
    }
 }
+
+float StatsClass::meanValue(){
+  return mean;
+}
+
+
+float StatsClass::updateMean(float v){
+  int meanSamples = 100;
+  float tot = v;
+  for (int i=meanSamples-1;i>0;i--){
+    meanRaws[i] = meanRaws[i-1];
+    tot = tot + meanRaws[i+1];
+  }
+  meanRaws[0] = v;
+  tot = tot + v;
+  
+  mean = tot / meanSamples;
+  return mean;
+}
+
 void StatsClass::addSample(float rawValue_) {
       rawValue = rawValue_; 
       prelimBuffer[prelimSamplesCounter++] = rawValue_;
-      
+      updateMean(rawValue);
       if (prelimSamplesCounter < maxSamplesBeforeStore) {
         return;
       } else {
@@ -237,7 +257,7 @@ void StatsClass::renderTrend(int x, int y, bool limitDetails) {
     int i = endPtr;
 
     uispan = visibleMax - visibleMin;
-
+ if (!limitDetails) {
     // main graph
     for (int pos=0; pos<nrOfTrendPoints;pos++) { 
       float height = viewHeight * ( (visibleMax - value[i]) / uispan);
@@ -255,7 +275,7 @@ void StatsClass::renderTrend(int x, int y, bool limitDetails) {
     }
 
     i = endPtr;
-
+ }
     if (!limitDetails) {
       
       // max min graphing

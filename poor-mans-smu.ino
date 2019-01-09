@@ -81,16 +81,23 @@ void setup()
 
   Serial.println("Initializing DAC...");
 
-     pinMode(9, OUTPUT);
-   digitalWrite(9, HIGH);
-   DAC.init();
-   pinMode(10, OUTPUT);
-   digitalWrite(10, HIGH);
-     Serial.println("Done!");
+  disableSPIunits();
+  
+  DAC.init();
 
+   if(DAC.checkDataAvilable() == true) {
+    float v = DAC.convertToMv();
+    Serial.print("Measured raw:");  
+    Serial.print(v, 3);
+    Serial.println(" mV");  
+    Serial.flush();
+   }
 
    
+  Serial.println("Done!");
+
   Serial.println("Initializing WeatherNG graphics controller FT81x...");
+  disableSPIunits();
   GD.begin(0);
   Serial.println("Done!");
     
@@ -114,7 +121,12 @@ void setup()
 
 }
 
-
+void disableSPIunits(){
+    pinMode(9, OUTPUT);
+    digitalWrite(9, HIGH);
+    pinMode(10, OUTPUT);
+    digitalWrite(10, HIGH);
+}
 
 
 void voltagePanel(int x, int y) {
@@ -157,7 +169,12 @@ void voltagePanel(int x, int y) {
   GD.ColorRGB(0xffffff);
 
   DIGIT_UTIL.renderValue(x+620, 15 + y + 45, V_STATS.maximum, 1, DigitUtilClass::typeVoltage);
-  DIGIT_UTIL.renderValue(x+620, 15 + y + 70, V_STATS.maximum - V_STATS.minimum, 1, DigitUtilClass::typeVoltage);
+  //DIGIT_UTIL.renderValue(x+620, 15 + y + 70, V_STATS.maximum - V_STATS.minimum, 1, DigitUtilClass::typeVoltage);
+  GD.ColorRGB(COLOR_VOLT);
+
+  DIGIT_UTIL.renderValue(x+620, 15 + y + 70, V_STATS.meanValue(), 1, DigitUtilClass::typeVoltage);
+  GD.ColorRGB(0xffffff);
+
   DIGIT_UTIL.renderValue(x+620, 15 + y + 95, V_STATS.minimum, 1, DigitUtilClass::typeVoltage);
 
 }
@@ -272,7 +289,6 @@ void showWidget(int widgetNo, int scroll) {
     }
   } else if (widgetNo == 2) {
       if (!DIAL.isDialogOpen()){
-        // dont render if dialog is open because then there are too much GPU commands 
         renderVoltageGraph(scroll, yPos, scrollDir != 0);
       }
   } else if (widgetNo == 3) {
@@ -504,40 +520,27 @@ const long interval = 1; // should it account for time taken to perform ADC samp
 void loop()
 {
    GD.__end();
-   pinMode(9, OUTPUT);
-   digitalWrite(9, HIGH);  
-   
-   //SPI.beginTransaction (SPISettings (1000000, MSBFIRST, SPI_MODE1)); // 100000
+   disableSPIunits();
 
-      pinMode(10, OUTPUT);
+     SPI.beginTransaction (SPISettings (1000000, MSBFIRST, SPI_MODE1)); // 100000
+
+   pinMode(10, OUTPUT);   // enable DAC SPI
    digitalWrite(10, LOW);
    float Vout;
     if(DAC.checkDataAvilable() == true) {
     Vout = DAC.convertToMv();
-    Serial.print("Raw:");  
+    Serial.print("Measured raw:");  
     Serial.print(Vout, 3);
     Serial.println(" mV");  
     Serial.flush();
    }
     //delay(100);
-      pinMode(10, OUTPUT);
-   digitalWrite(10, HIGH);
-      pinMode(9, OUTPUT);
-   digitalWrite(9, LOW);
+   disableSPIunits();
 
   unsigned long currentMillis = millis();
 
-  #ifdef ADDITIONAL_SPI_DEVICES
-  // change SPI mode for other spi devices ! Needed because the gd2 lib "occupies" the spi
-  SPI.setDataMode(SPI_MODE1); //...or whatever it requires
-  #endif
-
-   
-  // restore SPI
-//  SPI.setDataMode(SPI_MODE0);
-  //SPI.setClockDivider(SPI_CLOCK_DIV2);
   GD.resume();
-
+SPI.beginTransaction(SPISettings(3000000, MSBFIRST, SPI_MODE0));
   if (!gestureDetected) {
     if (GD.inputs.tag == BUTTON_VOLT_SET) {
       DIAL.open(BUTTON_VOLT_SET, closeCallback);
