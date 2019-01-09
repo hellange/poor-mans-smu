@@ -1,4 +1,5 @@
 #include "Stats.h"
+#include <SPI.h>
 #include "GD2.h"
 #include "digit_util.h"
 #include "colors.h"

@@ -1,4 +1,5 @@
 #include "digit_util.h"
+#include <SPI.h>
 #include "GD2.h"
 
 // TODO: A possible error in this function.

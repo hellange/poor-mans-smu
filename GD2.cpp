@@ -1,42 +1,70 @@
 /*
  * Copyright (C) 2013-2016 by James Bowman <jamesb@excamera.com>
- * Gameduino 2 library for Arduino, Arduino Due, Raspberry Pi.
- *
- * Minimized and modified to work with 800x640 display by Helge Langehaug (2017)
+ * Gameduino 2/3 library for Arduino, Arduino Due, Raspberry Pi,
+ * Teensy 3.2 and ESP8266.
  *
  */
-
 
 #include <Arduino.h>
 #include "SPI.h"
 #if !defined(__SAM3X8E__)
 #include "EEPROM.h"
 #endif
-#define VERBOSE       2
+#define VERBOSE       0
 #include "GD2.h"
+
+#if defined(ESP8266)
+#define SD_PIN        D9    // pin used for the microSD enable signal
+#else
+#define SD_PIN        9     // pin used for the microSD enable signal
+#endif
 
 #define BOARD_FTDI_80x    0
 #define BOARD_GAMEDUINO23 1
-#define BOARD_EVITA_0     2
-#define BOARD_VM810C      3
+#define HELGE 2
 
-#define BOARD         BOARD_VM810C 
+#define BOARD         HELGE // board, from above
+#define STORAGE       1                 // Want SD storage?
+#define CALIBRATION   1                 // Want touchscreen?
+
+// FTDI boards do not have storage
+#if (BOARD == BOARD_FTDI_80x) || defined(RASPBERRY_PI) || defined(DUMPDEV) || defined(SPIDRIVER)
+#undef STORAGE
+#define STORAGE 0
+#endif
+
 
 #ifdef DUMPDEV
 #include <assert.h>
 #include "transports/dump.h"
 #endif
 
+#ifdef RASPBERRY_PI
+#include <stdio.h>
+#include <fcntl.h>
+#include <stdlib.h>
+#include <string.h>
+#include <unistd.h>
+#include <stdint.h>
+
+#include <sys/ioctl.h>
+#include <linux/types.h>
+#include <linux/spi/spidev.h>
+
+#include "transports/spidev.h"
+#endif
+
 byte ft8xx_model;
 
-
-
 #if defined(ARDUINO)
-#include "wiring_gd.h"
+#include "transports/wiring.h"
+#endif
+
+#if defined(SPIDRIVER)
+#include "transports/tr-spidriver.h"
 #endif
 
 ////////////////////////////////////////////////////////////////////////
-
 
 void xy::set(int _x, int _y)
 {
@@ -76,6 +104,32 @@ class xy xy::operator+=(class xy &other)
   return *this;
 }
 
+class xy xy::operator-=(class xy &other)
+{
+  x -= other.x;
+  y -= other.y;
+  return *this;
+}
+
+class xy xy::operator<<=(int d)
+{
+  x <<= d;
+  y <<= d;
+  return *this;
+}
+
+long xy::operator*(class xy &other)
+{
+  return (long(x) * other.x) + (long(y) * other.y);
+}
+
+class xy xy::operator*=(int s)
+{
+  x *= s;
+  y *= s;
+  return *this;
+}
+
 int xy::nearer_than(int distance, xy &other)
 {
   int lx = abs(x - other.x);
@@ -90,9 +144,220 @@ int xy::nearer_than(int distance, xy &other)
   if ((lx < d2) && (ly < d2))
     return 1;
 
-  return ((lx * lx) + (ly * ly)) < (distance * distance);
+#define SQ(c) (long(c) * (c))
+  return (SQ(lx) + SQ(ly)) < SQ(distance);
+#undef SQ
 }
 
+void xy::rotate(int angle)
+{
+  // the hardware's convention that rotation is clockwise
+  int32_t s = GD.rsin(32767, angle);
+  int32_t c = GD.rcos(32767, angle);
+
+  int xr = ((x * c) - (y * s)) >> 15;
+  int yr = ((x * s) + (y * c)) >> 15;
+  x = xr;
+  y = yr;
+}
+
+////////////////////////////////////////////////////////////////////////
+
+void Bitmap::fromtext(int font, const char* s)
+{
+  GD.textsize(size.x, size.y, font, s);
+
+  int pclk = GD.rd16(REG_PCLK);
+  int vsize = GD.rd16(REG_VSIZE);
+  int hsize = GD.rd16(REG_HSIZE);
+
+  GD.finish();
+  GD.wr(REG_PCLK, 0);
+  delay(1);
+  GD.wr16(REG_HSIZE, size.x);
+  GD.wr16(REG_VSIZE, size.y);
+
+  GD.cmd_dlstart();
+  GD.Clear();
+  GD.BlendFunc(1,1);
+  GD.cmd_text(0, 0, font, 0, s);
+
+  GD.swap();
+  GD.loadptr = (GD.loadptr + 1) & ~1;
+  GD.cmd_snapshot(GD.loadptr);
+  GD.finish();
+
+  GD.wr16(REG_HSIZE, hsize);
+  GD.wr16(REG_VSIZE, vsize);
+  GD.wr16(REG_PCLK, pclk);
+
+  defaults(ARGB4);
+}
+
+void Bitmap::fromfile(const char* filename, int format)
+{
+  GD.loadptr = (GD.loadptr + 1) & ~1;
+  GD.cmd_loadimage(GD.loadptr, OPT_NODL);
+  GD.load(filename);
+  uint32_t ptr, w, h;
+  GD.cmd_getprops(ptr, w, h);
+  GD.finish();
+  size.x = GD.rd16(w);
+  size.y = GD.rd16(h);
+  defaults(format);
+}
+
+static const PROGMEM uint8_t bpltab[] = {
+/* 0  ARGB1555  */ 0,
+/* 1  L1        */ 4,
+/* 2  L4        */ 2,
+/* 3  L8        */ 1,
+/* 4  RGB332    */ 1,
+/* 5  ARGB2     */ 1,
+/* 6  ARGB4     */ 0,
+/* 7  RGB565    */ 0,
+/* 8  PALETTED  */ 1,
+/* 9  TEXT8X8   */ 0,
+/* 10 TEXTVGA   */ 0,
+/* 11 BARGRAPH  */ 1,
+/* 12           */ 0,
+/* 13           */ 0,
+/* 14           */ 0,
+/* 15           */ 0,
+/* 16           */ 0,
+/* 17 L2        */ 3
+};
+
+void Bitmap::defaults(uint8_t f)
+{
+  source = GD.loadptr;
+  format = f;
+  handle = -1;
+  center.x = size.x / 2;
+  center.y = size.y / 2;
+  GD.loadptr += (long)((size.x << 1) >> pgm_read_byte_near(bpltab + f)) * size.y;
+}
+
+void Bitmap::setup(void)
+{
+  GD.BitmapSource(source);
+  int bpl = (size.x << 1) >> pgm_read_byte_near(bpltab + format);
+  GD.BitmapLayout(format, bpl, size.y);
+  GD.BitmapSize(NEAREST, BORDER, BORDER, size.x, size.y);
+}
+
+void Bitmap::bind(uint8_t h)
+{
+  handle = h;
+
+  GD.BitmapHandle(handle);
+  setup();
+}
+
+#define IS_POWER_2(x) (((x) & ((x) - 1)) == 0)
+
+void Bitmap::wallpaper()
+{
+  if (handle == -1) {
+    GD.BitmapHandle(15);
+    setup();
+  } else {
+    GD.BitmapHandle(handle);
+  }
+  GD.Begin(BITMAPS);
+  // if power-of-2, can just use REPEAT,REPEAT
+  // otherwise must draw it across whole screen
+  if (IS_POWER_2(size.x) && IS_POWER_2(size.y)) {
+    GD.BitmapSize(NEAREST, REPEAT, REPEAT, GD.w, GD.h);
+    GD.Vertex2f(0, 0);
+  } else {
+    for (int x = 0; x < GD.w; x += size.x)
+      for (int y = 0; y < GD.h; y += size.y)
+        GD.Vertex2f(x << 4, y << 4);
+  }
+}
+
+void Bitmap::draw(int x, int y, int16_t angle)
+{
+  xy pos;
+  pos.set(x, y);
+  pos <<= 4;
+  draw(pos, angle);
+}
+
+void Bitmap::draw(const xy &p, int16_t angle)
+{
+  xy pos = p;
+  if (handle == -1) {
+    GD.BitmapHandle(15);
+    setup();
+  } else {
+    GD.BitmapHandle(handle);
+  }
+  GD.Begin(BITMAPS);
+
+  if (angle == 0) {
+    xy c4 = center;
+    c4 <<= 4;
+    pos -= c4;
+    GD.BitmapSize(NEAREST, BORDER, BORDER, size.x, size.y);
+    GD.Vertex2f(pos.x, pos.y);
+  } else {
+    // Compute the screen positions of 4 corners of the bitmap
+    xy corners[4] = {
+      {0,0              },
+      {size.x,  0       },
+      {0,       size.y  },
+      {size.x,  size.y  },
+    };
+    for (int i = 0; i < 4; i++) {
+      xy &c = corners[i];
+      c -= center;
+      c <<= 4;
+      c.rotate(angle);
+      c += pos;
+    }
+
+    // Find top-left and bottom-right boundaries
+    xy topleft, bottomright;
+    topleft.set(
+      min(min(corners[0].x, corners[1].x), min(corners[2].x, corners[3].x)),
+      min(min(corners[0].y, corners[1].y), min(corners[2].y, corners[3].y)));
+    bottomright.set(
+      max(max(corners[0].x, corners[1].x), max(corners[2].x, corners[3].x)),
+      max(max(corners[0].y, corners[1].y), max(corners[2].y, corners[3].y)));
+
+    // span is the total size of this region
+    xy span = bottomright;
+    span -= topleft;
+    GD.BitmapSize(BILINEAR, BORDER, BORDER,
+                  (span.x + 15) >> 4, (span.y + 15) >> 4);
+
+    // Set up the transform and draw the bitmap
+    pos -= topleft;
+    GD.SaveContext();
+    GD.cmd_loadidentity();
+    GD.cmd_translate((int32_t)pos.x << 12, (int32_t)pos.y << 12);
+    GD.cmd_rotate(angle);
+    GD.cmd_translate(F16(-center.x), F16(-center.y));
+    GD.cmd_setmatrix();
+    GD.Vertex2f(topleft.x, topleft.y);
+    GD.RestoreContext();
+  }
+}
+
+class Bitmap __fromatlas(uint32_t a)
+{
+  Bitmap r;
+  r.size.x    = GD.rd16(a);
+  r.size.y    = GD.rd16(a + 2);
+  r.center.x  = GD.rd16(a + 4);
+  r.center.y  = GD.rd16(a + 6);
+  r.source    = GD.rd32(a + 8);
+  r.format    = GD.rd(a + 12);
+  r.handle    = -1;
+  return r;
+}
 
 ////////////////////////////////////////////////////////////////////////
 
@@ -105,7 +370,7 @@ GDClass GD;
 // The GD3 has a tiny configuration EEPROM - AT24C01D
 // It is programmed at manufacturing time with the setup
 // commands for the connected panel. The SCL,SDA lines
-// are connected to thye FT81x GPIO0, GPIO1 signals.
+// are connected to the FT81x GPIO0, GPIO1 signals.
 // This is a read-only driver for it.  A single method
 // 'read()' initializes the RAM and reads all 128 bytes
 // into an array.
@@ -229,29 +494,56 @@ void GDClass::swap(void) {
 #endif
 }
 
+uint32_t GDClass::measure_freq(void)
+{
+  unsigned long t0 = GDTR.rd32(REG_CLOCK);
+  delayMicroseconds(15625);
+  unsigned long t1 = GDTR.rd32(REG_CLOCK);
+  // Serial.println((t1 - t0) << 6);
+  return (t1 - t0) << 6;
+}
+
+#define LOW_FREQ_BOUND  47040000UL
+// #define LOW_FREQ_BOUND  32040000UL
+
+void GDClass::tune(void)
+{
+  uint32_t f;
+  for (byte i = 0; (i < 31) && ((f = measure_freq()) < LOW_FREQ_BOUND); i++) {
+    GDTR.wr(REG_TRIM, i);
+  }
+  GDTR.wr32(REG_FREQUENCY, f);
+}
 
 void GDClass::begin(uint8_t options) {
-#if defined(ARDUINO)
+#if defined(ARDUINO) || defined(ESP8266) || defined(SPIDRIVER)
   GDTR.begin0();
+
+  if (STORAGE && (options & GD_STORAGE)) {
+    GDTR.ios();
+    SD.begin(SD_PIN);
+  }
 #endif
+
+  byte external_crystal = 0;
+begin1:
   GDTR.begin1();
 
-  rseed = 0x77777777;
-
-#if 1
+#if 0
   Serial.println("ID REGISTER:");
   Serial.println(GDTR.rd(REG_ID), HEX);
 #endif
 
+#if (BOARD == BOARD_FTDI_80x)
+  GDTR.wr(REG_PCLK_POL, 1);
+  GDTR.wr(REG_PCLK, 5);
+#endif
 
   GDTR.wr(REG_PWM_DUTY, 0);
   GDTR.wr(REG_GPIO_DIR, 0x83);
   GDTR.wr(REG_GPIO, GDTR.rd(REG_GPIO) | 0x80);
 
-// configuration based on info in thread:
-// http://gameduino2.proboards.com/thread/270/gameduino-3
-// works for http://www.buydisplay.com/default/7-tft-lcd-touch-screen-display-module-800x480-for-mp4-gps-tablet-pc
-#if (BOARD == BOARD_VM810C)
+#if (BOARD == HELGE)
   GD.wr32(REG_HCYCLE, 900);//548
   GD.wr32(REG_HOFFSET, 43);
   GD.wr32(REG_HSIZE, 800);
@@ -269,18 +561,220 @@ void GDClass::begin(uint8_t options) {
   GD.wr(REG_SWIZZLE, 0);//3 for GD2
 #endif
 
+#if (BOARD == BOARD_GAMEDUINO23)
+  ConfigRam cr;
+  byte v8[128] = {0};
+  cr.read(v8);
+  if ((v8[1] == 0xff) && (v8[2] == 0x01)) {
+    options &= ~(GD_TRIM | GD_CALIBRATE);
+    if (!external_crystal && (v8[3] & 2)) {
+      GDTR.external_crystal();
+      external_crystal = 1;
+      goto begin1;
+    }
+    copyram(v8 + 4, 124);
+    finish();
+  } else {
+    GDTR.wr(REG_PCLK_POL, 1);
+    GDTR.wr(REG_PCLK, 5);
+    GDTR.wr(REG_ROTATE, 1);
+    GDTR.wr(REG_SWIZZLE, 3);
+  }
+#endif
+
   w = GDTR.rd16(REG_HSIZE);
   h = GDTR.rd16(REG_VSIZE);
-  Serial.print("Width:");
-  Serial.println(w);
-  Serial.print("Height");
-  Serial.println(h);
+  loadptr = 0;
+
+  // Work-around issue with bitmap sizes not being reset
+  for (byte i = 0; i < 32; i++) {
+    BitmapHandle(i);
+    cI(0x28000000UL);
+    cI(0x29000000UL);
+  }
 
   Clear(); swap();
   Clear(); swap();
   Clear(); swap();
   cmd_regwrite(REG_PWM_DUTY, 128);
-  GD.flush();
+  flush();
+
+  if (CALIBRATION & (options & GD_CALIBRATE)) {
+
+#if defined(ARDUINO) && !defined(__DUE__)
+    if ((EEPROM.read(0) != 0x7c)) {
+      self_calibrate();
+      // for (int i = 0; i < 24; i++) Serial.println(GDTR.rd(REG_TOUCH_TRANSFORM_A + i), HEX);
+      for (int i = 0; i < 24; i++)
+        EEPROM.write(1 + i, GDTR.rd(REG_TOUCH_TRANSFORM_A + i));
+      EEPROM.write(0, 0x7c);  // is written!
+    } else {
+      for (int i = 0; i < 24; i++)
+        GDTR.wr(REG_TOUCH_TRANSFORM_A + i, EEPROM.read(1 + i));
+    }
+#endif
+
+#ifdef __DUE__
+    // The Due has no persistent storage. So instead use a "canned"
+    // calibration.
+
+    // self_calibrate();
+    // for (int i = 0; i < 24; i++)
+    //   Serial.println(GDTR.rd(REG_TOUCH_TRANSFORM_A + i), HEX);
+    static const byte canned_calibration[24] = {
+      0xCC, 0x7C, 0xFF, 0xFF, 0x57, 0xFE, 0xFF, 0xFF,
+      0xA1, 0x04, 0xF9, 0x01, 0x93, 0x00, 0x00, 0x00,
+      0x5E, 0x4B, 0x00, 0x00, 0x08, 0x8B, 0xF1, 0xFF };
+    for (int i = 0; i < 24; i++)
+      GDTR.wr(REG_TOUCH_TRANSFORM_A + i, canned_calibration[i]);
+#endif
+
+#if defined(RASPBERRY_PI)
+    {
+      uint8_t cal[24];
+      FILE *calfile = fopen(".calibration", "r");
+      if (calfile == NULL) {
+        calfile = fopen(".calibration", "w");
+        if (calfile != NULL) {
+          self_calibrate();
+          for (int i = 0; i < 24; i++)
+            cal[i] = GDTR.rd(REG_TOUCH_TRANSFORM_A + i);
+          fwrite(cal, 1, sizeof(cal), calfile);
+          fclose(calfile);
+        }
+      } else {
+        fread(cal, 1, sizeof(cal), calfile);
+        for (int i = 0; i < 24; i++)
+          GDTR.wr(REG_TOUCH_TRANSFORM_A + i, cal[i]);
+        fclose(calfile);
+      }
+    }
+#endif
+
+  }
+
+  GDTR.wr16(REG_TOUCH_RZTHRESH, 1200);
+
+  rseed = 0x77777777;
+
+  if ((BOARD == BOARD_GAMEDUINO23) && (options & GD_TRIM)) {
+    tune();
+  }
+}
+
+void GDClass::storage(void) {
+  GDTR.__end();
+  SD.begin(SD_PIN);
+  GDTR.resume();
+}
+
+void GDClass::self_calibrate(void) {
+  cmd_dlstart();
+  Clear();
+  cmd_text(w / 2, h / 2, 30, OPT_CENTER, "please tap on the dot");
+  cmd_calibrate();
+  finish();
+  cmd_loadidentity();
+  cmd_dlstart();
+  GDTR.flush();
+}
+
+void GDClass::seed(uint16_t n) {
+  rseed = n ? n : 7;
+}
+
+uint16_t GDClass::random() {
+  rseed ^= rseed << 2;
+  rseed ^= rseed >> 5;
+  rseed ^= rseed << 1;
+  return rseed;
+}
+
+uint16_t GDClass::random(uint16_t n) {
+  uint16_t p = random();
+  if (n == (n & -n))
+    return p & (n - 1);
+  return (uint32_t(p) * n) >> 16;
+}
+
+uint16_t GDClass::random(uint16_t n0, uint16_t n1) {
+  return n0 + random(n1 - n0);
+}
+
+// >>> [int(65535*math.sin(math.pi * 2 * i / 1024)) for i in range(257)]
+static const PROGMEM uint16_t sintab[257] = {
+0, 402, 804, 1206, 1608, 2010, 2412, 2813, 3215, 3617, 4018, 4419, 4821, 5221, 5622, 6023, 6423, 6823, 7223, 7622, 8022, 8421, 8819, 9218, 9615, 10013, 10410, 10807, 11203, 11599, 11995, 12390, 12785, 13179, 13573, 13966, 14358, 14750, 15142, 15533, 15923, 16313, 16702, 17091, 17479, 17866, 18252, 18638, 19023, 19408, 19791, 20174, 20557, 20938, 21319, 21699, 22078, 22456, 22833, 23210, 23585, 23960, 24334, 24707, 25079, 25450, 25820, 26189, 26557, 26924, 27290, 27655, 28019, 28382, 28744, 29105, 29465, 29823, 30181, 30537, 30892, 31247, 31599, 31951, 32302, 32651, 32999, 33346, 33691, 34035, 34378, 34720, 35061, 35400, 35737, 36074, 36409, 36742, 37075, 37406, 37735, 38063, 38390, 38715, 39039, 39361, 39682, 40001, 40319, 40635, 40950, 41263, 41574, 41885, 42193, 42500, 42805, 43109, 43411, 43711, 44010, 44307, 44603, 44896, 45189, 45479, 45768, 46055, 46340, 46623, 46905, 47185, 47463, 47739, 48014, 48287, 48558, 48827, 49094, 49360, 49623, 49885, 50145, 50403, 50659, 50913, 51165, 51415, 51664, 51910, 52155, 52397, 52638, 52876, 53113, 53347, 53580, 53810, 54039, 54265, 54490, 54712, 54933, 55151, 55367, 55581, 55793, 56003, 56211, 56416, 56620, 56821, 57021, 57218, 57413, 57606, 57796, 57985, 58171, 58355, 58537, 58717, 58894, 59069, 59242, 59413, 59582, 59748, 59912, 60074, 60234, 60391, 60546, 60699, 60849, 60997, 61143, 61287, 61428, 61567, 61704, 61838, 61970, 62100, 62227, 62352, 62474, 62595, 62713, 62828, 62941, 63052, 63161, 63267, 63370, 63472, 63570, 63667, 63761, 63853, 63942, 64029, 64114, 64196, 64275, 64353, 64427, 64500, 64570, 64637, 64702, 64765, 64825, 64883, 64938, 64991, 65042, 65090, 65135, 65178, 65219, 65257, 65293, 65326, 65357, 65385, 65411, 65435, 65456, 65474, 65490, 65504, 65515, 65523, 65530, 65533, 65535
+};
+
+int16_t GDClass::rsin(int16_t r, uint16_t th) {
+  th >>= 6; // angle 0-1023
+  // return int(r * sin((2 * M_PI) * th / 1024.));
+  int th4 = th & 511;
+  if (th4 & 256)
+    th4 = 512 - th4; // 256->256 257->255, etc
+  uint16_t s = pgm_read_word_near(sintab + th4);
+  int16_t p = ((uint32_t)s * r) >> 16;
+  if (th & 512)
+    p = -p;
+  return p;
+}
+
+int16_t GDClass::rcos(int16_t r, uint16_t th) {
+  return rsin(r, th + 0x4000);
+}
+
+void GDClass::polar(int &x, int &y, int16_t r, uint16_t th) {
+  x = (int)(-GD.rsin(r, th));
+  y = (int)( GD.rcos(r, th));
+}
+
+// >>> [int(round(1024 * math.atan(i / 256.) / math.pi)) for i in range(256)]
+static const PROGMEM uint8_t atan8[] = {
+0,1,3,4,5,6,8,9,10,11,13,14,15,17,18,19,20,22,23,24,25,27,28,29,30,32,33,34,36,37,38,39,41,42,43,44,46,47,48,49,51,52,53,54,55,57,58,59,60,62,63,64,65,67,68,69,70,71,73,74,75,76,77,79,80,81,82,83,85,86,87,88,89,91,92,93,94,95,96,98,99,100,101,102,103,104,106,107,108,109,110,111,112,114,115,116,117,118,119,120,121,122,124,125,126,127,128,129,130,131,132,133,134,135,137,138,139,140,141,142,143,144,145,146,147,148,149,150,151,152,153,154,155,156,157,158,159,160,161,162,163,164,165,166,167,168,169,170,171,172,173,174,175,176,177,177,178,179,180,181,182,183,184,185,186,187,188,188,189,190,191,192,193,194,195,195,196,197,198,199,200,201,201,202,203,204,205,206,206,207,208,209,210,211,211,212,213,214,215,215,216,217,218,219,219,220,221,222,222,223,224,225,225,226,227,228,228,229,230,231,231,232,233,234,234,235,236,236,237,238,239,239,240,241,241,242,243,243,244,245,245,246,247,248,248,249,250,250,251,251,252,253,253,254,255,255
+};
+
+uint16_t GDClass::atan2(int16_t y, int16_t x)
+{
+  uint16_t a;
+  uint16_t xx = 0;
+
+  /* These values are tricky. So pretend they are not */
+  if (x == -32768)
+    x++;
+  if (y == -32768)
+    y++;
+
+  if ((x <= 0) ^ (y > 0)) {
+    int16_t t; t = x; x = y; y = t;
+    xx ^= 0x4000;
+  }
+  if (x <= 0) {
+    x = -x;
+  } else {
+    xx ^= 0x8000;
+  }
+  y = abs(y);
+  if (x > y) {
+    int16_t t; t = x; x = y; y = t;
+    xx ^= 0x3fff;
+  }
+  while ((x | y) & 0xff80) {
+    x >>= 1;
+    y >>= 1;
+  }
+  if (y == 0) {
+    a = 0;
+  } else if (x == y) {
+    a = 0x2000;
+  } else {
+    // assert(x <= y);
+    int r = ((x << 8) / y);
+    // assert(0 <= r);
+    // assert(r < 256);
+    a = pgm_read_byte(atan8 + r) << 5;
+  }
+  a ^= xx;
+  return a;
 }
 
 void GDClass::align(byte n) {
@@ -328,7 +822,11 @@ void GDClass::cs(const char *s) {
   align(count + 1);
 }
 
-void GDClass::copy(const  uint8_t *src, int count) {
+#if !defined(ESP8266)
+void GDClass::copy(const PROGMEM uint8_t *src, int count) {
+#else
+void GDClass::copy(const uint8_t *src, int count) {
+#endif
   byte a = count & 3;
   while (count--) {
     GDTR.cmdbyte(pgm_read_byte_near(src));
@@ -363,6 +861,11 @@ void GDClass::BitmapLayout(byte format, uint16_t linestride, uint16_t height) {
   b[2] = (7 & (linestride >> 7)) | (format << 3);
   b[3] = 7;
   cI(c);
+  if (ft8xx_model) {
+    b[0] = (((linestride >> 10) & 3) << 2) | ((height >> 9) & 3);
+    b[3] = 0x28;
+    cI(c);
+  }
 }
 void GDClass::BitmapSize(byte filter, byte wrapx, byte wrapy, uint16_t width, uint16_t height) {
   byte fxy = (filter << 2) | (wrapx << 1) | (wrapy);
@@ -514,16 +1017,36 @@ void GDClass::Vertex2f(int16_t x, int16_t y) {
   // y = int(16 * y);
   cI((1UL << 30) | ((x & 32767L) << 15) | ((y & 32767L) << 0));
 }
-void GDClass::Vertex2ii(int16_t x, int16_t y, byte handle, byte cell) {
 
+// In order to draw bitmap on x coordinates higher that 512
+// we use VertexTranslateX which according to documentation:
+// "Specifies the offset added to vertex X coordinates. 
+// This command allows drawing to be shifted on the screen"
+// Not sure if this is the right approach, but it seems to work
+int16_t GDClass::above512pixelMagic(int16_t x) {
+     if (x < 0) {
+    // For negative x we shift instead of setting x
+    GD.VertexTranslateX(x * 16);
+    x = 0; 
+  } else if (x >= 512) {
+    // for high values we start to use shift
+    // and reduces the x value accordingly
+    GD.VertexTranslateX(512 * 16);
+    x = x - 512;
+  } else {
+    GD.VertexTranslateX(0);
+  }
+  return x;
+}
+
+void GDClass::Vertex2ii(uint16_t x, uint16_t y, byte handle, byte cell) {
   x = above512pixelMagic(x);
-  
   // cI((2UL << 30) | ((x & 511L) << 21) | ((y & 511L) << 12) | ((handle & 31L) << 7) | ((cell & 127L) << 0));
   union {
     uint32_t c;
     uint8_t b[4];
   };
-  b[0] = cell | ((handle & 1) << 7);
+  b[0] = (cell & 127) | ((handle & 1) << 7);
   b[1] = (handle >> 1) | (y << 4);
   b[2] = (y >> 4) | (x << 5);
   b[3] = (2 << 6) | (x >> 3);
@@ -533,7 +1056,7 @@ void GDClass::VertexFormat(byte frac) {
   cI((39UL << 24) | (((frac) & 7) << 0));
 }
 void GDClass::BitmapLayoutH(byte linestride, byte height) {
-  cI((40 << 24) | (((linestride) & 3) << 2) | (((height) & 3) << 0));
+  cI((40UL << 24) | (((linestride) & 3) << 2) | (((height) & 3) << 0));
 }
 void GDClass::BitmapSizeH(byte width, byte height) {
   cI((41UL << 24) | (((width) & 3) << 2) | (((height) & 3) << 0));
@@ -561,8 +1084,7 @@ void GDClass::cmd_bgcolor(uint32_t c) {
   cI(c);
 }
 void GDClass::cmd_button(int16_t x, int16_t y, uint16_t w, uint16_t h, byte font, uint16_t options, const char *s) {
-    x = above512pixelMagic(x);
-
+  x = above512pixelMagic(x);
   cFFFFFF(0x0d);
   ch(x);
   ch(y);
@@ -710,8 +1232,7 @@ void GDClass::cmd_regwrite(uint32_t ptr, uint32_t val) {
   cI(val);
 }
 void GDClass::cmd_number(int16_t x, int16_t y, byte font, uint16_t options, uint32_t n) {
-
-  x = GD.above512pixelMagic(x);
+  x = above512pixelMagic(x);
 
   cFFFFFF(0x2e);
   ch(x);
@@ -804,31 +1325,11 @@ void GDClass::cmd_stop(void) {
 void GDClass::cmd_swap(void) {
   cFFFFFF(0x01);
 }
-
-// In order to draw bitmap on x coordinates higher that 512
-// we use VertexTranslateX which according to documentation:
-// "Specifies the offset added to vertex X coordinates. 
-// This command allows drawing to be shifted on the screen"
-// Not sure if this is the right approach, but it seems to work
-int16_t GDClass::above512pixelMagic(int16_t x) {
-     if (x < 0) {
-    // For negative x we shift instead of setting x
-    GD.VertexTranslateX(x * 16);
-    x = 0; 
-  } else if (x >= 512) {
-    // for high values we start to use shift
-    // and reduces the x value accordingly
-    GD.VertexTranslateX(512 * 16);
-    x = x - 512;
-  } else {
-    GD.VertexTranslateX(0);
-  }
-  return x;
-}
 void GDClass::cmd_text(int16_t x, int16_t y, byte font, uint16_t options, const char *s) {
 
-  x = GD.above512pixelMagic(x);
-  
+    x = above512pixelMagic(x);
+
+
   cFFFFFF(0x0c);
   ch(x);
   ch(y);
@@ -924,6 +1425,10 @@ void GDClass::cmd_videostart() {
   cFFFFFF(0x40);
 }
 
+void GDClass::cmd_sync() {
+  cFFFFFF(0x42);
+}
+
 byte GDClass::rd(uint32_t addr) {
   return GDTR.rd(addr);
 }
@@ -942,9 +1447,9 @@ uint32_t GDClass::rd32(uint32_t addr) {
 void GDClass::wr32(uint32_t addr, uint32_t v) {
   GDTR.wr32(addr, v);
 }
-//void GDClass::wr_n(uint32_t addr, byte *src, uint32_t n) {
-//  GDTR.wr_n(addr, src, n);
-//}
+void GDClass::wr_n(uint32_t addr, byte *src, uint32_t n) {
+  GDTR.wr_n(addr, src, n);
+}
 
 void GDClass::cmdbyte(uint8_t b) {
   GDTR.cmdbyte(b);
@@ -1023,7 +1528,18 @@ void GDClass::__end(void) {
   GDTR.__end();
 #endif
 }
-
+void GDClass::play(uint8_t instrument, uint8_t note) {
+  wr16(REG_SOUND, (note << 8) | instrument);
+  wr(REG_PLAY, 1);
+}
+void GDClass::sample(uint32_t start, uint32_t len, uint16_t freq, uint16_t format, int loop) {
+  GD.wr32(REG_PLAYBACK_START, start);
+  GD.wr32(REG_PLAYBACK_LENGTH, len);
+  GD.wr16(REG_PLAYBACK_FREQ, freq);
+  GD.wr(REG_PLAYBACK_FORMAT, format);
+  GD.wr(REG_PLAYBACK_LOOP, loop);
+  GD.wr(REG_PLAYBACK_PLAY, 1);
+}
 void GDClass::reset() {
   GDTR.__end();
   GDTR.wr(REG_CPURESET, 1);
@@ -1034,7 +1550,46 @@ void GDClass::reset() {
 // Load named file from storage
 // returns 0 on failure (e.g. file not found), 1 on success
 
+byte GDClass::load(const char *filename, void (*progress)(long, long))
+{
+#if defined(RASPBERRY_PI) || defined(DUMPDEV) || defined(SPIDRIVER)
+  char full_name[2048]  = "sdcard/";
+  strcat(full_name, filename);
+  FILE *f = fopen(full_name, "rb");
+  if (!f) {
+    perror(full_name);
+    exit(1);
+  }
+  byte buf[512];
+  int n;
+  while ((n = fread(buf, 1, 512, f)) > 0) {
+    GDTR.cmd_n(buf, (n + 3) & ~3);
+  }
+  fclose(f);
+  return 1;
+#else
+  GD.__end();
+  Reader r;
+  if (r.openfile(filename)) {
+    byte buf[512];
+    while (r.offset < r.size) {
+      uint16_t n = min(512U, r.size - r.offset);
+      n = (n + 3) & ~3;   // force 32-bit alignment
+      r.readsector(buf);
 
+      GD.resume();
+      if (progress)
+        (*progress)(r.offset, r.size);
+      GD.copyram(buf, n);
+      GDTR.stop();
+    }
+    GD.resume();
+    return 1;
+  }
+  GD.resume();
+  return 0;
+#endif
+}
 
 // Generated by mk_bsod.py. Blue screen with 'ERROR' text
 static const PROGMEM uint8_t __bsod[32] = {
@@ -1073,6 +1628,15 @@ void GDClass::safeload(const char *filename)
   }
 }
 
+void GDClass::textsize(int &w, int &h, int font, const char *s)
+{
+  uint32_t font_addr = rd32(0x309074 + 4 * font);
+  w = 0;
+  while (*s)
+    w += GD.rd(font_addr + *s++);
+  h = GD.rd(font_addr + 140);
+}
+
 #define REG_SCREENSHOT_EN    (ft8xx_model ? 0x302010UL : 0x102410UL) // Set to enable screenshot mode
 #define REG_SCREENSHOT_Y     (ft8xx_model ? 0x302014UL : 0x102414UL) // Y line register
 #define REG_SCREENSHOT_START (ft8xx_model ? 0x302018UL : 0x102418UL) // Screenshot start trigger
@@ -1085,14 +1649,17 @@ void GDClass::dumpscreen(void)
 {
   {
     finish();
+    int w = GD.rd16(REG_HSIZE), h = GD.rd16(REG_VSIZE);
 
     wr(REG_SCREENSHOT_EN, 1);
+    if (ft8xx_model)
+      wr(0x0030201c, 32);
     Serial.write(0xa5);
-    Serial.write(GD.w & 0xff);
-    Serial.write((GD.w >> 8) & 0xff);
-    Serial.write(GD.h & 0xff);
-    Serial.write((GD.h >> 8) & 0xff);
-    for (int ly = 0; ly < GD.h; ly++) {
+    Serial.write(w & 0xff);
+    Serial.write((w >> 8) & 0xff);
+    Serial.write(h & 0xff);
+    Serial.write((h >> 8) & 0xff);
+    for (int ly = 0; ly < h; ly++) {
       wr16(REG_SCREENSHOT_Y, ly);
       wr(REG_SCREENSHOT_START, 1);
       delay(2);
@@ -1101,7 +1668,7 @@ void GDClass::dumpscreen(void)
       wr(REG_SCREENSHOT_READ, 1);
       bulkrd(RAM_SCREENSHOT);
       SPI.transfer(0xff);
-      for (int x = 0; x < GD.w; x += 8) {
+      for (int x = 0; x < w; x += 8) {
         union {
           uint32_t v;
           struct {
@@ -1136,20 +1703,6 @@ void GDClass::dumpscreen(void)
 }
 #endif
 
-void GDClass::seed(uint16_t n) {
-  rseed = n ? n : 7;
-}
 
-uint16_t GDClass::random() {
-  rseed ^= rseed << 2;
-  rseed ^= rseed >> 5;
-  rseed ^= rseed << 1;
-  return rseed;
-}
 
-uint16_t GDClass::random(uint16_t n) {
-  uint16_t p = random();
-  if (n == (n & -n))
-    return p & (n - 1);
-  return (uint32_t(p) * n) >> 16;
-}
+

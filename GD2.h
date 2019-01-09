@@ -1,8 +1,13 @@
 /*
- * Copyright (C) 2013-2016 by James Bowman <jamesb@excamera.com>
- * Gameduino 2 library for Arduino, Arduino Due, Raspberry Pi.
- *
+ * Copyright (C) 2013-2018 by James Bowman <jamesb@excamera.com>
+ * Gameduino 2/3 library for Arduino, Arduino Due, Teensy 3.2 and
+ * ESP8266.
  */
+
+#ifndef _GD2_H_INCLUDED
+#define _GD2_H_INCLUDED
+
+#define GD2_VERSION "1.0.2"
 
 #if defined(RASPBERRY_PI) || defined(DUMPDEV)
 #include "wiring.h"
@@ -72,13 +77,357 @@ public:
     }
     return r;
   }
+  void transfer(byte*m, int s) {
+    while (s--) {
+      *m = transfer(*m);
+      m++;
+    }
+  }
 };
 static class ASPI_t ASPI;
 #define SPI ASPI
 
 #endif
 
+#if defined(ARDUINO_STM32L4_BLACKICE)
+// BlackIce Board uses SPI1 on the Arduino header.
+#define SPI SPI1
+// Board Support:
+//   JSON: http://www.hamnavoe.com/package_millerresearch_mystorm_index.json
+//   Source: https://github.com/millerresearch/arduino-mystorm
+#endif
 
+#if SDCARD
+
+#if defined(VERBOSE) && (VERBOSE > 0)
+#define INFO(X) Serial.println((X))
+#if defined(RASPBERRY_PI)
+#define REPORT(VAR) fprintf(stderr, #VAR "=%d\n", (VAR))
+#else
+#define REPORT(VAR) (Serial.print(#VAR "="), Serial.print(VAR, DEC), Serial.print(' '), Serial.println(VAR, HEX))
+#endif
+#else
+#define INFO(X)
+#define REPORT(X)
+#endif
+
+struct dirent {
+  char name[8];
+  char ext[3];
+  byte attribute;
+  byte reserved[8];
+  uint16_t cluster_hi;  // FAT32 only
+  uint16_t time;
+  uint16_t date;
+  uint16_t cluster;
+  uint32_t size;
+};
+
+// https://www.sdcard.org/downloads/pls/simplified_specs/Part_1_Physical_Layer_Simplified_Specification_Ver_3.01_Final_100518.pdf
+// page 22
+// http://mac6.ma.psu.edu/space2008/RockSat/microController/sdcard_appnote_foust.pdf
+// http://elm-chan.org/docs/mmc/mmc_e.html
+// http://www.pjrc.com/tech/8051/ide/fat32.html
+
+#define FAT16 0
+#define FAT32 1
+
+#define DD
+
+class sdcard {
+  public:
+  void sel() {
+    digitalWrite(pin, LOW);
+    delay(1);
+  }
+  void desel() {
+    digitalWrite(pin, HIGH);
+    SPI.transfer(0xff); // force DO release
+  }
+  void sd_delay(byte n) {
+    while (n--) {
+      DD SPI.transfer(0xff);
+    }
+  }
+
+  void cmd(byte cmd, uint32_t lba = 0, uint8_t crc = 0x95) {
+#if VERBOSE > 1
+    Serial.print("cmd ");
+    Serial.print(cmd, DEC);
+    Serial.print(" ");
+    Serial.print(lba, HEX);
+    Serial.println();
+#endif
+
+    sel();
+    // DD SPI.transfer(0xff);
+    DD SPI.transfer(0x40 | cmd);
+    DD SPI.transfer(0xff & (lba >> 24));
+    DD SPI.transfer(0xff & (lba >> 16));
+    DD SPI.transfer(0xff & (lba >> 8));
+    DD SPI.transfer(0xff & (lba));
+    DD SPI.transfer(crc);
+    // DD SPI.transfer(0xff);
+  }
+
+  byte response() {
+    byte r;
+    DD
+    r = SPI.transfer(0xff);
+    while (r & 0x80) {
+      DD
+      r = SPI.transfer(0xff);
+    }
+    return r;
+  }
+
+  byte R1() {   // read response R1
+    byte r = response();
+    desel();
+    SPI.transfer(0xff);   // trailing byte
+    return r;
+  }
+
+  byte sdR3(uint32_t &ocr) {  // read response R3
+    byte r = response();
+    for (byte i = 4; i; i--)
+      ocr = (ocr << 8) | SPI.transfer(0xff);
+    SPI.transfer(0xff);   // trailing byte
+
+    desel();
+    return r;
+  }
+
+  byte sdR7() {  // read response R3
+    byte r = response();
+    for (byte i = 4; i; i--)
+      // Serial.println(SPI.transfer(0xff), HEX);
+      SPI.transfer(0xff);
+    desel();
+
+    return r;
+  }
+
+  void appcmd(byte cc, uint32_t lba = 0) {
+    cmd(55); R1();
+    cmd(cc, lba);
+  }
+
+  void begin(byte p) {
+    byte type_code;
+    byte sdhc;
+    pin = p;
+
+    pinMode(pin, OUTPUT);
+#if !defined(__DUE__) && !defined(TEENSYDUINO) && !defined(ARDUINO_ARCH_STM32L4)
+    SPI.setClockDivider(SPI_CLOCK_DIV64);
+#endif
+    desel();
+
+  // for (;;) SPI.transfer(0xff);
+    delay(50);      // wait for boot
+    sd_delay(10);   // deselected, 80 pulses
+
+    INFO("Attempting card reset... ");
+    byte r1;
+    static int attempts;
+    attempts = 0;
+    do {       // reset, enter idle
+      cmd(0);
+      while ((r1 = SPI.transfer(0xff)) & 0x80)
+        if (++attempts == 1000)
+          goto finished;
+      desel();
+      SPI.transfer(0xff);   // trailing byte
+      REPORT(r1);
+    } while (r1 != 1);
+    INFO("reset ok\n");
+
+    sdhc = 0;
+    cmd(8, 0x1aa, 0x87);
+    r1 = sdR7();
+    sdhc = (r1 == 1);
+
+    REPORT(sdhc);
+
+    INFO("Sending card init command");
+    attempts = 0;
+    while (1) {
+      appcmd(41, sdhc ? (1UL << 30) : 0); // card init
+      r1 = R1();
+#if VERBOSE
+      Serial.println(r1, HEX);
+#endif
+      if ((r1 & 1) == 0)
+        break;
+      if (++attempts == 300)
+        goto finished;
+      delay(1);
+    }
+    INFO("OK");
+
+    if (sdhc) {
+      uint32_t OCR = 0;
+      for (int i = 10; i; i--) {
+        cmd(58);
+        sdR3(OCR);
+        REPORT(OCR);
+      }
+      ccs = 1UL & (OCR >> 30);
+    } else {
+      ccs = 0;
+    }
+    REPORT(ccs);
+
+    // Test point: dump sector 0 to serial.
+    // should see first 512 bytes of card, ending 55 AA.
+#if 0
+    cmd17(0);
+    for (int i = 0; i < 512; i++) {
+      delay(10);
+      byte b = SPI.transfer(0xff);
+      Serial.print(b, HEX);
+      Serial.print(' ');
+      if ((i & 15) == 15)
+        Serial.println();
+    }
+    desel();
+    for (;;);
+#endif
+
+#if !defined(__DUE__) && !defined(ESP8266) && !defined(ARDUINO_ARCH_STM32L4)
+    SPI.setClockDivider(SPI_CLOCK_DIV2);
+    SPSR = (1 << SPI2X);
+#endif
+
+#if defined(ESP8266)
+  SPI.setFrequency(40000000L);
+#endif
+
+    type_code = rd(0x1be + 0x4);
+    switch (type_code) {
+      default:
+        type = FAT16;
+        break;
+      case 0x0b:
+      case 0x0c:
+        type = FAT32;
+        break;
+    }
+    REPORT(type_code);
+
+    o_partition = 512L * rd4(0x1be + 0x8);
+    sectors_per_cluster = rd(o_partition + 0xd);
+    reserved_sectors = rd2(o_partition + 0xe);
+    cluster_size = 512L * sectors_per_cluster;
+    REPORT(sectors_per_cluster);
+
+    // Serial.println("Bytes per sector:    %d\n", rd2(o_partition + 0xb));
+    // Serial.println("Sectors per cluster: %d\n", sectors_per_cluster);
+
+    if (type == FAT16) {
+      max_root_dir_entries = rd2(o_partition + 0x11);
+      sectors_per_fat = rd2(o_partition + 0x16);
+      o_fat = o_partition + 512L * reserved_sectors;
+      o_root = o_fat + (2 * 512L * sectors_per_fat);
+      // data area starts with cluster 2, so offset it here
+      o_data = o_root + (max_root_dir_entries * 32L) - (2L * cluster_size); 
+    } else {
+      uint32_t sectors_per_fat = rd4(o_partition + 0x24);
+      root_dir_first_cluster = rd4(o_partition + 0x2c);
+      uint32_t fat_begin_lba = (o_partition >> 9) + reserved_sectors;
+      uint32_t cluster_begin_lba = (o_partition >> 9) + reserved_sectors + (2 * sectors_per_fat);
+
+      o_fat = 512L * fat_begin_lba;
+      o_root = (512L * (cluster_begin_lba + (root_dir_first_cluster - 2) * sectors_per_cluster));
+      o_data = (512L * (cluster_begin_lba - 2 * sectors_per_cluster));
+    }
+  finished:
+    INFO("finished");
+    ;
+  }
+  void cmd17(uint32_t off) {
+    if (ccs)
+      cmd(17, off >> 9);
+    else
+      cmd(17, off & ~511L);
+    R1();
+    sel();
+    while (SPI.transfer(0xff) != 0xfe)
+      ;
+  }
+  void rdn(byte *d, uint32_t off, uint16_t n) {
+    cmd17(off);
+    uint16_t i;
+    uint16_t bo = (off & 511);
+    for (i = 0; i < bo; i++)
+      SPI.transfer(0xff);
+    for (i = 0; i < n; i++)
+      *d++ = SPI.transfer(0xff);
+    for (i = 0; i < (514 - bo - n); i++)
+      SPI.transfer(0xff);
+    desel();
+  }
+
+  uint32_t rd4(uint32_t off) {
+    uint32_t r;
+    rdn((byte*)&r, off, sizeof(r));
+    return r;
+  }
+
+  uint16_t rd2(uint32_t off) {
+    uint16_t r;
+    rdn((byte*)&r, off, sizeof(r));
+    return r;
+  }
+
+  byte rd(uint32_t off) {
+    byte r;
+    rdn((byte*)&r, off, sizeof(r));
+    return r;
+  }
+  byte pin;
+  byte ccs;
+
+  byte type;
+  uint16_t sectors_per_cluster;
+  uint16_t reserved_sectors;
+  uint16_t max_root_dir_entries;
+  uint16_t sectors_per_fat;
+  uint16_t cluster_size;
+  uint32_t root_dir_first_cluster;
+
+  // These are all linear addresses, hence the o_ prefix
+  uint32_t o_partition;
+  uint32_t o_fat;
+  uint32_t o_root;
+  uint32_t o_data;
+};
+
+static void dos83(byte dst[11], const char *ps)
+{
+  byte i = 0;
+  while (*ps) {
+    if (*ps != '.')
+      dst[i++] = toupper(*ps);
+    else {
+      while (i < 8)
+        dst[i++] = ' ';
+    }
+    ps++;
+  }
+  while (i < 11)
+    dst[i++] = ' ';
+}
+
+#else
+class sdcard {
+public:
+  void begin(int p) {};
+};
+#endif
+
+////////////////////////////////////////////////////////////////////////
 
 class xy {
 public:
@@ -87,30 +436,62 @@ public:
   void rmove(int distance, int angle);
   int angleto(class xy &other);
   void draw(byte offset = 0);
+  void rotate(int angle);
   int onscreen(void);
+  class xy operator<<=(int d);
   class xy operator+=(class xy &other);
+  class xy operator-=(class xy &other);
+  long operator*(class xy &other);
+  class xy operator*=(int);
   int nearer_than(int distance, xy &other);
 };
+
+class Bitmap {
+public:
+  xy size, center;
+  uint32_t source;
+  uint8_t format;
+  int8_t handle;
+
+  void fromtext(int font, const char* s);
+  void fromfile(const char *filename, int format = 7);
+
+  void bind(uint8_t handle);
+
+  void wallpaper();
+  void draw(int x, int y, int16_t angle = 0);
+  void draw(const xy &pos, int16_t angle = 0);
+
+private:
+  void defaults(uint8_t f);
+  void setup(void);
+};
+
+class Bitmap __fromatlas(uint32_t addr);
 
 ////////////////////////////////////////////////////////////////////////
 
 class GDClass {
 public:
   int w, h;
+  uint32_t loadptr;
 
   void begin(uint8_t options = (GD_CALIBRATE | GD_TRIM | GD_STORAGE));
 
   uint16_t random();
   uint16_t random(uint16_t n);
+  uint16_t random(uint16_t n0, uint16_t n1);
   void seed(uint16_t n);
   int16_t rsin(int16_t r, uint16_t th);
   int16_t rcos(int16_t r, uint16_t th);
   void polar(int &x, int &y, int16_t r, uint16_t th);
   uint16_t atan2(int16_t y, int16_t x);
 
-  //void copy(const PROGMEM uint8_t *src, int count);
-  void copy(const  uint8_t *src, int count);
-
+#if !defined(ESP8266)
+  void copy(const PROGMEM uint8_t *src, int count);
+#else
+  void copy(const uint8_t *src, int count);
+#endif
   void copyram(byte *src, int count);
 
   void self_calibrate(void);
@@ -118,6 +499,9 @@ public:
   void swap(void);
   void flush(void);
   void finish(void);
+
+  void play(uint8_t instrument, uint8_t note = 0);
+  void sample(uint32_t start, uint32_t len, uint16_t freq, uint16_t format, int loop = 0);
 
   void get_inputs(void);
   void get_accel(int &x, int &y, int &z);
@@ -179,8 +563,8 @@ public:
   void TagMask(byte mask);
   void Tag(byte s);
   void Vertex2f(int16_t x, int16_t y);
-  void Vertex2ii(int16_t x, int16_t y, byte handle = 0, byte cell = 0);
-
+  void Vertex2ii(uint16_t x, uint16_t y, byte handle = 0, byte cell = 0);
+  int16_t above512pixelMagic(int16_t x);
   void VertexFormat(byte frac);
   void BitmapLayoutH(byte linestride, byte height);
   void BitmapSizeH(byte width, byte height);
@@ -189,11 +573,8 @@ public:
   void VertexTranslateY(uint32_t y);
   void Nop(void);
 
-  // Hack for higher x that 512
-  int16_t above512pixelMagic(int16_t);
-
   // Higher-level graphics commands
-  
+
   void cmd_append(uint32_t ptr, uint32_t num);
   void cmd_bgcolor(uint32_t c);
   void cmd_button(int16_t x, int16_t y, uint16_t w, uint16_t h, byte font, uint16_t options, const char *s);
@@ -249,6 +630,7 @@ public:
   void cmd_setrotate(uint32_t r);
   void cmd_videostart();
   void cmd_setbitmap(uint32_t source, uint16_t fmt, uint16_t w, uint16_t h);
+  void cmd_sync();
 
   byte rd(uint32_t addr);
   void wr(uint32_t addr, uint8_t v);
@@ -256,7 +638,7 @@ public:
   void wr16(uint32_t addr, uint16_t v);
   uint32_t rd32(uint32_t addr);
   void wr32(uint32_t addr, uint32_t v);
-  //void wr_n(uint32_t addr, byte *src, uint32_t n);
+  void wr_n(uint32_t addr, byte *src, uint32_t n);
 
   void cmd32(uint32_t b);
 
@@ -269,6 +651,12 @@ public:
   byte load(const char *filename, void (*progress)(long, long) = NULL);
   void safeload(const char *filename);
   void alert(const char *message);
+  void textsize(int &w, int &h, int font, const char *s);
+
+  sdcard SD;
+
+  void storage(void);
+  void tune(void);
 
 private:
   static void cFFFFFF(byte v);
@@ -282,11 +670,185 @@ private:
   static void align(byte n);
   void cmdbyte(uint8_t b);
 
-  uint16_t rseed;
+  uint32_t measure_freq(void);
+
+  uint32_t rseed;
 };
 
 extern GDClass GD;
 extern byte ft8xx_model;
+
+#if SDCARD
+class Reader {
+public:
+  int openfile(const char *filename) {
+    int i = 0;
+    byte dosname[11];
+    dirent de;
+
+    dos83(dosname, filename);
+    do {
+      GD.SD.rdn((byte*)&de, GD.SD.o_root + i * 32, sizeof(de));
+      // Serial.println(de.name);
+      if (0 == memcmp(de.name, dosname, 11)) {
+        begin(de);
+        return 1;
+      }
+      i++;
+    } while (de.name[0]);
+    return 0;
+  }
+
+  void begin(dirent &de) {
+    nseq = 0;
+    size = de.size;
+    cluster0 = de.cluster;
+    if (GD.SD.type == FAT32)
+      cluster0 |= ((long)de.cluster_hi << 16);
+    rewind();
+  }
+
+  void rewind(void) {
+    cluster = cluster0;
+    sector = 0;
+    offset = 0;
+  }
+
+  void nextcluster() {
+    if (GD.SD.type == FAT16)
+      cluster = GD.SD.rd2(GD.SD.o_fat + 2 * cluster);
+    else
+      cluster = GD.SD.rd4(GD.SD.o_fat + 4 * cluster);
+#if VERBOSE
+    Serial.print("nextcluster=");
+    Serial.println(cluster, DEC);
+#endif
+  }
+
+  void fetch512(byte *dst) {
+#if defined(__DUE__) || defined(TEENSYDUINO) || defined(ESP8266) || 1
+
+#if defined(ESP8266)
+    SPI.transferBytes(NULL, dst, 512);
+#else
+    // for (int i = 0; i < 512; i++) *dst++ = SPI.transfer(0xff);
+    memset(dst, 0xff, 512); SPI.transfer(dst, 512);
+#endif
+
+    SPI.transfer(0xff);   // consume CRC
+    SPI.transfer(0xff);
+#else
+    SPDR = 0xff;
+    asm volatile("nop"); while (!(SPSR & _BV(SPIF))) ;
+    for (int i = 0; i < 512; i++) {
+      while (!(SPSR & _BV(SPIF))) ;
+      asm volatile("nop");
+      asm volatile("nop");
+      asm volatile("nop");
+      asm volatile("nop");
+      asm volatile("nop");
+      asm volatile("nop");
+      asm volatile("nop");
+      asm volatile("nop");
+      asm volatile("nop");
+      asm volatile("nop");
+      asm volatile("nop");
+
+      *dst++ = SPDR;
+      SPDR = 0xff;
+    }
+    asm volatile("nop"); while (!(SPSR & _BV(SPIF))) ;
+    SPI.transfer(0xff);
+#endif
+    GD.SD.desel();
+  }
+
+  void nextcluster2(byte *dst) {
+    if (nseq) {
+      nseq--;
+      cluster++;
+      return;
+    }
+    uint32_t off = GD.SD.o_fat + 4 * cluster;
+    GD.SD.cmd17(off & ~511L);
+    fetch512(dst);
+    int i = off & 511;
+    cluster = *(uint32_t*)&dst[i];
+    nseq = 0;
+    for (uint32_t c = cluster;
+         (i < 512) && *(uint32_t*)&dst[i] == c; 
+         i += 4, c++)
+      nseq++;
+  }
+
+  void skipcluster() {
+    nextcluster();
+    offset += GD.SD.cluster_size;
+  }
+
+  void skipsector() {
+    if (sector == GD.SD.sectors_per_cluster) {
+      sector = 0;
+      nextcluster();
+    }
+    sector++;
+    offset += 512;
+  }
+
+  void seek(uint32_t o) {
+    union {
+      uint8_t buf[512];
+      uint32_t fat32[128];
+      uint16_t fat16[256];
+    };
+    uint32_t co = ~0;
+
+    if (o < offset)
+      rewind();
+    while (offset < o) {
+      if ((sector == GD.SD.sectors_per_cluster) && ((o - offset) > (long)GD.SD.cluster_size)) {
+        uint32_t o;
+        if (GD.SD.type == FAT16)
+          o = (GD.SD.o_fat + 2 * cluster) & ~511;
+        else
+          o = (GD.SD.o_fat + 4 * cluster) & ~511;
+        if (o != co) {
+          GD.SD.rdn(buf, o, 512);
+          co = o;
+        }
+        cluster = fat32[cluster & 127];
+        offset += GD.SD.cluster_size;
+      } else
+        skipsector();
+    }
+  }
+
+  void readsector(byte *dst) {
+    if (sector == GD.SD.sectors_per_cluster) {
+      sector = 0;
+      nextcluster2(dst);
+    }
+    REPORT(cluster);
+    uint32_t off = GD.SD.o_data + ((long)GD.SD.cluster_size * cluster) + (512L * sector);
+    REPORT(off);
+    GD.SD.cmd17(off & ~511L);
+    REPORT(off);
+    sector++;
+    offset += 512;
+    fetch512(dst);
+  }
+
+  int eof(void) {
+    return size <= offset;
+  }
+
+  uint32_t cluster, cluster0;
+  uint32_t offset;
+  uint32_t size;
+  byte sector;
+  byte nseq;
+};
+#endif
 
 typedef struct {
   byte handle;
@@ -298,7 +860,7 @@ typedef struct {
 #define PIXELS(x)  int((x) * 16)
 
 // Convert degrees to Furmans
-#define DEGREES(n) ((65536UL * (n)) / 360)
+#define DEGREES(n) ((65536L * (n)) / 360)
 
 #define NEVER                0
 #define LESS                 1
@@ -321,6 +883,7 @@ typedef struct {
 #define TEXT8X8              9
 #define TEXTVGA              10
 #define BARGRAPH             11
+#define L2                   17
 
 #define NEAREST              0
 #define BILINEAR             1
@@ -383,6 +946,7 @@ typedef struct {
 #define OPT_NOHANDS          49152
 #define OPT_RIGHTX           2048
 #define OPT_SIGNED           256
+#define OPT_SOUND            32
 
 #define OPT_NOTEAR           4
 #define OPT_FULLSCREEN       8
@@ -506,9 +1070,13 @@ typedef struct {
 #define REG_VSIZE             (ft8xx_model ? 0x302048UL : 0x102444UL)
 #define REG_VSYNC0            (ft8xx_model ? 0x30204cUL : 0x102448UL)
 #define REG_VSYNC1            (ft8xx_model ? 0x302050UL : 0x10244cUL)
+#define FONT_ROOT             (ft8xx_model ? 0x2ffffcUL : 0x0ffffcUL)
 
-#define REG_MEDIAFIFO_READ    0x309014
-#define REG_MEDIAFIFO_WRITE   0x309018
+// FT81x only registers
+#define REG_CMDB_SPACE                       0x302574UL
+#define REG_CMDB_WRITE                       0x302578UL
+#define REG_MEDIAFIFO_READ                   0x309014UL
+#define REG_MEDIAFIFO_WRITE                  0x309018UL
 
 #define VERTEX2II(x, y, handle, cell) \
         ((2UL << 30) | (((x) & 511UL) << 21) | (((y) & 511UL) << 12) | (((handle) & 31) << 7) | (((cell) & 127) << 0))
@@ -562,9 +1130,9 @@ class Poly {
       GD.ColorMask(1,1,1,1);
       GD.StencilFunc(EQUAL, 255, 255);
 
-      GD.Begin(EDGE_STRIP_B);
-      GD.Vertex2ii(0, 0);
-      GD.Vertex2ii(511, 0);
+      GD.Begin(EDGE_STRIP_R);
+      GD.Vertex2f(0, 0);
+      GD.Vertex2f(0, PIXELS(GD.h));
     }
     void draw() {
       paint();
@@ -576,6 +1144,270 @@ class Poly {
     }
 };
 
+#if SDCARD
+class Streamer {
+public:
+  void begin(const char *rawsamples,
+             uint16_t freq = 44100,
+             byte format = ADPCM_SAMPLES,
+             uint32_t _base = (0x40000UL - 8192), uint16_t size = 8192) {
+    GD.__end();
+    r.openfile(rawsamples);
+    GD.resume();
+
+    base = _base;
+    mask = size - 1;
+    wp = 0;
+
+    for (byte i = 10; i; i--)
+      feed();
+
+    GD.sample(base, size, freq, format, 1);
+  }
+  int feed() {
+    uint16_t rp = GD.rd32(REG_PLAYBACK_READPTR) - base;
+    uint16_t freespace = mask & ((rp - 1) - wp);
+    if (freespace >= 512) {
+      // REPORT(base);
+      // REPORT(rp);
+      // REPORT(wp);
+      // REPORT(freespace);
+      // Serial.println();
+      byte buf[512];
+      // uint16_t n = min(512, r.size - r.offset);
+      // n = (n + 3) & ~3;   // force 32-bit alignment
+      GD.__end();
+      r.readsector(buf);
+      GD.resume();
+      GD.cmd_memwrite(base + wp, 512);
+      GD.copyram(buf, 512);
+      wp = (wp + 512) & mask;
+    }
+    return r.offset < r.size;
+  }
+  void progress(uint16_t &val, uint16_t &range) {
+    uint32_t m = r.size;
+    uint32_t p = min(r.offset, m);
+    while (m > 0x10000) {
+      m >>= 1;
+      p >>= 1;
+    }
+    val = p;
+    range = m;
+  }
+private:
+  Reader r;
+  uint32_t base;
+  uint16_t mask;
+  uint16_t wp;
+};
+#else
+class Streamer {
+public:
+  void begin(const char *rawsamples,
+             uint16_t freq = 44100,
+             byte format = ADPCM_SAMPLES,
+             uint32_t _base = (0x40000UL - 4096), uint16_t size = 4096) {}
+  int feed() {}
+  void progress(uint16_t &val, uint16_t &range) {}
+};
+
+#endif
+
+////////////////////////////////////////////////////////////////////////
+//  TileMap: maps made with the "tiled" map editor
+////////////////////////////////////////////////////////////////////////
+
+class TileMap {
+  uint32_t chunkstart;
+  int chunkw, chunkh;
+  int stride;
+  int bpc;
+  byte layers;
+
+public:
+  uint16_t w, h;
+  void begin(uint32_t loadpoint) {
+    GD.finish();
+    w      = GD.rd16(loadpoint +  0);
+    h      = GD.rd16(loadpoint +  2);
+    chunkw = GD.rd16(loadpoint +  4);
+    chunkh = GD.rd16(loadpoint +  6);
+    stride = GD.rd16(loadpoint +  8);
+    layers = GD.rd16(loadpoint + 10);
+    bpc = (4 * 16);
+    chunkstart = loadpoint + 12;
+  }
+  void draw(uint16_t x, uint16_t y, uint16_t layermask = ~0) {
+    int16_t chunk_x = (x / chunkw);
+    int16_t ox0 = -(x % chunkw);
+    int16_t chunk_y = (y / chunkh);
+    int16_t oy = -(y % chunkh);
+
+    GD.Begin(BITMAPS);
+    GD.SaveContext();
+    GD.BlendFunc(ONE, ONE_MINUS_SRC_ALPHA);
+    while (oy < GD.h) {
+      int16_t ox = ox0;
+      GD.VertexTranslateY(oy << 4);
+      uint32_t pos = chunkstart + (chunk_x + long(stride) * chunk_y) * layers * bpc;
+      while (ox < GD.w) {
+        GD.VertexTranslateX(ox << 4);
+        for (byte layer = 0; layer < layers; layer++)
+          if (layermask & (1 << layer))
+            GD.cmd_append(pos + bpc * layer, bpc);
+        pos += (layers * bpc);
+        ox += chunkw;
+      }
+      oy += chunkh;
+      chunk_y++;
+    }
+    GD.RestoreContext();
+  }
+  void draw(xy pos) {
+    draw(pos.x >> 4, pos.y >> 4);
+  }
+  uint32_t addr(uint16_t x, uint16_t y, byte layer) {
+    int16_t tx = (x / (chunkw >> 2));
+    int16_t ty = (y / (chunkh >> 2));
+    return
+      chunkstart +
+      ((tx >> 2) + long(stride) * (ty >> 2)) * layers * bpc +
+      (tx & 3) * 4 +
+      (ty & 3) * 16 +
+      layer * 64;
+  }
+  int read(uint16_t x, uint16_t y, byte layer) {
+    uint32_t op = GD.rd32(addr(x, y, layer));
+    if ((op >> 24) == 0x2d)
+      return 0;
+    else
+      return 1 + (op & 2047);
+  }
+  void write(uint16_t x, uint16_t y, byte layer, int tile) {
+    uint32_t op;
+    uint32_t a = addr(x, y, layer);
+    if (tile == 0)
+      op = 0x2d000000UL;
+    else
+      op = (GD.rd32(a) & ~2047) | ((tile - 1) & 2047);
+    GD.wr32(a, op);
+  }
+  int read(xy pos, byte layer) {
+    return read(pos.x >> 4, pos.y >> 4, layer);
+  }
+  void write(xy pos, byte layer, int tile) {
+    write(pos.x >> 4, pos.y >> 4, layer, tile);
+  }
+};
+
+class MoviePlayer
+{
+  uint32_t mf_size, mf_base, wp;
+  Reader r;
+  void loadsector() {
+    byte buf[512];
+    GD.__end();
+    r.readsector(buf);
+    GD.resume();
+    GD.wr_n(mf_base + wp, buf, 512);
+    wp = (wp + 512) & (mf_size - 1);
+  }
+
+public:
+  int begin(const char *filename) {
+    mf_size = 0x40000UL;
+    mf_base = 0x100000UL - mf_size;
+    GD.__end();
+    if (!r.openfile(filename)) {
+      // Serial.println("Open failed");
+      return 0;
+    }
+    GD.resume();
+
+    wp = 0;
+    while (wp < (mf_size - 512)) {
+      loadsector();
+    }
+
+    GD.cmd_mediafifo(mf_base, mf_size);
+    GD.cmd_regwrite(REG_MEDIAFIFO_WRITE, wp);
+    GD.finish();
+
+    return 1;
+  }
+  int service() {
+    if (r.eof()) {
+      return 0;
+    } else {
+      uint32_t fullness = (wp - GD.rd32(REG_MEDIAFIFO_READ)) & (mf_size - 1);
+      while (fullness < (mf_size - 512)) {
+        loadsector();
+        fullness += 512;
+        GD.wr32(REG_MEDIAFIFO_WRITE, wp);
+      }
+      return 1;
+    }
+  }
+  void play() {
+    GD.cmd_playvideo(OPT_MEDIAFIFO | OPT_FULLSCREEN);
+    GD.flush();
+    while (service())
+      ;
+    GD.cmd_memcpy(0, 0, 4);
+    GD.finish();
+  }
+};
+
+class Dirsearch {
+  struct dirent de;
+  int index;
+  
+public:
+  char name[13];
+  void begin() {
+    index = 0;
+  }
+  int get(const char *ext) {
+    byte i;
+
+    GD.__end();
+    char e3[3];
+
+    do {
+      GD.SD.rdn((byte*)&de, GD.SD.o_root + index++ * 32, sizeof(de));
+      for (i = 0; i < 3; i++)
+        e3[i] = tolower(de.ext[i]);
+    } while (de.name[0] &&
+             ((de.name[0] & 0x80) || (memcmp(ext, e3, 3) != 0)));
+
+    GD.resume();
+
+    char *pc = name;
+    for (i = 0; i < 8 && de.name[i] != ' '; i++)
+      *pc++ = tolower(de.name[i]);
+    *pc++ = '.';
+    for (i = 0; i < 3 && de.ext[i] != ' '; i++)
+      *pc++ = tolower(de.ext[i]);
+    *pc++ = 0;
+
+    return de.name[0];
+  }
+};
+
+/*
+ * PROGMEM declarations are currently not supported by the ESP8266
+ * compiler. So redefine PROGMEM to nothing.
+ */
+
+#if defined(ESP8266) || defined(ARDUINO_ARCH_STM32L4)
+#undef PROGMEM
+#define PROGMEM
+#endif
+
+#endif
 
 
+
+ 
 

@@ -1,4 +1,5 @@
 #include "volt_display.h"
+#include <SPI.h>
 #include "GD2.h"
 #include "colors.h"
 #include "digit_util.h"

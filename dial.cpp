@@ -1,6 +1,7 @@
 #include "dial.h"
 #include "math.h"
 #include "colors.h"
+#include <SPI.h>
 #include "GD2.h"
 
 void (*closedFn)(int type, bool cancel);

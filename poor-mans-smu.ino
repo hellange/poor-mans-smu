@@ -255,10 +255,6 @@ void scrollIndication(int y, int activeWidget) {
   }
 }
 
-  float avgVout; //TODO: fix global...
-  int smoothingSamples = 10;//TODO: fix global...
-
-
 
 void showWidget(int widgetNo, int scroll) {
   int yPos = LOWER_WIDGET_Y_POS;

@@ -1,69 +1,100 @@
+#ifndef CS
+#if defined(ESP8266)
+#define CS D8
+#else
+#define CS 9
+#endif
+#endif
 
-// spi chip select arduino
-//#define CS 8
-
-// spi chip select modemcu with arduino ide
-//https://github.com/esp8266/Arduino/issues/1429
-//#define CS 15
-
-#define CS 9 // arduino
-
+#if defined(ESP8266)
+#define YIELD() yield()
+#else
+#define YIELD()
+#endif
 
 class GDTransport {
 private:
   byte model;
 public:
-  void begin0() {
-    Serial.println("begin0");
+  void ios() {
     pinMode(CS, OUTPUT);
     digitalWrite(CS, HIGH);
+    pinMode(SD_PIN, OUTPUT);
+    digitalWrite(SD_PIN, HIGH);
+  }
+  void begin0() {
+    ios();
+
     SPI.begin();
-
-    SPI.beginTransaction (SPISettings (1000000, MSBFIRST, SPI_MODE0)); // 100000
-    //SPI.setClockDivider(SPI_CLOCK_DIV32);
-
-#ifdef TEENSYDUINO
+#if defined(TEENSYDUINO) || defined(ARDUINO_ARCH_STM32L4)
     SPI.beginTransaction(SPISettings(3000000, MSBFIRST, SPI_MODE0));
 #else
-#ifndef __DUE__
-    //SPI.setClockDivider(SPI_CLOCK_DIV2);
-    //SPSR = (1 << SPI2X);
+#if !defined(__DUE__) && !defined(ESP8266)
+    SPI.setClockDivider(SPI_CLOCK_DIV2);
+    SPSR = (1 << SPI2X);
 #endif
 #endif
 
-    hostcmd(0x00);
+    hostcmd(0x42);    // SLEEP
+    hostcmd(0x61);    // CLKSEL default
+    hostcmd(0x00);    // ACTIVE
 #if (BOARD != BOARD_GAMEDUINO23)
- hostcmd(0x44); // from external crystal
+    hostcmd(0x44);    // CLKEXT
+#else
+    hostcmd(0x48);    // CLKINT
 #endif
-    hostcmd(0x68);
+    hostcmd(0x49);    // PD_ROMS all up
+    hostcmd(0x68);    // RST_PULSE
   }
   void begin1() {
-    Serial.println("begin1, waiting for FT81x to respond...");
+#if 0
+    delay(120);
+#else
+    while ((__rd16(0xc0000UL) & 0xff) != 0x08)
+      ;
+#endif
 
-    byte stat = __rd16(0xc0000UL) & 0xff;
-    Serial.println(stat, HEX);
+    // Test point: saturate SPI
+    while (0) {
+      digitalWrite(CS, LOW);
+      SPI.transfer(0x55);
+      digitalWrite(CS, HIGH);
+    }
 
-    
-    while ((__rd16(0xc0000UL) & 0xff) != 0x08) {
-      //yield(); // avoid 8266 reset while waiting...
-    };
+#if 0
+    // Test point: attempt to wake up FT8xx every 2 seconds
+    while (0) {
+      hostcmd(0x00);
+      delay(120);
+      hostcmd(0x68);
+      delay(120);
+      digitalWrite(CS, LOW);
+      Serial.println(SPI.transfer(0x10), HEX);
+      Serial.println(SPI.transfer(0x24), HEX);
+      Serial.println(SPI.transfer(0x00), HEX);
+      Serial.println(SPI.transfer(0xff), HEX);
+      Serial.println(SPI.transfer(0x00), HEX);
+      Serial.println(SPI.transfer(0x00), HEX);
+      Serial.println();
 
-    stat = __rd16(0xc0000UL) & 0xff;
-    Serial.print("status:");
-    Serial.println(stat, HEX);
+      digitalWrite(CS, HIGH);
+      delay(2000);
+    }
+#endif
 
-    
     // So that FT800,801      FT81x
     // model       0            1
-    ft8xx_model = __rd16(0x0c0000) >> 12;
-      
-    Serial.print("modell:");
-    Serial.println(ft8xx_model, HEX);
+    ft8xx_model = __rd16(0x0c0000) >> 12;  
 
     wp = 0;
     freespace = 4096 - 4;
 
     stream();
+  }
+
+  void external_crystal() {
+    __end();
+    hostcmd(0x44);
   }
 
   void cmd32(uint32_t x) {
@@ -72,6 +103,10 @@ public:
     }
     wp += 4;
     freespace -= 4;
+#if defined(ESP8266)
+    // SPI.writeBytes((uint8_t*)&x, 4);
+    SPI.write32(x, 0);
+#else
     union {
       uint32_t c;
       uint8_t b[4];
@@ -81,6 +116,7 @@ public:
     SPI.transfer(b[1]);
     SPI.transfer(b[2]);
     SPI.transfer(b[3]);
+#endif
   }
   void cmdbyte(byte x) {
     if (freespace == 0) {
@@ -112,6 +148,7 @@ public:
   }
 
   void flush() {
+    YIELD();
     getfree(0);
   }
   uint16_t rp() {
@@ -126,7 +163,7 @@ public:
     __end();
     __wr16(REG_CMD_WRITE, wp);
     while (rp() != wp)
-      ;
+      YIELD();
     stream();
   }
 
@@ -194,6 +231,41 @@ public:
       *dst++ = SPI.transfer(0);
     stream();
   }
+#if defined(ARDUINO) && !defined(__DUE__) && !defined(ESP8266) && !defined(ARDUINO_ARCH_STM32L4)
+  void wr_n(uint32_t addr, byte *src, uint16_t n)
+  {
+    __end(); // stop streaming
+    __wstart(addr);
+    while (n--) {
+      SPDR = *src++;
+      asm volatile("nop");
+      asm volatile("nop");
+      asm volatile("nop");
+      asm volatile("nop");
+      asm volatile("nop");
+      asm volatile("nop");
+      asm volatile("nop");
+      asm volatile("nop");
+      asm volatile("nop");
+      asm volatile("nop");
+    }
+    while (!(SPSR & _BV(SPIF))) ;
+    stream();
+  }
+#else
+  void wr_n(uint32_t addr, byte *src, uint16_t n)
+  {
+    __end(); // stop streaming
+    __wstart(addr);
+#if defined(ESP8266)
+    SPI.writeBytes(src, n);
+#else
+    while (n--)
+      SPI.transfer(*src++);
+#endif
+    stream();
+  }
+#endif
 
   void wr32(uint32_t addr, unsigned long v)
   {
