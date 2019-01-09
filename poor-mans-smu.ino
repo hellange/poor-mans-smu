@@ -27,6 +27,8 @@
 #include "Wire.h"
 #include "SMU_HAL_dummy.h"
 
+#include "Dac.h"
+
 
 #define _SOURCE_AND_SINK 111
 
@@ -76,17 +78,21 @@ void setup()
   //wdt_disable();
   Serial.begin(9600);
   //DAC.init(); // Not using any separate DAC. Using easySMU instead
+
+  Serial.println("Initializing DAC...");
+
+     pinMode(9, OUTPUT);
+   digitalWrite(9, HIGH);
+   DAC.init();
+   pinMode(10, OUTPUT);
+   digitalWrite(10, HIGH);
+     Serial.println("Done!");
+
+
+   
   Serial.println("Initializing WeatherNG graphics controller FT81x...");
   GD.begin(0);
   Serial.println("Done!");
-
-    #ifdef EASYSMU
-      i2c_enable(); //Set Linduino default I2C speed instead of Wire default settings.
-      pinMode(QUIKEVAL_MUX_MODE_PIN, OUTPUT);   //Set Linduino MUX pin to disable the I2C MUX. Otherwise it can cause unpredictable behavior.
-      digitalWrite(QUIKEVAL_MUX_MODE_PIN, LOW);
-      SMU[0].ReadCalibration();
-    #endif
-
     
     setMv = 0.0;
     setMa = 10.0;
@@ -497,6 +503,27 @@ unsigned long previousMillisSlow = 0;
 const long interval = 1; // should it account for time taken to perform ADC sample ?
 void loop()
 {
+   GD.__end();
+   pinMode(9, OUTPUT);
+   digitalWrite(9, HIGH);  
+   
+   //SPI.beginTransaction (SPISettings (1000000, MSBFIRST, SPI_MODE1)); // 100000
+
+      pinMode(10, OUTPUT);
+   digitalWrite(10, LOW);
+   float Vout;
+    if(DAC.checkDataAvilable() == true) {
+    Vout = DAC.convertToMv();
+    Serial.print("Raw:");  
+    Serial.print(Vout, 3);
+    Serial.println(" mV");  
+    Serial.flush();
+   }
+    //delay(100);
+      pinMode(10, OUTPUT);
+   digitalWrite(10, HIGH);
+      pinMode(9, OUTPUT);
+   digitalWrite(9, LOW);
 
   unsigned long currentMillis = millis();
 
@@ -507,7 +534,7 @@ void loop()
 
    
   // restore SPI
-  SPI.setDataMode(SPI_MODE0);
+//  SPI.setDataMode(SPI_MODE0);
   //SPI.setClockDivider(SPI_CLOCK_DIV2);
   GD.resume();
 
@@ -532,7 +559,9 @@ void loop()
     // Dont sample voltage and current while scrolling because polling is slow.
     // TODO: Remove this limitation when sampling is based on interrupts.
     if (scrollDir == 0) {
-       V_STATS.addSample(SMU[0].MeasureVoltage() * 1000.0);
+       //V_STATS.addSample(SMU[0].MeasureVoltage() * 1000.0);
+       V_STATS.addSample(Vout);
+
        C_STATS.addSample(SMU[0].MeasureCurrent() * 1000.0);
     }
 

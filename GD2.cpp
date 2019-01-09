@@ -1482,7 +1482,6 @@ void GDClass::get_inputs(void) {
     fscanf(stimfile, "%hhx %hhx %hhx %hhx %hhx %hhx %hhx %hhx %hhx %hhx %hhx %hhx %hhx %hhx %hhx %hhx %hhx %hhx",
         &bi[0],
         &bi[1],
-        &bi[2],
         &bi[3],
         &bi[4],
         &bi[5],
