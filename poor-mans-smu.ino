@@ -134,6 +134,22 @@ void disableSPIunits(){
 }
 
 
+void showStatusIndicator(int x,int y,const char* text, bool enable) {
+  GD.Begin(RECTS);
+  if (enable) {
+      GD.ColorA(150);
+      GD.ColorRGB(COLOR_VOLT);
+  } else {
+      GD.ColorA(50);
+      GD.ColorRGB(0xaaaaaa);
+  }
+  GD.LineWidth(150);
+  GD.Vertex2ii(x, 15 + y);
+  GD.Vertex2ii(x + 60, y + 24);
+  GD.ColorRGB(0xffffff);
+  GD.cmd_text(x+ 2, y + 10, 27, 0, text);
+  GD.ColorA(255);
+}
 void voltagePanel(int x, int y) {
   //GD.ColorA(70);
   /*
@@ -175,15 +191,13 @@ void voltagePanel(int x, int y) {
   renderDeviation(x + 667,y + 130, V_STATS.rawValue, setMv, false);
 
   //helge
-  GD.Begin(RECTS);
-  GD.ColorA(150);
-  GD.ColorRGB(COLOR_VOLT);
-  GD.LineWidth(150);
-  GD.Vertex2ii(x+650, 15 + y + 30);
-  GD.Vertex2ii(x+650 + 80, y + 30 + 34);
-  GD.ColorRGB(0xffffff);
 
-  GD.cmd_text(x+620 + 36, y + 42, 28, 0, "FILTER");
+  showStatusIndicator(x+620, y, "FILTER", true);
+  showStatusIndicator(x+720, y, "NULL", false);
+  showStatusIndicator(x+620, y+40, "50Hz", false);
+  showStatusIndicator(x+720, y+40, "4 1/2", false);
+
+  
 }
 
 void renderDeviation(int x, int y, float rawM, float setM, bool cur) {
@@ -513,6 +527,17 @@ void detectGestures() {
 }
 
 
+unsigned long startupMillis =  millis();
+
+bool readyToDoStableMeasurements() {
+  // wait a second after startup before starting to store measurements
+  if (millis() > startupMillis + 2000) {
+    return true;
+  } else {
+    return false;
+  }
+}
+
 unsigned long previousMillis = 0; 
 unsigned long previousMillisSlow = 0; 
 const long interval = 1; // should it account for time taken to perform ADC sample ?
@@ -525,7 +550,7 @@ void loop()
 
    pinMode(10, OUTPUT);   // enable DAC SPI
    digitalWrite(10, LOW);
-   float Vout = 0.0;
+   float Vout;
     if(DAC.checkDataAvilable() == true) {
     Vout = DAC.convertToMv();
     Serial.print("Measured raw:");  
@@ -557,19 +582,19 @@ SPI.beginTransaction(SPISettings(3000000, MSBFIRST, SPI_MODE0));
     GD.Clear();
 
 
-     
-    // Dont sample voltage and current while scrolling because polling is slow.
-    // TODO: Remove this limitation when sampling is based on interrupts.
-    if (scrollDir == 0) {
-       //V_STATS.addSample(SMU[0].MeasureVoltage() * 1000.0);
-       V_STATS.addSample(Vout);
-       V_FILTERS.updateMean(Vout);
-
-       C_STATS.addSample(SMU[0].MeasureCurrent() * 1000.0);
+    if (readyToDoStableMeasurements()) {
+      // Dont sample voltage and current while scrolling because polling is slow.
+      // TODO: Remove this limitation when sampling is based on interrupts.
+      if (scrollDir == 0) {
+         //V_STATS.addSample(SMU[0].MeasureVoltage() * 1000.0);
+         V_STATS.addSample(Vout);
+         V_FILTERS.updateMean(Vout);
+  
+         C_STATS.addSample(SMU[0].MeasureCurrent() * 1000.0);
+      }
+  
     }
-
     renderDisplay();
-
     
     if (DIAL.isDialogOpen()) {
       bluredBackground();

@@ -8,6 +8,9 @@ void StatsClass::init(int type_) {
    type = type_;
    for (int pos=0; pos<nrOfTrendPoints;pos++) { 
      value[pos] = undefinedValue;
+     valueExt[pos][0] = undefinedValue;
+     valueExt[pos][1] = undefinedValue;
+
    }
 }
 
@@ -51,10 +54,10 @@ void StatsClass::updateMinMax() {
     minimum = undefinedValue;
     maximum = -minimum;
     for (int i=0;i<nrOfTrendPoints;i++) {
-      if (valueExt[i][0]<=minimum) {
+      if (valueExt[i][0]<=minimum && valueExt[i][0]!=undefinedValue) {
         minimum = valueExt[i][0];
       }
-      if (valueExt[i][1]>=maximum) {
+      if (valueExt[i][1]>=maximum && valueExt[i][1]!=undefinedValue) {
         maximum = valueExt[i][1];
       }
     }
