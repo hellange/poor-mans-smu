@@ -134,15 +134,21 @@ void disableSPIunits(){
 }
 
 
-void showStatusIndicator(int x,int y,const char* text, bool enable) {
+void showStatusIndicator(int x,int y,const char* text, bool enable, bool warn) {
   GD.Begin(RECTS);
+  if (warn) {
+     GD.ColorRGB(0xFF0000);
+  } else {
+     GD.ColorRGB(COLOR_VOLT);
+  }
   if (enable) {
       GD.ColorA(150);
-      GD.ColorRGB(COLOR_VOLT);
   } else {
-      GD.ColorA(50);
-      GD.ColorRGB(0xaaaaaa);
+      GD.ColorA(25);
+      //GD.ColorRGB(0xaaaaaa);
   }
+
+  
   GD.LineWidth(150);
   GD.Vertex2ii(x, 15 + y);
   GD.Vertex2ii(x + 60, y + 24);
@@ -190,12 +196,12 @@ void voltagePanel(int x, int y) {
   
   renderDeviation(x + 667,y + 130, V_STATS.rawValue, setMv, false);
 
-  //helge
-
-  showStatusIndicator(x+620, y, "FILTER", true);
-  showStatusIndicator(x+720, y, "NULL", false);
-  showStatusIndicator(x+620, y+40, "50Hz", false);
-  showStatusIndicator(x+720, y+40, "4 1/2", false);
+  y=y+5;
+  showStatusIndicator(x+620, y, "FILTER", true, false);
+  showStatusIndicator(x+720, y, "NULL", false, false);
+  showStatusIndicator(x+620, y+40, "50Hz", false, false);
+  showStatusIndicator(x+720, y+40, "4 1/2", false, false);
+  showStatusIndicator(x+620, y+80, "Comp", false, true);
 
   
 }
@@ -550,7 +556,7 @@ void loop()
 
    pinMode(10, OUTPUT);   // enable DAC SPI
    digitalWrite(10, LOW);
-   float Vout;
+   float Vout = 0.0;
     if(DAC.checkDataAvilable() == true) {
     Vout = DAC.convertToMv();
     Serial.print("Measured raw:");  
