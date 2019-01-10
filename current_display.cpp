@@ -18,9 +18,9 @@ void CurrentDisplayClass::renderMeasured(int x, int y, float rawMa, boolean over
   int ua = (rawMa - ma) * 1000;
   
 //  GD.ColorRGB(COLOR_CURRENT_SHADDOW);
-//  GD.cmd_number(x+80+6-17, y+36 ,   1, 1, a);
-//  GD.cmd_text(x+130+6-17, y+36 ,   1, 0, ".");
-//  GD.cmd_number(x+153+6-17, y+36 ,   1, 3, ma);
+//  GD.cmd_number(x+80+6-17, y+36-30 ,   1, 1, a);
+//  GD.cmd_text(x+130+6-17, y+36-30 ,   1, 0, ".");
+//  GD.cmd_number(x+153+6-17, y+36-30 ,   1, 3, ma);
   
   if (overflow) {
     GD.ColorRGB(0xFF4500); //0xdd1120
@@ -33,21 +33,21 @@ void CurrentDisplayClass::renderMeasured(int x, int y, float rawMa, boolean over
   if (a>0) {
 
     // TODO: Preliminary dont show sign. Set current goes for both pos and neg (sing/source). Preliminary?
-    boldText(x,y+30, sign);
+    boldText(x,y+30-30, sign);
     
-    boldNumber(x+63, y+30, 1, a);
-    boldText(x+113, y+30, ".");
-    boldNumber(x+136, y+30, 3, ma);
+    boldNumber(x+63, y+30-30, 1, a);
+    boldText(x+113, y+30-30, ".");
+    boldNumber(x+136, y+30-30, 3, ma);
 
-    GD.cmd_number(x+305, y+32, 1, 3, ua);
-    GD.cmd_text(x+478, y+32 ,  1, 0, "A");
+    GD.cmd_number(x+305, y+32-30, 1, 3, ua);
+    GD.cmd_text(x+478, y+32-30 ,  1, 0, "A");
   } else {
-    boldText(x,y+30, sign);
+    boldText(x,y+30-30, sign);
 
-    boldNumber(x+63, y+30, 3, ma);
-    boldText(x+305-50-30, y+30, ".");
-    GD.cmd_number(x+305-50, y+32, 1, 3, ua);
-    GD.cmd_text(x+478-50, y+32 ,  1, 0, "mA");
+    boldNumber(x+63, y+30-30, 3, ma);
+    boldText(x+305-50-30, y+30-30, ".");
+    GD.cmd_number(x+305-50, y+32-30, 1, 3, ua);
+    GD.cmd_text(x+478-50, y+32-30 ,  1, 0, "mA");
   }
 
 

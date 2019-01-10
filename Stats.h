@@ -16,10 +16,6 @@ private:
   float visibleMaxSlow = -undefinedValue; 
   float visibleMinSlow = undefinedValue;
   int type;
-
-  float updateMean(float v);
-  float mean;
-  float meanRaws[100];
   
   const int noOfBins = 21;
 public:
@@ -27,7 +23,6 @@ public:
   void renderTrend(int x, int y, bool limitDetails);
   void renderHistogram(int x, int y, bool limitDetails);
   void addSample(float rawValue);
-  float meanValue();
   float rawValue;
   float minimum;
   float maximum;

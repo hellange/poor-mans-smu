@@ -20,6 +20,7 @@
 #include "volt_display.h"
 #include "current_display.h"
 #include "Stats.h"
+#include "Filters.h"
 #include "digit_util.h"
 #include "tags.h"
 
@@ -61,6 +62,8 @@ int scrollMainMenuDir = 0;
 
 StatsClass V_STATS;
 StatsClass C_STATS;
+FiltersClass V_FILTERS;
+
 float rawMa_glob; // TODO: store in stats for analysis just as voltage
 
 float DACVout;  // TODO: Dont use global
@@ -119,6 +122,8 @@ void setup()
    V_STATS.init(DigitUtilClass::typeVoltage);
    C_STATS.init(DigitUtilClass::typeCurrent);
 
+   V_FILTERS.init();
+
 }
 
 void disableSPIunits(){
@@ -151,32 +156,34 @@ void voltagePanel(int x, int y) {
 
   // heading
   GD.ColorRGB(200,255,200);
-  GD.cmd_text(x+56, y+16 ,   29, 0, "SOURCE VOLTAGE");
+  GD.cmd_text(x+56, y+16-16 ,   29, 0, "SOURCE VOLTAGE");
 
-  VOLT_DISPLAY.renderMeasured(x + 17,y , V_STATS.rawValue);
-  VOLT_DISPLAY.renderSet(x + 120, y+150, setMv);
+  
+  //VOLT_DISPLAY.renderMeasured(x + 17,y + 26 , V_STATS.rawValue);
+  VOLT_DISPLAY.renderMeasured(x + 17,y + 26, V_FILTERS.mean);
+  
+  VOLT_DISPLAY.renderSet(x + 120, y + 26 + 105, setMv);
 
   GD.ColorRGB(0,0,0);
 
   GD.cmd_fgcolor(0xaaaa90);  
   GD.Tag(BUTTON_VOLT_SET);
-  GD.cmd_button(x+20,y+143,90,58,30,0,"SET");
+  GD.cmd_button(x + 20,y + 132,95,50,30,0,"SET");
   GD.Tag(BUTTON_VOLT_AUTO);
-  GD.cmd_button(x+350,y+143,90,58,30,0,"AUTO");
+  GD.cmd_button(x + 350,y + 132,95,50,30,0,"AUTO");
   
-  renderDeviation(x+667,y+147, V_STATS.rawValue, setMv, false);
+  renderDeviation(x + 667,y + 130, V_STATS.rawValue, setMv, false);
 
-  GD.ColorRGB(0xffffff);
-
-  DIGIT_UTIL.renderValue(x+620, 15 + y + 45, V_STATS.maximum, 1, DigitUtilClass::typeVoltage);
-  //DIGIT_UTIL.renderValue(x+620, 15 + y + 70, V_STATS.maximum - V_STATS.minimum, 1, DigitUtilClass::typeVoltage);
+  //helge
+  GD.Begin(RECTS);
+  GD.ColorA(150);
   GD.ColorRGB(COLOR_VOLT);
-
-  DIGIT_UTIL.renderValue(x+620, 15 + y + 70, V_STATS.meanValue(), 1, DigitUtilClass::typeVoltage);
+  GD.LineWidth(150);
+  GD.Vertex2ii(x+650, 15 + y + 30);
+  GD.Vertex2ii(x+650 + 80, y + 30 + 34);
   GD.ColorRGB(0xffffff);
 
-  DIGIT_UTIL.renderValue(x+620, 15 + y + 95, V_STATS.minimum, 1, DigitUtilClass::typeVoltage);
-
+  GD.cmd_text(x+620 + 36, y + 42, 28, 0, "FILTER");
 }
 
 void renderDeviation(int x, int y, float rawM, float setM, bool cur) {
@@ -196,23 +203,26 @@ void renderDeviation(int x, int y, float rawM, float setM, bool cur) {
   } else {
     GD.ColorRGB(COLOR_VOLT);
   }
+  
+  y=y+16;
+  
   if (setM != 0.0) {
     if (devPercent < 1.0) {
-      GD.cmd_text(x, y+16, 30, 0, "0.");
-      GD.cmd_number(x+30, y+16, 30, 3, devPercent * 1000.0);
-      GD.cmd_text(x+30+50, y+16, 30, 0, "%");
+      GD.cmd_text(x, y, 30, 0, "0.");
+      GD.cmd_number(x+30, y, 30, 3, devPercent * 1000.0);
+      GD.cmd_text(x+30+50, y, 30, 0, "%");
     } else if (devPercent >= 10.0){
       if (!cur) {
         GD.ColorRGB(255,0,0); // RED
       }
-      GD.cmd_text(x, y+16, 30, 0, ">=10%");
+      GD.cmd_text(x, y, 30, 0, ">=10%");
     } else if (devPercent >= 1.0 && devPercent <10.0){
       int whole = (int)devPercent;
-      //GD.cmd_text(x, y+16, 30, 0, "0.");
-      GD.cmd_number(x, y+16, 30, 1, whole );
-      GD.cmd_text(x+20, y+16, 30, 0, ".");
-      GD.cmd_number(x+30, y+16, 30, 2, (devPercent - (float)whole) * 100.0);
-      GD.cmd_text(x+65, y+16, 30, 0, "%");
+      //GD.cmd_text(x, y, 30, 0, "0.");
+      GD.cmd_number(x, y, 30, 1, whole );
+      GD.cmd_text(x+20, y, 30, 0, ".");
+      GD.cmd_number(x+30, y, 30, 2, (devPercent - (float)whole) * 100.0);
+      GD.cmd_text(x+65, y, 30, 0, "%");
     }
   }
 }
@@ -244,16 +254,16 @@ void currentPanel(int x, int y, boolean overflow) {
  
   GD.cmd_text(x+56, y, 29, 0, "MEASURE CURRENT");
 
-  CURRENT_DISPLAY.renderMeasured(x + 17, y, C_STATS.rawValue, overflow);
+  CURRENT_DISPLAY.renderMeasured(x + 17, y+30, C_STATS.rawValue, overflow);
   CURRENT_DISPLAY.renderSet(x+120, y+135, setMa);
   
   GD.ColorRGB(0,0,0);
 
   GD.cmd_fgcolor(0xaaaa90);  
   GD.Tag(BUTTON_CUR_SET);
-  GD.cmd_button(x+20,y+130,90,58,30,0,"LIM");
+  GD.cmd_button(x+20,y+135,95,50,30,0,"LIM");
   GD.Tag(BUTTON_CUR_AUTO);
-  GD.cmd_button(x+350,y+130,90,58,30,0,"AUTO");
+  GD.cmd_button(x+350,y+135,95,50,30,0,"AUTO");
   
 }
 
@@ -401,7 +411,7 @@ void handleMenuScrolldown(){
 void renderDisplay() {
 
   int x = 0;
-  int y = 0;
+  int y = 20;
 
 
   // register screen for gestures on top half
@@ -439,18 +449,7 @@ void renderDisplay() {
   
   scrollIndication(240, activeWidget);
 
-  
-
-
-  
   handleMenuScrolldown();
-
-
-
-
-
-
-  
 
 }
 
@@ -522,11 +521,11 @@ void loop()
    GD.__end();
    disableSPIunits();
 
-     SPI.beginTransaction (SPISettings (1000000, MSBFIRST, SPI_MODE1)); // 100000
+   SPI.beginTransaction (SPISettings (1000000, MSBFIRST, SPI_MODE1)); // 100000
 
    pinMode(10, OUTPUT);   // enable DAC SPI
    digitalWrite(10, LOW);
-   float Vout;
+   float Vout = 0.0;
     if(DAC.checkDataAvilable() == true) {
     Vout = DAC.convertToMv();
     Serial.print("Measured raw:");  
@@ -564,6 +563,7 @@ SPI.beginTransaction(SPISettings(3000000, MSBFIRST, SPI_MODE0));
     if (scrollDir == 0) {
        //V_STATS.addSample(SMU[0].MeasureVoltage() * 1000.0);
        V_STATS.addSample(Vout);
+       V_FILTERS.updateMean(Vout);
 
        C_STATS.addSample(SMU[0].MeasureCurrent() * 1000.0);
     }

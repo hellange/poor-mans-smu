@@ -11,29 +11,10 @@ void StatsClass::init(int type_) {
    }
 }
 
-float StatsClass::meanValue(){
-  return mean;
-}
-
-
-float StatsClass::updateMean(float v){
-  int meanSamples = 100;
-  float tot = v;
-  for (int i=meanSamples-1;i>0;i--){
-    meanRaws[i] = meanRaws[i-1];
-    tot = tot + meanRaws[i+1];
-  }
-  meanRaws[0] = v;
-  tot = tot + v;
-  
-  mean = tot / meanSamples;
-  return mean;
-}
 
 void StatsClass::addSample(float rawValue_) {
-      rawValue = rawValue_; 
+      rawValue = rawValue_;
       prelimBuffer[prelimSamplesCounter++] = rawValue_;
-      updateMean(rawValue);
       if (prelimSamplesCounter < maxSamplesBeforeStore) {
         return;
       } else {

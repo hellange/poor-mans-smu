@@ -18,28 +18,28 @@ void VoltDisplayClass::renderMeasured(int x, int y, float rawMv) {
   
 
 //  GD.ColorRGB(COLOR_VOLTAGE_SHADDOW);
-//  GD.cmd_number(x+80+6-17, y+48 , 1, 2, v);
-//  GD.cmd_text(x+183+6-17-1, y+48 , 1, 0, ".");
-//  GD.cmd_number(x+205+6-17, y+48 , 1, 3, mv);
+//  GD.cmd_number(x+80+6-17, y+48-42 , 1, 2, v);
+//  GD.cmd_text(x+183+6-17-1, y+48-42 , 1, 0, ".");
+//  GD.cmd_number(x+205+6-17, y+48-42 , 1, 3, mv);
 
   GD.ColorRGB(COLOR_VOLT);
   GD.ColorA(255);
 
  if (v>=1.0) {
-   boldText(x,y+42, sign);
-   boldNumber(x+63,y+42, 2, v);
-   boldText(x+167,y+42, ".");
-   boldNumber(x+188,y+42, 3, mv);
-   GD.cmd_number(x+357, y+44, 1, 3, uv);
-   GD.cmd_text(x+530, y+44 ,  1, 0, "V"); 
+   boldText(x,y+42-42, sign);
+   boldNumber(x+63,y+42-42, 2, v);
+   boldText(x+167,y+42-42, ".");
+   boldNumber(x+188,y+42-42, 3, mv);
+   GD.cmd_number(x+357, y+44-42, 1, 3, uv);
+   GD.cmd_text(x+530, y+44-42 ,  1, 0, "V"); 
  } else {
-   boldText(x,y+42, sign);
-   //boldNumber(x+63,y+42, 2, v);
-   boldNumber(x+167-100,y+42, 3, mv);
-   boldText(x+357-100-30,y+42, ".");
+   boldText(x,y+42-42, sign);
+   //boldNumber(x+63,y+42-42, 2, v);
+   boldNumber(x+167-100,y+42-42, 3, mv);
+   boldText(x+357-100-30,y+42-42, ".");
 
-   GD.cmd_number(x+357-100, y+44, 1, 3, uv);
-   GD.cmd_text(x+530-100, y+44 ,  1, 0, "mV"); 
+   GD.cmd_number(x+357-100, y+44-42, 1, 3, uv);
+   GD.cmd_text(x+530-100, y+44-42 ,  1, 0, "mV"); 
  }
 
  
