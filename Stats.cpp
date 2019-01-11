@@ -190,9 +190,7 @@ void StatsClass::renderTrend(int x, int y, bool limitDetails) {
       GD.Vertex2ii(farRight, yaxis); 
     }
    
-    x = x + 95;
-    y = y + 23;
-  
+
     int viewHeight;
 
     // Add by 1000 to reduce decimal roudning problems.... should have stored value in uV and uA instead of mV and mA....
@@ -254,6 +252,9 @@ void StatsClass::renderTrend(int x, int y, bool limitDetails) {
  
     GD.ColorA(255);
 
+    x = x + 95;
+    y = y + 23;
+  
     int i = endPtr;
 
     uispan = visibleMax - visibleMin;
@@ -261,7 +262,7 @@ void StatsClass::renderTrend(int x, int y, bool limitDetails) {
     // main graph
     for (int pos=0; pos<nrOfTrendPoints;pos++) { 
       float height = viewHeight * ( (visibleMax - value[i]) / uispan);
-      int xpos = x + pos*(1+pixelsPrSample);
+      int xpos = 10 + x + pos*(1+pixelsPrSample);
       if (xpos>800) {
         return;
       }
@@ -285,7 +286,7 @@ void StatsClass::renderTrend(int x, int y, bool limitDetails) {
       for (int pos=0; pos<nrOfTrendPoints;pos++) { 
         float min = viewHeight * ( (visibleMax - valueExt[i][0]) / uispan);
         float max = viewHeight * ( (visibleMax - valueExt[i][1]) / uispan);
-        int xpos = x + pos*(1+pixelsPrSample);
+        int xpos = 10 + x + pos*(1+pixelsPrSample);
         if (xpos>800) {
           return;
         }

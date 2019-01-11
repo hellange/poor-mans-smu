@@ -178,9 +178,11 @@ void voltagePanel(int x, int y) {
   VOLT_DISPLAY.renderMeasured(x + 17,y + 26, V_FILTERS.mean);
 
   // secondary
+  GD.ColorRGB(COLOR_VOLT_LIGHT);
   DIGIT_UTIL.renderValue(x + 320,  y-4 , V_STATS.rawValue, 4, DigitUtilClass::typeVoltage); 
 
-  
+
+  GD.ColorRGB(COLOR_VOLT);
   VOLT_DISPLAY.renderSet(x + 120, y + 26 + 105, setMv);
 
   GD.ColorRGB(0,0,0);
@@ -193,11 +195,11 @@ void voltagePanel(int x, int y) {
   
   renderDeviation(x + 667,y + 130, V_STATS.rawValue, setMv, false);
 
-  showStatusIndicator(x+625, y+5, "FILTER", true, false);
+  showStatusIndicator(x+630, y+5, "FILTER", true, false);
   showStatusIndicator(x+720, y+5, "NULL", false, false);
-  showStatusIndicator(x+625, y+45, "50Hz", false, false);
+  showStatusIndicator(x+630, y+45, "50Hz", false, false);
   showStatusIndicator(x+720, y+45, "4 1/2", false, false);
-  showStatusIndicator(x+625, y+85, "COMP", true, true);
+  showStatusIndicator(x+630, y+85, "COMP", true, true);
 
   
 }
@@ -426,7 +428,7 @@ void handleMenuScrolldown(){
 void renderDisplay() {
 
   int x = 0;
-  int y = 20;
+  int y = 25;
 
 
   // register screen for gestures on top half
@@ -462,7 +464,7 @@ void renderDisplay() {
     }   
   }
   
-  scrollIndication(240, activeWidget);
+  scrollIndication(245, activeWidget);
 
   handleMenuScrolldown();
 
