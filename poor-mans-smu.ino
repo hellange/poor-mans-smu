@@ -171,7 +171,7 @@ void voltagePanel(int x, int y) {
 
   // heading
   GD.ColorRGB(COLOR_VOLT);
-  GD.cmd_text(x+56, y+16-16 ,   29, 0, "SOURCE VOLTAGE");
+  GD.cmd_text(x+10, y+16-16 ,   29, 0, "SOURCE VOLTAGE");
 
   // primary
   //VOLT_DISPLAY.renderMeasured(x + 17,y + 26 , V_STATS.rawValue);
@@ -180,6 +180,8 @@ void voltagePanel(int x, int y) {
   // secondary
   GD.ColorRGB(COLOR_VOLT_LIGHT);
   DIGIT_UTIL.renderValue(x + 320,  y-4 , V_STATS.rawValue, 4, DigitUtilClass::typeVoltage); 
+
+  
 
 
   GD.ColorRGB(COLOR_VOLT);
@@ -269,7 +271,7 @@ void currentPanel(int x, int y, boolean overflow) {
  
   GD.ColorRGB(COLOR_CURRENT);
  
-  GD.cmd_text(x+56, y, 29, 0, "MEASURE CURRENT");
+  GD.cmd_text(x+10, y, 29, 0, "MEASURE CURRENT");
 
   CURRENT_DISPLAY.renderMeasured(x + 17, y+30, C_STATS.rawValue, overflow);
   CURRENT_DISPLAY.renderSet(x+120, y+135, setMa);
@@ -588,13 +590,13 @@ SPI.beginTransaction(SPISettings(3000000, MSBFIRST, SPI_MODE0));
     if (readyToDoStableMeasurements()) {
       // Dont sample voltage and current while scrolling because polling is slow.
       // TODO: Remove this limitation when sampling is based on interrupts.
-      if (scrollDir == 0) {
+      //if (scrollDir == 0) {
          //V_STATS.addSample(SMU[0].MeasureVoltage() * 1000.0);
          V_STATS.addSample(Vout);
          V_FILTERS.updateMean(Vout);
   
          C_STATS.addSample(SMU[0].MeasureCurrent() * 1000.0);
-      }
+      //}
   
     }
     renderDisplay();

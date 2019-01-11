@@ -149,7 +149,13 @@ void StatsClass::renderHistogram(int x, int y, bool limitDetails) {
 void StatsClass::renderTrend(int x, int y, bool limitDetails) {     
     GD.ColorRGB(type==DigitUtilClass::typeVoltage?COLOR_VOLT:COLOR_CURRENT);
 
-    GD.cmd_text(x+56, y, 29, 0, type==DigitUtilClass::typeVoltage?"VOLTAGE TREND":"CURRENT TREND");
+    GD.cmd_text(x+10, y, 29, 0, type==DigitUtilClass::typeVoltage?"VOLTAGE TREND":"CURRENT TREND");
+
+    // secondary (voltage trend shows current value and the other way around)
+    //GD.ColorRGB(type==DigitUtilClass::typeVoltage?COLOR_CURRENT:COLOR_VOLT);
+    //DIGIT_UTIL.renderValue(x + 320,  y-4 , rawValue, 4, DigitUtilClass::typeCurrent); 
+
+
     
     GD.ColorRGB(0xffffff); 
 
@@ -262,9 +268,9 @@ void StatsClass::renderTrend(int x, int y, bool limitDetails) {
     // main graph
     for (int pos=0; pos<nrOfTrendPoints;pos++) { 
       float height = viewHeight * ( (visibleMax - value[i]) / uispan);
-      int xpos = 10 + x + pos*(1+pixelsPrSample);
-      if (xpos>800) {
-        return;
+      int xpos = x + pos*(1+pixelsPrSample);
+      if (xpos>800) { // avoid writing outside screen
+        return; 
       }
       if (value[i] < undefinedValue){
         GD.Vertex2ii(xpos, y + height); 
@@ -286,7 +292,7 @@ void StatsClass::renderTrend(int x, int y, bool limitDetails) {
       for (int pos=0; pos<nrOfTrendPoints;pos++) { 
         float min = viewHeight * ( (visibleMax - valueExt[i][0]) / uispan);
         float max = viewHeight * ( (visibleMax - valueExt[i][1]) / uispan);
-        int xpos = 10 + x + pos*(1+pixelsPrSample);
+        int xpos = x + pos*(1+pixelsPrSample);
         if (xpos>800) {
           return;
         }
