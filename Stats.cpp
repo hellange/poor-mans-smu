@@ -35,6 +35,7 @@ void StatsClass::addSample(float rawValue_) {
           
         }
         value[endPtr] = tot/maxSamplesBeforeStore; // set value as mean value of prelim samples
+       
 
         prelimSamplesCounter = 0;
         updateMinMax();
@@ -50,7 +51,22 @@ void StatsClass::addSample(float rawValue_) {
 }
 
 
-void StatsClass::updateMinMax() {      
+void StatsClass::updateMinMax() { 
+
+    // based on mean value of a few samples
+    minimumMean = undefinedValue;
+    maximumMean = -minimumMean;
+    for (int i=0;i<nrOfTrendPoints;i++) {
+      if (value[i]<=minimumMean && value[i]!=undefinedValue) {
+        minimumMean = value[i];
+      }
+      if (value[i]>=maximumMean && value[i]!=undefinedValue) {
+        maximumMean= value[i];
+      }
+    }
+    
+
+    // based on raw samples
     minimum = undefinedValue;
     maximum = -minimum;
     for (int i=0;i<nrOfTrendPoints;i++) {
@@ -156,7 +172,7 @@ void StatsClass::renderTrend(int x, int y, bool limitDetails) {
 
 
     // draw horisontal lines
-    int farRight = x + 780;
+    int farRight = x + 690;
     if (farRight > 780) {
       farRight = 780;
     }
@@ -167,14 +183,14 @@ void StatsClass::renderTrend(int x, int y, bool limitDetails) {
             if (i == 0 || i==5 || i==10) {
                GD.ColorRGB(0xffffff);
             } else {
-               GD.ColorRGB(0x444444);
+               GD.ColorRGB(0x666666);
             }
 
-      GD.Vertex2ii(x+90+(i==5?100:0), yaxis); 
+      GD.Vertex2ii(x+90, yaxis); 
       GD.Vertex2ii(farRight, yaxis); 
     }
    
-    x = x + 190;
+    x = x + 95;
     y = y + 23;
   
     int viewHeight;
@@ -292,7 +308,7 @@ void StatsClass::renderTrend(int x, int y, bool limitDetails) {
       }
     }
     
-    x=x-5;
+    x=x+600;
     // show the span info with top and bottom
     float top = viewHeight * ( (visibleMax - maximum) / uispan);
     float bottom = viewHeight * ( (visibleMax - minimum) / uispan);
@@ -301,22 +317,35 @@ void StatsClass::renderTrend(int x, int y, bool limitDetails) {
     DIGIT_UTIL.renderValue(x-10, y + top - 18, maximum, 0, type); 
     GD.Begin(LINE_STRIP);
     GD.LineWidth(20);
-    GD.Vertex2ii(x+5, y + top); 
-    GD.Vertex2ii(x, y + top + 2); 
+    GD.Vertex2ii(x, y + top); 
+    GD.Vertex2ii(x+5, y + top + 2); 
     //GD.Vertex2ii(x, y + (viewHeight)/2 - 5); 
     //GD.Vertex2ii(x-5, y + (viewHeight)/2 ); 
     //GD.Vertex2ii(x, y + (viewHeight)/2 + 5); 
-    GD.Vertex2ii(x, y + bottom - 2);
-    GD.Vertex2ii(x+5, y + bottom);
+    GD.Vertex2ii(x+5, y + bottom - 2);
+    GD.Vertex2ii(x, y + bottom);
     // if close to bottom, put it at the bottom, trying to avoid "flicker" when minimum close to the bottom
     if (viewHeight - bottom > 5) {
       DIGIT_UTIL.renderValue(x-10, y + bottom + 5, minimum, 0, type); 
     } else {
-       DIGIT_UTIL.renderValue(x-10,  y + viewHeight + 5 , minimum, 0, type); 
+      DIGIT_UTIL.renderValue(x-10,  y + viewHeight + 5 , minimum, 0, type); 
     }
     float actualSpan = maximum - minimum;
-    GD.cmd_text(x-70+6, y + top + (bottom-top)/2 -15 , 26, 0, "Span");
-    DIGIT_UTIL.renderValue(x-98,  y + top + (bottom-top)/2 , actualSpan, 0 , type); 
+    float actualSpan1 = maximumMean - minimumMean;
+    int spanTextY = y + top + (bottom-top)/2;
+    GD.ColorA(180);
+    GD.ColorRGB(COLOR_VOLT);
+    GD.cmd_text(x + 15, spanTextY -30 , 26, 0, "Span noise");
+    GD.ColorA(255);
+    GD.ColorRGB(0xffffff);
+    DIGIT_UTIL.renderValue(x + 10,  spanTextY -15, actualSpan, 0 , type);
+    GD.ColorA(255);
+    GD.ColorRGB(COLOR_VOLT);
+    GD.cmd_text(x + 15, spanTextY + 5 , 26, 0, "Span signal");
+    GD.ColorA(255);
+    GD.ColorRGB(0xffffff);
+    DIGIT_UTIL.renderValue(x + 10,  spanTextY + 20, actualSpan1, 0 , type); 
+
 }
 
 

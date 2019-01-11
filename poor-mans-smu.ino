@@ -4,13 +4,6 @@
  *  P O O R  M A N ' s  S M U
  *  
  *  by Helge Langehaug (2018, 2019)
- *  
- *  
- *  FT81x graphics driver/library copied (2016) from 
- *  jamesbowman / gd2-lib
- *  (https://github.com/jamesbowman/gd2-lib.git)
- *  Reduced and modified to work with 800x640 displays 
- *  by Helge Langehaug
  * 
  *****************************************************************/
 
@@ -177,12 +170,16 @@ void voltagePanel(int x, int y) {
   */
 
   // heading
-  GD.ColorRGB(200,255,200);
+  GD.ColorRGB(COLOR_VOLT);
   GD.cmd_text(x+56, y+16-16 ,   29, 0, "SOURCE VOLTAGE");
 
-  
+  // primary
   //VOLT_DISPLAY.renderMeasured(x + 17,y + 26 , V_STATS.rawValue);
   VOLT_DISPLAY.renderMeasured(x + 17,y + 26, V_FILTERS.mean);
+
+  // secondary
+  DIGIT_UTIL.renderValue(x + 320,  y-4 , V_STATS.rawValue, 4, DigitUtilClass::typeVoltage); 
+
   
   VOLT_DISPLAY.renderSet(x + 120, y + 26 + 105, setMv);
 
@@ -196,12 +193,11 @@ void voltagePanel(int x, int y) {
   
   renderDeviation(x + 667,y + 130, V_STATS.rawValue, setMv, false);
 
-  y=y+5;
-  showStatusIndicator(x+620, y, "FILTER", true, false);
-  showStatusIndicator(x+720, y, "NULL", false, false);
-  showStatusIndicator(x+620, y+40, "50Hz", false, false);
-  showStatusIndicator(x+720, y+40, "4 1/2", false, false);
-  showStatusIndicator(x+620, y+80, "Comp", false, true);
+  showStatusIndicator(x+625, y+5, "FILTER", true, false);
+  showStatusIndicator(x+720, y+5, "NULL", false, false);
+  showStatusIndicator(x+625, y+45, "50Hz", false, false);
+  showStatusIndicator(x+720, y+45, "4 1/2", false, false);
+  showStatusIndicator(x+625, y+85, "COMP", true, true);
 
   
 }
@@ -270,7 +266,6 @@ void currentPanel(int x, int y, boolean overflow) {
   GD.ColorRGB(50,50,0); // yellow
  
   GD.ColorRGB(COLOR_CURRENT);
-  //GD.ColorRGB(232,202,158);
  
   GD.cmd_text(x+56, y, 29, 0, "MEASURE CURRENT");
 

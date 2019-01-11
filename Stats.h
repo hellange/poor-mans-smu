@@ -1,6 +1,6 @@
 
 class StatsClass {
-#define MAX_SAMPLES_BEFORE_STORE 100
+#define MAX_SAMPLES_BEFORE_STORE 1
 #define MAX_FULL_SAMPLES 85
 private:
   float undefinedValue = 1000000; // just a way to indicate that value is not set...
@@ -26,6 +26,8 @@ public:
   float rawValue;
   float minimum;
   float maximum;
+  float minimumMean;
+  float maximumMean;
   float visibleMax;
   float visibleMin;
   float span;
