@@ -343,13 +343,13 @@ void StatsClass::renderTrend(int x, int y, bool limitDetails) {
     float actualSpan1 = maximumMean - minimumMean;
     int spanTextY = y + top + (bottom-top)/2;
     GD.ColorA(180);
-    GD.ColorRGB(COLOR_VOLT);
+    GD.ColorRGB(type==DigitUtilClass::typeVoltage?COLOR_VOLT:COLOR_CURRENT);
     GD.cmd_text(x + 15, spanTextY -30 , 26, 0, "Span noise");
     GD.ColorA(255);
     GD.ColorRGB(0xffffff);
     DIGIT_UTIL.renderValue(x + 10,  spanTextY -15, actualSpan, 0 , type);
     GD.ColorA(255);
-    GD.ColorRGB(COLOR_VOLT);
+    GD.ColorRGB(type==DigitUtilClass::typeVoltage?COLOR_VOLT:COLOR_CURRENT);
     GD.cmd_text(x + 15, spanTextY + 5 , 26, 0, "Span signal");
     GD.ColorA(255);
     GD.ColorRGB(0xffffff);

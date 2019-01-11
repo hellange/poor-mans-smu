@@ -30,7 +30,7 @@
  
  float SMU_HAL_dummy::MeasureCurrent(){
 
-  float simulatedLoad = 100.0; //ohm
+  float simulatedLoad = 10.0; //ohm
   nowValueI = nowValueV / simulatedLoad;
   
   nowValueI =  nowValueI +  nowValueI * (random(0, 10) / 1000.0); // 0.0% - 0.1% error
