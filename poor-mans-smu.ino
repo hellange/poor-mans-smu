@@ -129,49 +129,32 @@ void disableSPIunits(){
 
 void showStatusIndicator(int x,int y,const char* text, bool enable, bool warn) {
   GD.Begin(RECTS);
-  if (warn) {
-     GD.ColorRGB(0xFF0000);
-  } else {
-     GD.ColorRGB(COLOR_VOLT);
-  }
-  if (enable) {
-      GD.ColorA(150);
-  } else {
-      GD.ColorA(25);
-      //GD.ColorRGB(0xaaaaaa);
-  }
-
+  GD.ColorRGB(warn ? 0xFF0000 : COLOR_VOLT);
+  GD.ColorA(enable ? 150 : 25);
   
   GD.LineWidth(150);
   GD.Vertex2ii(x, 15 + y);
   GD.Vertex2ii(x + 60, y + 24);
   GD.ColorRGB(0xffffff);
+  GD.ColorA(enable ? 200 : 25);
   GD.cmd_text(x+ 2, y + 10, 27, 0, text);
   GD.ColorA(255);
 }
 void voltagePanel(int x, int y) {
-  //GD.ColorA(70);
-  /*
-  GD.Begin(LINE_STRIP);
-  GD.LineWidth(32);
-  GD.ColorRGB(0,255,150);
-  GD.Vertex2ii(x+10, y+30); 
-  GD.Vertex2ii(x+790, y+30);
-  GD.Vertex2ii(x+790, y+210);
-  GD.Vertex2ii(x+10, y+210);
-  GD.Vertex2ii(x+10, y+30);
 
-  // clear area behind heading
-  GD.ColorA(255);
-  GD.Begin(RECTS);
-  GD.ColorRGB(00,00,00);
-  GD.Vertex2ii(x+56, y+20);
-  GD.Vertex2ii(x+260, y+50);
-  */
+  // frame
+  GD.Begin(LINE_STRIP);
+  GD.LineWidth(7);
+  GD.ColorRGB(0,255,150);
+  GD.Vertex2ii(x+10, y); 
+  GD.Vertex2ii(x+790, y);
+  GD.Vertex2ii(x+790, y+190);
+  GD.Vertex2ii(x+10, y+190);
+  GD.Vertex2ii(x+10, y);
 
   // heading
   GD.ColorRGB(COLOR_VOLT);
-  GD.cmd_text(x+10, y+16-16 ,   29, 0, "SOURCE VOLTAGE");
+  GD.cmd_text(x+20, y + 2 ,   29, 0, "SOURCE VOLTAGE");
 
   // primary
   //VOLT_DISPLAY.renderMeasured(x + 17,y + 26 , V_STATS.rawValue);
@@ -182,8 +165,6 @@ void voltagePanel(int x, int y) {
   DIGIT_UTIL.renderValue(x + 320,  y-4 , V_STATS.rawValue, 4, DigitUtilClass::typeVoltage); 
 
   
-
-
   GD.ColorRGB(COLOR_VOLT);
   VOLT_DISPLAY.renderSet(x + 120, y + 26 + 105, setMv);
 
@@ -569,7 +550,7 @@ void loop()
   unsigned long currentMillis = millis();
 
   GD.resume();
-SPI.beginTransaction(SPISettings(3000000, MSBFIRST, SPI_MODE0));
+SPI.beginTransaction(SPISettings(10000000, MSBFIRST, SPI_MODE0));
   if (!gestureDetected) {
     if (GD.inputs.tag == BUTTON_VOLT_SET) {
       DIAL.open(BUTTON_VOLT_SET, closeCallback);

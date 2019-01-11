@@ -248,7 +248,7 @@ void StatsClass::renderTrend(int x, int y, bool limitDetails) {
     visibleMin = visibleMin/1000.0;
 
 
-    int pixelsPrSample = 6;
+    int pixelsPrSample = 7;
     
     viewHeight = 150;
 
@@ -268,7 +268,7 @@ void StatsClass::renderTrend(int x, int y, bool limitDetails) {
     // main graph
     for (int pos=0; pos<nrOfTrendPoints;pos++) { 
       float height = viewHeight * ( (visibleMax - value[i]) / uispan);
-      int xpos = x + pos*(1+pixelsPrSample);
+      int xpos = 5 + x + pos*(1+pixelsPrSample);
       if (xpos>800) { // avoid writing outside screen
         return; 
       }
@@ -292,7 +292,7 @@ void StatsClass::renderTrend(int x, int y, bool limitDetails) {
       for (int pos=0; pos<nrOfTrendPoints;pos++) { 
         float min = viewHeight * ( (visibleMax - valueExt[i][0]) / uispan);
         float max = viewHeight * ( (visibleMax - valueExt[i][1]) / uispan);
-        int xpos = x + pos*(1+pixelsPrSample);
+        int xpos = 5 + x + pos*(1+pixelsPrSample);
         if (xpos>800) {
           return;
         }
@@ -316,6 +316,8 @@ void StatsClass::renderTrend(int x, int y, bool limitDetails) {
     }
     
     x=x+600;
+        if (!limitDetails) {
+
     // show the span info with top and bottom
     float top = viewHeight * ( (visibleMax - maximum) / uispan);
     float bottom = viewHeight * ( (visibleMax - minimum) / uispan);
@@ -352,7 +354,7 @@ void StatsClass::renderTrend(int x, int y, bool limitDetails) {
     GD.ColorA(255);
     GD.ColorRGB(0xffffff);
     DIGIT_UTIL.renderValue(x + 10,  spanTextY + 20, actualSpan1, 0 , type); 
-
+        }
 }
 
 
