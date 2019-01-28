@@ -37,7 +37,7 @@
 #define GEST_MOVE_LEFT 1
 #define GEST_MOVE_RIGHT 2
 #define GEST_MOVE_DOWN 3
-#define LOWER_WIDGET_Y_POS 260
+#define LOWER_WIDGET_Y_POS 250
 
 //!touchscreen I2C address
 #define I2C_FT6206_ADDR0    0x38
@@ -71,59 +71,33 @@ int noOfWidgets = 4;
 
 void setup()
 {
-  //wdt_disable();
   Serial.begin(9600);
-  //DAC.init(); // Not using any separate DAC. Using easySMU instead
-
   Serial.println("Initializing DAC...");
-
   disableSPIunits();
-  
   DAC.init();
-
-   if(DAC.checkDataAvilable() == true) {
-    float v = DAC.convertToMv();
-    Serial.print("Measured raw:");  
-    Serial.print(v, 3);
-    Serial.println(" mV");  
-    Serial.flush();
-   }
-
-   
   Serial.println("Done!");
 
   Serial.println("Initializing WeatherNG graphics controller FT81x...");
   disableSPIunits();
   GD.begin(0);
+  GD.cmd_romfont(1, 34); // put FT81x font 34 in slot 1
   Serial.println("Done!");
     
-    setMv = 0.0;
-    setMa = 10.0;
-    SMU[0].fltSetCommitCurrentSource(setMa / 1000.0, _SOURCE_AND_SINK); 
-    SMU[0].fltSetCommitVoltageSource(setMv / 1000.0);
-    
-    
-    #ifdef EASYSMU
-    SMU[0].EnableOutput();
-    #endif
-
-
- 
-  GD.cmd_romfont(1, 34); // put FT81x font 34 in slot 1
-  //GD.wr(REG_PWM_DUTY, 10);
-
-   V_STATS.init(DigitUtilClass::typeVoltage);
-   C_STATS.init(DigitUtilClass::typeCurrent);
-
-   V_FILTERS.init();
-
+  setMv = 0.0;
+  setMa = 10.0;
+  SMU[0].fltSetCommitCurrentSource(setMa / 1000.0, _SOURCE_AND_SINK); 
+  SMU[0].fltSetCommitVoltageSource(setMv / 1000.0);
+  
+  V_STATS.init(DigitUtilClass::typeVoltage);
+  C_STATS.init(DigitUtilClass::typeCurrent);
+  V_FILTERS.init();
 }
 
 void disableSPIunits(){
-    pinMode(9, OUTPUT);
-    digitalWrite(9, HIGH);
-    pinMode(10, OUTPUT);
-    digitalWrite(10, HIGH);
+  pinMode(9, OUTPUT);
+  digitalWrite(9, HIGH);
+  pinMode(10, OUTPUT);
+  digitalWrite(10, HIGH);
 }
 
 
@@ -142,16 +116,6 @@ void showStatusIndicator(int x,int y,const char* text, bool enable, bool warn) {
 }
 void voltagePanel(int x, int y) {
 
-  // frame
-  GD.Begin(LINE_STRIP);
-  GD.LineWidth(7);
-  GD.ColorRGB(0,255,150);
-  GD.Vertex2ii(x+10, y); 
-  GD.Vertex2ii(x+790, y);
-  GD.Vertex2ii(x+790, y+190);
-  GD.Vertex2ii(x+10, y+190);
-  GD.Vertex2ii(x+10, y);
-
   // heading
   GD.ColorRGB(COLOR_VOLT);
   GD.cmd_text(x+20, y + 2 ,   29, 0, "SOURCE VOLTAGE");
@@ -164,7 +128,6 @@ void voltagePanel(int x, int y) {
   GD.ColorRGB(COLOR_VOLT_LIGHT);
   DIGIT_UTIL.renderValue(x + 320,  y-4 , V_STATS.rawValue, 4, DigitUtilClass::typeVoltage); 
 
-  
   GD.ColorRGB(COLOR_VOLT);
   VOLT_DISPLAY.renderSet(x + 120, y + 26 + 105, setMv);
 
@@ -183,8 +146,6 @@ void voltagePanel(int x, int y) {
   showStatusIndicator(x+630, y+45, "50Hz", false, false);
   showStatusIndicator(x+720, y+45, "4 1/2", false, false);
   showStatusIndicator(x+630, y+85, "COMP", true, true);
-
-  
 }
 
 void renderDeviation(int x, int y, float rawM, float setM, bool cur) {
@@ -243,16 +204,15 @@ void renderHistogram(int x,int y, bool scrolling) {
 
 
 void currentPanel(int x, int y, boolean overflow) {
+
   if (x >= 800) {
     return;
   }
   GD.Begin(LINE_STRIP);
   GD.LineWidth(32);
-  GD.ColorRGB(50,50,0); // yellow
+  GD.ColorRGB(50,50,0);
  
-  GD.ColorRGB(COLOR_CURRENT);
- 
-  GD.cmd_text(x+10, y, 29, 0, "MEASURE CURRENT");
+  GD.ColorRGB(0xbbbbbb);
 
   CURRENT_DISPLAY.renderMeasured(x + 17, y+30, C_STATS.rawValue, overflow);
   CURRENT_DISPLAY.renderSet(x+120, y+135, setMa);
@@ -268,10 +228,7 @@ void currentPanel(int x, int y, boolean overflow) {
 }
 
 void drawBall(int x, int y, bool set) {
-  GD.PointSize(16 * 7); 
-  GD.ColorRGB(255,255,255);
   GD.Begin(POINTS);
-  GD.Vertex2ii(x, y);
   GD.PointSize(16 * 6);  
   if (set == true) {
     GD.ColorRGB(255,255,255); 
@@ -281,7 +238,25 @@ void drawBall(int x, int y, bool set) {
   GD.Vertex2ii(x, y);
 }
 
-void scrollIndication(int y, int activeWidget) {
+void widgetHeaderTab(int y, int activeWidget) {
+  y=y+10;
+  GD.Begin(RECTS);
+
+  GD.ColorA(255);
+  GD.LineWidth(350);
+  //GD.ColorRGB(0x444477);
+  GD.ColorRGB(0x333350);
+  GD.Vertex2ii(30,y);
+  GD.Vertex2ii(770, 480);
+
+  GD.Begin(RECTS);
+  GD.ColorA(255);
+  GD.LineWidth(10);
+  GD.ColorRGB(0x000000);
+  GD.Vertex2ii(0,y+15);
+  GD.Vertex2ii(800, 480);
+
+  y=y-5;
   int x = 400 - 30 * noOfWidgets/2;
   for (int i = 0; i < noOfWidgets; i++) {
     drawBall(x+ i*30,y,activeWidget == i);
@@ -289,20 +264,36 @@ void scrollIndication(int y, int activeWidget) {
 }
 
 
-void showWidget(int widgetNo, int scroll) {
-  int yPos = LOWER_WIDGET_Y_POS;
+void showWidget(int y, int widgetNo, int scroll) {
+  int yPos = y;
     if (widgetNo ==0) {
+       if (scroll ==0){
+         GD.ColorRGB(0xbbbbbb);
+         GD.cmd_text(20, yPos+2, 29, 0, "MEASURE CURRENT");
+       }
        currentPanel(scroll, yPos, SMU[0].Overflow());
   }else if (widgetNo == 1) {
     if (!DIAL.isDialogOpen()){
+       if (scroll ==0){
+         GD.ColorRGB(0xbbbbbb);
+         GD.cmd_text(20, yPos+2, 29, 0, "CURRENT TREND");
+       }
        renderCurrentGraph(scroll, yPos, scrollDir != 0);
     }
   } else if (widgetNo == 2) {
       if (!DIAL.isDialogOpen()){
+        if (scroll ==0){
+          GD.ColorRGB(0xbbbbbb);
+          GD.cmd_text(20, yPos+2, 29, 0, "VOLTAGE TREND");
+        }
         renderVoltageGraph(scroll, yPos, scrollDir != 0);
       }
   } else if (widgetNo == 3) {
-    renderHistogram(scroll, yPos, scrollDir !=0);
+      if (scroll ==0){
+        GD.ColorRGB(0xbbbbbb);
+        GD.cmd_text(20, yPos+2, 29, 0, "VOLTAGE HISTOGRAM");
+      }
+      renderHistogram(scroll, yPos, scrollDir !=0);
   }
 
 }
@@ -350,8 +341,6 @@ void bluredBackground() {
 boolean mainMenuActive = false;
 void handleMenuScrolldown(){
 
-
-  
   if (gestureDetected == GEST_MOVE_DOWN && mainMenuActive == false) {
     mainMenuActive = true;
     scrollMainMenuDir = 1;
@@ -426,37 +415,32 @@ void renderDisplay() {
   // register screen for gestures on lower half
   GD.Tag(GESTURE_AREA_LOW);
   GD.Begin(RECTS);
-  GD.ColorA(200);
+  //GD.ColorA(200);
   GD.ColorRGB(0x000000);
   GD.Vertex2ii(0,LOWER_WIDGET_Y_POS);
   GD.Vertex2ii(800, 480);
   
   handleWidgetScrollPosition();
-  
+
+  widgetHeaderTab(260, activeWidget);
+
   if (activeWidget >= 0) {
     if (scrollDir == 0) {
-      showWidget(activeWidget, 0);
+      showWidget(LOWER_WIDGET_Y_POS, activeWidget, 0);
     }
     else if (scrollDir == -1) {
-      showWidget(activeWidget, scroll); 
-      showWidget(activeWidget + 1, scroll + 800);
+      showWidget(LOWER_WIDGET_Y_POS,activeWidget, scroll); 
+      showWidget(LOWER_WIDGET_Y_POS,activeWidget + 1, scroll + 800);
     } 
     else if (scrollDir == 1) {
-      showWidget(activeWidget - 1, scroll - 800);
-      showWidget(activeWidget, scroll + 0);
+      showWidget(LOWER_WIDGET_Y_POS,activeWidget - 1, scroll - 800);
+      showWidget(LOWER_WIDGET_Y_POS,activeWidget, scroll + 0);
     }   
   }
   
-  scrollIndication(245, activeWidget);
-
   handleMenuScrolldown();
 
 }
-
-
-
-
-
 
 
 int gestOldX = 0;
@@ -504,12 +488,8 @@ void detectGestures() {
     gestDurationX = 0;
     gestDurationY = 0;
   }
-
-
-    gestOldY = GD.inputs.y;  
-    gestOldX = GD.inputs.x;  
- 
-
+  gestOldY = GD.inputs.y;  
+  gestOldX = GD.inputs.x;  
 }
 
 
@@ -527,30 +507,25 @@ bool readyToDoStableMeasurements() {
 unsigned long previousMillis = 0; 
 unsigned long previousMillisSlow = 0; 
 const long interval = 1; // should it account for time taken to perform ADC sample ?
+float Vout = 0.0;
 void loop()
 {
-   GD.__end();
-   disableSPIunits();
+  GD.__end();
+  disableSPIunits();
 
-   SPI.beginTransaction (SPISettings (1000000, MSBFIRST, SPI_MODE1)); // 100000
-
-   pinMode(10, OUTPUT);   // enable DAC SPI
-   digitalWrite(10, LOW);
-   float Vout = 0.0;
-    if(DAC.checkDataAvilable() == true) {
-    Vout = DAC.convertToMv();
+  SPI.beginTransaction (SPISettings (1000000, MSBFIRST, SPI_MODE1));
+  digitalWrite(10, LOW);
+  if(DAC.dataReady() == true) {
+    Vout = DAC.MeasureVoltage();
     Serial.print("Measured raw:");  
     Serial.print(Vout, 3);
     Serial.println(" mV");  
     Serial.flush();
-   }
-    //delay(100);
-   disableSPIunits();
-
-  unsigned long currentMillis = millis();
+  }
+  disableSPIunits();
 
   GD.resume();
-SPI.beginTransaction(SPISettings(10000000, MSBFIRST, SPI_MODE0));
+  SPI.beginTransaction(SPISettings(10000000, MSBFIRST, SPI_MODE0));
   if (!gestureDetected) {
     if (GD.inputs.tag == BUTTON_VOLT_SET) {
       DIAL.open(BUTTON_VOLT_SET, closeCallback);
@@ -559,15 +534,14 @@ SPI.beginTransaction(SPISettings(10000000, MSBFIRST, SPI_MODE0));
     }
   }
 
+  unsigned long currentMillis = millis();
   if (currentMillis - previousMillis >= interval) {
     previousMillis = currentMillis;
 
     GD.get_inputs();
-      detectGestures();
+    detectGestures();
 
     GD.Clear();
-
-
     if (readyToDoStableMeasurements()) {
       // Dont sample voltage and current while scrolling because polling is slow.
       // TODO: Remove this limitation when sampling is based on interrupts.
@@ -575,10 +549,8 @@ SPI.beginTransaction(SPISettings(10000000, MSBFIRST, SPI_MODE0));
          //V_STATS.addSample(SMU[0].MeasureVoltage() * 1000.0);
          V_STATS.addSample(Vout);
          V_FILTERS.updateMean(Vout);
-  
          C_STATS.addSample(SMU[0].MeasureCurrent() * 1000.0);
       //}
-  
     }
     renderDisplay();
     
@@ -596,20 +568,20 @@ SPI.beginTransaction(SPISettings(10000000, MSBFIRST, SPI_MODE0));
 
 
 void closeCallback(int vol_cur_type, bool cancel) {
-     Serial.print("SET type:");
-     Serial.println(vol_cur_type);
-     Serial.println(DIAL.type() );
-    if (cancel) {
-      return;
-    }
-    if (DIAL.type() == BUTTON_VOLT_SET) {
-       if (SMU[0].fltSetCommitVoltageSource(DIAL.getMv() / 1000.0)) printError(_PRINT_ERROR_VOLTAGE_SOURCE_SETTING);
-       setMv = DIAL.getMv();
-    }
-    if (DIAL.type() == BUTTON_CUR_SET) {
-       if (SMU[0].fltSetCommitCurrentSource(DIAL.getMv() / 1000.0, _SOURCE_AND_SINK)) printError(_PRINT_ERROR_CURRENT_SOURCE_SETTING);
-       setMa = DIAL.getMv();
-    }
+   Serial.print("SET type:");
+   Serial.println(vol_cur_type);
+   Serial.println(DIAL.type() );
+  if (cancel) {
+    return;
+  }
+  if (DIAL.type() == BUTTON_VOLT_SET) {
+     if (SMU[0].fltSetCommitVoltageSource(DIAL.getMv() / 1000.0)) printError(_PRINT_ERROR_VOLTAGE_SOURCE_SETTING);
+     setMv = DIAL.getMv();
+  }
+  if (DIAL.type() == BUTTON_CUR_SET) {
+     if (SMU[0].fltSetCommitCurrentSource(DIAL.getMv() / 1000.0, _SOURCE_AND_SINK)) printError(_PRINT_ERROR_CURRENT_SOURCE_SETTING);
+     setMa = DIAL.getMv();
+  }
      
 }
 

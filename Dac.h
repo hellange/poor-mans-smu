@@ -15,11 +15,14 @@ class DacClass {
   Protocentral_ADS1220 ADS1220;
   int nrBeforeAveraging;
 
-public:
-  float smoothing(float average, int size, float value);
+private:
   float convertToMv();
-  bool checkDataAvilable();
+  float smoothing(float average, int size, float value);
+
+public:
   void init();
+  bool dataReady();
+  float MeasureVoltage();
 };
 
 extern DacClass DAC;

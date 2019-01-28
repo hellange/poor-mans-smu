@@ -81,9 +81,10 @@ void StatsClass::updateMinMax() {
 
 
 void StatsClass::renderHistogram(int x, int y, bool limitDetails) {   
-    GD.ColorRGB(type==DigitUtilClass::typeVoltage?COLOR_VOLT:COLOR_CURRENT);
-    GD.ColorA(255);
-    GD.cmd_text(x+56, y, 29, 0, type==DigitUtilClass::typeVoltage?"VOLTAGE HISTOGRAM":"CURRENT HISTOGRAM");
+    //GD.ColorRGB(type==DigitUtilClass::typeVoltage?COLOR_VOLT:COLOR_CURRENT);
+    //GD.ColorRGB(0xdddddd);
+    //GD.ColorA(255);
+    //GD.cmd_text(x+26, y, 29, 0, type==DigitUtilClass::typeVoltage?"VOLTAGE HISTOGRAM":"CURRENT HISTOGRAM");
 
     uispan = visibleMax - visibleMin;
 
@@ -147,19 +148,11 @@ void StatsClass::renderHistogram(int x, int y, bool limitDetails) {
 
 
 void StatsClass::renderTrend(int x, int y, bool limitDetails) {     
-    GD.ColorRGB(type==DigitUtilClass::typeVoltage?COLOR_VOLT:COLOR_CURRENT);
+    //GD.ColorRGB(type==DigitUtilClass::typeVoltage?COLOR_VOLT:COLOR_CURRENT);
+    //GD.ColorRGB(0xdddddd);
+    //GD.cmd_text(x+20, y, 29, 0, type==DigitUtilClass::typeVoltage?"VOLTAGE TREND":"CURRENT TREND");
 
-    GD.cmd_text(x+10, y, 29, 0, type==DigitUtilClass::typeVoltage?"VOLTAGE TREND":"CURRENT TREND");
-
-    // secondary (voltage trend shows current value and the other way around)
-    //GD.ColorRGB(type==DigitUtilClass::typeVoltage?COLOR_CURRENT:COLOR_VOLT);
-    //DIGIT_UTIL.renderValue(x + 320,  y-4 , rawValue, 4, DigitUtilClass::typeCurrent); 
-
-
-    
-    GD.ColorRGB(0xffffff); 
-
-    y=y+25;
+    y=y+35;
     int lines = 11;
     int height = 150;
     float visibleSpan = visibleMax - visibleMin;

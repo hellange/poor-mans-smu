@@ -1,5 +1,6 @@
 #include "Dac.h"
 
+DacClass DAC;
 void DacClass::init() {
   pinMode(10, OUTPUT);
   pinMode(ADS1220_DRDY_PIN, INPUT);
@@ -9,7 +10,7 @@ void DacClass::init() {
   ADS1220.PGA_OFF();
 }
 
-bool DacClass::checkDataAvilable() {
+bool DacClass::dataReady() {
   // TODO: Implement the Data Ready signal in hardware. Currently only using the SPI and poll
   //if((digitalRead(ADS1220_DRDY_PIN)) == LOW) //        Wait for DRDY to transition low
   { 
@@ -45,6 +46,10 @@ float DacClass::smoothing(float average, int size, float value) {
   } else {
     return value;
   }
+}
+
+float DacClass::MeasureVoltage(){
+  return convertToMv();
 }
 
 float DacClass::convertToMv() {
@@ -88,4 +93,4 @@ float DacClass::convertToMv() {
     return (float)((bit32*VFSR*1000)/FSR);     //In  mV
 }
 
-DacClass DAC;
+

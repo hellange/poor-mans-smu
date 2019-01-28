@@ -17,6 +17,10 @@
  int8_t SMU_HAL_dummy::fltSetCommitCurrentSource(float fCurrent, int8_t up_down_both) {
   return setValueI = fCurrent;                         
  }
+
+ bool SMU_HAL_dummy::dataReady() {
+  return true;
+ }
  
  float SMU_HAL_dummy::MeasureVoltage(){
   int r = random(2);
