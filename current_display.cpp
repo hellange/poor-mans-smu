@@ -4,35 +4,30 @@
 #include "colors.h"
 #include "digit_util.h"
 
-void CurrentDisplayClass::renderMeasured(int x, int y, float rawMa, boolean overflow) {
+unsigned long overflow_timer = millis();
+unsigned long old_overflow_timer = overflow_timer ;
 
-  if (rawMa < 0.0f) {
-    rawMa = 0.0f - rawMa;
-    sign[0] = '-';
-  } else {
-    sign[0] = '+';
-  }
-  
-  int a = rawMa / 1000;
-  int ma = (rawMa - a * 1000);
-  int ua = (rawMa - ma) * 1000;
-  
-//  GD.ColorRGB(COLOR_CURRENT_SHADDOW);
-//  GD.cmd_number(x+80+6-17, y+36-30 ,   1, 1, a);
-//  GD.cmd_text(x+130+6-17, y+36-30 ,   1, 0, ".");
-//  GD.cmd_number(x+153+6-17, y+36-30 ,   1, 3, ma);
+void CurrentDisplayClass::renderMeasured(int x, int y, float rawMa, boolean overflow) {
+  overflow_timer = millis();
+  int color = 0xFF4522;
+
+  if (overflow_timer - old_overflow_timer > 1000) {
+    old_overflow_timer = overflow_timer;
+  } else if (overflow_timer - old_overflow_timer > 500) {
+    color = 0xaa1002;
+  } 
+
+  int a, ma, ua;
+  bool neg;
+  DIGIT_UTIL.separate(&a, &ma, &ua, &neg, rawMa);
   
   if (overflow) {
-    GD.ColorRGB(0xFF4500); //0xdd1120
-    
+    GD.ColorRGB(color); //0xFF4522); //0xdd1120
   } else {
     GD.ColorRGB(COLOR_CURRENT);
   }
-  GD.ColorA(255);
 
-
-    GD.cmd_text(x, y,  1, 0, sign);
-    //boldText(x,y, sign);
+  GD.cmd_text(x, y,  1, 0, neg ? "-":"+");
   x=x+55;
   
   if (a>0) {

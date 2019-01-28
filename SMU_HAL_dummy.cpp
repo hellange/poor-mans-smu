@@ -42,7 +42,7 @@
  }
 
  boolean SMU_HAL_dummy::Overflow(){
-   return setValueI < nowValueI;
+   return abs(setValueI) < abs(nowValueI);
  }
  
 

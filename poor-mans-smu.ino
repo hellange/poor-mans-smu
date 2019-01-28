@@ -266,13 +266,13 @@ void widgetHeaderTab(int y, int activeWidget) {
 
 void showWidget(int y, int widgetNo, int scroll) {
   int yPos = y;
-    if (widgetNo ==0) {
-       if (scroll ==0){
-         GD.ColorRGB(0xbbbbbb);
-         GD.cmd_text(20, yPos+2, 29, 0, "MEASURE CURRENT");
-       }
-       currentPanel(scroll, yPos, SMU[0].Overflow());
-  }else if (widgetNo == 1) {
+  if (widgetNo ==0) {
+     if (scroll ==0){
+       GD.ColorRGB(0xbbbbbb);
+       GD.cmd_text(20, yPos+2, 29, 0, "MEASURE CURRENT");
+     }
+     currentPanel(scroll, yPos, SMU[0].Overflow());
+  } else if (widgetNo == 1) {
     if (!DIAL.isDialogOpen()){
        if (scroll ==0){
          GD.ColorRGB(0xbbbbbb);

@@ -5,45 +5,30 @@
 #include "digit_util.h"
 
 void VoltDisplayClass::renderMeasured(int x, int y, float rawMv) {
-  if (rawMv < 0.0f) {
-    rawMv = 0.0f - rawMv;
-    sign[0] = '-';
-  } else {
-    sign[0] = '+';
-  }
 
   int v, mv, uv;
   bool neg;
   DIGIT_UTIL.separate(&v, &mv, &uv, &neg, rawMv);
-  
-
-//  GD.ColorRGB(COLOR_VOLTAGE_SHADDOW);
-//  GD.cmd_number(x+80+6-17, y+48-42 , 1, 2, v);
-//  GD.cmd_text(x+183+6-17-1, y+48-42 , 1, 0, ".");
-//  GD.cmd_number(x+205+6-17, y+48-42 , 1, 3, mv);
 
   GD.ColorRGB(COLOR_VOLT);
   GD.ColorA(255);
 
-  GD.cmd_text(x, y,  1, 0, sign);
-  //boldText(x,y, sign);
-
- x = x + 55;
- if (v>=1.0) {
-   boldNumber(x,y, 2, v);
-   boldText(x+104,y, ".");
-   boldNumber(x+130,y, 3, mv);
-   GD.cmd_number(x+307, y+2, 1, 3, uv);
-   GD.cmd_text(x+470, y+2,  1, 0, "V"); 
- } else {
-   //boldNumber(x,y+42-42, 2, v);
-   boldNumber(x+104-100,y, 3, mv);
-   boldText(x+164,y, ".");
-   GD.cmd_number(x+194, y+2, 1, 3, uv);
-   GD.cmd_text(x+360, y+2,  1, 0, "mV"); 
- }
-
+  GD.cmd_text(x, y,  1, 0, neg ? "-":"+");
+  x = x + 55;
  
+  if (v>=1.0) {
+    boldNumber(x,y, 2, v);
+    boldText(x+104,y, ".");
+    boldNumber(x+130,y, 3, mv);
+    GD.cmd_number(x+307, y+2, 1, 3, uv);
+    GD.cmd_text(x+470, y+2,  1, 0, "V"); 
+  } else {
+    //boldNumber(x,y+42-42, 2, v);
+    boldNumber(x+104-100,y, 3, mv);
+    boldText(x+164,y, ".");
+    GD.cmd_number(x+194, y+2, 1, 3, uv);
+    GD.cmd_text(x+360, y+2,  1, 0, "mV"); 
+  }
 }
 
 void VoltDisplayClass::renderSet(int x, int y, float rawMv) {
