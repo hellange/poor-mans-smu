@@ -41,9 +41,9 @@
 //!touchscreen I2C address
 #define I2C_FT6206_ADDR0    0x38
  
-SMU_HAL_dummy SMU[1] = {
-  SMU_HAL_dummy()
-  //SMU_HAL_ADS1220()
+SMU_HAL_ADS1220 SMU[1] = {
+  //SMU_HAL_dummy()
+  SMU_HAL_ADS1220()
 };
 
 int scroll = 0;
@@ -119,7 +119,6 @@ void voltagePanel(int x, int y) {
   GD.cmd_text(x+20, y + 2 ,   29, 0, "SOURCE VOLTAGE");
 
   // primary
-  //VOLT_DISPLAY.renderMeasured(x + 17,y + 26 , V_STATS.rawValue);
   VOLT_DISPLAY.renderMeasured(x + 17,y + 26, V_FILTERS.mean);
 
   // secondary
@@ -510,8 +509,6 @@ void loop()
 {
   GD.__end();
   disableSPIunits();
-  //SPI.beginTransaction (SPISettings (1000000, MSBFIRST, SPI_MODE1));
-  //digitalWrite(10, LOW);
 
   if(SMU[0].dataReady() == true) {
     Vout = SMU[0].measureVoltage();

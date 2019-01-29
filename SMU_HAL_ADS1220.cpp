@@ -10,6 +10,8 @@ void SMU_HAL_ADS1220::init() {
 }
 
 bool SMU_HAL_ADS1220::dataReady() {
+  SPI.beginTransaction (SPISettings (1000000, MSBFIRST, SPI_MODE1));
+  digitalWrite(10, LOW);
   // TODO: Implement the Data Ready signal in hardware. Currently only using the SPI and poll
   //if((digitalRead(ADS1220_DRDY_PIN)) == LOW) //        Wait for DRDY to transition low
   { 
