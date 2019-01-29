@@ -1,7 +1,6 @@
-#include "Dac.h"
+#include "SMU_HAL_ADS1220.h"
 
-DacClass DAC;
-void DacClass::init() {
+void SMU_HAL_ADS1220::init() {
   pinMode(10, OUTPUT);
   pinMode(ADS1220_DRDY_PIN, INPUT);
   ADS1220.begin();
@@ -10,7 +9,7 @@ void DacClass::init() {
   ADS1220.PGA_OFF();
 }
 
-bool DacClass::dataReady() {
+bool SMU_HAL_ADS1220::dataReady() {
   // TODO: Implement the Data Ready signal in hardware. Currently only using the SPI and poll
   //if((digitalRead(ADS1220_DRDY_PIN)) == LOW) //        Wait for DRDY to transition low
   { 
@@ -24,22 +23,19 @@ bool DacClass::dataReady() {
     LSB = SPI_RX_Buff_Ptr[2];
 
     Serial.print("hex ");
-
     Serial.print(MSB,BIN);
-        Serial.print(" ");
-
+    Serial.print(" ");
     Serial.print(data,BIN);
-            Serial.print(" ");
-
+    Serial.print(" ");
     Serial.println(LSB,BIN);
-
     
     return true;
   } else {
     return false;
   }
 }
-float DacClass::smoothing(float average, int size, float value) {
+
+float SMU_HAL_ADS1220::smoothing(float average, int size, float value) {
   nrBeforeAveraging ++;
   if (nrBeforeAveraging > size){
        return (size * average + value ) / (size + 1);
@@ -48,18 +44,15 @@ float DacClass::smoothing(float average, int size, float value) {
   }
 }
 
-float DacClass::MeasureVoltage(){
+float SMU_HAL_ADS1220::measureVoltage(){
   return convertToMv();
 }
 
-float DacClass::convertToMv() {
+float SMU_HAL_ADS1220::convertToMv() {
 
    long int bit32;
    long int bit24;
-   //byte *config_reg;
-  
-    
-  
+
     bit24 = MSB;
     bit24 = (bit24 << 8) | data;
     bit24 = (bit24 << 8) | LSB;                                 // Converting 3 bytes to a 24 bit int
@@ -73,7 +66,6 @@ float DacClass::convertToMv() {
     bit24= ( bit24 << 8 );
     bit32 = ( bit24 >> 8 );                      // Converting 24 bit two's complement to 32 bit two's complement
 
-
     /* 
     config_reg = ADS1220.get_config_reg();
     Serial.print("Config Reg : ");
@@ -86,11 +78,37 @@ float DacClass::convertToMv() {
     Serial.println(config_reg[3],HEX);
     */
 
-
     Serial.print("bit 32  ");
     Serial.println(bit32,HEX);
     
     return (float)((bit32*VFSR*1000)/FSR);     //In  mV
 }
 
+
+
+
+
+
+
+// used to simulate nonexisting features
+int8_t SMU_HAL_ADS1220::fltSetCommitVoltageSource(float fVoltage) {
+   return nowValueV = fVoltage;
+ }
+ 
+ int8_t SMU_HAL_ADS1220::fltSetCommitCurrentSource(float fCurrent, int8_t up_down_both) {
+  return setValueI = fCurrent;                         
+ }
+
+ float SMU_HAL_ADS1220::measureCurrent(){
+
+  float simulatedLoad = 10.0; //ohm
+  nowValueI = nowValueV / simulatedLoad;
+  
+  nowValueI =  nowValueI +  nowValueI * (random(0, 10) / 1000.0); // 0.0% - 0.1% error
+  return nowValueI;
+ }
+
+bool SMU_HAL_ADS1220::compliance(){
+   return abs(setValueI) < abs(nowValueI);
+}
 

@@ -6,7 +6,9 @@
 #define VREF 2.048            // Internal reference of 2.048V
 #define VFSR VREF/PGA   
 
-class DacClass {
+class SMU_HAL_ADS1220 {
+
+
 
   volatile byte MSB;
   volatile byte data;
@@ -16,13 +18,26 @@ class DacClass {
   int nrBeforeAveraging;
 
 private:
+
+  // used to simulate nonexisting features
+  float nowValueI = 0.0;
+  float setValueI = 0.0;
+  float nowValueV = 0.0;
+  //--------------------------------------
+  
   float convertToMv();
   float smoothing(float average, int size, float value);
 
 public:
   void init();
   bool dataReady();
-  float MeasureVoltage();
+  float measureVoltage();
+
+  // used to simulate nonexisting features
+  int8_t fltSetCommitVoltageSource(float fVoltage);
+  int8_t fltSetCommitCurrentSource(float fCurrent, int8_t up_down_both);
+  float measureCurrent();
+  bool compliance();
 };
 
-extern DacClass DAC;
+

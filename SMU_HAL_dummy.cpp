@@ -6,10 +6,8 @@
 
 #include "SMU_HAL_dummy.h"
 
- float nowValueV = 0.0;
- float nowValueI = 0.0;
- float setValueI = 0.0;
 
+ 
  int8_t SMU_HAL_dummy::fltSetCommitVoltageSource(float fVoltage) {
    return nowValueV = fVoltage;
  }
@@ -18,21 +16,32 @@
   return setValueI = fCurrent;                         
  }
 
- bool SMU_HAL_dummy::dataReady() {
-  return true;
+ int SMU_HAL_dummy::init() {
+  lastSampleMilli = millis();
+   return 0; 
  }
  
- float SMU_HAL_dummy::MeasureVoltage(){
+ bool SMU_HAL_dummy::dataReady() {
+  if (lastSampleMilli + 100 < millis()) {
+    lastSampleMilli = millis();
+    return true;
+  }
+  return false;
+ }
+ 
+ float SMU_HAL_dummy::measureVoltage(){
+
   int r = random(2);
   if (r == 0) {
-    nowValueV = nowValueV + random(50) / 1000000.0;
+    nowValueV = nowValueV + random(50) / 10000.0;
   } else if (r == 1) {
-    nowValueV = nowValueV - random(50) / 1000000.0;
+    nowValueV = nowValueV - random(50) / 10000.0;
   }
+
   return nowValueV;
  }
  
- float SMU_HAL_dummy::MeasureCurrent(){
+ float SMU_HAL_dummy::measureCurrent(){
 
   float simulatedLoad = 10.0; //ohm
   nowValueI = nowValueV / simulatedLoad;
@@ -41,7 +50,7 @@
   return nowValueI;
  }
 
- boolean SMU_HAL_dummy::Overflow(){
+ boolean SMU_HAL_dummy::compliance(){
    return abs(setValueI) < abs(nowValueI);
  }
  

@@ -19,10 +19,9 @@
 
 #include "Arduino.h"
 #include "Wire.h"
+
 #include "SMU_HAL_dummy.h"
-
-#include "Dac.h"
-
+#include "SMU_HAL_ADS1220.h"
 
 #define _SOURCE_AND_SINK 111
 
@@ -44,9 +43,8 @@
  
 SMU_HAL_dummy SMU[1] = {
   SMU_HAL_dummy()
+  //SMU_HAL_ADS1220()
 };
-
-
 
 int scroll = 0;
 int scrollDir = 0;
@@ -72,22 +70,22 @@ int noOfWidgets = 4;
 void setup()
 {
   Serial.begin(9600);
-  Serial.println("Initializing DAC...");
   disableSPIunits();
-  DAC.init();
-  Serial.println("Done!");
-
-  Serial.println("Initializing WeatherNG graphics controller FT81x...");
-  disableSPIunits();
-  GD.begin(0);
-  GD.cmd_romfont(1, 34); // put FT81x font 34 in slot 1
-  Serial.println("Done!");
-    
+  Serial.println("Initializing SMU...");
+  SMU[0].init();
   setMv = 0.0;
   setMa = 10.0;
   SMU[0].fltSetCommitCurrentSource(setMa / 1000.0, _SOURCE_AND_SINK); 
   SMU[0].fltSetCommitVoltageSource(setMv / 1000.0);
-  
+  Serial.println("Done!");
+
+  Serial.println("Initializing WeatherNG graphics controller FT81x...");
+  disableSPIunits();
+  delay(100);
+  GD.begin(0);
+  GD.cmd_romfont(1, 34); // put FT81x font 34 in slot 1
+  Serial.println("Done!");
+    
   V_STATS.init(DigitUtilClass::typeVoltage);
   C_STATS.init(DigitUtilClass::typeCurrent);
   V_FILTERS.init();
@@ -271,7 +269,7 @@ void showWidget(int y, int widgetNo, int scroll) {
        GD.ColorRGB(0xbbbbbb);
        GD.cmd_text(20, yPos+2, 29, 0, "MEASURE CURRENT");
      }
-     currentPanel(scroll, yPos, SMU[0].Overflow());
+     currentPanel(scroll, yPos, SMU[0].compliance());
   } else if (widgetNo == 1) {
     if (!DIAL.isDialogOpen()){
        if (scroll ==0){
@@ -512,11 +510,11 @@ void loop()
 {
   GD.__end();
   disableSPIunits();
+  //SPI.beginTransaction (SPISettings (1000000, MSBFIRST, SPI_MODE1));
+  //digitalWrite(10, LOW);
 
-  SPI.beginTransaction (SPISettings (1000000, MSBFIRST, SPI_MODE1));
-  digitalWrite(10, LOW);
-  if(DAC.dataReady() == true) {
-    Vout = DAC.MeasureVoltage();
+  if(SMU[0].dataReady() == true) {
+    Vout = SMU[0].measureVoltage();
     Serial.print("Measured raw:");  
     Serial.print(Vout, 3);
     Serial.println(" mV");  
@@ -546,10 +544,10 @@ void loop()
       // Dont sample voltage and current while scrolling because polling is slow.
       // TODO: Remove this limitation when sampling is based on interrupts.
       //if (scrollDir == 0) {
-         //V_STATS.addSample(SMU[0].MeasureVoltage() * 1000.0);
+         //V_STATS.addSample(SMU[0].measureVoltage() * 1000.0);
          V_STATS.addSample(Vout);
          V_FILTERS.updateMean(Vout);
-         C_STATS.addSample(SMU[0].MeasureCurrent() * 1000.0);
+         C_STATS.addSample(SMU[0].measureCurrent() * 1000.0);
       //}
     }
     renderDisplay();

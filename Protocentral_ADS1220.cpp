@@ -31,7 +31,7 @@ uint8_t Protocentral_ADS1220::readRegister(uint8_t address)
 
 void Protocentral_ADS1220::begin()
 {
-  static char data;
+  //static char data;
 
   SPI.begin();                           // wake up the SPI bus.
   //SPI.setBitOrder(MSBFIRST);
