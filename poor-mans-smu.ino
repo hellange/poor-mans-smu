@@ -337,7 +337,7 @@ void showWidget(int y, int widgetNo, int scroll) {
        GD.ColorRGB(COLOR_CURRENT_TEXT);
        GD.cmd_text(20, yPos, 29, 0, "MEASURE CURRENT");
      }
-     currentPanel(scroll, yPos, SMU[0].compliance());
+     currentPanel(scroll, yPos + 10, SMU[0].compliance());
   } else if (widgetNo == 1) {
     if (!DIAL.isDialogOpen()){
        if (scroll ==0){
