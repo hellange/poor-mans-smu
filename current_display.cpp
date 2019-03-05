@@ -9,12 +9,12 @@ unsigned long old_overflow_timer = overflow_timer ;
 
 void CurrentDisplayClass::renderMeasured(int x, int y, float rawMa, boolean overflow) {
   overflow_timer = millis();
-  int color = 0xFF4522;
+  int color = 0xff4522;
 
   if (overflow_timer - old_overflow_timer > 1000) {
     old_overflow_timer = overflow_timer;
   } else if (overflow_timer - old_overflow_timer > 500) {
-    color = 0xaa1002;
+    color = 0x991002;
   } 
 
   int a, ma, ua;

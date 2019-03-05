@@ -33,9 +33,9 @@
 
   int r = random(2);
   if (r == 0) {
-    nowValueV = nowValueV + random(50) / 10000.0;
+    nowValueV = nowValueV + random(10) / 100000.0;
   } else if (r == 1) {
-    nowValueV = nowValueV - random(50) / 10000.0;
+    nowValueV = nowValueV - random(10) / 100000.0;
   }
 
   return nowValueV;
