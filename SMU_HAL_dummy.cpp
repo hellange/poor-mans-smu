@@ -9,6 +9,7 @@
 
  
  int8_t SMU_HAL_dummy::fltSetCommitVoltageSource(float fVoltage) {
+   setValueV = fVoltage;
    return nowValueV = fVoltage;
  }
  
@@ -53,6 +54,11 @@
  boolean SMU_HAL_dummy::compliance(){
    return abs(setValueI) < abs(nowValueI);
  }
+
+ float SMU_HAL_dummy::getSetValuemV(){
+  return setValueV * 1000.0;
+ }
+
  
 
     

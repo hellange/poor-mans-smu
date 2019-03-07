@@ -62,8 +62,8 @@ float DACVout;  // TODO: Dont use global
 float setMv;
 float setMa;
 
-int noOfWidgets = 4;
-
+int noOfWidgets = 5;
+int activeWidget = 4;
 
 #include "dial.h"
 
@@ -116,8 +116,13 @@ void voltagePanel(int x, int y) {
 
   // heading
   GD.ColorRGB(COLOR_VOLT);
+  GD.ColorA(120);
   GD.cmd_text(x+20, y + 2 ,   29, 0, "SOURCE VOLTAGE");
+  GD.cmd_text(x+20 + 1, y + 2 + 1 ,   29, 0, "SOURCE VOLTAGE");
 
+  //GD.ColorA(200);
+  //GD.cmd_text(x+20, y + 2 ,   29, 0, "SOURCE VOLTAGE");
+   
   // primary
   VOLT_DISPLAY.renderMeasured(x + 17,y + 26, V_FILTERS.mean);
 
@@ -130,14 +135,15 @@ void voltagePanel(int x, int y) {
   VOLT_DISPLAY.renderSet(x + 120, y + 26 + 105, setMv);
 
   GD.ColorRGB(0,0,0);
-
   GD.cmd_fgcolor(0xaaaa90);  
+  
   GD.Tag(BUTTON_VOLT_SET);
-  GD.cmd_button(x + 20,y + 132,95,50,29,0,"SET");
+  GD.cmd_button(x + 20,y + 132,95,50,29,OPT_NOTEAR,"SET");
   GD.Tag(BUTTON_VOLT_AUTO);
   GD.cmd_button(x + 350,y + 132,95,50,29,0,"AUTO");
-  
-  renderDeviation(x + 667,y + 125, V_FILTERS.mean /*V_STATS.rawValue*/, setMv, false);
+
+  //rawValue
+  //renderDeviation(x + 667,y + 125, V_FILTERS.mean /*V_STATS.rawValue*/, SMU[0].getSetValuemV(), false);
 
   showStatusIndicator(x+630, y+5, "FILTER", true, false);
   showStatusIndicator(x+720, y+5, "NULL", false, false);
@@ -147,7 +153,7 @@ void voltagePanel(int x, int y) {
 }
 
  
- void showAnalogGauge(int x, int y, int radius, int degreeRelativeToTop) {
+ void showAnalogGauge(int x, int y, int radius, int radiusStart, int degreeRelativeToTop, int needleColor) {
   int maxDegree = 60; 
   
   degreeRelativeToTop = degreeRelativeToTop <-maxDegree ? -maxDegree: degreeRelativeToTop;
@@ -155,12 +161,20 @@ void voltagePanel(int x, int y) {
   
   float oneDegreeRad = 2*3.1415 / 360.0;
   float rad = (3.1415/2.0) - degreeRelativeToTop * oneDegreeRad;
+  
+  GD.ColorRGB(needleColor);
+  GD.ColorA(255);
+  GD.Begin(LINE_STRIP);
+  GD.LineWidth(30);
   GD.Vertex2ii(x+cos(rad)*radius, y-sin(rad)*radius);
-  GD.Vertex2ii(x, y);
+  GD.Vertex2ii(x+cos(rad)*radiusStart, y-sin(rad)*radiusStart);
 }
 
 
-void renderDeviation(int x, int y, float rawM, float setM, bool cur) {
+void renderExperimental(int x, int y, float rawM, float setM, bool cur) {
+  //experimental feature showing deviation from set value
+  
+  y=y+25;
   if (cur) {
      //Special handling: set current must currently be positive even if sink/negative.
      //                  This give error when comparing negative measured and positive set.
@@ -169,68 +183,83 @@ void renderDeviation(int x, int y, float rawM, float setM, bool cur) {
      rawM = abs(rawM);
   }
 
-  float accuracy = 0.05;
-  float maxNeedle = accuracy * 2.0;
-  
+  y=y+50;
+ 
+    x=x+300;
+
+   
   float deviationInPercent = 100.0 * ((setM - rawM) / setM);
-
-
-  GD.ColorRGB(200,255,200);
-  GD.Begin(RECTS);
-  GD.LineWidth(10);
+  int gaugeRadius = 120;
   
-  
-  GD.ColorRGB(0x00ff00);
-  GD.ColorA(150);
-
-  GD.Begin(RECTS);
-  float scaling = 500;
-  GD.Vertex2ii(x+50-accuracy*scaling,y+50);
-  GD.Vertex2ii(x+50+accuracy*scaling,y+70);
-  GD.ColorRGB(0xff0000);
-  GD.Begin(RECTS);
-  GD.Vertex2ii(x+50+accuracy*scaling+3,y+50);
-  GD.Vertex2ii(x+50+maxNeedle*scaling, y+70);
-  GD.Begin(RECTS);
-  GD.Vertex2ii(x+50-accuracy*scaling,y+50);
-  GD.Vertex2ii(x+50-maxNeedle*scaling, y+70);
-
-  GD.ColorRGB(0xffffff);
-  GD.ColorA(255);
   GD.Begin(LINE_STRIP);
-  GD.LineWidth(30);
+  GD.LineWidth(20);
 
-  float degrees = -deviationInPercent * 500.0;
-
-  showAnalogGauge(x+50, y+80, 50, degrees);
-
-  GD.ColorRGB(0xffffff);
-  GD.cmd_text(x, y, 27, 0, "Deviation");
-  if (cur) {
-    GD.ColorRGB(COLOR_CURRENT);
-  } else {
-    GD.ColorRGB(COLOR_VOLT);
+  for (int i=-50; i<=50; i=i+10) {
+      int needleColor;
+      if (i==30 || i ==-30) {
+        needleColor = COLOR_ORANGE;
+      }
+      else if (i>-40 && i<40) {
+        needleColor = 0xffffff;
+      } else {
+        needleColor = 0xff0000;
+      }
+      showAnalogGauge(x+gaugeRadius, y+gaugeRadius+10, gaugeRadius, gaugeRadius - 10, i, needleColor);
   }
+
+  GD.Begin(LINE_STRIP);
+  GD.ColorRGB(0x888888);
+  GD.LineWidth(10);
+
+  GD.Vertex2ii(x, y);
+  GD.Vertex2ii(x, y+gaugeRadius+10);
+  GD.Vertex2ii(x+gaugeRadius*2, y+gaugeRadius+10);
+  GD.Vertex2ii(x+gaugeRadius*2, y);
+  GD.Vertex2ii(x, y);
+
+
+
+
+  float degrees = -deviationInPercent * 700.0;
+
+  showAnalogGauge(x+gaugeRadius, y+gaugeRadius+10, gaugeRadius, 40, degrees, 0xffffff);
   
-  y=y+16;
+  GD.Begin(RECTS);
+    GD.ColorRGB(0x333333);
+  GD.Vertex2ii(x+4, y+gaugeRadius-25 + 2);
+  GD.Vertex2ii(x+gaugeRadius*2-4, y+gaugeRadius+10-4);
+  
+  GD.ColorRGB(0xffffff);
+  GD.cmd_text(x+gaugeRadius/2-20, y-20, 27, 0, "Deviation from SET");
+//  if (cur) {
+//    GD.ColorRGB(COLOR_CURRENT);
+//  } else {
+//    GD.ColorRGB(COLOR_VOLT);
+//  }
+  
+  GD.ColorRGB(0xaaccaa);
+  
+  y=y+95;
+  x=x+45;
   deviationInPercent = abs(deviationInPercent);
+  int font = 30;
   if (setM != 0.0) {
     if (deviationInPercent < 1.0) {
-      GD.cmd_text(x, y, 30, 0, "0.");
-      GD.cmd_number(x+30, y, 30, 3, deviationInPercent * 1000.0);
-      GD.cmd_text(x+30+50, y, 30, 0, "%");
+      GD.cmd_text(x+25, y, font, 0, "0.");
+      GD.cmd_number(x+50, y, font, 3, deviationInPercent * 1000.0);
+      GD.cmd_text(x+30+50+20, y, font, 0, "%");
     } else if (deviationInPercent > 10.0){
       if (!cur) {
         GD.ColorRGB(255,0,0); // RED
       }
-      GD.cmd_text(x, y, 30, 0, ">10%");
+      GD.cmd_text(x+50, y, font, 0, ">10%");
     } else if (deviationInPercent >= 1.0 && deviationInPercent <10.0){
       int whole = (int)deviationInPercent;
-      //GD.cmd_text(x, y, 30, 0, "0.");
-      GD.cmd_number(x, y, 30, 1, whole );
-      GD.cmd_text(x+20, y, 30, 0, ".");
-      GD.cmd_number(x+30, y, 30, 2, (deviationInPercent - (float)whole) * 100.0);
-      GD.cmd_text(x+65, y, 30, 0, "%");
+      //GD.cmd_text(x+35, y, font, 0, "0.");
+      GD.cmd_number(x+30, y, font, 1, whole );
+      GD.cmd_text(x+45, y, font, 0, ".");
+      GD.cmd_number(x+55, y, font, 2, (deviationInPercent - (float)whole) * 100.0);
+      GD.cmd_text(x+90, y, font, 0, "%");
     }
   }
 }
@@ -250,25 +279,47 @@ void renderHistogram(int x,int y, bool scrolling) {
 
 
 void currentPanel(int x, int y, boolean overflow) {
-
   if (x >= 800) {
     return;
   }
-  //GD.Begin(LINE_STRIP);
-  //GD.LineWidth(32);
-  //GD.ColorRGB(50,50,0);
-  //GD.ColorRGB(0xbbbbbb);
+  
+  y=y+48;  
 
-  CURRENT_DISPLAY.renderMeasured(x + 17, y+30, C_STATS.rawValue, overflow);
-  CURRENT_DISPLAY.renderSet(x+120, y+135, setMa);
+  GD.Begin(RECTS);
+    GD.LineWidth(10);
+  for (int i=0;i<20;i++) {
+    int percent = 100 * (C_STATS.rawValue / setMa);
+    if (percent > i*5) {
+       GD.ColorA(255);
+    } else {
+       GD.ColorA(60);
+    }
+    if (i>16) {
+       GD.ColorRGB(0xff0000);
+    } else if (i>12) {
+       GD.ColorRGB(COLOR_ORANGE);
+    }else {
+       GD.ColorRGB(0x00cc00);
+    }
+    GD.Vertex2ii(x+20 + i*25 ,y);
+    GD.Vertex2ii(x+20 + (i+1)*25 - 3, y+9);
+  }
+  
+  y=y+12;
+  GD.ColorA(255);
+
+  CURRENT_DISPLAY.renderMeasured(x + 17, y, C_STATS.rawValue, overflow);
+  CURRENT_DISPLAY.renderSet(x+120, y+105, setMa);
+  
+
+  y=y+105;
   
   GD.ColorRGB(0,0,0);
-
   GD.cmd_fgcolor(0xaaaa90);  
   GD.Tag(BUTTON_CUR_SET);
-  GD.cmd_button(x+20,y+135,95,50,29,0,"LIM");
+  GD.cmd_button(x+20,y,95,50,29,0,"LIM");
   GD.Tag(BUTTON_CUR_AUTO);
-  GD.cmd_button(x+350,y+135,95,50,29,0,"AUTO");
+  GD.cmd_button(x+350,y,95,50,29,0,"AUTO");
   
 }
 
@@ -337,7 +388,7 @@ void showWidget(int y, int widgetNo, int scroll) {
        GD.ColorRGB(COLOR_CURRENT_TEXT);
        GD.cmd_text(20, yPos, 29, 0, "MEASURE CURRENT");
      }
-     currentPanel(scroll, yPos + 10, SMU[0].compliance());
+     currentPanel(scroll, yPos, SMU[0].compliance());
   } else if (widgetNo == 1) {
     if (!DIAL.isDialogOpen()){
        if (scroll ==0){
@@ -360,13 +411,20 @@ void showWidget(int y, int widgetNo, int scroll) {
         GD.cmd_text(20, yPos, 29, 0, "VOLTAGE HISTOGRAM");
       }
       renderHistogram(scroll, yPos, scrollDir !=0);
+  } else if (widgetNo == 4) {
+      if (scroll ==0){
+        GD.ColorRGB(COLOR_VOLT);
+        GD.cmd_text(20, yPos, 29, 0, "EXPERIMENTAL");
+      }
+      float rawM = V_FILTERS.mean;
+      float setM = SMU[0].getSetValuemV();
+      renderExperimental(scroll,yPos, rawM, setM, false);
   }
 
 }
 
 
 int gestureDetected = GEST_NONE;
-int activeWidget = 0;
 int scrollSpeed = 75;
 void handleWidgetScrollPosition() {
   if (gestureDetected == GEST_MOVE_LEFT) {

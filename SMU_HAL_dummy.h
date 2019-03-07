@@ -5,11 +5,10 @@ class SMU_HAL_dummy
 
   unsigned long lastSampleMilli;
 
- float nowValueV = 0.0;
- float nowValueI = 0.0;
- float setValueI = 0.0;
- 
-  private:
+  float nowValueV = 0.0;
+  float nowValueI = 0.0;
+  float setValueI = 0.0;
+  float setValueV = 0.0;
 
   public:
     int init();
@@ -19,4 +18,6 @@ class SMU_HAL_dummy
     bool dataReady();
     float measureCurrent();
     boolean compliance();
+
+    float getSetValuemV();
 };

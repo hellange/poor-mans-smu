@@ -8,8 +8,6 @@
 
 class SMU_HAL_ADS1220 {
 
-
-
   volatile byte MSB;
   volatile byte data;
   volatile byte LSB;
@@ -17,12 +15,12 @@ class SMU_HAL_ADS1220 {
   Protocentral_ADS1220 ADS1220;
   int nrBeforeAveraging;
 
-private:
-
   // used to simulate nonexisting features
   float nowValueI = 0.0;
   float setValueI = 0.0;
   float nowValueV = 0.0;
+  float setValueV = 0.0;
+
   //--------------------------------------
   
   float convertToMv();
@@ -38,6 +36,8 @@ public:
   int8_t fltSetCommitCurrentSource(float fCurrent, int8_t up_down_both);
   float measureCurrent();
   bool compliance();
+
+  float getSetValuemV();
 };
 
 

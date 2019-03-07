@@ -1,6 +1,7 @@
 #define COLOR_BLUISH 0x75b1ff //0x85C1E9
 #define COLOR_DARK_BLUISH 0x3581ff
 #define COLOR_YELLOW_ORANGEISH 0xE8CA3A
+#define COLOR_ORANGE 0xff8000
 
 
 //#define COLOR_VOLT 0x00F94E  // is light and clearly visible on the LCD display. 

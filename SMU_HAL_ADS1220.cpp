@@ -94,6 +94,7 @@ float SMU_HAL_ADS1220::convertToMv() {
 
 // used to simulate nonexisting features
 int8_t SMU_HAL_ADS1220::fltSetCommitVoltageSource(float fVoltage) {
+   setValueV = fVoltage;
    return nowValueV = fVoltage;
  }
  
@@ -113,4 +114,8 @@ int8_t SMU_HAL_ADS1220::fltSetCommitVoltageSource(float fVoltage) {
 bool SMU_HAL_ADS1220::compliance(){
    return abs(setValueI) < abs(nowValueI);
 }
+
+ float SMU_HAL_ADS1220::getSetValuemV(){
+  return setValueV * 1000.0;
+ }
 

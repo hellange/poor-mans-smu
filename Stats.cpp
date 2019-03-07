@@ -160,7 +160,7 @@ void StatsClass::renderTrend(int x, int y, bool limitDetails) {
 
     // show values for the horisontal lines
     GD.ColorRGB(0xffffff);
-    for (int i=0;i<lines;i++) {
+    for (int i=0;i<lines;i=i+2) {
       if (i==0 || i ==lines-1) {
         GD.ColorRGB(type==DigitUtilClass::typeVoltage?COLOR_VOLT:COLOR_CURRENT);
       } else {
@@ -176,11 +176,11 @@ void StatsClass::renderTrend(int x, int y, bool limitDetails) {
       farRight = 780;
     }
     GD.LineWidth(8);
-    for (int i=0;i<lines;i++) {
+    for (int i=0;i<lines;i=i+2) {
       int yaxis = 23 + y + i*height/(lines - 1);
       GD.Begin(LINE_STRIP);
             if (i == 0 || i==5 || i==10) {
-               GD.ColorRGB(0xffffff);
+               GD.ColorRGB(0xbbbbbb);
             } else {
                GD.ColorRGB(0x666666);
             }
