@@ -46,7 +46,7 @@ float SMU_HAL_ADS1220::smoothing(float average, int size, float value) {
   }
 }
 
-float SMU_HAL_ADS1220::measureVoltage(){
+float SMU_HAL_ADS1220::measureMilliVoltage(){
   return convertToMv();
 }
 
@@ -118,4 +118,6 @@ bool SMU_HAL_ADS1220::compliance(){
  float SMU_HAL_ADS1220::getSetValuemV(){
   return setValueV * 1000.0;
  }
-
+ float SMU_HAL_ADS1220::getSetValuemA(){
+  return setValueI * 1000.0;
+ }

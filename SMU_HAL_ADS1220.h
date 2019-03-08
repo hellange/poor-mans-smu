@@ -29,7 +29,7 @@ class SMU_HAL_ADS1220 {
 public:
   void init();
   bool dataReady();
-  float measureVoltage();
+  float measureMilliVoltage();
 
   // used to simulate nonexisting features
   int8_t fltSetCommitVoltageSource(float fVoltage);
@@ -38,6 +38,8 @@ public:
   bool compliance();
 
   float getSetValuemV();
+      float getSetValuemA();
+
 };
 
 

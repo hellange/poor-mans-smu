@@ -40,10 +40,16 @@
 
 //!touchscreen I2C address
 #define I2C_FT6206_ADDR0    0x38
- 
-SMU_HAL_ADS1220 SMU[1] = {
-  //SMU_HAL_dummy()
-  SMU_HAL_ADS1220()
+
+
+// uncomment if you want to use read AD/DA 
+//SMU_HAL_ADS1220 SMU[1] = {
+//  SMU_HAL_ADS1220()
+//};
+
+// uncomment if you want to use dummy
+SMU_HAL_dummy SMU[1] = {
+  SMU_HAL_dummy()
 };
 
 int scroll = 0;
@@ -59,11 +65,8 @@ float rawMa_glob; // TODO: store in stats for analysis just as voltage
 
 float DACVout;  // TODO: Dont use global
 
-float setMv;
-float setMa;
-
 int noOfWidgets = 5;
-int activeWidget = 4;
+int activeWidget = 0;
 
 #include "dial.h"
 
@@ -73,8 +76,8 @@ void setup()
   disableSPIunits();
   Serial.println("Initializing SMU...");
   SMU[0].init();
-  setMv = 0.0;
-  setMa = 10.0;
+  float setMv = 0.0;
+  float setMa = 10.0;
   SMU[0].fltSetCommitCurrentSource(setMa / 1000.0, _SOURCE_AND_SINK); 
   SMU[0].fltSetCommitVoltageSource(setMv / 1000.0);
   Serial.println("Done!");
@@ -132,7 +135,7 @@ void voltagePanel(int x, int y) {
   DIGIT_UTIL.renderValue(x + 320,  y-4 , V_STATS.rawValue, 4, DigitUtilClass::typeVoltage); 
 
   GD.ColorA(255);
-  VOLT_DISPLAY.renderSet(x + 120, y + 26 + 105, setMv);
+  VOLT_DISPLAY.renderSet(x + 120, y + 26 + 105, SMU[0].getSetValuemV());
 
   GD.ColorRGB(0,0,0);
   GD.cmd_fgcolor(0xaaaa90);  
@@ -149,7 +152,7 @@ void voltagePanel(int x, int y) {
   showStatusIndicator(x+720, y+5, "NULL", false, false);
   showStatusIndicator(x+630, y+45, "50Hz", false, false);
   showStatusIndicator(x+720, y+45, "4 1/2", false, false);
-  showStatusIndicator(x+630, y+85, "COMP", true, true);
+  showStatusIndicator(x+630, y+85, "COMP", SMU[0].compliance(), SMU[0].compliance());
 }
 
  
@@ -290,7 +293,7 @@ void currentPanel(int x, int y, boolean overflow) {
   GD.Begin(RECTS);
     GD.LineWidth(10);
   for (int i=0;i<40;i++) {
-    int percent = 100 * (C_STATS.rawValue / setMa);
+    int percent = 100 * (C_STATS.rawValue / SMU[0].getSetValuemA());
     if (percent > i*2.5) {
        GD.ColorA(255);
     } else {
@@ -311,7 +314,7 @@ void currentPanel(int x, int y, boolean overflow) {
   GD.ColorA(255);
 
   CURRENT_DISPLAY.renderMeasured(x + 17, y, C_STATS.rawValue, overflow);
-  CURRENT_DISPLAY.renderSet(x+120, y+105, setMa);
+  CURRENT_DISPLAY.renderSet(x+120, y+105, SMU[0].getSetValuemA());
   
 
   y=y+105;
@@ -664,7 +667,7 @@ void loop()
   disableSPIunits();
 
   if(SMU[0].dataReady() == true) {
-    Vout = SMU[0].measureVoltage();
+    Vout = SMU[0].measureMilliVoltage();
     Serial.print("Measured raw:");  
     Serial.print(Vout, 3);
     Serial.println(" mV");  
@@ -694,7 +697,7 @@ void loop()
       // Dont sample voltage and current while scrolling because polling is slow.
       // TODO: Remove this limitation when sampling is based on interrupts.
       //if (scrollDir == 0) {
-         //V_STATS.addSample(SMU[0].measureVoltage() * 1000.0);
+         //V_STATS.addSample(SMU[0].measureMilliVoltage() * 1000.0);
          V_STATS.addSample(Vout);
          V_FILTERS.updateMean(Vout);
          C_STATS.addSample(SMU[0].measureCurrent() * 1000.0);
@@ -724,11 +727,9 @@ void closeCallback(int vol_cur_type, bool cancel) {
   }
   if (DIAL.type() == BUTTON_VOLT_SET) {
      if (SMU[0].fltSetCommitVoltageSource(DIAL.getMv() / 1000.0)) printError(_PRINT_ERROR_VOLTAGE_SOURCE_SETTING);
-     setMv = DIAL.getMv();
   }
   if (DIAL.type() == BUTTON_CUR_SET) {
      if (SMU[0].fltSetCommitCurrentSource(DIAL.getMv() / 1000.0, _SOURCE_AND_SINK)) printError(_PRINT_ERROR_CURRENT_SOURCE_SETTING);
-     setMa = DIAL.getMv();
   }
      
 }

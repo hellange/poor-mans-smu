@@ -14,10 +14,12 @@ class SMU_HAL_dummy
     int init();
     int8_t fltSetCommitVoltageSource(float fVoltage);
     int8_t fltSetCommitCurrentSource(float fCurrent, int8_t up_down_both);
-    float measureVoltage();
+    float measureMilliVoltage();
     bool dataReady();
     float measureCurrent();
     boolean compliance();
 
     float getSetValuemV();
+    float getSetValuemA();
+
 };
