@@ -153,7 +153,7 @@ void voltagePanel(int x, int y) {
 }
 
  
- void showAnalogGauge(int x, int y, int radius, int radiusStart, int degreeRelativeToTop, int needleColor) {
+ void showAnalogPin(int x, int y, int radius, int radiusStart, int degreeRelativeToTop, int needleColor, int lineWidth, boolean needle) {
   int maxDegree = 60; 
   
   degreeRelativeToTop = degreeRelativeToTop <-maxDegree ? -maxDegree: degreeRelativeToTop;
@@ -165,34 +165,46 @@ void voltagePanel(int x, int y) {
   GD.ColorRGB(needleColor);
   GD.ColorA(255);
   GD.Begin(LINE_STRIP);
-  GD.LineWidth(30);
+  GD.LineWidth(lineWidth);
   GD.Vertex2ii(x+cos(rad)*radius, y-sin(rad)*radius);
   GD.Vertex2ii(x+cos(rad)*radiusStart, y-sin(rad)*radiusStart);
+
+  if (needle){
+    GD.Vertex2ii(x+cos(rad)*radius, y-sin(rad)*radius);
+    GD.Vertex2ii(x+cos(rad*1.04)*radiusStart, y-sin(rad*1.04)*radiusStart);
+    GD.Vertex2ii(x+cos(rad*0.96)*radiusStart, y-sin(rad*0.96)*radiusStart);
+    GD.Vertex2ii(x+cos(rad)*radius, y-sin(rad)*radius);
+
+  }
+
 }
 
+void renderExperimental(int x, int y, float valM, float setM, bool cur) {
 
-void renderExperimental(int x, int y, float rawM, float setM, bool cur) {
-  //experimental feature showing deviation from set value
+  y=y+65;
+  x=x+100;
   
-  y=y+25;
   if (cur) {
      //Special handling: set current must currently be positive even if sink/negative.
      //                  This give error when comparing negative measured and positive set.
      //                  Use absolute values to give "correct" comparision...
      setM = abs(setM);
-     rawM = abs(rawM);
+     valM = abs(valM);
   }
 
-  y=y+50;
- 
-    x=x+300;
-
-   
-  float deviationInPercent = 100.0 * ((setM - rawM) / setM);
-  int gaugeRadius = 120;
   
-  GD.Begin(LINE_STRIP);
-  GD.LineWidth(20);
+  float deviationInPercent = 100.0 * ((setM - valM) / setM);
+  if (setM == 0.0) {
+    deviationInPercent = 100;
+  }
+  float degrees = -deviationInPercent * 700.0;
+  renderAnalogGauge(x,y,240, degrees, deviationInPercent, "Deviation from SET");
+}
+
+void renderAnalogGauge(int x, int y, int size, float degrees, float value, char* title) {
+  //experimental feature showing deviation from set value
+  
+  int gaugeRadius = size/2;
 
   for (int i=-50; i<=50; i=i+10) {
       int needleColor;
@@ -204,11 +216,12 @@ void renderExperimental(int x, int y, float rawM, float setM, bool cur) {
       } else {
         needleColor = 0xff0000;
       }
-      showAnalogGauge(x+gaugeRadius, y+gaugeRadius+10, gaugeRadius, gaugeRadius - 10, i, needleColor);
+      showAnalogPin(x+gaugeRadius, y+gaugeRadius+10, gaugeRadius, gaugeRadius - 10, i, needleColor, gaugeRadius/4, false);
   }
 
   GD.Begin(LINE_STRIP);
   GD.ColorRGB(0x888888);
+  GD.ColorA(255);
   GD.LineWidth(10);
 
   GD.Vertex2ii(x, y);
@@ -217,52 +230,42 @@ void renderExperimental(int x, int y, float rawM, float setM, bool cur) {
   GD.Vertex2ii(x+gaugeRadius*2, y);
   GD.Vertex2ii(x, y);
 
+  showAnalogPin(x+gaugeRadius, y+gaugeRadius+10, gaugeRadius, 30, degrees, 0xffffff, 20, true);
 
-
-
-  float degrees = -deviationInPercent * 700.0;
-
-  showAnalogGauge(x+gaugeRadius, y+gaugeRadius+10, gaugeRadius, 40, degrees, 0xffffff);
   
   GD.Begin(RECTS);
-    GD.ColorRGB(0x333333);
+  GD.ColorRGB(0x223322);
+  GD.ColorA(255);
   GD.Vertex2ii(x+4, y+gaugeRadius-25 + 2);
   GD.Vertex2ii(x+gaugeRadius*2-4, y+gaugeRadius+10-4);
   
   GD.ColorRGB(0xffffff);
-  GD.cmd_text(x+gaugeRadius/2-20, y-20, 27, 0, "Deviation from SET");
-//  if (cur) {
-//    GD.ColorRGB(COLOR_CURRENT);
-//  } else {
-//    GD.ColorRGB(COLOR_VOLT);
-//  }
+  GD.cmd_text(x+gaugeRadius/2, y-20, 27, 0, title);
   
-  GD.ColorRGB(0xaaccaa);
-  
-  y=y+95;
-  x=x+45;
-  deviationInPercent = abs(deviationInPercent);
-  int font = 30;
-  if (setM != 0.0) {
-    if (deviationInPercent < 1.0) {
-      GD.cmd_text(x+25, y, font, 0, "0.");
-      GD.cmd_number(x+50, y, font, 3, deviationInPercent * 1000.0);
-      GD.cmd_text(x+30+50+20, y, font, 0, "%");
+  GD.ColorRGB(0xdddddd);
+
+
+  y=y+gaugeRadius-22;
+  x=x+gaugeRadius*1.2/2;
+  float deviationInPercent = value;
+
+  int font = 29;
+     if (deviationInPercent < 1.0) {
+      GD.cmd_text(x+8, y, font, 0, "0.");
+      GD.cmd_number(x+30, y, font, 3, deviationInPercent * 1000.0);
+      GD.cmd_text(x+85, y, font, 0, "%");
     } else if (deviationInPercent > 10.0){
-      if (!cur) {
-        GD.ColorRGB(255,0,0); // RED
-      }
-      GD.cmd_text(x+50, y, font, 0, ">10%");
+      GD.ColorRGB(255,0,0); // RED
+      GD.cmd_text(x+25, y, font, 0, ">10%");
     } else if (deviationInPercent >= 1.0 && deviationInPercent <10.0){
       int whole = (int)deviationInPercent;
-      //GD.cmd_text(x+35, y, font, 0, "0.");
-      GD.cmd_number(x+30, y, font, 1, whole );
-      GD.cmd_text(x+45, y, font, 0, ".");
-      GD.cmd_number(x+55, y, font, 2, (deviationInPercent - (float)whole) * 100.0);
-      GD.cmd_text(x+90, y, font, 0, "%");
+      //GD.cmd_text(x+15, y, font, 0, "0.");
+      GD.cmd_number(x+5, y, font, 1, whole );
+      GD.cmd_text(x+20, y, font, 0, ".");
+      GD.cmd_number(x+30, y, font, 2, (deviationInPercent - (float)whole) * 100.0);
+      GD.cmd_text(x+65, y, font, 0, "%");
     }
-  }
-}
+ }
 
 
 
@@ -287,22 +290,22 @@ void currentPanel(int x, int y, boolean overflow) {
 
   GD.Begin(RECTS);
     GD.LineWidth(10);
-  for (int i=0;i<20;i++) {
+  for (int i=0;i<40;i++) {
     int percent = 100 * (C_STATS.rawValue / setMa);
-    if (percent > i*5) {
+    if (percent > i*2.5) {
        GD.ColorA(255);
     } else {
        GD.ColorA(60);
     }
-    if (i>16) {
+    if (i>34) {
        GD.ColorRGB(0xff0000);
-    } else if (i>12) {
+    } else if (i>29) {
        GD.ColorRGB(COLOR_ORANGE);
     }else {
        GD.ColorRGB(0x00cc00);
     }
-    GD.Vertex2ii(x+20 + i*25 ,y);
-    GD.Vertex2ii(x+20 + (i+1)*25 - 3, y+9);
+    GD.Vertex2ii(x+20 + i*14 ,y);
+    GD.Vertex2ii(x+20 + (i+1)*14 - 3, y+9);
   }
   
   y=y+12;
@@ -367,7 +370,7 @@ void widgetBodyHeaderTab(int y, int activeWidget) {
   GD.ColorA(200);
   GD.LineWidth(10);
   GD.ColorRGB(COLOR_CURRENT_TEXT);
-  GD.Vertex2ii(2,y+15+2);
+  GD.Vertex2ii(0,y+15+2);
   GD.Vertex2ii(798, y+15+2);
   GD.ColorA(255);
 
