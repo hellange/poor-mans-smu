@@ -247,7 +247,7 @@ void renderAnalogGauge(int x, int y, int size, float degrees, float value, char*
 
   y=y+gaugeRadius-22;
   x=x+gaugeRadius*1.2/2;
-  float deviationInPercent = value;
+  float deviationInPercent = abs(value);
 
   int font = 29;
      if (deviationInPercent < 1.0) {
@@ -259,7 +259,6 @@ void renderAnalogGauge(int x, int y, int size, float degrees, float value, char*
       GD.cmd_text(x+25, y, font, 0, ">10%");
     } else if (deviationInPercent >= 1.0 && deviationInPercent <10.0){
       int whole = (int)deviationInPercent;
-      //GD.cmd_text(x+15, y, font, 0, "0.");
       GD.cmd_number(x+5, y, font, 1, whole );
       GD.cmd_text(x+20, y, font, 0, ".");
       GD.cmd_number(x+30, y, font, 2, (deviationInPercent - (float)whole) * 100.0);
