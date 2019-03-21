@@ -490,22 +490,35 @@ void handleMenuScrolldown(){
     GD.Begin(RECTS);
     GD.LineWidth(200);
     GD.ColorA(200);
-    GD.ColorRGB(0xffffff);
+    GD.ColorRGB(0x888888);
     GD.Vertex2ii(50,0);
     GD.Vertex2ii(750, scrollMainMenu+40);
 
     GD.Begin(RECTS);
     GD.LineWidth(180);
-    GD.ColorA(200);
+    GD.ColorA(230);
     GD.ColorRGB(0x000000);
     GD.Vertex2ii(50,0);
     GD.Vertex2ii(750, scrollMainMenu+40);
     GD.ColorRGB(0xffffff);
 
-    GD.ColorA(255);
+    GD.ColorA(230);
 
+    int buttonWidth = 200;
+    int buttonHeight = 70;
+               
+    const char * t[3][3] = {
+    {"SOURCE VOLT\0", "SOURCE CURRENT\0", "BATTERY\0"},
+    {"ELECTRONIC LOAD\0", "VOLTMETER\0", "PULSE GENERATOR\0"},
+    {"SWEEP\0", "RESISTANCE\0", "SETTINGS\0"}};
+    GD.ColorRGB(0x444444);
+    for (int y =0;y<3;y++) {
+      for (int x =0;x<3;x++) {
+        GD.cmd_button(70+(buttonWidth+30)*x,scrollMainMenu-280+(buttonHeight+20)*y,buttonWidth,buttonHeight,28,0,t[y][x]);
+      }
+    }
     GD.Tag(MAIN_MENU_CLOSE);
-    GD.cmd_button(360,scrollMainMenu-20,80,50,28,0,"CLOSE");
+    GD.cmd_button(360,scrollMainMenu-10,80,40,28,0,"CLOSE");
    
     GD.get_inputs();
 
@@ -546,6 +559,7 @@ void renderDisplay() {
   GD.ColorRGB(0x181818);
   GD.Vertex2ii(0,0);
   GD.Vertex2ii(800, 22);
+  
   
   GD.ColorA(255);
   GD.ColorRGB(0xdddddd);
