@@ -2,7 +2,7 @@
 #if defined(ESP8266)
 #define CS D8
 #else
-#define CS 9
+#define CS 6
 #endif
 #endif
 
@@ -27,7 +27,7 @@ public:
 
     SPI.begin();
 #if defined(TEENSYDUINO) || defined(ARDUINO_ARCH_STM32L4)
-    SPI.beginTransaction(SPISettings(3000000, MSBFIRST, SPI_MODE0));
+    SPI.beginTransaction(SPISettings(10000000, MSBFIRST, SPI_MODE0));
 #else
 #if !defined(__DUE__) && !defined(ESP8266)
     SPI.setClockDivider(SPI_CLOCK_DIV2);

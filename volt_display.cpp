@@ -35,6 +35,7 @@ void VoltDisplayClass::renderMeasured(int x, int y, float rawMv) {
       GD.cmd_number(x+194, y+2, 1, 2, uv/10.0);
     GD.cmd_text(x+360, y+2,  1, 0, "mV"); 
   }
+ 
 }
 
 void VoltDisplayClass::renderSet(int x, int y, float rawMv) {

@@ -21,7 +21,7 @@
 #include "Wire.h"
 
 #include "SMU_HAL_dummy.h"
-#include "SMU_HAL_ADS1220.h"
+#include "SMU_HAL_717x.h"
 
 #define _SOURCE_AND_SINK 111
 
@@ -41,16 +41,15 @@
 //!touchscreen I2C address
 #define I2C_FT6206_ADDR0    0x38
 
-
-// uncomment if you want to use read AD/DA 
-//SMU_HAL_ADS1220 SMU[1] = {
-//  SMU_HAL_ADS1220()
-//};
-
-// uncomment if you want to use dummy
-SMU_HAL_dummy SMU[1] = {
-  SMU_HAL_dummy()
+//uncomment below if you want to use read AD/DA 
+ADCClass SMU[1] = {
+  ADCClass()
 };
+
+// uncomment below if you want to use dummy
+//SMU_HAL_dummy SMU[1] = {
+//  SMU_HAL_dummy()
+//};
 
 int scroll = 0;
 int scrollDir = 0;
@@ -73,28 +72,51 @@ int activeWidget = 0;
 void setup()
 {
   Serial.begin(9600);
+     pinMode(11,OUTPUT);
+   pinMode(12,INPUT);
+   pinMode(13,OUTPUT);
   disableSPIunits();
-  Serial.println("Initializing SMU...");
-  SMU[0].init();
+
+   Serial.println("Initializing graphics controller FT81x...");
+  disableSPIunits();
+
+   // bootup FT8xx
+   // Drive the PD_N pin high
+   pinMode(5,OUTPUT);
+   delay(50);
+   digitalWrite(5, HIGH);
+   delay(50);
+   GD.begin(0);
+   GD.cmd_romfont(1, 34); // put FT81x font 34 in slot 1
+   delay(50);
+ GD.__end();
+   Serial.println("...Done");
+   
+   disableSPIunits();
+   SMU[0].init();
+   delay(1000);
+   Serial.println("Start measuring...");
+
+
   float setMv = 0.0;
   float setMa = 10.0;
-  SMU[0].fltSetCommitCurrentSource(setMa / 1000.0, _SOURCE_AND_SINK); 
+  SMU[0].fltSetCommitCurrentSource(setMa / 1000.0, _SOURCE_AND_SINK);
   SMU[0].fltSetCommitVoltageSource(setMv / 1000.0);
   Serial.println("Done!");
 
-  Serial.println("Initializing WeatherNG graphics controller FT81x...");
-  disableSPIunits();
-  delay(100);
-  GD.begin(0);
-  GD.cmd_romfont(1, 34); // put FT81x font 34 in slot 1
-  Serial.println("Done!");
-    
   V_STATS.init(DigitUtilClass::typeVoltage);
   C_STATS.init(DigitUtilClass::typeCurrent);
   V_FILTERS.init();
+   
+
+  
 }
 
 void disableSPIunits(){
+    pinMode(7, OUTPUT);
+  digitalWrite(7, HIGH);
+    pinMode(6, OUTPUT);
+  digitalWrite(6, HIGH);
   pinMode(9, OUTPUT);
   digitalWrite(9, HIGH);
   pinMode(10, OUTPUT);
@@ -675,6 +697,9 @@ unsigned long previousMillis = 0;
 unsigned long previousMillisSlow = 0; 
 const long interval = 1; // should it account for time taken to perform ADC sample ?
 float Vout = 0.0;
+
+
+
 void loop()
 {
   GD.__end();
@@ -690,7 +715,7 @@ void loop()
   disableSPIunits();
 
   GD.resume();
-  SPI.beginTransaction(SPISettings(10000000, MSBFIRST, SPI_MODE0));
+  //SPI.beginTransaction(SPISettings(10000000, MSBFIRST, SPI_MODE0));
   if (!gestureDetected) {
     if (GD.inputs.tag == BUTTON_VOLT_SET) {
       DIAL.open(BUTTON_VOLT_SET, closeCallback);
@@ -712,6 +737,8 @@ void loop()
       // TODO: Remove this limitation when sampling is based on interrupts.
       //if (scrollDir == 0) {
          //V_STATS.addSample(SMU[0].measureMilliVoltage() * 1000.0);
+         Vout = Vout + 2.24;
+         Vout = Vout * 1.0466;
          V_STATS.addSample(Vout);
          V_FILTERS.updateMean(Vout);
          C_STATS.addSample(SMU[0].measureCurrent() * 1000.0);
