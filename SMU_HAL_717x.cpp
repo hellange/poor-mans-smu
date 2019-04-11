@@ -15,40 +15,73 @@ static st_reg init_state[] =
     {0x11, 2, 0, 0x0000l, "Ch_Map_1 "}, //CH_Map_2
     {0x12, 2, 0, 0x0000l, "Ch_Map_2 "}, //CH_Map_3
     {0x13, 2, 0, 0x0000l, "Ch_Map_3 "}, //CH_Map_4
-    {0x20, 2, 0, 0x1020l, "SetupCfg0"}, //Setup_Config_1   //ext ref
-//    {0x20, 2, 0, 0x0020l, "SetupCfg0"}, //Setup_Config_1  unipolar
+    {0x20, 2, 0, 0x1000l, "SetupCfg0"}, //Setup_Config_1   //ext ref
+  // {0x20, 2, 0, 0x0020l, "SetupCfg0"}, //Setup_Config_1  unipolar
 
     {0x21, 2, 0, 0x1020l, "SetupCfg1"}, //Setup_Config_2
     {0x22, 2, 0, 0x1020l, "SetupCfg2"}, //Setup_Config_3
     {0x23, 2, 0, 0x1020l, "SetupCfg3"}, //Setup_Config_4
     
     //{0x28, 2, 0, 0x020Al, "FilterCf0"}, //Filter_Config_1
-    {0x28, 2, 0, 0x0214l, "FilterCf0"}, //Filter_Config_1  // 5 pr sek
+   // {0x28, 2, 0, 0x0214l, "FilterCf0"}, //Filter_Config_1  // 5 pr sek
+      // {0x28, 2, 0, 0x0213l, "FilterCf0"}, //Filter_Config_1  // 10 pr sek
+       {0x28, 2, 0, 0x0212l, "FilterCf0"}, //Filter_Config_1  // 20? pr sek
+
     
-    
-    {0x29, 2, 0, 0x0200l, "FilterCf1"}, //Filter_Config_2
-    {0x2a, 2, 0, 0x0200l, "FilterCf2"}, //Filter_Config_3
-    {0x2b, 2, 0, 0x0200l, "FilterCf3"}, //Filter_Config_4
-    {0x30, 3, 0, 0l,      "Offset_0 "}, //Offset_1
-    {0x31, 3, 0, 0l,      "Offset_1 "},  //Offset_2
-    {0x32, 3, 0, 0l,      "Offset_2 "}, //Offset_3
-    {0x33, 3, 0, 0l,      "Offset_3 "}, //Offset_4
-    {0x38, 3, 0, 0l,      "Gain_0   "}, //Gain_1
-    {0x39, 3, 0, 0l,      "Gain_1   "}, //Gain_2
-    {0x3a, 3, 0, 0l,      "Gain_2   "}, //Gain_3
-    {0x3b, 3, 0, 0l,      "Gain_3   "}, //Gain_4
+    {0x29, 2, 0, 0x0214l, "FilterCf1"}, //Filter_Config_2
+    {0x2a, 2, 0, 0x0214l, "FilterCf2"}, //Filter_Config_3
+    {0x2b, 2, 0, 0x0214l, "FilterCf3"}, //Filter_Config_4
+    {0x30, 3, 0, 0x800000l,      "Offset_0 "}, //Offset_1
+    {0x31, 3, 0, 0x800000l,      "Offset_1 "},  //Offset_2
+    {0x32, 3, 0, 0x800000l,      "Offset_2 "}, //Offset_3
+    {0x33, 3, 0, 0x800000l,      "Offset_3 "}, //Offset_4
+    {0x38, 3, 0, 0x555555l,      "Gain_0   "}, //Gain_1
+    {0x39, 3, 0, 0x555555l,      "Gain_1   "}, //Gain_2
+    {0x3a, 3, 0, 0x555555l,      "Gain_2   "}, //Gain_3
+    {0x3b, 3, 0, 0x555555l,      "Gain_3   "}, //Gain_4
     {0xFF, 1, 0, 0l,      "Comm_Reg "} //Communications_Register
 };
 
 float ADCClass::measureMilliVoltage() {
   AD7176_ReadRegister(&AD7176_regs[4]);
-  float v = (float) ((AD7176_regs[4].value*VFSR*1000.0)/FSR); 
-  v=v-VREF*1000.0;
+  Serial.print("BIN:");
+  Serial.println(AD7176_regs[4].value, BIN);
+  size_t adc_value = AD7176_regs[4].value;
+  Serial.println(adc_value, HEX);
+  // convert to 2s complement
+  adc_value=adc_value^0x800000;
+  bool neg = adc_value & 0x800000;
+      Serial.print("NEG");
+      Serial.println(neg);
+
+    Serial.println(adc_value, HEX);
+
+// reg
+    if (neg==1) {
+        adc_value++;
+        adc_value *= -1;
+        adc_value = adc_value & 0x00ffffff;
+    }
+    Serial.println(adc_value, HEX);
+    Serial.println((adc_value*VFSR*1000.0)/(float)FSR);
+    //adc_value=0x15dddd;
+    //float v = (adc_value*VFSR*1000.0);//   divided by FSR; 
+      float v = (adc_value*VFSR*1000.0);//   divided by FSR;
+      //(((long int)1<<23)-1) 
+v=v / (float) (((long int)1<<23)-1);
+  //float v = (float) ((AD7176_regs[4].value*VFSR*1000.0)/FSR); 
+  //v=v-VREF*1000.0;
+  if (neg==1) {
+    v=v*-1.0;
+  }
   return v;
 }
 
 bool ADCClass::dataReady() {
-  return AD7176_ReadRegister(&AD7176_regs[Status_Register]);
+   AD7176_WaitForReady(500);
+   return true;
+
+  //return AD7176_ReadRegister(&AD7176_regs[Status_Register]);
 }
 
 int ADCClass::init(){
@@ -60,7 +93,7 @@ int ADCClass::init(){
   // copy of AD7176 registers
   enum AD7176_registers regNr;
  
-  for(int regNr = 0; regNr < Offset_1; ++regNr) {
+  for(int regNr = 0; regNr < Gain_3; ++regNr) {
 
     //if (regNr == ADC_Mode_Register) continue;
     //if (regNr == Interface_Mode_Register) continue;
@@ -81,6 +114,7 @@ int ADCClass::init(){
     Serial.print(AD7176_ReadRegister(&AD7176_regs[regNr]));
     Serial.print(" bytes: ");
     Serial.println(AD7176_regs[regNr].value, HEX);
+    delay(100);
   }
   AD7176_UpdateSettings();
   return 0;
@@ -131,6 +165,3 @@ int8_t ADCClass::fltSetCommitVoltageSource(float fVoltage) {
  
 
     
-
-
-

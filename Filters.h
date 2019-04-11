@@ -1,7 +1,7 @@
 
 class FiltersClass {
 
-#define FILTER_LENGTH 50
+#define FILTER_LENGTH 10
 
 private:
   float meanRaws[FILTER_LENGTH];
@@ -10,6 +10,3 @@ public:
   float updateMean(float v);
   float mean;
 };
-
-
-

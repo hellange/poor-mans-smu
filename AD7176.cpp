@@ -144,6 +144,7 @@ int32_t AD7176_ReadRegister(st_reg* pReg)
     pReg->value = 0l;
     for(i = 1; i < pReg->size + 1; i++)
     {
+        Serial.println(buffer[i], HEX);
         pReg->value <<= 8;
         pReg->value += buffer[i];
     }

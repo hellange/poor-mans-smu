@@ -71,7 +71,7 @@ int activeWidget = 0;
 
 void setup()
 {
-  Serial.begin(9600);
+  Serial.begin(115200);
      pinMode(11,OUTPUT);
    pinMode(12,INPUT);
    pinMode(13,OUTPUT);
@@ -93,9 +93,9 @@ void setup()
    Serial.println("...Done");
    
    disableSPIunits();
-   SMU[0].init();
    delay(1000);
    Serial.println("Start measuring...");
+   SMU[0].init();
 
 
   float setMv = 0.0;
@@ -686,7 +686,7 @@ unsigned long startupMillis =  millis();
 
 bool readyToDoStableMeasurements() {
   // wait a second after startup before starting to store measurements
-  if (millis() > startupMillis + 2000) {
+  if (millis() > startupMillis + 5000) {
     return true;
   } else {
     return false;
@@ -698,24 +698,92 @@ unsigned long previousMillisSlow = 0;
 const long interval = 1; // should it account for time taken to perform ADC sample ?
 float Vout = 0.0;
 
-
-
+float VoutLast = 0.0;
 void loop()
 {
   GD.__end();
   disableSPIunits();
 
-  if(SMU[0].dataReady() == true) {
-    Vout = SMU[0].measureMilliVoltage();
-    Serial.print("Measured raw:");  
-    Serial.print(Vout, 3);
-    Serial.println(" mV");  
-    Serial.flush();
+
+  // have problems with dataReady check.
+  // preliminary say that new sample is when sample is different from last.
+  // Should be enough noise in last signifigant bit so that shoule work...
+  Vout = SMU[0].measureMilliVoltage();
+  if (Vout != VoutLast) {
+  //if(SMU[0].dataReady() == true) {
+    
+    //TODO: dont go in here before NEXT sample is ready !
+
+    //Vout = SMU[0].measureMilliVoltage();
+    VoutLast = Vout;
+    //Serial.print("Measured raw:");  
+    //Serial.print(Vout, 3);
+    //Serial.println(" mV");  
+    //Serial.flush();
+
+
+     if (readyToDoStableMeasurements()) {
+      // Dont sample voltage and current while scrolling because polling is slow.
+      // TODO: Remove this limitation when sampling is based on interrupts.
+      //if (scrollDir == 0) {
+         //V_STATS.addSample(SMU[0].measureMilliVoltage() * 1000.0);
+         Vout = Vout + 0.060;
+         Vout = Vout *2.5;  // account for attenuator
+
+     Vout = Vout * 1.01669;
+     
+     if (abs(Vout)>=100.0) {
+       Vout = Vout;
+     } else if (abs(Vout)>=50.0) {
+       Vout = Vout *1.0005;
+     } else {
+        Vout = Vout * 1.003;
+     }
+         
+/*
+         // calibrate
+         if (abs(Vout)>=5000.0) {
+           Vout = Vout * 1.0304;
+         } else if (abs(Vout)>=4000.0) {
+           Vout = Vout * 1.0305;
+         } else if (abs(Vout)>=3000.0) {
+           Vout = Vout * 1.0309;
+         } else if (abs(Vout)>=2000.0) {
+           Vout = Vout * 1.0313;
+         } else if (abs(Vout)>=1000.0) {
+           Vout = Vout * 1.0317;
+         } else if (abs(Vout)>=600.0) {
+           Vout = Vout * 1.0324;
+         } else if (abs(Vout)>=100.0){
+          Vout = Vout * 1.0350;
+         } else if (abs(Vout)>=50.0){
+          Vout = Vout * 1.0322;
+         } else if (abs(Vout)>=10.0){
+          Vout = Vout * 1.0332;
+         } else if (abs(Vout)>=5.0){
+          Vout = Vout * 1.0400;
+         } else if (abs(Vout)>=1.0){
+          Vout = Vout * 1.065;
+         }else {
+          Vout = Vout * 1.170;
+         }
+         
+         
+         
+         */
+         V_STATS.addSample(Vout);
+         //V_FILTERS.updateMean(Vout);
+         C_STATS.addSample(SMU[0].measureCurrent() * 1000.0);
+             V_FILTERS.updateMean(Vout);
+
+      //}
+    }
+    
   }
   disableSPIunits();
 
   GD.resume();
-  //SPI.beginTransaction(SPISettings(10000000, MSBFIRST, SPI_MODE0));
+  //SPI.beginTransaction(SPISettings(3000000, MSBFIRST, SPI_MODE0));
   if (!gestureDetected) {
     if (GD.inputs.tag == BUTTON_VOLT_SET) {
       DIAL.open(BUTTON_VOLT_SET, closeCallback);
@@ -725,25 +793,25 @@ void loop()
   }
 
   unsigned long currentMillis = millis();
-  if (currentMillis - previousMillis >= interval) {
+  if ( 1==1 || currentMillis - previousMillis >= interval) {
     previousMillis = currentMillis;
 
     GD.get_inputs();
     detectGestures();
 
     GD.Clear();
-    if (readyToDoStableMeasurements()) {
-      // Dont sample voltage and current while scrolling because polling is slow.
-      // TODO: Remove this limitation when sampling is based on interrupts.
-      //if (scrollDir == 0) {
-         //V_STATS.addSample(SMU[0].measureMilliVoltage() * 1000.0);
-         Vout = Vout + 2.24;
-         Vout = Vout * 1.0466;
-         V_STATS.addSample(Vout);
-         V_FILTERS.updateMean(Vout);
-         C_STATS.addSample(SMU[0].measureCurrent() * 1000.0);
-      //}
-    }
+//    if (readyToDoStableMeasurements()) {
+//      // Dont sample voltage and current while scrolling because polling is slow.
+//      // TODO: Remove this limitation when sampling is based on interrupts.
+//      //if (scrollDir == 0) {
+//         //V_STATS.addSample(SMU[0].measureMilliVoltage() * 1000.0);
+//         Vout = Vout -0.95;
+//         Vout = Vout * 1.03466;
+//         V_STATS.addSample(Vout);
+//         //V_FILTERS.updateMean(Vout);
+//         C_STATS.addSample(SMU[0].measureCurrent() * 1000.0);
+//      //}
+//    }
     renderDisplay();
     
     if (DIAL.isDialogOpen()) {
@@ -784,10 +852,3 @@ void printError(int16_t  errorNum)
   Serial.print(errorNum);
   Serial.println(")");
 }
-
-
-
-
-
-
-

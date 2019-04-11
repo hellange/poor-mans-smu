@@ -230,7 +230,7 @@ void StatsClass::renderTrend(int x, int y, bool limitDetails) {
       visibleMin = visibleMin - adjust;
     }    
   
-    //  Add by 1000 to reduce decimal roudning problems.... should have stored value in uV and uA instead of mV and mA....
+    //  Add by 1000 to reduce decimal rounding problems.... should have stored value in uV and uA instead of mV and mA....
     maximum = maximum/1000.0;
     minimum = minimum/1000.0;
   
@@ -316,7 +316,7 @@ void StatsClass::renderTrend(int x, int y, bool limitDetails) {
     float bottom = viewHeight * ( (visibleMax - minimum) / uispan);
     GD.ColorRGB(0xdddddd);
     GD.ColorA(255);
-    DIGIT_UTIL.renderValue(x-10, y + top - 18, maximum, 0, type); 
+    DIGIT_UTIL.renderValue(x-125, y + top - 25, maximum, 1, type); 
     GD.Begin(LINE_STRIP);
     GD.LineWidth(20);
     GD.Vertex2ii(x, y + top); 
@@ -328,9 +328,9 @@ void StatsClass::renderTrend(int x, int y, bool limitDetails) {
     GD.Vertex2ii(x, y + bottom);
     // if close to bottom, put it at the bottom, trying to avoid "flicker" when minimum close to the bottom
     if (viewHeight - bottom > 5) {
-      DIGIT_UTIL.renderValue(x-10, y + bottom + 5, minimum, 0, type); 
+      DIGIT_UTIL.renderValue(x-125, y + bottom + 0, minimum, 1, type); 
     } else {
-      DIGIT_UTIL.renderValue(x-10,  y + viewHeight + 5 , minimum, 0, type); 
+      DIGIT_UTIL.renderValue(x-125,  y + viewHeight + 0 , minimum, 1, type); 
     }
     float actualSpan = maximum - minimum;
     float actualSpan1 = maximumMean - minimumMean;
@@ -349,5 +349,3 @@ void StatsClass::renderTrend(int x, int y, bool limitDetails) {
     DIGIT_UTIL.renderValue(x + 10,  spanTextY + 20, actualSpan1, 0 , type); 
         }
 }
-
-
