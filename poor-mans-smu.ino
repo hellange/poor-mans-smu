@@ -13,6 +13,7 @@
 #include "volt_display.h"
 #include "current_display.h"
 #include "Stats.h"
+#include "Calibration.h"
 #include "Filters.h"
 #include "digit_util.h"
 #include "tags.h"
@@ -61,12 +62,13 @@ boolean mainMenuActive = false;
 StatsClass V_STATS;
 StatsClass C_STATS;
 FiltersClass V_FILTERS;
+CalibrationClass CALIBRATION;
 
 float rawMa_glob; // TODO: store in stats for analysis just as voltage
 
 float DACVout;  // TODO: Dont use global
 
-int noOfWidgets = 5;
+int noOfWidgets = 6;
 int activeWidget = 0;
 
 #include "dial.h"
@@ -109,7 +111,8 @@ void setup()
   V_STATS.init(DigitUtilClass::typeVoltage);
   C_STATS.init(DigitUtilClass::typeCurrent);
   V_FILTERS.init();
-   
+   CALIBRATION.init();
+
 
   
 }
@@ -205,6 +208,8 @@ void voltagePanel(int x, int y) {
   }
 
 }
+
+
 
 void renderExperimental(int x, int y, float valM, float setM, bool cur) {
 
@@ -448,6 +453,14 @@ void showWidget(int y, int widgetNo, int scroll) {
       float rawM = V_FILTERS.mean;
       float setM = SMU[0].getSetValuemV();
       renderExperimental(scroll,yPos, rawM, setM, false);
+  } else if (widgetNo == 5) {
+      if (scroll ==0){
+        GD.ColorRGB(COLOR_VOLT);
+        GD.cmd_text(20, yPos, 29, 0, "CAL");
+      }
+      float rawM = V_FILTERS.mean;
+      float setM = SMU[0].getSetValuemV();
+      CALIBRATION.renderCal(scroll,yPos, rawM, setM, false);
   }
 
 }
@@ -691,34 +704,13 @@ unsigned long startupMillis =  millis();
 
 bool readyToDoStableMeasurements() {
   // wait a second after startup before starting to store measurements
-  if (millis() > startupMillis + 2000) {
+  if (millis() > startupMillis + 3000) {
     return true;
   } else {
     return false;
   }
 }
 
-float adjustMeasuredVoltageForCalibrationData(float v) {
-
-  // offset
-  v = v - 0.330 / 2.5;
-  
-  // system gain
-  v = v * 2.5;  // account for attenuator
-
-  // other gain factors
-  v = v * 1.01589; 
-
-  // Nonlinearity
-  if (abs(v)>=100.0) {
-       v = v;
-     } else if (abs(v)>=50.0) {
-       v = v *1.0005;
-     } else {
-       v = v * 1.003;
-     }
-  return v;
-}
 
 
 float Vout = 0.0;
@@ -751,7 +743,7 @@ void loop()
     //if (scrollDir == 0) {
        //V_STATS.addSample(SMU[0].measureMilliVoltage() * 1000.0);
 
-       Vout = adjustMeasuredVoltageForCalibrationData(Vout);
+       Vout = CALIBRATION.adjust(Vout);
    
        V_STATS.addSample(Vout);
        //V_FILTERS.updateMean(Vout);
