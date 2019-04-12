@@ -131,7 +131,9 @@ void StatsClass::renderHistogram(int x, int y, bool limitDetails) {
       GD.Vertex2ii(xpos+barWidth - 4, y - top); 
 
       GD.ColorRGB(0xffffff);
-      GD.cmd_number(xpos-2+barWidth/2, y-top-25, 26, 0, bins[i]);
+      if (!limitDetails) {
+        GD.cmd_number(xpos-2+barWidth/2, y-top-25, 26, 0, bins[i]);
+      }
 
       if (i==0 || i==((noOfbins-1)/2) || i==noOfbins-1){
         DIGIT_UTIL.renderValue(xpos-35, y+20, binLimits[i], 0, type);

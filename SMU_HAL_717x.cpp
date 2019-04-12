@@ -23,9 +23,9 @@ static st_reg init_state[] =
     {0x23, 2, 0, 0x1020l, "SetupCfg3"}, //Setup_Config_4
     
     //{0x28, 2, 0, 0x020Al, "FilterCf0"}, //Filter_Config_1
-   // {0x28, 2, 0, 0x0214l, "FilterCf0"}, //Filter_Config_1  // 5 pr sek
+    {0x28, 2, 0, 0x0214l, "FilterCf0"}, //Filter_Config_1  // 5 pr sek
       // {0x28, 2, 0, 0x0213l, "FilterCf0"}, //Filter_Config_1  // 10 pr sek
-       {0x28, 2, 0, 0x0212l, "FilterCf0"}, //Filter_Config_1  // 20? pr sek
+      // {0x28, 2, 0, 0x0212l, "FilterCf0"}, //Filter_Config_1  // 20? pr sek
 
     
     {0x29, 2, 0, 0x0214l, "FilterCf1"}, //Filter_Config_2
@@ -44,31 +44,33 @@ static st_reg init_state[] =
 
 float ADCClass::measureMilliVoltage() {
   AD7176_ReadRegister(&AD7176_regs[4]);
-  Serial.print("BIN:");
-  Serial.println(AD7176_regs[4].value, BIN);
+  //Serial.print("BIN:");
+  //Serial.println(AD7176_regs[4].value, BIN);
   size_t adc_value = AD7176_regs[4].value;
-  Serial.println(adc_value, HEX);
+  //Serial.println(adc_value, HEX);
+  
   // convert to 2s complement
   adc_value=adc_value^0x800000;
   bool neg = adc_value & 0x800000;
-      Serial.print("NEG");
-      Serial.println(neg);
+  
+  //Serial.print("NEG");
+  //Serial.println(neg);
+  //Serial.println(adc_value, HEX);
 
-    Serial.println(adc_value, HEX);
-
-// reg
     if (neg==1) {
         adc_value++;
         adc_value *= -1;
         adc_value = adc_value & 0x00ffffff;
     }
-    Serial.println(adc_value, HEX);
-    Serial.println((adc_value*VFSR*1000.0)/(float)FSR);
+    
+    //Serial.println(adc_value, HEX);
+    //Serial.println((adc_value*VFSR*1000.0)/(float)FSR);
+    
     //adc_value=0x15dddd;
     //float v = (adc_value*VFSR*1000.0);//   divided by FSR; 
       float v = (adc_value*VFSR*1000.0);//   divided by FSR;
       //(((long int)1<<23)-1) 
-v=v / (float) (((long int)1<<23)-1);
+  v=v / (float) (((long int)1<<23)-1);
   //float v = (float) ((AD7176_regs[4].value*VFSR*1000.0)/FSR); 
   //v=v-VREF*1000.0;
   if (neg==1) {
@@ -122,11 +124,6 @@ int ADCClass::init(){
 
 
 
-
-
-
-
-
 int8_t ADCClass::fltSetCommitVoltageSource(float fVoltage) {
    setValueV = fVoltage;
    nowValueV = fVoltage;
@@ -137,9 +134,6 @@ int8_t ADCClass::fltSetCommitVoltageSource(float fVoltage) {
   return setValueI = fCurrent;                         
  }
 
-
- 
- 
  
  float ADCClass::measureCurrent(){
 
