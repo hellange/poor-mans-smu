@@ -30,9 +30,9 @@ static st_reg init_state[] =
     //{0x28, 2, 0, 0x020Al, "FilterCf0"}, //Filter_Config_1
      //{0x28, 2, 0, 0x0214l, "FilterCf0"}, //Filter_Config_1  // 5 pr sek
      //  {0x28, 2, 0, 0x0213l, "FilterCf0"}, //Filter_Config_1  // 10 pr sek
-     {0x28, 2, 0, 0x0212l, "FilterCf0"}, //Filter_Config_1  // 16.66 pr sek
-     //{0x28, 2, 0, 0x0211l, "FilterCf0"}, //Filter_Config_1  // 20 pr sek
-    // {0x28, 2, 0, 0x0210l, "FilterCf0"}, //Filter_Config_1  // 49.96 pr sek
+    // {0x28, 2, 0, 0x0212l, "FilterCf0"}, //Filter_Config_1  // 16.66 pr sek
+     {0x28, 2, 0, 0x0211l, "FilterCf0"}, //Filter_Config_1  // 20 pr sek
+     //{0x28, 2, 0, 0x0210l, "FilterCf0"}, //Filter_Config_1  // 49.96 pr sek
 
     
     {0x29, 2, 0, 0x0214l, "FilterCf1"}, //Filter_Config_2
@@ -159,6 +159,7 @@ int8_t ADCClass::fltSetCommitVoltageSource(float fVoltage) {
     AD7176_ReadRegister(&AD7176_regs[4]);
   float v = (float) ((AD7176_regs[4].value*VFSR*1000.0)/FSR); 
   v=v-VREF*1000.0;
+  nowValueI = v/1000.0;
   return v;
 
   

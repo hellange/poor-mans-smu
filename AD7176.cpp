@@ -251,22 +251,25 @@ int AD7176_dataReady()
 //        }
 
 
-     //Serial.println(AD7176_regs[Status_Register].value, HEX); 
+     byte stat = AD7176_regs[Status_Register].value;
+//         Serial.println(stat, BIN); 
+//          Serial.println(STATUS_REG_ADC_ERR, BIN); 
+//          Serial.println(STATUS_REG_CRC_ERR, BIN); 
 
-//if (AD7176_regs[Status_Register].value & STATUS_REG_ADC_ERR != 0) {
-//            Serial.println("!!! STATUS_REG_ADC_ERR");
-// 
-//return -1;
-//}
-//if (AD7176_regs[Status_Register].value & STATUS_REG_CRC_ERR != 0) {
-//           Serial.println("!!! STATUS_REG_CRC_ERR"); 
-//return -1;
-//
-//}
+if ((stat & STATUS_REG_ADC_ERR) > 0x01) {
+            Serial.println("!!! STATUS_REG_ADC_ERR");
+ 
+return -99;
+}
+if ((stat & STATUS_REG_CRC_ERR) > 0x01) {
+           Serial.println("!!! STATUS_REG_CRC_ERR"); 
+return -99;
+
+}
 
         /* Check the RDY bit in the Status Register */
         if ((AD7176_regs[Status_Register].value & STATUS_REG_RDY) == 0) {
-                     // Serial.println(AD7176_regs[Status_Register].value, BIN); 
+  //                   Serial.println(AD7176_regs[Status_Register].value, BIN); 
 
           return AD7176_regs[Status_Register].value;
         } else {

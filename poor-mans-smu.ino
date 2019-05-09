@@ -815,8 +815,8 @@ void loop()
  //if (Vout != VoutLast) {
 
   int dataR = SMU[0].dataReady();
-  if (dataR <0) {
-    
+  if (dataR == -99) {
+    Serial.print("DONT USE SAMPLE!");  
   }
   else if (dataR == 1) {
     float Cout = SMU[0].measureCurrent();
@@ -858,8 +858,7 @@ void loop()
   disableSPIunits();
   //delay(1);
   GD.resume();
-         V_FILTERS.updateMean(Vout);
-
+  
 
   if (!gestureDetected) {
     if (GD.inputs.tag == BUTTON_VOLT_SET) {
