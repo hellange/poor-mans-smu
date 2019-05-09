@@ -6,25 +6,26 @@
 
 //TODO: remove globals
   float real_c[]  = {0.0, 1000.00, 2000.00, 3000.00, 4000.00, 5000.00, 6000.00, 7000.00, 8000.00, 9000.00, 10000.00};
-  float meas_c[]  = {0.0, 0999.25, 1998.25, 2997.24, 3999.90, 4999.95, 5994.08, 6999.84, 7999.82, 8990.94, 9990.05};
+  float meas_c[]  = {0.0, 0999.21, 1999.35, 2997.24, 3999.63, 4999.77, 5994.08, 6999.84, 7999.82, 8990.94, 9990.05};
 
   
 void CalibrationClass::init() {
 }
 
+// todo: change parameter name to mv ?
 float CalibrationClass::adjust(float v){
 
   // lookup table for nonlinearity. As many as possible.
   
   // offset
-  v = v - 0.330 / 2.5;
-  
+  v = v - 0.529;  // mv;
+  /*
   // system gain
   v = v * 2.5;  // account for attenuator
-
+*/
   // other gain factors
-  v = v * 1.01589; 
-
+  v=v*1.00042;
+/*
   // Nonlinearity
   for (int i=0;i<10;i++) {
     if (v > meas_c[i] && v <= meas_c[i+1]) {
@@ -33,7 +34,7 @@ float CalibrationClass::adjust(float v){
       float adj_factor_diff = adj_factor_high - adj_factor_low;
 
       float range = real_c[i+1] - real_c[i];
-      float partWithinRange = ( (v-real_c[i]) / range); /* 0 to 1. Where then 0.5 is in the middle of the range */
+      float partWithinRange = ( (v-real_c[i]) / range); // 0 to 1. Where then 0.5 is in the middle of the range 
       float adj_factor = adj_factor_low + adj_factor_diff * partWithinRange;
  
       Serial.print("meas:");  
@@ -51,14 +52,8 @@ float CalibrationClass::adjust(float v){
 
     }
   }
-
-  if (abs(v)>=100.0) {
-       v = v;
-     } else if (abs(v)>=50.0) {
-       v = v *1.0005;
-     } else {
-       v = v * 1.003;
-     }
+  */
+  
   return v;
 }
 
@@ -95,7 +90,3 @@ void CalibrationClass::renderCal(int x, int y, float valM, float setM, bool cur)
   }
   
 }
-
-
-
-

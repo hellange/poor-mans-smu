@@ -70,6 +70,8 @@ int32_t AD7176_Reset(void);
 /*! Waits until a new conversion result is available. */
 int32_t AD7176_WaitForReady(uint32_t timeout);
 
+int AD7176_dataReady();
+
 /*! Reads the conversion result from the device. */
 int32_t AD7176_ReadData(int32_t* pData);
 

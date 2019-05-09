@@ -144,7 +144,7 @@ int32_t AD7176_ReadRegister(st_reg* pReg)
     pReg->value = 0l;
     for(i = 1; i < pReg->size + 1; i++)
     {
-        Serial.println(buffer[i], HEX);
+        //Serial.println(buffer[i], HEX);
         pReg->value <<= 8;
         pReg->value += buffer[i];
     }
@@ -228,10 +228,53 @@ int32_t AD7176_WaitForReady(uint32_t timeout)
             return ret;
 
         /* Check the RDY bit in the Status Register */
-        ready = (AD7176_regs[Status_Register].value & STATUS_REG_RDY) != 0;
+        ready = (AD7176_regs[Status_Register].value & STATUS_REG_RDY) == 0;
     }
 
     return timeout ? 0 : -1; 
+}
+
+
+int AD7176_dataReady()
+{
+    int32_t ret;
+
+   
+
+        /* Read the value of the Status Register */
+        ret = AD7176_ReadRegister(&AD7176_regs[Status_Register]);
+//        if(ret < 0) {
+//            //Serial.print("!!! Register read error ");
+//                        //Serial.println(++reg_err, DEC);
+//return -1;
+//
+//        }
+
+
+     //Serial.println(AD7176_regs[Status_Register].value, HEX); 
+
+//if (AD7176_regs[Status_Register].value & STATUS_REG_ADC_ERR != 0) {
+//            Serial.println("!!! STATUS_REG_ADC_ERR");
+// 
+//return -1;
+//}
+//if (AD7176_regs[Status_Register].value & STATUS_REG_CRC_ERR != 0) {
+//           Serial.println("!!! STATUS_REG_CRC_ERR"); 
+//return -1;
+//
+//}
+
+        /* Check the RDY bit in the Status Register */
+        if ((AD7176_regs[Status_Register].value & STATUS_REG_RDY) == 0) {
+                     // Serial.println(AD7176_regs[Status_Register].value, BIN); 
+
+          return AD7176_regs[Status_Register].value;
+        } else {
+          return -1;
+        }
+    
+
+
 }
 
 /***************************************************************************//**

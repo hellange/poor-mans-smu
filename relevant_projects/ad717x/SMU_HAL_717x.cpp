@@ -4,7 +4,9 @@ static st_reg init_state[] =
 {
     {0x00, 1, 0, 0x00l,   "Stat_Reg "}, //Status_Register
     {0x01, 2, 0, 0x8000l, "ADCModReg"}, //ADC_Mode_Register
-    {0x02, 2, 0, 0x1840l, "IfModeReg"}, //Interface_Mode_Register
+    {0x02, 2, 0, 0x1040l, "IfModeReg"}, //Interface_Mode_Register
+       // {0x02, 2, 0, 0x1080l, "IfModeReg"}, //Interface_Mode_Register
+
     {0x03, 3, 0, 0x0000l, "Reg_Check"}, //Register_Check
     {0x04, 3, 0, 0x0000l, "ADC_Data "}, //Data_Register
     {0x06, 2, 0, 0x080Cl, "GPIO_Conf"}, //IOCon_Register
@@ -48,12 +50,14 @@ float ADCClass::measureMilliVoltage() {
 }
 
 bool ADCClass::dataReady() {
-  return AD7176_ReadRegister(&AD7176_regs[Status_Register]);
+  //return false;
+  return AD7176_dataReady();
+  //return AD7176_ReadRegister(&AD7176_regs[Status_Register]);
 }
 
 int ADCClass::init(){
-  Serial.print("SETUP: ");
-  
+  Serial.println("SETUP: ");
+  Serial.flush();
   Serial.println(AD7176_Setup());
   Serial.println("REGS:");
 
@@ -81,6 +85,7 @@ int ADCClass::init(){
     Serial.print(AD7176_ReadRegister(&AD7176_regs[regNr]));
     Serial.print(" bytes: ");
     Serial.println(AD7176_regs[regNr].value, HEX);
+    Serial.flush();
   }
   AD7176_UpdateSettings();
   return 0;
@@ -131,6 +136,3 @@ int8_t ADCClass::fltSetCommitVoltageSource(float fVoltage) {
  
 
     
-
-
-

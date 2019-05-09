@@ -15,7 +15,7 @@ class SMU_HAL_dummy
     int8_t fltSetCommitVoltageSource(float fVoltage);
     int8_t fltSetCommitCurrentSource(float fCurrent, int8_t up_down_both);
     float measureMilliVoltage();
-    bool dataReady();
+    int dataReady();
     float measureCurrent();
     boolean compliance();
 

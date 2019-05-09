@@ -227,11 +227,36 @@ int32_t AD7176_WaitForReady(uint32_t timeout)
             return ret;
 
         /* Check the RDY bit in the Status Register */
-        ready = (AD7176_regs[Status_Register].value & STATUS_REG_RDY) != 0;
+        ready = (AD7176_regs[Status_Register].value & STATUS_REG_RDY) == 0;
     }
 
     return timeout ? 0 : -1; 
 }
+
+
+boolean AD7176_dataReady()
+{
+    int32_t ret;
+
+   
+
+        /* Read the value of the Status Register */
+        ret = AD7176_ReadRegister(&AD7176_regs[Status_Register]);
+        if(ret < 0) {
+          Serial.println("?????"); 
+                           return false;
+
+
+        }
+     //Serial.println(AD7176_regs[Status_Register].value, HEX); 
+
+        /* Check the RDY bit in the Status Register */
+        return (AD7176_regs[Status_Register].value & STATUS_REG_RDY) == 0;
+    
+
+
+}
+
 
 /***************************************************************************//**
 * @brief Reads the conversion result from the device.
@@ -340,7 +365,7 @@ int32_t AD7176_Setup(void)
     enum AD7176_registers regNr;
 
     /* Initialize the SPI communication. */
-    AD7176_Init(0, 10000000, 1,0);//1600000
+    AD7176_Init(0, 8000000, 1,0);//1600000
 
     /*  Reset the device interface.*/
     AD7176_Reset();

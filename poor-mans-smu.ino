@@ -75,27 +75,60 @@ int activeWidget = 0;
 
 void setup()
 {
+    disableSPIunits();
+delay(50);
+    pinMode(6,OUTPUT); // LCD powerdown pin?
+   digitalWrite(6, HIGH);
+   
   Serial.begin(115200);
+   while(!Serial) {
+  }
      pinMode(11,OUTPUT);
    pinMode(12,INPUT);
    pinMode(13,OUTPUT);
-  disableSPIunits();
 
    Serial.println("Initializing graphics controller FT81x...");
-  disableSPIunits();
+   Serial.flush();
 
    // bootup FT8xx
    // Drive the PD_N pin high
-   pinMode(5,OUTPUT);
-   delay(50);
-   digitalWrite(5, HIGH);
-   delay(50);
+   Serial.flush();
+
+
+
+
+ // brief reset on the LCD clear pin
+//   delay(200);
+ //     digitalWrite(6, LOW);
+//         delay(200);
+//    digitalWrite(6, HIGH);
+//   delay(200);
+
+
+
+
    GD.begin(0);
+      delay(100);
+
+   Serial.println("...begin...");
+   Serial.flush();
    GD.cmd_romfont(1, 34); // put FT81x font 34 in slot 1
-   delay(50);
+   delay(100);
+   GD.Clear();
+   GD.ColorRGB(0xaaaaff);
+  GD.ColorA(120);
+  GD.cmd_text(250, 200 ,   31, 0, "Poor man's SMU");
+     GD.ColorRGB(0xaaaaaa);
+  
+    GD.cmd_text(250, 240 ,   28, 0, "Designed    by    Helge Langehaug");
+
+     delay(100);
+
+  GD.swap();
  GD.__end();
    Serial.println("...Done");
-   
+   Serial.flush();
+
    disableSPIunits();
    delay(100);
    Serial.println("Start measuring...");
@@ -118,12 +151,20 @@ void setup()
 }
 
 void disableSPIunits(){
-  pinMode(7, OUTPUT);
+ 
+
+
+
+// preliminary set the mux address for ADC here...
+     pinMode(7, OUTPUT);  // mux master chip select
   digitalWrite(7, HIGH);
-  pinMode(6, OUTPUT);
-  digitalWrite(6, HIGH);
-  pinMode(9, OUTPUT);
-  digitalWrite(9, HIGH);
+    pinMode(8, OUTPUT);  // cs adr 0
+  digitalWrite(8, LOW);
+  pinMode(9, OUTPUT); // cs adr 1
+  digitalWrite(9, LOW);
+
+  
+  
   pinMode(10, OUTPUT);
   digitalWrite(10, HIGH);
 }
@@ -539,7 +580,6 @@ void handleMenuScrolldown(){
     GD.LineWidth(180);
     GD.ColorA(230);
     GD.ColorRGB(0x000000);
-    GD.Vertex2ii(50,0);
     GD.Vertex2ii(750, scrollMainMenu+40);
     GD.ColorRGB(0xffffff);
 
@@ -711,7 +751,55 @@ bool readyToDoStableMeasurements() {
   }
 }
 
+int aliveCounter = 0;
+void loop3(){
+  GD.resume();
+    GD.Clear();
+    GD.ColorRGB(COLOR_VOLT);
+  GD.ColorA(120);
+  GD.cmd_text(20, 20 ,   29, 0, "Hi !");
+  GD.swap();
 
+  
+    Serial.print("Alive !"); 
+        Serial.println(aliveCounter++);  
+ 
+Serial.flush();
+delay(1000);
+}
+
+
+void loop2()
+{
+
+  // ADC2.init();
+//delay(5000);
+
+   long ret = SMU[0].dataReady();
+   if(ret < 0) {
+   } else {
+     float v = SMU[0].measureMilliVoltage();
+
+     Serial.print("raw ");
+     Serial.print(AD7176_regs[4].value, HEX); 
+     Serial.print("=");
+     Serial.print(v);
+     
+     float offset = -0.0001;
+     v=v+offset;
+     Serial.print(" adjusted offset ");
+     Serial.print(v);
+  
+     float gain_factor = 0.0484; // arduino 5V
+     gain_factor = 0.0372; // teensy 3.3v
+     v = v + v * gain_factor;
+     
+     Serial.print(" adjusted gain ");
+     Serial.print(v);
+     Serial.println(" mv");
+     //delay(1000);
+   }
+}
 
 float Vout = 0.0;
 float VoutLast = 0.0;
@@ -719,25 +807,39 @@ void loop()
 {
   GD.__end();
   disableSPIunits();
-
+  //delay(1);
   // have problems with dataReady check.
   // preliminary say that new sample is when sample is different from last.
   // Should be enough noise in last signifigant bit so that shoule work...
-  Vout = SMU[0].measureMilliVoltage();
-  //if (Vout != VoutLast) {
-  if(SMU[0].dataReady() == true) {
+  //Vout = SMU[0].measureMilliVoltage();
+ //if (Vout != VoutLast) {
+
+  int dataR = SMU[0].dataReady();
+  if (dataR <0) {
+    
+  }
+  else if (dataR == 1) {
+    float Cout = SMU[0].measureCurrent();
+    C_STATS.addSample(Cout);
+//  Serial.print("Measured raw:");  
+//  Serial.print(Cout, 3);
+//  Serial.println(" mA");  
+//  Serial.flush();
+  }
+  else if(dataR == 0) {
     
   //TODO: dont go in here before NEXT sample is ready !
+ 
+ Vout = SMU[0].measureMilliVoltage();
 
-  //Vout = SMU[0].measureMilliVoltage();
   VoutLast = Vout;
-  //Serial.print("Measured raw:");  
-  //Serial.print(Vout, 3);
-  //Serial.println(" mV");  
-  //Serial.flush();
+//  Serial.print("Measured raw:");  
+//  Serial.print(Vout, 3);
+//  Serial.println(" mV");  
+//  Serial.flush();
 
 
-  if (readyToDoStableMeasurements()) {
+  //if (readyToDoStableMeasurements()) {
     // Dont sample voltage and current while scrolling because polling is slow.
     // TODO: Remove this limitation when sampling is based on interrupts.
     //if (scrollDir == 0) {
@@ -747,16 +849,17 @@ void loop()
    
        V_STATS.addSample(Vout);
        //V_FILTERS.updateMean(Vout);
-       C_STATS.addSample(SMU[0].measureCurrent() * 1000.0);
        V_FILTERS.updateMean(Vout);
 
     //}
-    }
+   // }
     
   }
   disableSPIunits();
-
+  //delay(1);
   GD.resume();
+         V_FILTERS.updateMean(Vout);
+
 
   if (!gestureDetected) {
     if (GD.inputs.tag == BUTTON_VOLT_SET) {
@@ -778,9 +881,10 @@ void loop()
     DIAL.handleKeypadDialog();
   }
 
-  GD.swap();    
+  GD.swap(); 
+   
   GD.__end();
-  
+
 }
 
 
@@ -798,7 +902,6 @@ void closeCallback(int vol_cur_type, bool cancel) {
   if (DIAL.type() == BUTTON_CUR_SET) {
      if (SMU[0].fltSetCommitCurrentSource(DIAL.getMv() / 1000.0, _SOURCE_AND_SINK)) printError(_PRINT_ERROR_CURRENT_SOURCE_SETTING);
   }
-     
 }
 
 

@@ -100,9 +100,21 @@ unsigned char AD7176_Read(unsigned char slaveDeviceId,
                        unsigned char bytesNumber)
 {
     SPI.beginTransaction(AD7176_spisettings);
-    digitalWrite(AD7176_CS_PIN, LOW);
+    //digitalWrite(AD7176_CS_PIN, LOW);
+      
+     pinMode(8, OUTPUT);  // cs adr 0
+    digitalWrite(8, LOW);
+    pinMode(9, OUTPUT); // cs adr 1
+    digitalWrite(9, LOW);
+    pinMode(7, OUTPUT);  // master chip select
+    digitalWrite(7, LOW);
+        delay(1);
+        
     SPI.transfer(data, bytesNumber);
-    digitalWrite(AD7176_CS_PIN, HIGH);
+   // digitalWrite(AD7176_CS_PIN, HIGH);
+   delay(1);
+
+         digitalWrite(7, HIGH);
     SPI.endTransaction();
     return bytesNumber;
 }
@@ -121,9 +133,22 @@ unsigned char AD7176_Write(unsigned char slaveDeviceId,
                         unsigned char bytesNumber)
 {
     SPI.beginTransaction(AD7176_spisettings);
-    digitalWrite(AD7176_CS_PIN, LOW);
+   // digitalWrite(AD7176_CS_PIN, LOW);
+        
+     pinMode(8, OUTPUT);  // cs adr 0
+    digitalWrite(8, LOW);
+    pinMode(9, OUTPUT); // cs adr 1
+    digitalWrite(9, LOW);
+    pinMode(7, OUTPUT);  // master chip select
+    digitalWrite(7, LOW);
+        delay(1);
+        
     SPI.transfer(data, bytesNumber);
-    digitalWrite(AD7176_CS_PIN, HIGH);
+    //digitalWrite(AD7176_CS_PIN, HIGH);
+            delay(1);
+
+          digitalWrite(7, HIGH);
+
     SPI.endTransaction();
     return bytesNumber;
 }

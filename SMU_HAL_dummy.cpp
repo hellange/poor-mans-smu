@@ -23,7 +23,7 @@
    return 0; 
  }
  
- bool SMU_HAL_dummy::dataReady() {
+ int SMU_HAL_dummy::dataReady() {
   if (lastSampleMilli + 100 < millis()) {
     lastSampleMilli = millis();
     return true;
@@ -35,11 +35,11 @@
 
   int r = random(2);
   if (r == 0) {
-    nowValueV = nowValueV + random(10) / 200000.0;
+    nowValueV = nowValueV + random(20) / 10000000.0;
   } else if (r == 1) {
-    nowValueV = nowValueV - random(10) / 200000.0;
+    nowValueV = nowValueV - random(20) / 10000000.0;
   }
-  return nowValueV * 1000;  // return millivolt
+  return nowValueV * 1000-0;  // return millivolt
  }
  
  float SMU_HAL_dummy::measureCurrent(){
@@ -47,7 +47,7 @@
   float simulatedLoad = 10.0; //ohm
   nowValueI = nowValueV / simulatedLoad;
   
-  nowValueI =  nowValueI + (random(0, 100) / 1000000.0);
+  nowValueI =  nowValueI + (random(0, 100) / 2000000.0);
   return nowValueI;
  }
 
@@ -66,5 +66,3 @@
  
 
     
-
-

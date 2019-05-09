@@ -3,29 +3,36 @@
 static st_reg init_state[] = 
 {
     {0x00, 1, 0, 0x00l,   "Stat_Reg "}, //Status_Register
-    {0x01, 2, 0, 0x8000l, "ADCModReg"}, //ADC_Mode_Register
-    {0x02, 2, 0, 0x1840l, "IfModeReg"}, //Interface_Mode_Register
+    {0x01, 2, 0, 0x8000l, "ADCModReg"}, //ADC_Mode_Register 100uS delay
+    {0x02, 2, 0, 0x0000l, "IfModeReg"}, //Interface_Mode_Register
+
     {0x03, 3, 0, 0x0000l, "Reg_Check"}, //Register_Check
     {0x04, 3, 0, 0x0000l, "ADC_Data "}, //Data_Register
     {0x06, 2, 0, 0x080Cl, "GPIO_Conf"}, //IOCon_Register
 //     {0x06, 2, 0, 0x0800l, "GPIO_Conf"}, //IOCon_Register
 
     {0x07, 2, 0, 0x0000l, "ID_ST_Reg"}, //ID_st_reg
-    {0x10, 2, 0, 0x8001l, "Ch_Map_0 "}, //CH_Map_1
-    {0x11, 2, 0, 0x0000l, "Ch_Map_1 "}, //CH_Map_2
+    
+    {0x10, 2, 0, 0x8001l, "Ch_Map_0 "}, //CH_Map_1   ain1, ain0
+    
+    {0x11, 2, 0, 0x8043l, "Ch_Map_1 "}, //CH_Map_2   ain3, ain2
+    //{0x11, 2, 0, 0x0001l, "Ch_Map_1 "}, //CH_Map_2   ain3, ain2
+
     {0x12, 2, 0, 0x0000l, "Ch_Map_2 "}, //CH_Map_3
     {0x13, 2, 0, 0x0000l, "Ch_Map_3 "}, //CH_Map_4
-    {0x20, 2, 0, 0x1000l, "SetupCfg0"}, //Setup_Config_1   //ext ref
-  // {0x20, 2, 0, 0x0020l, "SetupCfg0"}, //Setup_Config_1  unipolar
+  //  {0x20, 2, 0, 0x0f00l, "SetupCfg0"}, //Setup_Config_1   //ext ref
+   {0x20, 2, 0, 0x1f20l, "SetupCfg0"}, //Setup_Config_1  unipolar enable buffer
 
     {0x21, 2, 0, 0x1020l, "SetupCfg1"}, //Setup_Config_2
     {0x22, 2, 0, 0x1020l, "SetupCfg2"}, //Setup_Config_3
     {0x23, 2, 0, 0x1020l, "SetupCfg3"}, //Setup_Config_4
     
     //{0x28, 2, 0, 0x020Al, "FilterCf0"}, //Filter_Config_1
-    {0x28, 2, 0, 0x0214l, "FilterCf0"}, //Filter_Config_1  // 5 pr sek
-      // {0x28, 2, 0, 0x0213l, "FilterCf0"}, //Filter_Config_1  // 10 pr sek
-      // {0x28, 2, 0, 0x0212l, "FilterCf0"}, //Filter_Config_1  // 20? pr sek
+     //{0x28, 2, 0, 0x0214l, "FilterCf0"}, //Filter_Config_1  // 5 pr sek
+     //  {0x28, 2, 0, 0x0213l, "FilterCf0"}, //Filter_Config_1  // 10 pr sek
+     {0x28, 2, 0, 0x0212l, "FilterCf0"}, //Filter_Config_1  // 16.66 pr sek
+     //{0x28, 2, 0, 0x0211l, "FilterCf0"}, //Filter_Config_1  // 20 pr sek
+    // {0x28, 2, 0, 0x0210l, "FilterCf0"}, //Filter_Config_1  // 49.96 pr sek
 
     
     {0x29, 2, 0, 0x0214l, "FilterCf1"}, //Filter_Config_2
@@ -43,6 +50,13 @@ static st_reg init_state[] =
 };
 
 float ADCClass::measureMilliVoltage() {
+  AD7176_ReadRegister(&AD7176_regs[4]);
+  float v = (float) ((AD7176_regs[4].value*VFSR*1000.0)/FSR); 
+  v=v-VREF*1000.0;
+  return v;
+}
+
+float ADCClass::measureMilliVoltage2() {
   AD7176_ReadRegister(&AD7176_regs[4]);
   //Serial.print("BIN:");
   //Serial.println(AD7176_regs[4].value, BIN);
@@ -79,11 +93,10 @@ float ADCClass::measureMilliVoltage() {
   return v;
 }
 
-bool ADCClass::dataReady() {
-   AD7176_WaitForReady(500);
-   return true;
+int ADCClass::dataReady() {
+   //return AD7176_ReadRegister(&AD7176_regs[Status_Register]);
+     return AD7176_dataReady();
 
-  //return AD7176_ReadRegister(&AD7176_regs[Status_Register]);
 }
 
 int ADCClass::init(){
@@ -116,7 +129,7 @@ int ADCClass::init(){
     Serial.print(AD7176_ReadRegister(&AD7176_regs[regNr]));
     Serial.print(" bytes: ");
     Serial.println(AD7176_regs[regNr].value, HEX);
-    delay(100);
+    delay(10);
   }
   AD7176_UpdateSettings();
   return 0;
@@ -137,11 +150,18 @@ int8_t ADCClass::fltSetCommitVoltageSource(float fVoltage) {
  
  float ADCClass::measureCurrent(){
 
-  float simulatedLoad = 10.0; //ohm
-  nowValueI = nowValueV / simulatedLoad;
+//  float simulatedLoad = 10.0; //ohm
+//  nowValueI = nowValueV / simulatedLoad;
+//  
+//  nowValueI =  nowValueI + (random(0, 100) / 1000000.0);
+//  return nowValueI;
+
+    AD7176_ReadRegister(&AD7176_regs[4]);
+  float v = (float) ((AD7176_regs[4].value*VFSR*1000.0)/FSR); 
+  v=v-VREF*1000.0;
+  return v;
+
   
-  nowValueI =  nowValueI + (random(0, 100) / 1000000.0);
-  return nowValueI;
  }
 
  boolean ADCClass::compliance(){

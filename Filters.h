@@ -1,7 +1,7 @@
 
 class FiltersClass {
 
-#define FILTER_LENGTH 10
+#define FILTER_LENGTH 1
 
 private:
   float meanRaws[FILTER_LENGTH];
