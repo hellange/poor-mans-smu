@@ -10,8 +10,24 @@
 
   
 void CalibrationClass::init() {
+  nullValue = 0.0;
+  timeSinceLastChange = millis();
 }
 
+void CalibrationClass::setNullValue(float v) {
+  if (timeSinceLastChange + 1000 > millis()){
+    return;
+  }
+  if (nullValue != 0.0) {
+    nullValue = 0.0;
+  } else {
+    nullValue = v;
+  }
+  Serial.print("setNull to:");
+  Serial.println(v);
+  timeSinceLastChange = millis();
+
+}
 // todo: change parameter name to mv ?
 float CalibrationClass::adjust(float v){
 
@@ -19,6 +35,7 @@ float CalibrationClass::adjust(float v){
   
   // offset
   v = v - 0.170;  // mv;
+  v = v - nullValue;
   /*
   // system gain
   v = v * 2.5;  // account for attenuator
