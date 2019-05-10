@@ -243,12 +243,12 @@ int AD7176_dataReady()
 
         /* Read the value of the Status Register */
         ret = AD7176_ReadRegister(&AD7176_regs[Status_Register]);
-//        if(ret < 0) {
-//            //Serial.print("!!! Register read error ");
-//                        //Serial.println(++reg_err, DEC);
-//return -1;
-//
-//        }
+        if(ret < 0) {
+            Serial.println("!!! Register read error ");
+                        //Serial.println(++reg_err, DEC);
+return -99;
+
+        }
 
 
      byte stat = AD7176_regs[Status_Register].value;

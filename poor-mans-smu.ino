@@ -71,6 +71,9 @@ float DACVout;  // TODO: Dont use global
 int noOfWidgets = 6;
 int activeWidget = 0;
 
+int slider_value;
+
+
 #include "dial.h"
 
 void setup()
@@ -80,9 +83,9 @@ delay(50);
     pinMode(6,OUTPUT); // LCD powerdown pin?
    digitalWrite(6, HIGH);
    
-  Serial.begin(115200);
-   while(!Serial) {
-  }
+//  Serial.begin(115200);
+//   while(!Serial) {
+//  }
      pinMode(11,OUTPUT);
    pinMode(12,INPUT);
    pinMode(13,OUTPUT);
@@ -216,7 +219,7 @@ void voltagePanel(int x, int y) {
   //rawValue
   //renderDeviation(x + 667,y + 125, V_FILTERS.mean /*V_STATS.rawValue*/, SMU[0].getSetValuemV(), false);
 
-  showStatusIndicator(x+630, y+5, "FILTER", true, false);
+  showStatusIndicator(x+630, y+5, "FILTER", V_FILTERS.filterSize>1, false);
   showStatusIndicator(x+720, y+5, "NULL", false, false);
   showStatusIndicator(x+630, y+45, "50Hz", false, false);
   showStatusIndicator(x+720, y+45, "4 1/2", false, false);
@@ -272,6 +275,17 @@ void renderExperimental(int x, int y, float valM, float setM, bool cur) {
   }
   float degrees = -deviationInPercent * 700.0;
   renderAnalogGauge(x,y,240, degrees, deviationInPercent, "Deviation from SET");
+
+   GD.Tag(123);
+     GD.ColorRGB(COLOR_VOLT);
+
+  GD.cmd_slider(500, 320, 204,15, OPT_FLAT, slider_value, 65535);
+  GD.cmd_track(500, 320, 204, 20, 123);
+  GD.ColorRGB(0xffffff);
+      //GD.cmd_number(x+30, y, font, 3, deviationInPercent * 1000.0);
+  GD.cmd_text(550,290, 27, 0, "Filter size:");
+  GD.cmd_number(630, 290, 27, 0, V_FILTERS.filterSize);
+
 }
 
 void renderAnalogGauge(int x, int y, int size, float degrees, float value, char* title) {
@@ -548,7 +562,6 @@ void bluredBackground() {
     GD.Vertex2ii(0,0);
     GD.Vertex2ii(800, 480);
 }
-
 void handleMenuScrolldown(){
 
   if (gestureDetected == GEST_MOVE_DOWN && mainMenuActive == false) {
@@ -601,7 +614,8 @@ void handleMenuScrolldown(){
     GD.Tag(MAIN_MENU_CLOSE);
     GD.cmd_button(360,scrollMainMenu-10,80,40,28,0,"CLOSE");
    
-    GD.get_inputs();
+
+
 
     if(GD.inputs.tag == MAIN_MENU_CLOSE && scrollMainMenuDir == 0) {
       scrollMainMenuDir = -1;
@@ -816,7 +830,7 @@ void loop()
 
   int dataR = SMU[0].dataReady();
   if (dataR == -99) {
-    Serial.print("DONT USE SAMPLE!");  
+    Serial.println("DONT USE SAMPLE!");  
   }
   else if (dataR == 1) {
     float Cout = SMU[0].measureCurrent();
@@ -848,7 +862,6 @@ void loop()
        Vout = CALIBRATION.adjust(Vout);
    
        V_STATS.addSample(Vout);
-       //V_FILTERS.updateMean(Vout);
        V_FILTERS.updateMean(Vout);
 
     //}
@@ -858,7 +871,19 @@ void loop()
   disableSPIunits();
   //delay(1);
   GD.resume();
-  
+
+    GD.get_inputs();
+
+switch (GD.inputs.track_tag & 0xff) {
+  case 123:
+  //Serial.println("S");
+  slider_value = GD.inputs.track_val;
+  Serial.print("Set filter value:");
+  int v = 100.0 * slider_value / 65535.0;
+  Serial.println(v);
+
+  V_FILTERS.setFilterSize(int(v));
+  }
 
   if (!gestureDetected) {
     if (GD.inputs.tag == BUTTON_VOLT_SET) {
@@ -868,11 +893,15 @@ void loop()
     }
   }
 
-  GD.get_inputs();
+  //GD.get_inputs();
+
+  
   detectGestures();
 
   GD.Clear();
   renderDisplay();
+
+ 
   
   if (DIAL.isDialogOpen()) {
     bluredBackground();
