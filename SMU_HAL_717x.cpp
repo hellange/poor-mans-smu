@@ -1,8 +1,7 @@
 
 #include "SMU_HAL_717x.h"
 
-float DACA_RANGE_LOW = -10;
-float DACA_RANGE_HIGH = 10;
+
 
 
 
@@ -169,7 +168,7 @@ int ADCClass::init(){
   float set_dac[]  = {0.0, 0.10000, 0.20000, 0.90000, 1000.00, 1200.00, 1600.00, 1800.00, 2000.00, 3000.00, 4000.00, 5000.00, 6000.00, 7000.00, 8000.00, 9000.00, 10000.00};
   
   // actual output
-  float meas_dac[] = {0.0, 0.10000, 0.20000, 0.90000, 1000.03, 1200.00, 1599.89, 1799.86, 1999.85, 2999.59, 3999.39, 4999.12, 5998.93, 6998.66, 7998.46, 8193.95, 10000.00};
+  float meas_dac[] = {0.0, 0.10000, 0.20000, 0.89998, 999.93, 1200.00, 1599.93, 1799.90, 1999.89, 2999.84, 4000.00, 5000.00, 6000.00, 6998.66, 7998.46, 9000.00, 10000.00};
 
 float nonlinear_comp(float milliVolt) {
    // Nonlinearity
@@ -177,7 +176,7 @@ float nonlinear_comp(float milliVolt) {
    Serial.print(milliVolt);
    Serial.println(" millivolt");
    float v = milliVolt;
-  for (int i=0;i<16;i++) {
+  for (int i=0;i<17;i++) {
     if (v > meas_dac[i] && v <= meas_dac[i+1]) {
       float adj_factor_low = set_dac[i] - meas_dac[i];
       float adj_factor_high = set_dac[i+1] - meas_dac[i+1];
@@ -207,40 +206,39 @@ float nonlinear_comp(float milliVolt) {
 }
 
 uint32_t voltage_to_code_adj(float dac_voltage, float min_output, float max_output, bool serialOut){
- dac_voltage = dac_voltage - 0.000250; // offset
   dac_voltage = dac_voltage * 5.0/4.096; // using 4.096 ref instead of 5.0
- dac_voltage = dac_voltage * 0.99960;
-Serial.print("voltage:");
-Serial.print(dac_voltage);
-Serial.println(" volt");
+  dac_voltage = dac_voltage - 0.000640; // offset
 
+  dac_voltage = dac_voltage * 0.99976;
+  Serial.print("voltage:");
+  Serial.print(dac_voltage);
+  Serial.println(" volt");
   dac_voltage = nonlinear_comp(dac_voltage * 1000.0) / 1000.0;
-
   return LTC2758_voltage_to_code(dac_voltage, min_output, max_output, serialOut);
 }
 
 
-int8_t ADCClass::fltSetCommitVoltageSource(float fVoltage) {
-   setValueV = fVoltage;
-   nowValueV = fVoltage;
-   Serial.println(" XXXXXXXXXXXXXXXXXXXXXXXXX ");
-    Serial.println(fVoltage);
-    //SPAN
-    //       Serial.println("|    0   |    0 - 5 V    |");
-    //  Serial.println("|    1   |    0 - 10 V    |");
-    //  Serial.println("|    2   |   -5 - +5 V   |");
-    //  Serial.println("|    3   |  -10 - +10 V  |");
-    //  Serial.println("|    4   | -2.5 - +2.5 V |");
-    //  Serial.println("|    5   | -2.5 - +7.5 V |");
-      uint32_t choice = 3;
-      uint32_t span = (uint32_t)(choice << 2);
-      
-        LTC2758_write(LTC2758_CS, LTC2758_WRITE_SPAN_DAC, 0, span);
+int8_t ADCClass::fltSetCommitVoltageSource(float v) {
+  setValueV = v;
+  nowValueV = v;
 
-      float v_adj = voltage_to_code_adj(fVoltage, DACA_RANGE_LOW, DACA_RANGE_HIGH, false);
-       LTC2758_write(LTC2758_CS, LTC2758_WRITE_CODE_UPDATE_DAC, 0, v_adj); 
+  //SPAN 0 = 0 to5V
+  //     1 = 0 to 10V
+  //     2 = -5 to 5 V
+  //     3 = -10 to 10V
+  //     4 = -2.5 to +2.5V
+  //     5 = -2.5 to + 7.5V
+  uint32_t choice = 3;
+  uint32_t span = (uint32_t)(choice << 2);
+  float DAC_RANGE_LOW = -10;
+  float DAC_RANGE_HIGH = 10;
+  
+  LTC2758_write(LTC2758_CS, LTC2758_WRITE_SPAN_DAC, 0, span);
 
-   return nowValueV;
+  float v_adj = voltage_to_code_adj(v, DAC_RANGE_LOW, DAC_RANGE_HIGH, false);
+  LTC2758_write(LTC2758_CS, LTC2758_WRITE_CODE_UPDATE_DAC, 0, v_adj); 
+
+ return nowValueV;
  }
  
  int8_t ADCClass::fltSetCommitCurrentSource(float fCurrent, int8_t up_down_both) {
@@ -257,18 +255,10 @@ int8_t ADCClass::fltSetCommitVoltageSource(float fVoltage) {
 //  return nowValueI;
 
     AD7176_ReadRegister(&AD7176_regs[4]);
-  float v = (float) ((AD7176_regs[4].value*VFSR*1000.0)/FSR); 
-  v=v-VREF*1000.0;
-  nowValueI = v/1000.0;
-
-
-
-
-
-
-  return v;
-
-  
+    float v = (float) ((AD7176_regs[4].value*VFSR*1000.0)/FSR); 
+    v=v-VREF*1000.0;
+    nowValueI = v/1000.0;
+    return v;
  }
 
  boolean ADCClass::compliance(){
@@ -276,7 +266,6 @@ int8_t ADCClass::fltSetCommitVoltageSource(float fVoltage) {
  }
 
  float ADCClass::getSetValuemV(){
-
   return setValueV * 1000.0;
  }
 

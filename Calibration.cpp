@@ -5,13 +5,11 @@
 
 
 //TODO: remove globals
-  float real_c[]  = {0.0, 1.0, 50.00, 500.00, 1000.00, 1500.00, 2000.00};
-  float meas_c[]  = {0.0, 0.960, 49.90, 500.00, 1000.10, 1500.10, 2000.0};
-
   
 void CalibrationClass::init() {
   nullValue = 0.0;
   timeSinceLastChange = millis();
+ 
 }
 
 void CalibrationClass::setNullValue(float v) {
@@ -44,14 +42,14 @@ float CalibrationClass::adjust(float v){
   v=v*1.00037;
 
   // Nonlinearity
-  for (int i=0;i<5;i++) {
-    if (v > meas_c[i] && v <= meas_c[i+1]) {
-      float adj_factor_low = real_c[i] - meas_c[i];
-      float adj_factor_high = real_c[i+1] - meas_c[i+1];
+  for (int i=0;i<11;i++) {
+    if (v > meas_adc[i] && v <= meas_adc[i+1]) {
+      float adj_factor_low = set_adc[i] - meas_adc[i];
+      float adj_factor_high = set_adc[i+1] - meas_adc[i+1];
       float adj_factor_diff = adj_factor_high - adj_factor_low;
 
-      float range = real_c[i+1] - real_c[i];
-      float partWithinRange = ( (v-real_c[i]) / range); // 0 to 1. Where then 0.5 is in the middle of the range 
+      float range = set_adc[i+1] - set_adc[i];
+      float partWithinRange = ( (v-set_adc[i]) / range); // 0 to 1. Where then 0.5 is in the middle of the range 
       float adj_factor = adj_factor_low + adj_factor_diff * partWithinRange;
  /*
       Serial.print("meas:");  
@@ -82,9 +80,9 @@ void CalibrationClass::renderCal(int x, int y, float valM, float setM, bool cur)
       GD.Begin(LINE_STRIP);
 
       for (int i=0;i<10;i++) {
-        GD.Vertex2ii(x+100+i*50, y + 200 - real_c[i] / 100.0);
-        GD.Vertex2ii(x+100+i*50, - 10 +y + 200 - real_c[i] / 100.0);
-        GD.Vertex2ii(x+100+i*50, y + 200 - real_c[i] / 100.0);
+        GD.Vertex2ii(x+100+i*50, y + 200 - set_adc[i] / 100.0);
+        GD.Vertex2ii(x+100+i*50, - 10 +y + 200 - set_adc[i] / 100.0);
+        GD.Vertex2ii(x+100+i*50, y + 200 - set_adc[i] / 100.0);
 
       }
 
@@ -94,15 +92,15 @@ void CalibrationClass::renderCal(int x, int y, float valM, float setM, bool cur)
       GD.ColorRGB(0xff0000);
 
   for (int i=0;i<10;i++) {
-      float diff = real_c[i] - meas_c[i];
-      GD.Vertex2ii(x+100+i*50, y + 200 - (meas_c[i]+diff*100.0) / 100.0);
+      float diff = set_adc[i] - meas_adc[i];
+      GD.Vertex2ii(x+100+i*50, y + 200 - (meas_adc[i]+diff*100.0) / 100.0);
   }
 
       GD.ColorRGB(0xeeeeee);
 
   for (int i=0;i<10;i++) {
         
-      GD.cmd_number(x+100+i*50 - 15, y + 210, 26, 4, (int)real_c[i]);
+      GD.cmd_number(x+100+i*50 - 15, y + 210, 26, 4, (int)set_adc[i]);
 
   }
   
