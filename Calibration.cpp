@@ -5,8 +5,8 @@
 
 
 //TODO: remove globals
-  float real_c[]  = {0.0, 1.0, 50.00, 500.00, 900.00, 1400.00, 2000.00};
-  float meas_c[]  = {0.0, 0.960, 49.90, 500.02, 900.07, 1400.20, 2000.44};
+  float real_c[]  = {0.0, 1.0, 50.00, 500.00, 1000.00, 1500.00, 2000.00};
+  float meas_c[]  = {0.0, 0.960, 49.90, 500.00, 1000.10, 1500.10, 2000.0};
 
   
 void CalibrationClass::init() {
@@ -41,7 +41,7 @@ float CalibrationClass::adjust(float v){
   v = v * 2.5;  // account for attenuator
 */
   // other gain factors
-  v=v*1.00035;
+  v=v*1.00037;
 
   // Nonlinearity
   for (int i=0;i<5;i++) {

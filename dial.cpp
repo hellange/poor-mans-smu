@@ -353,8 +353,8 @@ void DialClass::validate(double mv) {
       showError("Max voltage is 30V");
       return;
     }
-    else if (decimalsAfterComma > 3) {
-      showError("Max resolution in V range is 1mV");
+    else if (decimalsAfterComma > 4) {
+      showError("Max resolution in V range is 100uV");
       return;
     }
   }

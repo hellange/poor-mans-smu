@@ -37,10 +37,10 @@ static st_reg init_state[] =
     
     //{0x28, 2, 0, 0x020Al, "FilterCf0"}, //Filter_Config_1
     // {0x28, 2, 0, 0x0214l, "FilterCf0"}, //Filter_Config_1  // 5 pr sek
-       {0x28, 2, 0, 0x0213l, "FilterCf0"}, //Filter_Config_1  // 10 pr sek
+    //   {0x28, 2, 0, 0x0213l, "FilterCf0"}, //Filter_Config_1  // 10 pr sek
     // {0x28, 2, 0, 0x0212l, "FilterCf0"}, //Filter_Config_1  // 16.66 pr sek
-   // {0x28, 2, 0, 0x0211l, "FilterCf0"}, //Filter_Config_1  // 20 pr sek
-    // {0x28, 2, 0, 0x0210l, "FilterCf0"}, //Filter_Config_1  // 49.96 pr sek
+    {0x28, 2, 0, 0x0211l, "FilterCf0"}, //Filter_Config_1  // 20 pr sek
+     //{0x28, 2, 0, 0x0210l, "FilterCf0"}, //Filter_Config_1  // 49.96 pr sek
 
     
     {0x29, 2, 0, 0x0214l, "FilterCf1"}, //Filter_Config_2
@@ -165,12 +165,56 @@ int ADCClass::init(){
   span = (uint32_t)(choice << 2);
  */
 
+ // set
+  float set_dac[]  = {0.0, 0.10000, 0.20000, 0.90000, 1000.00, 1200.00, 1600.00, 1800.00, 2000.00, 3000.00, 4000.00, 5000.00, 6000.00, 7000.00, 8000.00, 9000.00, 10000.00};
+  
+  // actual output
+  float meas_dac[] = {0.0, 0.10000, 0.20000, 0.90000, 1000.03, 1200.00, 1599.89, 1799.86, 1999.85, 2999.59, 3999.39, 4999.12, 5998.93, 6998.66, 7998.46, 8193.95, 10000.00};
+
+float nonlinear_comp(float milliVolt) {
+   // Nonlinearity
+   Serial.print("Looping up in comp table for ");
+   Serial.print(milliVolt);
+   Serial.println(" millivolt");
+   float v = milliVolt;
+  for (int i=0;i<16;i++) {
+    if (v > meas_dac[i] && v <= meas_dac[i+1]) {
+      float adj_factor_low = set_dac[i] - meas_dac[i];
+      float adj_factor_high = set_dac[i+1] - meas_dac[i+1];
+      float adj_factor_diff = adj_factor_high - adj_factor_low;
+
+      float range = set_dac[i+1] - set_dac[i];
+      float partWithinRange = ( (v-set_dac[i]) / range); /* 0 to 1. Where then 0.5 is in the middle of the range */
+      float adj_factor = adj_factor_low + adj_factor_diff * partWithinRange;
+ 
+      Serial.print("meas:");  
+      Serial.print(v, 3);
+      Serial.print(", range:");  
+      Serial.print(range, 3);
+      Serial.print(", part:");  
+      Serial.print(partWithinRange, 3);
+      Serial.print(", factor:");  
+      Serial.println(adj_factor, 3);
+
+      Serial.flush();
+      v = v + adj_factor; 
+      
+      return v;
+    }
+  } 
+  Serial.println("no comp");
+  return milliVolt;  
+}
+
 uint32_t voltage_to_code_adj(float dac_voltage, float min_output, float max_output, bool serialOut){
  dac_voltage = dac_voltage - 0.000250; // offset
   dac_voltage = dac_voltage * 5.0/4.096; // using 4.096 ref instead of 5.0
- dac_voltage = dac_voltage * 0.99985;
+ dac_voltage = dac_voltage * 0.99960;
+Serial.print("voltage:");
+Serial.print(dac_voltage);
+Serial.println(" volt");
 
-  //dac_voltage = nonlinear_comp(dac_voltage);
+  dac_voltage = nonlinear_comp(dac_voltage * 1000.0) / 1000.0;
 
   return LTC2758_voltage_to_code(dac_voltage, min_output, max_output, serialOut);
 }
@@ -194,13 +238,7 @@ int8_t ADCClass::fltSetCommitVoltageSource(float fVoltage) {
         LTC2758_write(LTC2758_CS, LTC2758_WRITE_SPAN_DAC, 0, span);
 
       float v_adj = voltage_to_code_adj(fVoltage, DACA_RANGE_LOW, DACA_RANGE_HIGH, false);
-        if (fVoltage < 1.0) {
-                   LTC2758_write(LTC2758_CS, LTC2758_WRITE_CODE_UPDATE_DAC, 0, v_adj); // initialize with a value to see that output works
-
-        } else {
-                   LTC2758_write(LTC2758_CS, LTC2758_WRITE_CODE_UPDATE_DAC, 0, v_adj); // initialize with a value to see that output works
-
-        }
+       LTC2758_write(LTC2758_CS, LTC2758_WRITE_CODE_UPDATE_DAC, 0, v_adj); 
 
    return nowValueV;
  }
