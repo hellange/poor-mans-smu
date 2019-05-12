@@ -9,12 +9,16 @@ void (*closedFn)(int type, bool cancel);
  
 
 // type: volt or current  to be implemented
-void DialClass::open(int type, void (*callbackFn)(int type, bool cancel) ) {
+void DialClass::open(int type, void (*callbackFn)(int type, bool cancel), float value ) {
   closedFn = callbackFn;
   vol_cur_type = type;
   dialog=true;  
   negative = false;
+  mv=value;
   clear();
+   digits = 1;
+
+  dialEntries[0] = 1;
 }
 
 float DialClass::getMv() {
@@ -88,6 +92,8 @@ void DialClass::handleKeypadDialog() {
 
   mv = toMv();
   validate(mv);
+
+ 
   renderInput(error);
 
   renderKeypad();
@@ -98,12 +104,7 @@ void DialClass::checkKeypress() {
     int maxDigits = 7;
 
     //GD.get_inputs();
-  
-  if (GD.inputs.tag== KEYBOARD_BACK) {
-    if (digits>0) {
-      digits --;
-    }
-  }
+
  
   if (GD.inputs.tag == KEYBOARD_CANCEL && dialog==true) {
     closedFn(vol_cur_type, true);
@@ -123,6 +124,12 @@ void DialClass::checkKeypress() {
      // }
       if (digits == 0 && GD.inputs.tag == KEYBOARD_COMMA) {
         dialEntries[digits++] = 0;
+      }
+        
+      if (GD.inputs.tag== KEYBOARD_BACK) {
+        if (digits>0) {
+          digits --;
+        }
       }
       if (GD.inputs.tag == KEYBOARD_COMMA) {
         bool alreadyHasComma = false;
@@ -408,4 +415,3 @@ double DialClass::toMv() {
 }
 
 DialClass DIAL;
-

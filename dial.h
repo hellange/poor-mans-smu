@@ -24,7 +24,7 @@ class DialClass {
 
   
 public:
-  void open(int type, void (*closedFn)(int type, bool cancel));
+  void open(int type, void (*closedFn)(int type, bool cancel), float value);
   void clear();
   bool isDialogOpen();
   int  type();
@@ -42,4 +42,3 @@ private:
 };
 
 extern DialClass DIAL;
-

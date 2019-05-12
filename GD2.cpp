@@ -1701,7 +1701,3 @@ void GDClass::dumpscreen(void)
   }
 }
 #endif
-
-
-
-

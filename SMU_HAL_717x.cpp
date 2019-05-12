@@ -1,5 +1,13 @@
 
 #include "SMU_HAL_717x.h"
+
+float DACA_RANGE_LOW = -10;
+float DACA_RANGE_HIGH = 10;
+
+
+
+
+
 static st_reg init_state[] = 
 {
     {0x00, 1, 0, 0x00l,   "Stat_Reg "}, //Status_Register
@@ -28,11 +36,11 @@ static st_reg init_state[] =
     {0x23, 2, 0, 0x1020l, "SetupCfg3"}, //Setup_Config_4
     
     //{0x28, 2, 0, 0x020Al, "FilterCf0"}, //Filter_Config_1
-     //{0x28, 2, 0, 0x0214l, "FilterCf0"}, //Filter_Config_1  // 5 pr sek
-     //  {0x28, 2, 0, 0x0213l, "FilterCf0"}, //Filter_Config_1  // 10 pr sek
+    // {0x28, 2, 0, 0x0214l, "FilterCf0"}, //Filter_Config_1  // 5 pr sek
+       {0x28, 2, 0, 0x0213l, "FilterCf0"}, //Filter_Config_1  // 10 pr sek
     // {0x28, 2, 0, 0x0212l, "FilterCf0"}, //Filter_Config_1  // 16.66 pr sek
-    // {0x28, 2, 0, 0x0211l, "FilterCf0"}, //Filter_Config_1  // 20 pr sek
-     {0x28, 2, 0, 0x0210l, "FilterCf0"}, //Filter_Config_1  // 49.96 pr sek
+   // {0x28, 2, 0, 0x0211l, "FilterCf0"}, //Filter_Config_1  // 20 pr sek
+    // {0x28, 2, 0, 0x0210l, "FilterCf0"}, //Filter_Config_1  // 49.96 pr sek
 
     
     {0x29, 2, 0, 0x0214l, "FilterCf1"}, //Filter_Config_2
@@ -132,14 +140,68 @@ int ADCClass::init(){
     delay(10);
   }
   AD7176_UpdateSettings();
+
+  LTC2758_write(LTC2758_CS, LTC2758_WRITE_SPAN_DAC, ADDRESS_DAC_ALL, 0);  // initialising all channels to 0V - 5V range
+  
+  LTC2758_write(LTC2758_CS, LTC2758_WRITE_CODE_UPDATE_DAC, 0, 0x111); // initialize with a value to see that output works
+  
+
   return 0;
 }
 
 
 
+/*
+ *   Serial.println("|    0   |    0 - 5 V    |");
+  Serial.println("|    1   |    0 - 10 V    |");
+  Serial.println("|    2   |   -5 - +5 V   |");
+  Serial.println("|    3   |  -10 - +10 V  |");
+  Serial.println("|    4   | -2.5 - +2.5 V |");
+  Serial.println("|    5   | -2.5 - +7.5 V |");
+
+  Serial.print("\nEnter your choice: ");
+  choice = read_int();
+  Serial.println(choice);
+  span = (uint32_t)(choice << 2);
+ */
+
+uint32_t voltage_to_code_adj(float dac_voltage, float min_output, float max_output, bool serialOut){
+ dac_voltage = dac_voltage - 0.000250; // offset
+  dac_voltage = dac_voltage * 5.0/4.096; // using 4.096 ref instead of 5.0
+ dac_voltage = dac_voltage * 0.99985;
+
+  //dac_voltage = nonlinear_comp(dac_voltage);
+
+  return LTC2758_voltage_to_code(dac_voltage, min_output, max_output, serialOut);
+}
+
+
 int8_t ADCClass::fltSetCommitVoltageSource(float fVoltage) {
    setValueV = fVoltage;
    nowValueV = fVoltage;
+   Serial.println(" XXXXXXXXXXXXXXXXXXXXXXXXX ");
+    Serial.println(fVoltage);
+    //SPAN
+    //       Serial.println("|    0   |    0 - 5 V    |");
+    //  Serial.println("|    1   |    0 - 10 V    |");
+    //  Serial.println("|    2   |   -5 - +5 V   |");
+    //  Serial.println("|    3   |  -10 - +10 V  |");
+    //  Serial.println("|    4   | -2.5 - +2.5 V |");
+    //  Serial.println("|    5   | -2.5 - +7.5 V |");
+      uint32_t choice = 3;
+      uint32_t span = (uint32_t)(choice << 2);
+      
+        LTC2758_write(LTC2758_CS, LTC2758_WRITE_SPAN_DAC, 0, span);
+
+      float v_adj = voltage_to_code_adj(fVoltage, DACA_RANGE_LOW, DACA_RANGE_HIGH, false);
+        if (fVoltage < 1.0) {
+                   LTC2758_write(LTC2758_CS, LTC2758_WRITE_CODE_UPDATE_DAC, 0, v_adj); // initialize with a value to see that output works
+
+        } else {
+                   LTC2758_write(LTC2758_CS, LTC2758_WRITE_CODE_UPDATE_DAC, 0, v_adj); // initialize with a value to see that output works
+
+        }
+
    return nowValueV;
  }
  
@@ -160,6 +222,12 @@ int8_t ADCClass::fltSetCommitVoltageSource(float fVoltage) {
   float v = (float) ((AD7176_regs[4].value*VFSR*1000.0)/FSR); 
   v=v-VREF*1000.0;
   nowValueI = v/1000.0;
+
+
+
+
+
+
   return v;
 
   
@@ -170,6 +238,7 @@ int8_t ADCClass::fltSetCommitVoltageSource(float fVoltage) {
  }
 
  float ADCClass::getSetValuemV(){
+
   return setValueV * 1000.0;
  }
 

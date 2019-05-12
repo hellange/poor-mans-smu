@@ -269,7 +269,7 @@ return -99;
 
         /* Check the RDY bit in the Status Register */
         if ((AD7176_regs[Status_Register].value & STATUS_REG_RDY) == 0) {
-  //                   Serial.println(AD7176_regs[Status_Register].value, BIN); 
+                    Serial.println(AD7176_regs[Status_Register].value, BIN); 
 
           return AD7176_regs[Status_Register].value;
         } else {

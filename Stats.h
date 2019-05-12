@@ -1,6 +1,6 @@
 
 class StatsClass {
-#define MAX_SAMPLES_BEFORE_STORE 10
+#define MAX_SAMPLES_BEFORE_STORE 1
 
 
 

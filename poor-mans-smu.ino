@@ -59,7 +59,7 @@ int scrollMainMenuDir = 0;
 boolean mainMenuActive = false;
 
 
-#define BUTTON_NULL 155
+#define BUTTON_NULL 220
 StatsClass V_STATS;
 StatsClass C_STATS;
 FiltersClass V_FILTERS;
@@ -161,14 +161,11 @@ void disableSPIunits(){
 // preliminary set the mux address for ADC here...
      pinMode(7, OUTPUT);  // mux master chip select
   digitalWrite(7, HIGH);
-    pinMode(8, OUTPUT);  // cs adr 0
-  digitalWrite(8, LOW);
-  pinMode(9, OUTPUT); // cs adr 1
-  digitalWrite(9, LOW);
+ 
 
   
   
-  pinMode(10, OUTPUT);
+  pinMode(10, OUTPUT);   // lcd
   digitalWrite(10, HIGH);
 }
 
@@ -273,8 +270,12 @@ void handleSliders(int x, int y) {
   GD.cmd_text(550+x,y, 27, 0, "Filter size:");
   GD.cmd_number(630+x,y, 27, 0, V_FILTERS.filterSize);
 
+  if (!DIAL.isDialogOpen()) {
     GD.Tag(BUTTON_NULL);
+  } else {
+        GD.ColorA(100);
 
+  }
     if (CALIBRATION.nullValue!=0.0) {
             GD.ColorRGB(0x00ff00);
 
@@ -283,7 +284,8 @@ void handleSliders(int x, int y) {
 
     }
 
-  GD.cmd_button(x+500,y+100,95,50,29,0,"NULL");
+  GD.cmd_button(x+700,y+130,95,50,29,0,"NULL");
+    GD.ColorA(255);
 
   
 
@@ -890,7 +892,6 @@ void loop()
   }
   else if(dataR == 0) {
     
-  //TODO: dont go in here before NEXT sample is ready !
  
  Vout = SMU[0].measureMilliVoltage();
 
@@ -924,10 +925,15 @@ void loop()
 
   if (!gestureDetected) {
     if (GD.inputs.tag == BUTTON_VOLT_SET) {
-      DIAL.open(BUTTON_VOLT_SET, closeCallback);
+            Serial.println("Vol set");
+
+      DIAL.open(BUTTON_VOLT_SET, closeCallback, SMU[0].getSetValuemV());
     } else if (GD.inputs.tag == BUTTON_CUR_SET) {
-      DIAL.open(BUTTON_CUR_SET, closeCallback);
+      Serial.println("Cur set");
+      DIAL.open(BUTTON_CUR_SET, closeCallback, SMU[0].getSetValuemA());
     } else if (GD.inputs.tag == BUTTON_NULL) {
+            Serial.println("Null set");
+
       CALIBRATION.setNullValue(Vout);
     }
   }
@@ -963,12 +969,15 @@ void closeCallback(int vol_cur_type, bool cancel) {
   if (cancel) {
     return;
   }
+    GD.__end();
+  disableSPIunits();
   if (DIAL.type() == BUTTON_VOLT_SET) {
      if (SMU[0].fltSetCommitVoltageSource(DIAL.getMv() / 1000.0)) printError(_PRINT_ERROR_VOLTAGE_SOURCE_SETTING);
   }
   if (DIAL.type() == BUTTON_CUR_SET) {
      if (SMU[0].fltSetCommitCurrentSource(DIAL.getMv() / 1000.0, _SOURCE_AND_SINK)) printError(_PRINT_ERROR_CURRENT_SOURCE_SETTING);
   }
+  GD.resume();
 }
 
 

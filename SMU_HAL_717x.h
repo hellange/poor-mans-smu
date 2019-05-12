@@ -5,6 +5,7 @@
 #include "AD7176_regs.h"
 #include "AD7176_Comm.h"
 #include "AD7176.h"
+#include "LTC2758.h"
 
 #define FSR (((long int)1<<23)-1)
 
