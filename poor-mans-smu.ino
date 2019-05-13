@@ -60,6 +60,7 @@ boolean mainMenuActive = false;
 
 
 #define BUTTON_NULL 220
+#define BUTTON_UNCAL 221
 StatsClass V_STATS;
 StatsClass C_STATS;
 FiltersClass V_FILTERS;
@@ -220,7 +221,9 @@ void voltagePanel(int x, int y) {
   showStatusIndicator(x+720, y+5, "NULL", CALIBRATION.nullValue!=0.0, false);
   showStatusIndicator(x+630, y+45, "50Hz", false, false);
   showStatusIndicator(x+720, y+45, "4 1/2", false, false);
-  showStatusIndicator(x+630, y+85, "COMP", SMU[0].compliance(), SMU[0].compliance());
+  showStatusIndicator(x+630, y+85, "COMP", SMU[0].compliance(), true);
+  showStatusIndicator(x+720, y+85, "UNCAL", !CALIBRATION.useCalibratedValues, true);
+
 }
 
  
@@ -272,20 +275,32 @@ void handleSliders(int x, int y) {
 
   if (!DIAL.isDialogOpen()) {
     GD.Tag(BUTTON_NULL);
-  } else {
-        GD.ColorA(100);
-
-  }
     if (CALIBRATION.nullValue!=0.0) {
-            GD.ColorRGB(0x00ff00);
-
+      GD.ColorRGB(0x00ff00);
     } else {
-            GD.ColorRGB(0x000000);
-
+      GD.ColorRGB(0x000000);
     }
+  } else {
+    GD.ColorA(100);
+  }
 
   GD.cmd_button(x+700,y+130,95,50,29,0,"NULL");
-    GD.ColorA(255);
+
+
+  if (!DIAL.isDialogOpen()) {
+    GD.Tag(BUTTON_UNCAL);
+    if (CALIBRATION.useCalibratedValues == false) {
+      GD.ColorRGB(0x00ff00);
+    } else {
+      GD.ColorRGB(0x000000);
+    }
+  } else {
+    GD.ColorA(100);
+  }
+
+  GD.cmd_button(x+600,y+130,95,50,29,0,"UNCAL");
+
+  GD.ColorA(255);
 
   
 
@@ -932,9 +947,11 @@ void loop()
       Serial.println("Cur set");
       DIAL.open(BUTTON_CUR_SET, closeCallback, SMU[0].getSetValuemA());
     } else if (GD.inputs.tag == BUTTON_NULL) {
-            Serial.println("Null set");
-
-      CALIBRATION.setNullValue(Vout);
+      Serial.println("Null set");
+      CALIBRATION.toggleNullValue(Vout);
+    } else if (GD.inputs.tag == BUTTON_UNCAL) {
+      Serial.println("Uncal set");
+      CALIBRATION.toggleCalibratedValues();
     }
   }
 

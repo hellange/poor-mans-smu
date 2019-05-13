@@ -222,16 +222,23 @@ int8_t ADCClass::fltSetCommitVoltageSource(float v) {
   setValueV = v;
   nowValueV = v;
 
-  //SPAN 0 = 0 to5V
-  //     1 = 0 to 10V
-  //     2 = -5 to 5 V
-  //     3 = -10 to 10V
+
+  float DAC_RANGE_LOW = -10;
+  float DAC_RANGE_HIGH = 10;
+  //SPAN 0 = 0 to +5V
+  //     1 = 0 to +10V
+  //     2 = -5 to +5 V
+  //     3 = -10 to +10V
   //     4 = -2.5 to +2.5V
   //     5 = -2.5 to + 7.5V
   uint32_t choice = 3;
+  if (v <1.0) {
+    choice = 4;
+    DAC_RANGE_LOW = -2.5;
+    DAC_RANGE_HIGH = 2.5;
+  }
   uint32_t span = (uint32_t)(choice << 2);
-  float DAC_RANGE_LOW = -10;
-  float DAC_RANGE_HIGH = 10;
+
   
   LTC2758_write(LTC2758_CS, LTC2758_WRITE_SPAN_DAC, 0, span);
 

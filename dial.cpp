@@ -160,7 +160,14 @@ void DialClass::checkKeypress() {
       if (GD.inputs.tag== KEYBOARD_V) {
   strncpy(voltDecade, "V" ,2);
       }
-  
+
+      if (GD.inputs.tag == KEYBOARD_PLUS_10MV) {
+        
+      }
+      if (GD.inputs.tag == KEYBOARD_MINUS_10MV) {
+        
+      }
+      
       if (GD.inputs.tag== KEYBOARD_CLR) {
         digits = 0;
       }
@@ -201,6 +208,8 @@ void DialClass::renderKeypad() {
   transButton(x+spacing*3, y+0, 18, symb, 31);
   GD.Tag(KEYBOARD_BACK);
   transButton(x+spacing*4, y+0, 18, "<", 31);
+  GD.Tag(KEYBOARD_PLUS_10MV);
+  transButton(x+spacing*5, y+0, 18, "up", 29);
   
   GD.Tag(4);
   transButton(x+0, y+spacing, 18, "4", 31); 
@@ -212,6 +221,9 @@ void DialClass::renderKeypad() {
   transButton(x+spacing*3, y+spacing, 18, symb_m, 30);
   GD.Tag(KEYBOARD_CLR);
   transButton(x+spacing*4, y+spacing, 18, "Clr", 30);
+  GD.Tag(KEYBOARD_MINUS_10MV);
+  transButton(x+spacing*5, y+spacing, 18, "down", 29);
+
   
   GD.Tag(7);
   transButton(x+0, y+spacing*2, 18, "7", 31); 

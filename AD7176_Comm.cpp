@@ -111,7 +111,7 @@ unsigned char AD7176_Read(unsigned char slaveDeviceId,
     digitalWrite(7, LOW);
   
 
-       delayMicroseconds(1);
+       //delayMicroseconds(1);
     SPI.transfer(data, bytesNumber);
        //delayMicroseconds(1);
 
@@ -148,7 +148,7 @@ unsigned char AD7176_Write(unsigned char slaveDeviceId,
 
   
     digitalWrite(7, LOW);
-       delayMicroseconds(1);
+       //delayMicroseconds(1);
 
     SPI.transfer(data, bytesNumber);
        //delayMicroseconds(5);
