@@ -103,7 +103,7 @@ unsigned char AD7176_Read(unsigned char slaveDeviceId,
     //digitalWrite(AD7176_CS_PIN, LOW);
       
      pinMode(8, OUTPUT);  // cs adr 0
-    digitalWrite(8, LOW);
+    digitalWrite(8, HIGH);
     pinMode(9, OUTPUT); // cs adr 1
     digitalWrite(9, LOW);
     pinMode(7, OUTPUT);  // master chip select
@@ -136,7 +136,7 @@ unsigned char AD7176_Write(unsigned char slaveDeviceId,
    // digitalWrite(AD7176_CS_PIN, LOW);
         
      pinMode(8, OUTPUT);  // cs adr 0
-    digitalWrite(8, LOW);
+    digitalWrite(8, HIGH);
     pinMode(9, OUTPUT); // cs adr 1
     digitalWrite(9, LOW);
     pinMode(7, OUTPUT);  // master chip select

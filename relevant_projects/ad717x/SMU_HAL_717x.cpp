@@ -3,7 +3,9 @@
 static st_reg init_state[] = 
 {
     {0x00, 1, 0, 0x00l,   "Stat_Reg "}, //Status_Register
-    {0x01, 2, 0, 0x8000l, "ADCModReg"}, //ADC_Mode_Register
+   // {0x01, 2, 0, 0x8000l, "ADCModReg"}, //ADC_Mode_Register
+        {0x01, 2, 0, 0x8000l, "ADCModReg"}, //ADC_Mode_Register
+
     {0x02, 2, 0, 0x1040l, "IfModeReg"}, //Interface_Mode_Register
        // {0x02, 2, 0, 0x1080l, "IfModeReg"}, //Interface_Mode_Register
 
@@ -18,7 +20,7 @@ static st_reg init_state[] =
     {0x12, 2, 0, 0x0000l, "Ch_Map_2 "}, //CH_Map_3
     {0x13, 2, 0, 0x0000l, "Ch_Map_3 "}, //CH_Map_4
     {0x20, 2, 0, 0x1020l, "SetupCfg0"}, //Setup_Config_1   //ext ref
-//    {0x20, 2, 0, 0x0020l, "SetupCfg0"}, //Setup_Config_1  unipolar
+ //   {0x20, 2, 0, 0x0020l, "SetupCfg0"}, //Setup_Config_1  unipolar
 
     {0x21, 2, 0, 0x1020l, "SetupCfg1"}, //Setup_Config_2
     {0x22, 2, 0, 0x1020l, "SetupCfg2"}, //Setup_Config_3

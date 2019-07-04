@@ -21,7 +21,7 @@ class ADCClass {
   float setValueV = 0.0;
   
   private:
-    float VREF =2.500; //2.5357;             
+    float VREF = 2.500; //2.5357;             
     float VFSR = VREF; 
   public:
    int init();

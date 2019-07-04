@@ -75,28 +75,22 @@ void LTC2758_write(uint8_t cs, uint8_t dac_command, uint8_t dac_address, uint32_
   //digitalWrite(LTC2758_CS,LOW);
     SPI.beginTransaction (SPISettings (2000000, MSBFIRST, SPI_MODE0));
 
-
-  pinMode(8, OUTPUT);  // cs adr 0
   digitalWrite(8, LOW);
-  pinMode(9, OUTPUT); // cs adr 1
   digitalWrite(9, HIGH);
-  
   digitalWrite(7, LOW);
-
-         delayMicroseconds(1);
+  delayMicroseconds(1);
 
   SPI.transfer(dac_command|dac_address);
   SPI.transfer((uint8_t)((data >> 10) & 0xFF));  // D17:D10
   SPI.transfer((uint8_t)((data >> 2) & 0xFF));     // D9:D2
   SPI.transfer((uint8_t)((data << 6) & 0xFF));     // D1:D0
-       delayMicroseconds(1);
+
+  //delayMicroseconds(1);
 
   digitalWrite(7, HIGH);
-      SPI.endTransaction();
+  SPI.endTransaction();
 
- pinMode(8, OUTPUT);  // cs adr 0
   digitalWrite(8, LOW);
-  pinMode(9, OUTPUT); // cs adr 1
   digitalWrite(9, LOW);
   
   //digitalWrite(LTC2758_CS,HIGH);

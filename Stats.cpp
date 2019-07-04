@@ -79,6 +79,16 @@ void StatsClass::updateMinMax() {
     }
 }
 
+int StatsClass::getNrOfSamplesBeforeStore() {
+  return maxSamplesBeforeStore;
+}
+void StatsClass::setNrOfSamplesBeforeStore(int s) {
+  if (s > MAX_PRELIMBUFFER_SIZE) {
+    s = MAX_PRELIMBUFFER_SIZE;  //TODO: add warning ?
+  }
+  maxSamplesBeforeStore = s;
+}
+
 
 void StatsClass::renderHistogram(int x, int y, bool limitDetails) {   
     //GD.ColorRGB(type==DigitUtilClass::typeVoltage?COLOR_VOLT:COLOR_CURRENT);

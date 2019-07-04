@@ -53,7 +53,7 @@ float CalibrationClass::adjust(float v){
   v = v * 2.5;  // account for attenuator
 */
   // other gain factors
-  v=v*1.00035;
+  v=v*1.000000;
 
   if (!useCalibratedValues) {
     return v;
@@ -111,25 +111,39 @@ void CalibrationClass::renderCal(int x, int y, float valM, float setM, bool cur)
       GD.ColorRGB(0xff0000);
 
       float max_set_value = set_adc[adc_cal_points-1];
+            float min_set_value = set_adc[0];
+
       float max_meas_value = meas_adc[adc_cal_points-1];
 
-
+  // correction graph
+  float correction_display_factor = 1000000.0; // TODO: Make it show as ppm ?  uV ?
   for (int i=0;i<adc_cal_points;i++) {
       float diff = set_adc[i] - meas_adc[i];
-      int xv = 400 *(set_adc[i] / max_set_value);
-      int yv = 150 *(meas_adc[i] / max_meas_value) - (diff/max_meas_value) * 200000.0;
-      GD.Vertex2ii(x+100+xv, y + 200 - yv);
+      int xv = 300 *(set_adc[i] / max_set_value);
+      int yv = /*150 *(meas_adc[i] / max_meas_value) - */(diff/max_meas_value) * correction_display_factor;
+      GD.Vertex2ii(x+400+xv, y + 100 - yv);
   }
 
+ // voltage axis
  GD.ColorRGB(0x00ff00);
  GD.Begin(LINE_STRIP);
       GD.ColorA(100);
   for (int i=0;i<adc_cal_points;i++) {
       float diff = set_adc[i] - meas_adc[i];
-      int xv = 400 *(set_adc[i] / max_set_value);
-      int yv = 150 *(set_adc[i] / max_set_value);
-      GD.Vertex2ii(x+100+xv, y + 200 - yv);
+      int xv = 300 *(set_adc[i] / max_set_value);
+      GD.Vertex2ii(x+400+xv, y + 100);
   }
+
+  // voltage labels
+  for (int i=min_set_value/1000.0;i<=max_set_value/1000.0;i++) {
+      int xv = i* 300/(int)(max_set_value/1000.0);
+      GD.cmd_text(x+400+xv-10, y + 200, 27, 0, i<0?"-":" ");
+      GD.cmd_number(x+400+xv, y + 200, 27, 1, abs(i));
+      GD.cmd_text(x+400+xv+10, y + 200, 27, 0, "V");
+
+  }
+
+  
   
       GD.ColorA(255);
 

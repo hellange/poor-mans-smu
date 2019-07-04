@@ -20,7 +20,7 @@ class ADCClass {
   float setValueV = 0.0;
   
   private:
-    float VREF = 2.5000;             
+    float VREF = 5.000; //2.5000;             
     float VFSR = VREF; 
   public:
    int init();
@@ -35,5 +35,3 @@ class ADCClass {
 };
 
 //extern ADCClass ADC2;
-
-

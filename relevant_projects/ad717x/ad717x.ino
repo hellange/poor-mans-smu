@@ -61,7 +61,7 @@ void loop()
      Serial.print("raw ");
      Serial.print(AD7176_regs[4].value, HEX); 
      Serial.print("=");
-          Serial.print(v);
+          Serial.print(v,3);
      Serial.print("  ");
 
      Serial.println(cntr++);
@@ -73,7 +73,7 @@ void loop()
   
      float gain_factor = 0.0484; // arduino 5V
      gain_factor = 0.0372; // teensy 3.3v
-     v = v + v * gain_factor;
+ //    v = v + v * gain_factor;
      //Serial.print(" adjusted gain ");
      //Serial.print(v);
      //Serial.println(" mv");

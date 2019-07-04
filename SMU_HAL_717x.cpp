@@ -1,7 +1,54 @@
 
 #include "SMU_HAL_717x.h"
+/*
+st_reg init_state[] = 
+{
+    {0x00, 1, 0, 0x00l,   "Stat_Reg "}, //Status_Register
+    {0x01, 2, 0, 0x8000l, "ADCModReg"}, //ADC_Mode_Register
+    {0x02, 2, 0, 0x1840l, "IfModeReg"}, //Interface_Mode_Register
+    {0x03, 3, 0, 0x0000l, "Reg_Check"}, //Register_Check
+    {0x04, 3, 0, 0x0000l, "ADC_Data "}, //Data_Register
+    {0x06, 2, 0, 0x080Cl, "GPIO_Conf"}, //IOCon_Register
+//     {0x06, 2, 0, 0x0800l, "GPIO_Conf"}, //IOCon_Register
+
+    {0x07, 2, 0, 0x0000l, "ID_ST_Reg"}, //ID_st_reg
+    {0x10, 2, 0, 0x8001l, "Ch_Map_0 "}, //CH_Map_1
+    {0x11, 2, 0, 0x0000l, "Ch_Map_1 "}, //CH_Map_2
+    {0x12, 2, 0, 0x0000l, "Ch_Map_2 "}, //CH_Map_3
+    {0x13, 2, 0, 0x0000l, "Ch_Map_3 "}, //CH_Map_4
+    
+ //   {0x20, 2, 0, 0x1020l, "SetupCfg0"}, //Setup_Config_1   //ext ref
+//    {0x20, 2, 0, 0x0020l, "SetupCfg0"}, //Setup_Config_1  unipolar
+
+  {0x20, 2, 0, 0x1f00l, "SetupCfg0"}, //Setup_Config_1   //ext ref 
+  // {0x20, 2, 0, 0x1f20l, "SetupCfg0"}, //Setup_Config_1  //int ref, unipolar 
 
 
+    {0x21, 2, 0, 0x1020l, "SetupCfg1"}, //Setup_Config_2
+    {0x22, 2, 0, 0x1020l, "SetupCfg2"}, //Setup_Config_3
+    {0x23, 2, 0, 0x1020l, "SetupCfg3"}, //Setup_Config_4
+    
+    //{0x28, 2, 0, 0x020Al, "FilterCf0"}, //Filter_Config_1
+    {0x28, 2, 0, 0x0214l, "FilterCf0"}, //Filter_Config_1  // 5 pr sek
+    
+    
+    {0x29, 2, 0, 0x0200l, "FilterCf1"}, //Filter_Config_2
+    {0x2a, 2, 0, 0x0200l, "FilterCf2"}, //Filter_Config_3
+    {0x2b, 2, 0, 0x0200l, "FilterCf3"}, //Filter_Config_4
+    {0x30, 3, 0, 0l,      "Offset_0 "}, //Offset_1
+    {0x31, 3, 0, 0l,      "Offset_1 "},  //Offset_2
+    {0x32, 3, 0, 0l,      "Offset_2 "}, //Offset_3
+    {0x33, 3, 0, 0l,      "Offset_3 "}, //Offset_4
+    {0x38, 3, 0, 0l,      "Gain_0   "}, //Gain_1
+    {0x39, 3, 0, 0l,      "Gain_1   "}, //Gain_2
+    {0x3a, 3, 0, 0l,      "Gain_2   "}, //Gain_3
+    {0x3b, 3, 0, 0l,      "Gain_3   "}, //Gain_4
+    {0xFF, 1, 0, 0l,      "Comm_Reg "} //Communications_Register
+};
+
+
+
+*/
 
 
 
@@ -10,7 +57,10 @@
 static st_reg init_state[] = 
 {
     {0x00, 1, 0, 0x00l,   "Stat_Reg "}, //Status_Register
-    {0x01, 2, 0, 0x8000l, "ADCModReg"}, //ADC_Mode_Register 100uS delay
+    {0x01, 2, 0, 0x8000l, "ADCModReg"}, //ADC_Mode_Register
+    //{0x01, 2, 0, 0x0040l, "ADCModReg"}, //ADC_Mode_Register - internal calibration
+
+
     {0x02, 2, 0, 0x0000l, "IfModeReg"}, //Interface_Mode_Register
 
     {0x03, 3, 0, 0x0000l, "Reg_Check"}, //Register_Check
@@ -19,27 +69,37 @@ static st_reg init_state[] =
 //     {0x06, 2, 0, 0x0800l, "GPIO_Conf"}, //IOCon_Register
 
     {0x07, 2, 0, 0x0000l, "ID_ST_Reg"}, //ID_st_reg
-    
+
+    // voltage meas
     {0x10, 2, 0, 0x8001l, "Ch_Map_0 "}, //CH_Map_1   ain1, ain0
-    
+
+    // current meas
     {0x11, 2, 0, 0x8043l, "Ch_Map_1 "}, //CH_Map_2   ain3, ain2
     //{0x11, 2, 0, 0x0001l, "Ch_Map_1 "}, //CH_Map_2   ain3, ain2
 
     {0x12, 2, 0, 0x0000l, "Ch_Map_2 "}, //CH_Map_3
     {0x13, 2, 0, 0x0000l, "Ch_Map_3 "}, //CH_Map_4
-  //  {0x20, 2, 0, 0x0f00l, "SetupCfg0"}, //Setup_Config_1   //ext ref
-   {0x20, 2, 0, 0x1f20l, "SetupCfg0"}, //Setup_Config_1  unipolar enable buffer
+
+   //{0x20, 2, 0, 0x1f00l, "SetupCfg0"}, //Setup_Config_1   //ext ref 
+   {0x20, 2, 0, 0x1f20l, "SetupCfg0"}, //Setup_Config_1  //int ref, unipolar 
 
     {0x21, 2, 0, 0x1020l, "SetupCfg1"}, //Setup_Config_2
+    
     {0x22, 2, 0, 0x1020l, "SetupCfg2"}, //Setup_Config_3
     {0x23, 2, 0, 0x1020l, "SetupCfg3"}, //Setup_Config_4
     
     //{0x28, 2, 0, 0x020Al, "FilterCf0"}, //Filter_Config_1
-    // {0x28, 2, 0, 0x0214l, "FilterCf0"}, //Filter_Config_1  // 5 pr sek
-    //   {0x28, 2, 0, 0x0213l, "FilterCf0"}, //Filter_Config_1  // 10 pr sek
+
+
+       //  {0x28, 2, 0, 0x0216l, "FilterCf0"}, //Filter_Config_1  // 1.25 pr sek, for AD7172-2 only?
+         //{0x28, 2, 0, 0x0215l, "FilterCf0"}, //Filter_Config_1  // 2.5 pr sek, for AD7172-2 only?
+     //{0x28, 2, 0, 0x0214l, "FilterCf0"}, //Filter_Config_1  // 5 pr sek
+       {0x28, 2, 0, 0x0213l, "FilterCf0"}, //Filter_Config_1  // 10 pr sek
     // {0x28, 2, 0, 0x0212l, "FilterCf0"}, //Filter_Config_1  // 16.66 pr sek
-    {0x28, 2, 0, 0x0211l, "FilterCf0"}, //Filter_Config_1  // 20 pr sek
-     //{0x28, 2, 0, 0x0210l, "FilterCf0"}, //Filter_Config_1  // 49.96 pr sek
+    //{0x28, 2, 0, 0x0211l, "FilterCf0"}, //Filter_Config_1  // 20 pr sek
+    //{0x28, 2, 0, 0x0210l, "FilterCf0"}, //Filter_Config_1  // 49.96 pr sek
+    // {0x28, 2, 0, 0x020fl, "FilterCf0"}, //Filter_Config_1  // 59.92 pr sek
+   //  {0x28, 2, 0, 0x020el, "FilterCf0"}, //Filter_Config_1  // 100 pr sek
 
     
     {0x29, 2, 0, 0x0214l, "FilterCf1"}, //Filter_Config_2
@@ -55,6 +115,8 @@ static st_reg init_state[] =
     {0x3b, 3, 0, 0x555555l,      "Gain_3   "}, //Gain_4
     {0xFF, 1, 0, 0l,      "Comm_Reg "} //Communications_Register
 };
+
+
 
 float ADCClass::measureMilliVoltage() {
   AD7176_ReadRegister(&AD7176_regs[4]);
@@ -140,9 +202,12 @@ int ADCClass::init(){
   }
   AD7176_UpdateSettings();
 
-  LTC2758_write(LTC2758_CS, LTC2758_WRITE_SPAN_DAC, ADDRESS_DAC_ALL, 0);  // initialising all channels to 0V - 5V range
-  
-  LTC2758_write(LTC2758_CS, LTC2758_WRITE_CODE_UPDATE_DAC, 0, 0x111); // initialize with a value to see that output works
+  LTC2758_write(LTC2758_CS, LTC2758_WRITE_SPAN_DAC, ADDRESS_DAC_ALL, 3);  // initialising all channels to -10V - 10V range
+
+  // 0x111 = 
+    LTC2758_write(LTC2758_CS, LTC2758_WRITE_CODE_UPDATE_DAC, 0, 0xaaa); // init to value;
+delay(1000);
+  LTC2758_write(LTC2758_CS, LTC2758_WRITE_CODE_UPDATE_DAC, 0, 0x0); // init to 0;
   
 
   return 0;
@@ -165,10 +230,10 @@ int ADCClass::init(){
  */
 
  // set
-  float set_dac[]  = {0.0, 0.10000, 0.20000, 0.90000, 1000.00, 1200.00, 1600.00, 1800.00, 2000.00, 3000.00, 4000.00, 5000.00, 6000.00, 7000.00, 8000.00, 9000.00, 10000.00};
+  float set_dac[]  = {900.00, 1000.00, 1100.00, 1200.00, 1600.00, 1800.00, 2000.00, 3000.00, 4000.00, 5000.00, 6000.00, 7000.00, 8000.00, 9000.00, 10000.00};
   
   // actual output
-  float meas_dac[] = {0.0, 0.10000, 0.20000, 0.89998, 999.93, 1200.00, 1599.93, 1799.90, 1999.89, 2999.84, 4000.00, 5000.00, 6000.00, 6998.66, 7998.46, 9000.00, 10000.00};
+  float meas_dac[] = {899.52, 999.49, 1099.50, 1199.50, 1599.45, 1799.42, 2000.20, 3001.00, 3999.02, 4999.66, 5999.38, 6999.31, 7999.31, 9000.00, 10000.00};
 
 float nonlinear_comp(float milliVolt) {
    // Nonlinearity
@@ -176,7 +241,7 @@ float nonlinear_comp(float milliVolt) {
    Serial.print(milliVolt);
    Serial.println(" millivolt");
    float v = milliVolt;
-  for (int i=0;i<17;i++) {
+  for (int i=0;i<15;i++) {
     if (v > meas_dac[i] && v <= meas_dac[i+1]) {
       float adj_factor_low = set_dac[i] - meas_dac[i];
       float adj_factor_high = set_dac[i+1] - meas_dac[i+1];
@@ -185,15 +250,17 @@ float nonlinear_comp(float milliVolt) {
       float range = set_dac[i+1] - set_dac[i];
       float partWithinRange = ( (v-set_dac[i]) / range); /* 0 to 1. Where then 0.5 is in the middle of the range */
       float adj_factor = adj_factor_low + adj_factor_diff * partWithinRange;
- 
+
       Serial.print("meas:");  
-      Serial.print(v, 3);
+      Serial.print(v, 4);
       Serial.print(", range:");  
-      Serial.print(range, 3);
+      Serial.print(range, 4);
       Serial.print(", part:");  
-      Serial.print(partWithinRange, 3);
+      Serial.print(partWithinRange, 4);
+      Serial.print(", diff:");  
+      Serial.print(adj_factor_diff, 4);
       Serial.print(", factor:");  
-      Serial.println(adj_factor, 3);
+      Serial.println(adj_factor, 4);
 
       Serial.flush();
       v = v + adj_factor; 
@@ -206,14 +273,17 @@ float nonlinear_comp(float milliVolt) {
 }
 
 uint32_t voltage_to_code_adj(float dac_voltage, float min_output, float max_output, bool serialOut){
-  dac_voltage = dac_voltage * 5.0/4.096; // using 4.096 ref instead of 5.0
-  dac_voltage = dac_voltage - 0.000640; // offset
+  
+      dac_voltage = dac_voltage * 5.0/4.096; // using 4.096 ref instead of 5.0
 
-  dac_voltage = dac_voltage * 0.99976;
+  dac_voltage = dac_voltage - 0.000075; // offset
+
+  dac_voltage = dac_voltage * 0.999760;
   Serial.print("voltage:");
   Serial.print(dac_voltage);
   Serial.println(" volt");
-  dac_voltage = nonlinear_comp(dac_voltage * 1000.0) / 1000.0;
+ // dac_voltage = nonlinear_comp(dac_voltage * 1000.0) / 1000.0;
+
   return LTC2758_voltage_to_code(dac_voltage, min_output, max_output, serialOut);
 }
 
@@ -223,8 +293,7 @@ int8_t ADCClass::fltSetCommitVoltageSource(float v) {
   nowValueV = v;
 
 
-  float DAC_RANGE_LOW = -10;
-  float DAC_RANGE_HIGH = 10;
+
   //SPAN 0 = 0 to +5V
   //     1 = 0 to +10V
   //     2 = -5 to +5 V
@@ -232,17 +301,21 @@ int8_t ADCClass::fltSetCommitVoltageSource(float v) {
   //     4 = -2.5 to +2.5V
   //     5 = -2.5 to + 7.5V
   uint32_t choice = 3;
+  float DAC_RANGE_LOW = -10.0;
+  float DAC_RANGE_HIGH = 10.0;
+  /*
   if (v <1.0) {
     choice = 4;
     DAC_RANGE_LOW = -2.5;
     DAC_RANGE_HIGH = 2.5;
   }
+  */
   uint32_t span = (uint32_t)(choice << 2);
 
   
   LTC2758_write(LTC2758_CS, LTC2758_WRITE_SPAN_DAC, 0, span);
 
-  float v_adj = voltage_to_code_adj(v, DAC_RANGE_LOW, DAC_RANGE_HIGH, false);
+  float v_adj = voltage_to_code_adj(v, DAC_RANGE_LOW, DAC_RANGE_HIGH, true);
   LTC2758_write(LTC2758_CS, LTC2758_WRITE_CODE_UPDATE_DAC, 0, v_adj); 
 
  return nowValueV;

@@ -87,6 +87,12 @@ delay(50);
 //  Serial.begin(115200);
 //   while(!Serial) {
 //  }
+
+     pinMode(7,OUTPUT);
+     pinMode(8,OUTPUT);
+     pinMode(9,OUTPUT);
+     pinMode(10,OUTPUT);
+
      pinMode(11,OUTPUT);
    pinMode(12,INPUT);
    pinMode(13,OUTPUT);
@@ -156,18 +162,17 @@ delay(50);
 
 void disableSPIunits(){
  
-
-
+     pinMode(7,OUTPUT);
+     pinMode(8,OUTPUT);
+     pinMode(9,OUTPUT);
+     pinMode(10,OUTPUT);
 
 // preliminary set the mux address for ADC here...
-     pinMode(7, OUTPUT);  // mux master chip select
+  //pinMode(7, OUTPUT);  // mux master chip select
   digitalWrite(7, HIGH);
  
-
-  
-  
-  pinMode(10, OUTPUT);   // lcd
-  digitalWrite(10, HIGH);
+  //pinMode(10, OUTPUT);   // lcd
+  //digitalWrite(10, HIGH);
 }
 
 
@@ -256,22 +261,31 @@ void voltagePanel(int x, int y) {
 
 
 
-int slider_value; // TODO: Not global !
-#define tag_filter_slider 123
+
+#define TAG_FILTER_SLIDER 123
+#define TAG_FILTER_SLIDER_B 122
+
+
 void handleSliders(int x, int y) {
   
-  y=y+50;
-  GD.Tag(tag_filter_slider);
+  y=y+40;
 
+//    GD.ColorRGB(0xffffff);
+//
+  GD.Tag(TAG_FILTER_SLIDER);
+  GD.cmd_slider(500+x, y+30, 204,15, OPT_FLAT, V_FILTERS.filterSize * (65535/100), 65535);
+  GD.cmd_track(500+x, y+30, 204, 20, TAG_FILTER_SLIDER);
+  
+  GD.Tag(TAG_FILTER_SLIDER_B);
+  GD.cmd_slider(500+x, y+90, 204,15, OPT_FLAT, V_STATS.getNrOfSamplesBeforeStore()* (65535/100), 65535);
+  GD.cmd_track(500+x, y+90, 204, 20, TAG_FILTER_SLIDER_B);
 
   
-  GD.ColorRGB(COLOR_VOLT);
-  GD.cmd_slider(500+x, y+30, 204,15, OPT_FLAT, slider_value, 65535);
-  GD.cmd_track(500+x, y+30, 204, 20, 123);
-  
-  GD.ColorRGB(0xffffff);
   GD.cmd_text(550+x,y, 27, 0, "Filter size:");
   GD.cmd_number(630+x,y, 27, 0, V_FILTERS.filterSize);
+  GD.cmd_text(550+x,y+60, 27, 0, "Samples size:");
+  GD.cmd_number(655+x,y+60, 27, 0, V_STATS.getNrOfSamplesBeforeStore());
+  
 
   if (!DIAL.isDialogOpen()) {
     GD.Tag(BUTTON_NULL);
@@ -309,14 +323,21 @@ void handleSliders(int x, int y) {
   
   GD.get_inputs();
   switch (GD.inputs.track_tag & 0xff) {
-    case tag_filter_slider:
-      slider_value = GD.inputs.track_val;
+    case TAG_FILTER_SLIDER: {
       Serial.print("Set filter value:");
-      int v = 100.0 * slider_value / 65535.0;
-      Serial.println(v);
-      V_FILTERS.setFilterSize(int(v));
+      int slider_val = 100.0 * GD.inputs.track_val / 65535.0;
+      Serial.println(slider_val);
+      V_FILTERS.setFilterSize(int(slider_val));
       break;
-
+    }
+    case TAG_FILTER_SLIDER_B:{
+      Serial.print("Set samples value:");
+      int slider_val = 100.0 * GD.inputs.track_val / 65535.0;
+      Serial.println(slider_val);
+      V_STATS.setNrOfSamplesBeforeStore(int(slider_val));
+      break;}
+    default:
+      break;
   }
 }
 
@@ -830,55 +851,8 @@ bool readyToDoStableMeasurements() {
   }
 }
 
-int aliveCounter = 0;
-void loop3(){
-  GD.resume();
-    GD.Clear();
-    GD.ColorRGB(COLOR_VOLT);
-  GD.ColorA(120);
-  GD.cmd_text(20, 20 ,   29, 0, "Hi !");
-  GD.swap();
-
-  
-    Serial.print("Alive !"); 
-        Serial.println(aliveCounter++);  
- 
-Serial.flush();
-delay(1000);
-}
 
 
-void loop2()
-{
-
-  // ADC2.init();
-//delay(5000);
-
-   long ret = SMU[0].dataReady();
-   if(ret < 0) {
-   } else {
-     float v = SMU[0].measureMilliVoltage();
-
-     Serial.print("raw ");
-     Serial.print(AD7176_regs[4].value, HEX); 
-     Serial.print("=");
-     Serial.print(v);
-     
-     float offset = -0.0001;
-     v=v+offset;
-     Serial.print(" adjusted offset ");
-     Serial.print(v);
-  
-     float gain_factor = 0.0484; // arduino 5V
-     gain_factor = 0.0372; // teensy 3.3v
-     v = v + v * gain_factor;
-     
-     Serial.print(" adjusted gain ");
-     Serial.print(v);
-     Serial.println(" mv");
-     //delay(1000);
-   }
-}
 
 float Vout = 0.0;
 float VoutLast = 0.0;
@@ -923,8 +897,13 @@ void loop()
     //if (scrollDir == 0) {
        //V_STATS.addSample(SMU[0].measureMilliVoltage() * 1000.0);
 
-       Vout = CALIBRATION.adjust(Vout);
-   
+      
+    Vout = Vout / 0.4;  // funnel amplifier x0.4
+   //Vout = Vout + 2500.0;
+   Vout = Vout - 0.290;
+      Vout = Vout * 0.99971;  // gain
+
+    Vout = CALIBRATION.adjust(Vout);
        V_STATS.addSample(Vout);
        V_FILTERS.updateMean(Vout);
 
