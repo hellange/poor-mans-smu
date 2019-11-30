@@ -19,7 +19,7 @@ void CurrentDisplayClass::renderMeasured(int x, int y, float rawMa, boolean over
 
   int a, ma, ua, na;
   bool neg;
-  bool uA_mode_enabled = true; // set true if you want uA scale
+  bool uA_mode_enabled = false; // set true if you want uA scale
   DIGIT_UTIL.separate2(&a, &ma, &ua, &na, &neg, rawMa);
   
   if (overflow) {
@@ -63,13 +63,6 @@ void CurrentDisplayClass::renderSet(int x, int y, float rawMa) {
   bool neg;
 
   DIGIT_UTIL.separate(&a, &ma, &ua, &neg, rawMa);
-
-    // Currently dont show sign for current. Positive value is used both for neg and pos (sink/source). Preliminary ?
-//    if (neg) {
-//        GD.cmd_text(x, y, 31, 3, "-");
-//    } else {
-//        GD.cmd_text(x, y, 31, 3, "+");
-//    }
   
   GD.ColorRGB(COLOR_CURRENT);
 

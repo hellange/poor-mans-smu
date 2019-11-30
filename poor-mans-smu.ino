@@ -323,6 +323,8 @@ void handleSliders(int x, int y) {
       int slider_val = 100.0 * GD.inputs.track_val / 65535.0;
       Serial.println(slider_val);
       V_STATS.setNrOfSamplesBeforeStore(int(slider_val));
+      // for now, just use same is current as for voltage
+      C_STATS.setNrOfSamplesBeforeStore(int(slider_val));
       break;}
     default:
       break;
@@ -830,8 +832,6 @@ void detectGestures() {
 }
 
 
-
-
 unsigned long startupMillis =  millis();
 
 bool readyToDoStableMeasurements() {
@@ -866,9 +866,9 @@ void loop()
   }
   else if (dataR == 1) {
     Cout = SMU[0].measureCurrent();
-      Cout = Cout / 0.8;  // funnel amplifier x0.8
+     Cout = Cout / 0.8;  // funnel amplifier x0.8
 
-    // Cout = Cout + 2.624; // preliminary nulling for test
+   
       
     C_STATS.addSample(Cout);
 //  Serial.print("Measured raw:");  
@@ -878,10 +878,9 @@ void loop()
   }
   else if(dataR == 0) {
     
- 
- Vout = SMU[0].measureMilliVoltage();
+    Vout = SMU[0].measureMilliVoltage();
 
-  VoutLast = Vout;
+    VoutLast = Vout;
 //  Serial.print("Measured raw:");  
 //  Serial.print(Vout, 3);
 //  Serial.println(" mV");  
@@ -895,15 +894,13 @@ void loop()
        //V_STATS.addSample(SMU[0].measureMilliVoltage() * 1000.0);
 
 
-  Vout = Vout / 0.8;  // funnel amplifier 
-
-  //Vout = Vout +1.17-0.68+0.230-0.18+0.09-0.145;// offset
-
-Vout = Vout*1.00034; // gain
+    Vout = Vout / 0.8;  // funnel amplifier 
+    Vout = Vout +3.0; // offset
+    Vout = Vout*1.00034; // gain
     Vout = CALIBRATION.adjust(Vout);
 
-       V_STATS.addSample(Vout);
-       V_FILTERS.updateMean(Vout);
+    V_STATS.addSample(Vout);
+    V_FILTERS.updateMean(Vout);
 
     //}
    // }

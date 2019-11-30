@@ -102,7 +102,7 @@ static st_reg init_state[] =
  {0x28, 2, 0, 0x0211l, "FilterCf0"}, //Filter_Config_1  // 20 pr sek
  //   {0x28, 2, 0, 0x0210l, "FilterCf0"}, //Filter_Config_1  // 49.96 pr sek
     // {0x28, 2, 0, 0x020fl, "FilterCf0"}, //Filter_Config_1  // 59.92 pr sek
-   //  {0x28, 2, 0, 0x020el, "FilterCf0"}, //Filter_Config_1  // 100 pr sek
+    // {0x28, 2, 0, 0x020el, "FilterCf0"}, //Filter_Config_1  // 100 pr sek
 
     
     {0x29, 2, 0, 0x0214l, "FilterCf1"}, //Filter_Config_2
@@ -242,7 +242,7 @@ uint32_t voltage_to_code_adj(float dac_voltage, float min_output, float max_outp
 //  dac_voltage = nonlinear_comp(dac_voltage * 1000.0) / 1000.0;
 //}
   dac_voltage = dac_voltage * 5.0/4.096; // using 4.096 ref instead of 5.0
-  dac_voltage = dac_voltage + 0.000070-0.000438; // offset
+  dac_voltage = dac_voltage + 0.0; // offset
   dac_voltage = dac_voltage * 0.99978; // gain
   
   Serial.print("voltage:");
@@ -299,20 +299,25 @@ int8_t ADCClass::fltSetCommitVoltageSource(float v) {
 
  
  float ADCClass::measureCurrent(){
-
-//  float simulatedLoad = 10.0; //ohm
-//  nowValueI = nowValueV / simulatedLoad;
-//  
-//  nowValueI =  nowValueI + (random(0, 100) / 1000000.0);
-//  return nowValueI;
+    bool full_board = true; // set to true to account for shunt and gain/offsets other places that dac/adc
 
     AD7176_ReadRegister(&AD7176_regs[4]);
     float v = (float) ((AD7176_regs[4].value*VFSR*1000.0)/FSR); 
     v=v-VREF*1000.0;
+    // DONT INCLUDE THESE ADJUSTMENTS WHEN TESTING ONLY DAC/ADC BOARD !!!!
+     if (full_board == true) {
+      //v=v/100.0; // 100 ohm shunt. Comment out if using 1ohm shunt
+      v=v/10.0; // x10 amplifier
 
-    // account for shunt value and x10 amplifier
-   v=v/1000.0; // 100 ohm shunt
-  //v=v/10.0; // 1ohm shunt 
+      // account for offset in amps
+      v = v + 1.135-0.180; // 1ohm shunt
+      //v = v + 0.011; // 100ohm shunt
+  
+      // account for gain in amps
+      v = v * 0.970; // 1ohm shunt
+      //v = v * 0.9875; // 100ohm shunt
+    }
+    
     compliance = abs(setValueI) < abs(v/1000.0);
     return v;
  }
