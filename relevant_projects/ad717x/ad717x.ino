@@ -42,12 +42,20 @@ void disableOtherSPIunits(){
 }
     int cntr = 0;
 
-    void loop2() 
+    void loop() 
     {
         //ADC2.init();
-delay(1000);
+ 
+    
+          Serial.println(AD7176_ReadRegister(&AD7176_regs[6]));
+    Serial.println(AD7176_regs[6].value, HEX);
+
+   
+    
+    Serial.flush();
+delay(500);
     }
-void loop()
+void loop2()
 {
 
 

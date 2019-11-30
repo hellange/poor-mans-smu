@@ -19,8 +19,8 @@ static st_reg init_state[] =
     {0x11, 2, 0, 0x0000l, "Ch_Map_1 "}, //CH_Map_2
     {0x12, 2, 0, 0x0000l, "Ch_Map_2 "}, //CH_Map_3
     {0x13, 2, 0, 0x0000l, "Ch_Map_3 "}, //CH_Map_4
-    {0x20, 2, 0, 0x1020l, "SetupCfg0"}, //Setup_Config_1   //ext ref
- //   {0x20, 2, 0, 0x0020l, "SetupCfg0"}, //Setup_Config_1  unipolar
+   // {0x20, 2, 0, 0x1020l, "SetupCfg0"}, //Setup_Config_1   //ext ref
+    {0x20, 2, 0, 0x0020l, "SetupCfg0"}, //Setup_Config_1  unipolar
 
     {0x21, 2, 0, 0x1020l, "SetupCfg1"}, //Setup_Config_2
     {0x22, 2, 0, 0x1020l, "SetupCfg2"}, //Setup_Config_3
@@ -61,12 +61,12 @@ int ADCClass::init(){
   Serial.println("SETUP: ");
   Serial.flush();
   Serial.println(AD7176_Setup());
-  Serial.println("REGS:");
 
   // copy of AD7176 registers
   enum AD7176_registers regNr;
  
   for(int regNr = 0; regNr < Offset_1; ++regNr) {
+ // for(int regNr = 6; regNr < 7; regNr++) {
 
     //if (regNr == ADC_Mode_Register) continue;
     //if (regNr == Interface_Mode_Register) continue;
@@ -89,6 +89,14 @@ int ADCClass::init(){
     Serial.println(AD7176_regs[regNr].value, HEX);
     Serial.flush();
   }
+  
+
+
+
+    
+    Serial.flush();
+
+  
   AD7176_UpdateSettings();
   return 0;
 }

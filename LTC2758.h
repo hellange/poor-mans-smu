@@ -125,4 +125,5 @@ float LTC2758_code_to_voltage(uint32_t dac_code, float min_output, float max_out
 //! @return 32 bit data
 uint32_t LTC2758_voltage_to_code(float dac_voltage, float min_output, float max_output, bool serialOut);
 
+void SPIMuxSelectLTC2758();
 #endif  //  LTC2758_H

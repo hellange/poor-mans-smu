@@ -73,11 +73,9 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 void LTC2758_write(uint8_t cs, uint8_t dac_command, uint8_t dac_address, uint32_t data)
 {
   //digitalWrite(LTC2758_CS,LOW);
-    SPI.beginTransaction (SPISettings (2000000, MSBFIRST, SPI_MODE0));
+    //SPI.beginTransaction (SPISettings (2000000, MSBFIRST, SPI_MODE0));
 
-  digitalWrite(8, LOW);
-  digitalWrite(9, HIGH);
-  digitalWrite(7, LOW);
+  SPIMuxSelectLTC2758();
   delayMicroseconds(1);
 
   SPI.transfer(dac_command|dac_address);
@@ -90,8 +88,8 @@ void LTC2758_write(uint8_t cs, uint8_t dac_command, uint8_t dac_address, uint32_
   digitalWrite(7, HIGH);
   SPI.endTransaction();
 
-  digitalWrite(8, LOW);
-  digitalWrite(9, LOW);
+  //digitalWrite(8, LOW);
+  //digitalWrite(9, LOW);
   
   //digitalWrite(LTC2758_CS,HIGH);
 
@@ -129,4 +127,13 @@ uint32_t LTC2758_voltage_to_code(float dac_voltage, float min_output, float max_
     Serial.flush();
   }
   return (dac_code);
+}
+
+//TODO: Move to somewhere else
+void SPIMuxSelectLTC2758(){
+    //pinMode(8, OUTPUT);  // cs adr 0
+    digitalWrite(8, LOW);
+    //pinMode(9, OUTPUT); // cs adr 1
+    digitalWrite(9, HIGH);
+    digitalWrite(7, LOW);
 }

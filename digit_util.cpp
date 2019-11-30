@@ -16,6 +16,20 @@ void DigitUtilClass::separate(int *v, int *mv, int *uv, bool *neg, float rawMv) 
   *uv = (rawMv - (int)rawMv) * 1000.0f;
 }
 
+void DigitUtilClass::separate2(int *v, int *mv, int *uv, int *nv, bool *neg, float rawMv) {
+  float uv_f;
+  *neg=false;
+  if (rawMv < 0.0f) {
+    rawMv = 0.0f - rawMv;
+    *neg=true;
+  }
+  *v = (int)(rawMv / 1000.0f);
+  *mv = (int)(rawMv - *v * 1000.0f);
+  uv_f = (rawMv - (int)rawMv) * 1000.0f;
+  *uv = uv_f;
+  *nv = (uv_f - int(uv_f)) * 1000.0;
+}
+
 void DigitUtilClass::renderValue(int x,int y,float val, int size = 0, int type = 0) {
 
     int font = 26;
@@ -69,4 +83,3 @@ void DigitUtilClass::renderValue(int x,int y,float val, int size = 0, int type =
 }
 
 DigitUtilClass DIGIT_UTIL;
-

@@ -244,7 +244,7 @@ int AD7176_dataReady()
         /* Read the value of the Status Register */
         ret = AD7176_ReadRegister(&AD7176_regs[Status_Register]);
         if(ret < 0) {
-            Serial.println("!!! Register read error ");
+            Serial.print("!!! Register read error ");
                         //Serial.println(++reg_err, DEC);
 return -99;
 
@@ -258,6 +258,8 @@ return -99;
 
 if ((stat & STATUS_REG_ADC_ERR) > 0x01) {
             Serial.println("!!! STATUS_REG_ADC_ERR");
+                        Serial.println(stat, BIN);
+
  
 return -99;
 }
@@ -377,7 +379,7 @@ void AD7176_UpdateSettings(void)
 }
 
 /***************************************************************************//**
-* @brief Initializes the AD7176.
+* @brief Initializes the A47176.
 *
 * @return Returns 0 for success or negative error code.
 *******************************************************************************/
@@ -387,7 +389,7 @@ int32_t AD7176_Setup(void)
     enum AD7176_registers regNr;
 
     /* Initialize the SPI communication. */
-    AD7176_Init(0, 4000000, 1,0);
+    AD7176_Init(0, 6000000, 1,0);
 
     /*  Reset the device interface.*/
     AD7176_Reset();

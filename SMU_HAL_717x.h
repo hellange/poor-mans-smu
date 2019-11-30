@@ -13,26 +13,23 @@
 // to make it easy to test different ADC without changing the application software...
 class ADCClass {
 
-    unsigned long lastSampleMilli;
+  unsigned long lastSampleMilli;
 
-  float nowValueV = 0.0;
-  float nowValueI = 0.0;
   float setValueI = 0.0;
   float setValueV = 0.0;
   
   private:
-    float VREF = 2.500; //2.5357;             
+    float VREF = 5.0; // 2.500; //2.5357;             
     float VFSR = VREF; 
   public:
-   int init();
+    bool compliance;
+    int init();
     int8_t fltSetCommitVoltageSource(float fVoltage);
     int8_t fltSetCommitCurrentSource(float fCurrent, int8_t up_down_both);
     float measureMilliVoltage();
-        float measureMilliVoltage2();
 
     int dataReady();
     float measureCurrent();
-    boolean compliance();
     float getSetValuemV();
     float getSetValuemA();
 };

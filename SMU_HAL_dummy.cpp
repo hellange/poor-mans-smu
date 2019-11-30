@@ -48,11 +48,9 @@
   nowValueI = nowValueV / simulatedLoad;
   
   nowValueI =  nowValueI + (random(0, 100) / 2000000.0);
-  return nowValueI;
- }
 
- boolean SMU_HAL_dummy::compliance(){
-   return abs(setValueI) < abs(nowValueI);
+  compliance = abs(setValueI) < abs(nowValueI);
+  return nowValueI;
  }
 
  float SMU_HAL_dummy::getSetValuemV(){

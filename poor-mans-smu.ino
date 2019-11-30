@@ -79,33 +79,30 @@ int activeWidget = 0;
 
 void setup()
 {
-    disableSPIunits();
-delay(50);
-    pinMode(6,OUTPUT); // LCD powerdown pin?
+   disableSPIunits();
+   delay(50);
+   pinMode(6,OUTPUT); // LCD powerdown pin?
    digitalWrite(6, HIGH);
    
 //  Serial.begin(115200);
 //   while(!Serial) {
 //  }
 
-     pinMode(7,OUTPUT);
-     pinMode(8,OUTPUT);
-     pinMode(9,OUTPUT);
-     pinMode(10,OUTPUT);
+    pinMode(7,OUTPUT);
+    pinMode(8,OUTPUT);
+    pinMode(9,OUTPUT);
+    pinMode(10,OUTPUT);
 
-     pinMode(11,OUTPUT);
-   pinMode(12,INPUT);
-   pinMode(13,OUTPUT);
+    //pinMode(11,OUTPUT);
+    //pinMode(12,INPUT);
+    //pinMode(13,OUTPUT);
 
-   Serial.println("Initializing graphics controller FT81x...");
-   Serial.flush();
+    Serial.println("Initializing graphics controller FT81x...");
+    Serial.flush();
 
-   // bootup FT8xx
-   // Drive the PD_N pin high
-   Serial.flush();
-
-
-
+    // bootup FT8xx
+    // Drive the PD_N pin high
+    Serial.flush();
 
  // brief reset on the LCD clear pin
 //   delay(200);
@@ -115,27 +112,23 @@ delay(50);
 //   delay(200);
 
 
-
-
    GD.begin(0);
-      delay(100);
+   delay(100);
 
    Serial.println("...begin...");
    Serial.flush();
    GD.cmd_romfont(1, 34); // put FT81x font 34 in slot 1
-   delay(100);
    GD.Clear();
    GD.ColorRGB(0xaaaaff);
-  GD.ColorA(120);
-  GD.cmd_text(250, 200 ,   31, 0, "Poor man's SMU");
-     GD.ColorRGB(0xaaaaaa);
-  
-    GD.cmd_text(250, 240 ,   28, 0, "Designed    by    Helge Langehaug");
+   GD.ColorA(120);
+   GD.cmd_text(250, 200 ,   31, 0, "Poor man's SMU");
+   GD.ColorRGB(0xaaaaaa);
+   GD.cmd_text(250, 240 ,   28, 0, "Designed    by    Helge Langehaug");
 
-     delay(100);
+   GD.swap();
+   delay(500);
 
-  GD.swap();
- GD.__end();
+   GD.__end();
    Serial.println("...Done");
    Serial.flush();
 
@@ -144,20 +137,16 @@ delay(50);
    Serial.println("Start measuring...");
    SMU[0].init();
 
+   float setMv = 0.0;
+   float setMa = 10.0;
+   SMU[0].fltSetCommitCurrentSource(setMa / 1000.0, _SOURCE_AND_SINK); 
+   SMU[0].fltSetCommitVoltageSource(setMv / 1000.0);
+   Serial.println("Done!");
 
-  float setMv = 0.0;
-  float setMa = 10.0;
-  SMU[0].fltSetCommitCurrentSource(setMa / 1000.0, _SOURCE_AND_SINK);
-  SMU[0].fltSetCommitVoltageSource(setMv / 1000.0);
-  Serial.println("Done!");
-
-  V_STATS.init(DigitUtilClass::typeVoltage);
-  C_STATS.init(DigitUtilClass::typeCurrent);
-  V_FILTERS.init();
+   V_STATS.init(DigitUtilClass::typeVoltage);
+   C_STATS.init(DigitUtilClass::typeCurrent);
+   V_FILTERS.init();
    CALIBRATION.init();
-
-
-  
 }
 
 void disableSPIunits(){
@@ -226,7 +215,7 @@ void voltagePanel(int x, int y) {
   showStatusIndicator(x+720, y+5, "NULL", CALIBRATION.nullValue!=0.0, false);
   showStatusIndicator(x+630, y+45, "50Hz", false, false);
   showStatusIndicator(x+720, y+45, "4 1/2", false, false);
-  showStatusIndicator(x+630, y+85, "COMP", SMU[0].compliance(), true);
+  showStatusIndicator(x+630, y+85, "COMP", SMU[0].compliance, true);
   showStatusIndicator(x+720, y+85, "UNCAL", !CALIBRATION.useCalibratedValues, true);
 
 }
@@ -279,7 +268,6 @@ void handleSliders(int x, int y) {
   GD.Tag(TAG_FILTER_SLIDER_B);
   GD.cmd_slider(500+x, y+90, 204,15, OPT_FLAT, V_STATS.getNrOfSamplesBeforeStore()* (65535/100), 65535);
   GD.cmd_track(500+x, y+90, 204, 20, TAG_FILTER_SLIDER_B);
-
   
   GD.cmd_text(550+x,y, 27, 0, "Filter size:");
   GD.cmd_number(630+x,y, 27, 0, V_FILTERS.filterSize);
@@ -315,7 +303,7 @@ void handleSliders(int x, int y) {
   GD.cmd_button(x+600,y+130,95,50,29,0,"UNCAL");
 
   GD.ColorA(255);
-
+  GD.Tag(0); // Note: Added this because other UI parts that the last button seemed to react as button
   
 
 
@@ -346,8 +334,6 @@ void renderExperimental(int x, int y, float valM, float setM, bool cur) {
 
  handleSliders(x,y);
 
-
- 
   y=y+65;
   x=x+100;
   
@@ -461,7 +447,7 @@ void currentPanel(int x, int y, boolean overflow) {
   GD.Begin(RECTS);
     GD.LineWidth(10);
   for (int i=0;i<40;i++) {
-    int percent = 100 * (C_STATS.rawValue / SMU[0].getSetValuemA());
+    int percent = 100 * (abs(C_STATS.rawValue) / abs(SMU[0].getSetValuemA()));
     if (percent > i*2.5) {
        GD.ColorA(255);
     } else {
@@ -521,7 +507,7 @@ void widgetBodyHeaderTab(int y, int activeWidget) {
   // tab 
   GD.ColorA(255);
   GD.LineWidth(350);
-  GD.ColorRGB(0x2a2a2a);
+  GD.ColorRGB(0x2c2c2c);
   GD.Vertex2ii(22,y);
   GD.Vertex2ii(778, 480);
 
@@ -529,7 +515,7 @@ void widgetBodyHeaderTab(int y, int activeWidget) {
   // Is it because the rectangle above "shines" though ? It is not set to transparrent...
   // must learn more about the blending....
   GD.Begin(RECTS);
-  GD.ColorA(230); // slightly transparrent to grey shine though a bit
+  GD.ColorA(180); // slightly transparrent to grey shine though a bit
   GD.LineWidth(10);
   GD.ColorRGB(0x000000);
   GD.Vertex2ii(0,y+15);
@@ -561,7 +547,7 @@ void showWidget(int y, int widgetNo, int scroll) {
        GD.ColorRGB(COLOR_CURRENT_TEXT);
        GD.cmd_text(20, yPos, 29, 0, "MEASURE CURRENT");
      }
-     currentPanel(scroll, yPos, SMU[0].compliance());
+     currentPanel(scroll, yPos, SMU[0].compliance);
   } else if (widgetNo == 1) {
     if (!DIAL.isDialogOpen()){
        if (scroll ==0){
@@ -785,6 +771,12 @@ void renderDisplay() {
   
   handleMenuScrolldown();
 
+  if(V_STATS.rawValue > 10.0) {
+    GD.ColorRGB(0xdddddd);
+    GD.cmd_number(600, 0, 27, 6, (int)(V_STATS.rawValue / C_STATS.rawValue));
+    GD.cmd_text(670, 0,  27, 0, "ohm load");
+  }
+
 }
 
 
@@ -855,6 +847,7 @@ bool readyToDoStableMeasurements() {
 
 
 float Vout = 0.0;
+float Cout = 0.0;
 float VoutLast = 0.0;
 void loop()
 {
@@ -872,7 +865,11 @@ void loop()
     Serial.println("DONT USE SAMPLE!");  
   }
   else if (dataR == 1) {
-    float Cout = SMU[0].measureCurrent();
+    Cout = SMU[0].measureCurrent();
+      Cout = Cout / 0.8;  // funnel amplifier x0.8
+
+    // Cout = Cout + 2.624; // preliminary nulling for test
+      
     C_STATS.addSample(Cout);
 //  Serial.print("Measured raw:");  
 //  Serial.print(Cout, 3);
@@ -897,13 +894,14 @@ void loop()
     //if (scrollDir == 0) {
        //V_STATS.addSample(SMU[0].measureMilliVoltage() * 1000.0);
 
-      
-    Vout = Vout / 0.4;  // funnel amplifier x0.4
-   //Vout = Vout + 2500.0;
-   Vout = Vout - 0.290;
-      Vout = Vout * 0.99971;  // gain
 
+  Vout = Vout / 0.8;  // funnel amplifier 
+
+  //Vout = Vout +1.17-0.68+0.230-0.18+0.09-0.145;// offset
+
+Vout = Vout*1.00034; // gain
     Vout = CALIBRATION.adjust(Vout);
+
        V_STATS.addSample(Vout);
        V_FILTERS.updateMean(Vout);
 
@@ -914,6 +912,9 @@ void loop()
   disableSPIunits();
   //delay(1);
   GD.resume();
+  Serial.print("R=");
+  Serial.println(V_STATS.rawValue / C_STATS.rawValue);
+
 
 
 
@@ -942,6 +943,7 @@ void loop()
   GD.Clear();
   renderDisplay();
 
+
  
   
   if (DIAL.isDialogOpen()) {
@@ -957,7 +959,50 @@ void loop()
 }
 
 
+float set_dac[]  = {-2000.00, -1000.00, 0.00, 100.00, 500.00, 1000.00, 1500.00, 2000.00, 3000.00, 4000.00, 4500.00, 5000.00, 6000.00, 7000.00, 8000.00, 9000.00, 10000.00};
+  
+  // actual output
+float meas_dac[] = {-1999.86, -0990.80, 0.00, 100.00, 500.013, 1000.046, 1500.07, 2000.10, 2999.99, 4000.02, 4500.10, 5000.10, 6000.11, 7000.21, 7999.31, 9000.00, 10000.00};
 
+float nonlinear_comp(float milliVolt) {
+   // Nonlinearity
+   //todo: CHECK IF THIS WORKS 
+   Serial.print("Looking up in comp table for ");
+   Serial.print(milliVolt);
+   Serial.println(" millivolt");
+   float v = milliVolt;
+  for (int i=0;i<15;i++) {
+    if (v > meas_dac[i] && v <= meas_dac[i+1]) {
+      float adj_factor_low = set_dac[i] - meas_dac[i];
+      float adj_factor_high = set_dac[i+1] - meas_dac[i+1];
+      float adj_factor_diff = adj_factor_high - adj_factor_low;
+
+      float range = set_dac[i+1] - set_dac[i];
+      float partWithinRange = ( (v-set_dac[i]) / range); /* 0 to 1. Where then 0.5 is in the middle of the range */
+      float adj_factor = adj_factor_low + adj_factor_diff * partWithinRange;
+
+      Serial.print("meas:");  
+      Serial.print(v, 4);
+      Serial.print(", range:");  
+      Serial.print(range, 4);
+      Serial.print(", part:");  
+      Serial.print(partWithinRange, 4);
+      Serial.print(", diff:");  
+      Serial.print(adj_factor_diff, 4);
+      Serial.print(", factor:");  
+      Serial.println(adj_factor, 4);
+
+      Serial.flush();
+      v = v + adj_factor; 
+      
+      return v;
+    }
+  } 
+  Serial.println("no comp");
+  return milliVolt;  
+}
+
+ 
 void closeCallback(int vol_cur_type, bool cancel) {
    Serial.print("SET type:");
    Serial.println(vol_cur_type);
@@ -968,7 +1013,11 @@ void closeCallback(int vol_cur_type, bool cancel) {
     GD.__end();
   disableSPIunits();
   if (DIAL.type() == BUTTON_VOLT_SET) {
-     if (SMU[0].fltSetCommitVoltageSource(DIAL.getMv() / 1000.0)) printError(_PRINT_ERROR_VOLTAGE_SOURCE_SETTING);
+    float mv = DIAL.getMv(); 
+     if (CALIBRATION.useCalibratedValues == true) {
+        mv = nonlinear_comp(mv);
+     }
+     if (SMU[0].fltSetCommitVoltageSource(mv / 1000.0)) printError(_PRINT_ERROR_VOLTAGE_SOURCE_SETTING);
   }
   if (DIAL.type() == BUTTON_CUR_SET) {
      if (SMU[0].fltSetCommitCurrentSource(DIAL.getMv() / 1000.0, _SOURCE_AND_SINK)) printError(_PRINT_ERROR_CURRENT_SOURCE_SETTING);

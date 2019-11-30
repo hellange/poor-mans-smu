@@ -133,27 +133,27 @@ unsigned char AD7176_Write(unsigned char slaveDeviceId,
                         unsigned char* data,
                         unsigned char bytesNumber)
 {
-  SPI.endTransaction();
+    SPI.endTransaction();
     SPI.beginTransaction(AD7176_spisettings);
-   // digitalWrite(AD7176_CS_PIN, LOW);
-     
-
-   
-       //pinMode(8, OUTPUT);  // cs adr 0
-  digitalWrite(8, LOW);
-  //pinMode(9, OUTPUT); // cs adr 1
-  digitalWrite(9, LOW);
-
+    
+    // digitalWrite(AD7176_CS_PIN, LOW);
+    SPIMuxSelectAD7176();   
   
-    digitalWrite(7, LOW);
-       //delayMicroseconds(1);
-
     SPI.transfer(data, bytesNumber);
-       //delayMicroseconds(5);
 
     //digitalWrite(AD7176_CS_PIN, HIGH);
-      digitalWrite(7, HIGH);
+    digitalWrite(7, HIGH);
+    
     SPI.endTransaction();
     
     return bytesNumber;
+}
+
+//TODO: Move to somewhere else
+void SPIMuxSelectAD7176(){
+    //pinMode(8, OUTPUT);  // cs adr 0
+    digitalWrite(8, LOW);
+    //pinMode(9, OUTPUT); // cs adr 1
+    digitalWrite(9, LOW);
+    digitalWrite(7, LOW);
 }

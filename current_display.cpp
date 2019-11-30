@@ -17,9 +17,10 @@ void CurrentDisplayClass::renderMeasured(int x, int y, float rawMa, boolean over
     color = 0x991002;
   } 
 
-  int a, ma, ua;
+  int a, ma, ua, na;
   bool neg;
-  DIGIT_UTIL.separate(&a, &ma, &ua, &neg, rawMa);
+  bool uA_mode_enabled = true; // set true if you want uA scale
+  DIGIT_UTIL.separate2(&a, &ma, &ua, &na, &neg, rawMa);
   
   if (overflow) {
     GD.ColorRGB(color); //0xFF4522); //0xdd1120
@@ -36,12 +37,21 @@ void CurrentDisplayClass::renderMeasured(int x, int y, float rawMa, boolean over
     boldNumber(x+70, y, 3, ma);
     GD.cmd_number(x+242, y+2, 1, 3, ua);
     GD.cmd_text(x+410, y+2 ,  1, 0, "A");
-  } else {
+  } else if (ma > 0 or (ma==0 &&  ua>100 && uA_mode_enabled==false) or uA_mode_enabled == false){
     boldNumber(x, y, 3, ma);
     boldText(x+162, y+30-30, ".");
     GD.cmd_number(x+192, y+2, 1, 3, ua);
-    GD.cmd_text(x+360, y+2 ,  1, 0, "mA");
-  }
+
+    GD.cmd_number(x+370, y+2, 1, 1, (int)(na/100.0)); // use only one digit for nano amps !
+    GD.cmd_text(x+470, y+2 ,  1, 0, "mA");
+    } 
+    else if (uA_mode_enabled == true) {
+    // Not sure if a separate uA is needed. nA is probably ruined by noise and offset anyway...
+      boldNumber(x, y, 3, ua);
+      boldText(x+162, y+30-30, ".");
+      GD.cmd_number(x+192, y+2, 1, 2, (int)(na/10.0)); // use only two digit for nano amps !
+      GD.cmd_text(x+320, y+2 ,  1, 0, "uA");
+    }
 
 
   

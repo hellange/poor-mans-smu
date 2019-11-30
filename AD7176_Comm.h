@@ -71,4 +71,5 @@ unsigned char AD7176_Write(unsigned char slaveDeviceId,
                         unsigned char* data,
                         unsigned char bytesNumber);
 
+void SPIMuxSelectAD7176();
 #endif // _COMMUNICATION_H_

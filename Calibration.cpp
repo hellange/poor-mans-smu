@@ -34,7 +34,7 @@ void CalibrationClass::toggleNullValue(float v) {
     nullValue = 0.0;
   } else {
     nullValue = v;
-  }
+  } 
   Serial.print("setNull to:");
   Serial.println(v);
   timeSinceLastChange = millis();
@@ -60,6 +60,7 @@ float CalibrationClass::adjust(float v){
   }
   
   // Nonlinearity
+  //TODO: Does it wor for negative voltages ?
   for (int i=0;i<adc_cal_points -1; i++) {
     if (v > meas_adc[i] && v <= meas_adc[i+1]) {
       float adj_factor_low = set_adc[i] - meas_adc[i];
@@ -129,7 +130,7 @@ void CalibrationClass::renderCal(int x, int y, float valM, float setM, bool cur)
  GD.Begin(LINE_STRIP);
       GD.ColorA(100);
   for (int i=0;i<adc_cal_points;i++) {
-      float diff = set_adc[i] - meas_adc[i];
+      //float diff = set_adc[i] - meas_adc[i];
       int xv = 300 *(set_adc[i] / max_set_value);
       GD.Vertex2ii(x+400+xv, y + 100);
   }
