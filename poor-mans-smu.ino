@@ -64,7 +64,10 @@ boolean mainMenuActive = false;
 StatsClass V_STATS;
 StatsClass C_STATS;
 FiltersClass V_FILTERS;
-CalibrationClass CALIBRATION;
+FiltersClass C_FILTERS;
+
+CalibrationClass V_CALIBRATION;
+CalibrationClass C_CALIBRATION;
 
 float rawMa_glob; // TODO: store in stats for analysis just as voltage
 
@@ -146,7 +149,9 @@ void setup()
    V_STATS.init(DigitUtilClass::typeVoltage);
    C_STATS.init(DigitUtilClass::typeCurrent);
    V_FILTERS.init();
-   CALIBRATION.init();
+   C_FILTERS.init();
+   V_CALIBRATION.init();
+   C_CALIBRATION.init();
 }
 
 void disableSPIunits(){
@@ -212,11 +217,11 @@ void voltagePanel(int x, int y) {
   //renderDeviation(x + 667,y + 125, V_FILTERS.mean /*V_STATS.rawValue*/, SMU[0].getSetValuemV(), false);
 
   showStatusIndicator(x+630, y+5, "FILTER", V_FILTERS.filterSize>1, false);
-  showStatusIndicator(x+720, y+5, "NULL", CALIBRATION.nullValue!=0.0, false);
+  showStatusIndicator(x+720, y+5, "NULL", V_CALIBRATION.nullValue!=0.0, false);
   showStatusIndicator(x+630, y+45, "50Hz", false, false);
   showStatusIndicator(x+720, y+45, "4 1/2", false, false);
   showStatusIndicator(x+630, y+85, "COMP", SMU[0].compliance, true);
-  showStatusIndicator(x+720, y+85, "UNCAL", !CALIBRATION.useCalibratedValues, true);
+  showStatusIndicator(x+720, y+85, "UNCAL", !V_CALIBRATION.useCalibratedValues, true);
 
 }
 
@@ -277,7 +282,7 @@ void handleSliders(int x, int y) {
 
   if (!DIAL.isDialogOpen()) {
     GD.Tag(BUTTON_NULL);
-    if (CALIBRATION.nullValue!=0.0) {
+    if (V_CALIBRATION.nullValue!=0.0) {
       GD.ColorRGB(0x00ff00);
     } else {
       GD.ColorRGB(0x000000);
@@ -291,7 +296,7 @@ void handleSliders(int x, int y) {
 
   if (!DIAL.isDialogOpen()) {
     GD.Tag(BUTTON_UNCAL);
-    if (CALIBRATION.useCalibratedValues == false) {
+    if (V_CALIBRATION.useCalibratedValues == false) {
       GD.ColorRGB(0x00ff00);
     } else {
       GD.ColorRGB(0x000000);
@@ -316,6 +321,9 @@ void handleSliders(int x, int y) {
       int slider_val = 100.0 * GD.inputs.track_val / 65535.0;
       Serial.println(slider_val);
       V_FILTERS.setFilterSize(int(slider_val));
+      // currently set same as for voltage
+      C_FILTERS.setFilterSize(int(slider_val));
+
       break;
     }
     case TAG_FILTER_SLIDER_B:{
@@ -469,7 +477,7 @@ void currentPanel(int x, int y, boolean overflow) {
   y=y+12;
   GD.ColorA(255);
 
-  CURRENT_DISPLAY.renderMeasured(x + 17, y, C_STATS.rawValue, overflow);
+  CURRENT_DISPLAY.renderMeasured(x + 17, y, C_FILTERS.mean, overflow);
   CURRENT_DISPLAY.renderSet(x+120, y+105, SMU[0].getSetValuemA());
   
 
@@ -587,7 +595,7 @@ void showWidget(int y, int widgetNo, int scroll) {
       }
       float rawM = V_FILTERS.mean;
       float setM = SMU[0].getSetValuemV();
-      CALIBRATION.renderCal(scroll,yPos, rawM, setM, false);
+      V_CALIBRATION.renderCal(scroll,yPos, rawM, setM, false);
   }
 
 }
@@ -868,9 +876,12 @@ void loop()
     Cout = SMU[0].measureCurrent();
      Cout = Cout / 0.8;  // funnel amplifier x0.8
 
-   
+     Cout = Cout - C_CALIBRATION.nullValue;
+
       
     C_STATS.addSample(Cout);
+    C_FILTERS.updateMean(Cout);
+
 //  Serial.print("Measured raw:");  
 //  Serial.print(Cout, 3);
 //  Serial.println(" mA");  
@@ -897,7 +908,8 @@ void loop()
     Vout = Vout / 0.8;  // funnel amplifier 
     Vout = Vout +3.0; // offset
     Vout = Vout*1.00034; // gain
-    Vout = CALIBRATION.adjust(Vout);
+    Vout = V_CALIBRATION.adjust(Vout);
+    Vout = Vout - V_CALIBRATION.nullValue;
 
     V_STATS.addSample(Vout);
     V_FILTERS.updateMean(Vout);
@@ -925,10 +937,11 @@ void loop()
       DIAL.open(BUTTON_CUR_SET, closeCallback, SMU[0].getSetValuemA());
     } else if (GD.inputs.tag == BUTTON_NULL) {
       Serial.println("Null set");
-      CALIBRATION.toggleNullValue(Vout);
+      V_CALIBRATION.toggleNullValue(V_STATS.rawValue);
+      C_CALIBRATION.toggleNullValue(C_STATS.rawValue);
     } else if (GD.inputs.tag == BUTTON_UNCAL) {
       Serial.println("Uncal set");
-      CALIBRATION.toggleCalibratedValues();
+      V_CALIBRATION.toggleCalibratedValues();
     }
   }
 
@@ -1011,7 +1024,7 @@ void closeCallback(int vol_cur_type, bool cancel) {
   disableSPIunits();
   if (DIAL.type() == BUTTON_VOLT_SET) {
     float mv = DIAL.getMv(); 
-     if (CALIBRATION.useCalibratedValues == true) {
+     if (V_CALIBRATION.useCalibratedValues == true) {
         mv = nonlinear_comp(mv);
      }
      if (SMU[0].fltSetCommitVoltageSource(mv / 1000.0)) printError(_PRINT_ERROR_VOLTAGE_SOURCE_SETTING);

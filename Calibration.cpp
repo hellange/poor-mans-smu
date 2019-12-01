@@ -43,18 +43,6 @@ void CalibrationClass::toggleNullValue(float v) {
 // todo: change parameter name to mv ?
 float CalibrationClass::adjust(float v){
 
-  // lookup table for nonlinearity. As many as possible.
-  
-  // offset
-  //v = v - 0.170;  // mv;
-  v = v - nullValue;
-  /*
-  // system gain
-  v = v * 2.5;  // account for attenuator
-*/
-  // other gain factors
-  v=v*1.000000;
-
   if (!useCalibratedValues) {
     return v;
   }
