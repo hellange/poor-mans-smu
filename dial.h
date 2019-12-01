@@ -8,7 +8,7 @@ class DialClass {
  // Store memory for entered digits and symbols
   int dialEntries[15];
   // current number of digits in display
-  int digits; 
+  int digits = 1;
 
   bool error;
   bool warning;
@@ -27,10 +27,10 @@ public:
   void open(int type, void (*closedFn)(int type, bool cancel), float value);
   void clear();
   bool isDialogOpen();
-  int  type();
   void handleKeypadDialog();
   void checkKeypress();
   float getMv();
+  void init();
 private:
   double toMv();
   void validate(double mv);
@@ -41,4 +41,5 @@ private:
   void renderKeypad();
 };
 
-extern DialClass DIAL;
+extern DialClass V_DIAL;
+extern DialClass C_DIAL;

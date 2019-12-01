@@ -6,18 +6,17 @@
 
 void (*closedFn)(int type, bool cancel);
 
- 
-
-// type: volt or current  to be implemented
 void DialClass::open(int type, void (*callbackFn)(int type, bool cancel), float value ) {
   closedFn = callbackFn;
   vol_cur_type = type;
   dialog=true;  
-  negative = false;
-  mv=value;
-  clear();
-   digits = 1;
+}
 
+void DialClass::init() {
+  negative = false;
+  mv=0.0;
+  clear();
+  digits = 1;
   dialEntries[0] = 1;
 }
 
@@ -32,9 +31,7 @@ float DialClass::getMv() {
 bool DialClass::isDialogOpen() {
   return dialog;
 }
-int DialClass::type() {
-  return vol_cur_type;
-}
+
 void DialClass::clear() {
   error = false;
   warning = false;
@@ -426,4 +423,5 @@ double DialClass::toMv() {
  return sum;
 }
 
-DialClass DIAL;
+DialClass V_DIAL;
+DialClass C_DIAL;

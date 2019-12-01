@@ -306,11 +306,11 @@ int8_t ADCClass::fltSetCommitVoltageSource(float v) {
     v=v-VREF*1000.0;
     // DONT INCLUDE THESE ADJUSTMENTS WHEN TESTING ONLY DAC/ADC BOARD !!!!
      if (full_board == true) {
-      v=v/100.0; // 100 ohm shunt. Comment out if using 1ohm shunt
+     // v=v/100.0; // 100 ohm shunt. Comment out if using 1ohm shunt
       v=v/10.0; // x10 amplifier
   
       // account for gain in amps
-    v = v * 0.985; // 1ohm shunt
+    v = v * 0.994; // 1ohm shunt
       //v = v * 0.9875; // 100ohm shunt
     }
     

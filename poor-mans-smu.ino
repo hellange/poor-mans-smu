@@ -17,7 +17,6 @@
 #include "Filters.h"
 #include "digit_util.h"
 #include "tags.h"
-
 #include "Arduino.h"
 #include "Wire.h"
 
@@ -68,6 +67,8 @@ FiltersClass C_FILTERS;
 
 CalibrationClass V_CALIBRATION;
 CalibrationClass C_CALIBRATION;
+
+
 
 float rawMa_glob; // TODO: store in stats for analysis just as voltage
 
@@ -148,10 +149,15 @@ void setup()
 
    V_STATS.init(DigitUtilClass::typeVoltage);
    C_STATS.init(DigitUtilClass::typeCurrent);
+   
    V_FILTERS.init();
    C_FILTERS.init();
+   
    V_CALIBRATION.init();
    C_CALIBRATION.init();
+
+   V_DIAL.init();
+   C_DIAL.init();
 }
 
 void disableSPIunits(){
@@ -259,6 +265,9 @@ void voltagePanel(int x, int y) {
 #define TAG_FILTER_SLIDER 123
 #define TAG_FILTER_SLIDER_B 122
 
+bool anyDialogOpen() {
+  return V_DIAL.isDialogOpen() or C_DIAL.isDialogOpen();
+}
 
 void handleSliders(int x, int y) {
   
@@ -280,7 +289,7 @@ void handleSliders(int x, int y) {
   GD.cmd_number(655+x,y+60, 27, 0, V_STATS.getNrOfSamplesBeforeStore());
   
 
-  if (!DIAL.isDialogOpen()) {
+  if (!anyDialogOpen()) {
     GD.Tag(BUTTON_NULL);
     if (V_CALIBRATION.nullValue!=0.0) {
       GD.ColorRGB(0x00ff00);
@@ -294,7 +303,7 @@ void handleSliders(int x, int y) {
   GD.cmd_button(x+700,y+130,95,50,29,0,"NULL");
 
 
-  if (!DIAL.isDialogOpen()) {
+  if (!anyDialogOpen()) {
     GD.Tag(BUTTON_UNCAL);
     if (V_CALIBRATION.useCalibratedValues == false) {
       GD.ColorRGB(0x00ff00);
@@ -559,7 +568,7 @@ void showWidget(int y, int widgetNo, int scroll) {
      }
      currentPanel(scroll, yPos, SMU[0].compliance);
   } else if (widgetNo == 1) {
-    if (!DIAL.isDialogOpen()){
+    if (!anyDialogOpen()){
        if (scroll ==0){
          GD.ColorRGB(COLOR_CURRENT_TEXT);
          GD.cmd_text(20, yPos, 29, 0, "CURRENT TREND");
@@ -567,7 +576,7 @@ void showWidget(int y, int widgetNo, int scroll) {
        renderCurrentGraph(scroll, yPos, reduceDetails());
     }
   } else if (widgetNo == 2) {
-      if (!DIAL.isDialogOpen()){
+      if (!anyDialogOpen()){
         if (scroll ==0){
           GD.ColorRGB(COLOR_VOLT);
           GD.cmd_text(20, yPos, 29, 0, "VOLTAGE TREND");
@@ -601,7 +610,7 @@ void showWidget(int y, int widgetNo, int scroll) {
 }
 
 bool reduceDetails() {
-  return scrollDir != 0 || DIAL.isDialogOpen() || mainMenuActive == true;
+  return scrollDir != 0 || anyDialogOpen() || mainMenuActive == true;
 }
 
 
@@ -924,17 +933,14 @@ void loop()
   Serial.print("R=");
   Serial.println(V_STATS.rawValue / C_STATS.rawValue);
 
-
-
-
   if (!gestureDetected) {
     if (GD.inputs.tag == BUTTON_VOLT_SET) {
             Serial.println("Vol set");
 
-      DIAL.open(BUTTON_VOLT_SET, closeCallback, SMU[0].getSetValuemV());
+      V_DIAL.open(BUTTON_VOLT_SET, closeCallback, SMU[0].getSetValuemV());
     } else if (GD.inputs.tag == BUTTON_CUR_SET) {
       Serial.println("Cur set");
-      DIAL.open(BUTTON_CUR_SET, closeCallback, SMU[0].getSetValuemA());
+      C_DIAL.open(BUTTON_CUR_SET, closeCallback, SMU[0].getSetValuemA());
     } else if (GD.inputs.tag == BUTTON_NULL) {
       Serial.println("Null set");
       V_CALIBRATION.toggleNullValue(V_STATS.rawValue);
@@ -953,13 +959,16 @@ void loop()
   GD.Clear();
   renderDisplay();
 
-
- 
-  
-  if (DIAL.isDialogOpen()) {
+  if (anyDialogOpen()) {
     bluredBackground();
-    DIAL.checkKeypress();
-    DIAL.handleKeypadDialog();
+    if (V_DIAL.isDialogOpen()){
+      V_DIAL.checkKeypress();
+      V_DIAL.handleKeypadDialog();
+    } else if (C_DIAL.isDialogOpen()) {
+      C_DIAL.checkKeypress();
+      C_DIAL.handleKeypadDialog();
+    }
+
   }
 
   GD.swap(); 
@@ -1012,25 +1021,26 @@ float nonlinear_comp(float milliVolt) {
   return milliVolt;  
 }
 
- 
+
 void closeCallback(int vol_cur_type, bool cancel) {
    Serial.print("SET type:");
    Serial.println(vol_cur_type);
-   Serial.println(DIAL.type() );
   if (cancel) {
     return;
   }
-    GD.__end();
+  GD.__end();
   disableSPIunits();
-  if (DIAL.type() == BUTTON_VOLT_SET) {
-    float mv = DIAL.getMv(); 
+  if (vol_cur_type == BUTTON_VOLT_SET) {
+
+    float mv = V_DIAL.getMv(); 
      if (V_CALIBRATION.useCalibratedValues == true) {
         mv = nonlinear_comp(mv);
      }
      if (SMU[0].fltSetCommitVoltageSource(mv / 1000.0)) printError(_PRINT_ERROR_VOLTAGE_SOURCE_SETTING);
   }
-  if (DIAL.type() == BUTTON_CUR_SET) {
-     if (SMU[0].fltSetCommitCurrentSource(DIAL.getMv() / 1000.0, _SOURCE_AND_SINK)) printError(_PRINT_ERROR_CURRENT_SOURCE_SETTING);
+  if (vol_cur_type == BUTTON_CUR_SET) {
+
+     if (SMU[0].fltSetCommitCurrentSource(C_DIAL.getMv() / 1000.0, _SOURCE_AND_SINK)) printError(_PRINT_ERROR_CURRENT_SOURCE_SETTING);
   }
   GD.resume();
 }
