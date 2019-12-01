@@ -65,8 +65,8 @@ StatsClass C_STATS;
 FiltersClass V_FILTERS;
 FiltersClass C_FILTERS;
 
-CalibrationClass V_CALIBRATION;
-CalibrationClass C_CALIBRATION;
+//CalibrationClass V_CALIBRATION;
+//CalibrationClass C_CALIBRATION;
 
 
 
@@ -108,12 +108,12 @@ void setup()
     // Drive the PD_N pin high
     Serial.flush();
 
- // brief reset on the LCD clear pin
-//   delay(200);
- //     digitalWrite(6, LOW);
-//         delay(200);
-//    digitalWrite(6, HIGH);
-//   delay(200);
+    //brief reset on the LCD clear pin
+    delay(200);
+    digitalWrite(6, LOW);
+    delay(200);
+    digitalWrite(6, HIGH);
+    delay(200);
 
 
    GD.begin(0);
@@ -286,7 +286,7 @@ void handleSliders(int x, int y) {
   GD.cmd_text(500+x,y, 27, 0, "Filter size:");
   GD.cmd_number(580+x,y, 27, 0, V_FILTERS.filterSize);
   GD.cmd_text(500+x,y+60, 27, 0, "Samples size:");
-  GD.cmd_number(580+x,y+60, 27, 0, V_STATS.getNrOfSamplesBeforeStore());
+  GD.cmd_number(605+x,y+60, 27, 0, V_STATS.getNrOfSamplesBeforeStore());
   
 
   if (!anyDialogOpen()) {
@@ -880,17 +880,11 @@ bool readyToDoStableMeasurements() {
 
 float Vout = 0.0;
 float Cout = 0.0;
-float VoutLast = 0.0;
 void loop()
 {
   GD.__end();
   disableSPIunits();
-  //delay(1);
-  // have problems with dataReady check.
-  // preliminary say that new sample is when sample is different from last.
-  // Should be enough noise in last signifigant bit so that shoule work...
-  //Vout = SMU[0].measureMilliVoltage();
- //if (Vout != VoutLast) {
+
 
   int dataR = SMU[0].dataReady();
   if (dataR == -99) {
@@ -898,11 +892,9 @@ void loop()
   }
   else if (dataR == 1) {
     Cout = SMU[0].measureCurrent();
-     Cout = Cout / 0.8;  // funnel amplifier x0.8
 
-     Cout = Cout - C_CALIBRATION.nullValue;
+    Cout = Cout - C_CALIBRATION.nullValue;
 
-      
     C_STATS.addSample(Cout);
     C_FILTERS.updateMean(Cout);
 
@@ -915,7 +907,6 @@ void loop()
     
     Vout = SMU[0].measureMilliVoltage();
 
-    VoutLast = Vout;
 //  Serial.print("Measured raw:");  
 //  Serial.print(Vout, 3);
 //  Serial.println(" mV");  
@@ -927,12 +918,10 @@ void loop()
     // TODO: Remove this limitation when sampling is based on interrupts.
     //if (scrollDir == 0) {
        //V_STATS.addSample(SMU[0].measureMilliVoltage() * 1000.0);
-
-
-    Vout = Vout / 0.8;  // funnel amplifier 
-    Vout = Vout +3.0; // offset
-    Vout = Vout*1.00034; // gain
-    Vout = V_CALIBRATION.adjust(Vout);
+       
+    //Vout = Vout +3.0; // offset
+    //Vout = Vout*1.00034; // gain
+    
     Vout = Vout - V_CALIBRATION.nullValue;
 
     V_STATS.addSample(Vout);

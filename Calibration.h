@@ -21,3 +21,6 @@ public:
   void renderCal(int x, int y, float valM, float setM, bool cur);
   void init();
 };
+
+extern CalibrationClass V_CALIBRATION;
+extern CalibrationClass C_CALIBRATION;

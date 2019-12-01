@@ -4,6 +4,10 @@
 #include <SPI.h>
 #include "GD2.h"
 
+
+DialClass V_DIAL;
+DialClass C_DIAL;
+
 void (*closedFn)(int type, bool cancel);
 
 void DialClass::open(int type, void (*callbackFn)(int type, bool cancel), float value ) {
@@ -422,6 +426,3 @@ double DialClass::toMv() {
  }
  return sum;
 }
-
-DialClass V_DIAL;
-DialClass C_DIAL;

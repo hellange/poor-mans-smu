@@ -4,7 +4,8 @@
 #include "GD2.h"
 
 
-//TODO: remove globals
+CalibrationClass V_CALIBRATION;
+CalibrationClass C_CALIBRATION;
   
 void CalibrationClass::init() {
   nullValue = 0.0;
