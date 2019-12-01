@@ -863,23 +863,6 @@ void detectGestures() {
   gestOldX = GD.inputs.x;  
 }
 
-
-unsigned long startupMillis =  millis();
-
-bool readyToDoStableMeasurements() {
-  // wait a second after startup before starting to store measurements
-  if (millis() > startupMillis + 3000) {
-    return true;
-  } else {
-    return false;
-  }
-}
-
-
-
-
-float Vout = 0.0;
-float Cout = 0.0;
 void loop()
 {
   GD.__end();
@@ -891,7 +874,8 @@ void loop()
     Serial.println("DONT USE SAMPLE!");  
   }
   else if (dataR == 1) {
-    Cout = SMU[0].measureCurrent();
+    
+    float Cout = SMU[0].measureCurrent();
 
     Cout = Cout - C_CALIBRATION.nullValue;
 
@@ -899,37 +883,22 @@ void loop()
     C_FILTERS.updateMean(Cout);
 
 //  Serial.print("Measured raw:");  
-//  Serial.print(Cout, 3);
+//  Serial.print(CouVoutt, 3);
 //  Serial.println(" mA");  
 //  Serial.flush();
   }
   else if(dataR == 0) {
-    
-    Vout = SMU[0].measureMilliVoltage();
+    float Vout = SMU[0].measureMilliVoltage();
 
 //  Serial.print("Measured raw:");  
 //  Serial.print(Vout, 3);
 //  Serial.println(" mV");  
 //  Serial.flush();
 
-
-  //if (readyToDoStableMeasurements()) {
-    // Dont sample voltage and current while scrolling because polling is slow.
-    // TODO: Remove this limitation when sampling is based on interrupts.
-    //if (scrollDir == 0) {
-       //V_STATS.addSample(SMU[0].measureMilliVoltage() * 1000.0);
-       
-    //Vout = Vout +3.0; // offset
-    //Vout = Vout*1.00034; // gain
-    
     Vout = Vout - V_CALIBRATION.nullValue;
 
     V_STATS.addSample(Vout);
     V_FILTERS.updateMean(Vout);
-
-    //}
-   // }
-    
   }
   disableSPIunits();
   //delay(1);
