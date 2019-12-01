@@ -196,10 +196,7 @@ void voltagePanel(int x, int y) {
   GD.ColorA(120);
   GD.cmd_text(x+20, y + 2 ,   29, 0, "SOURCE VOLTAGE");
   GD.cmd_text(x+20 + 1, y + 2 + 1 ,   29, 0, "SOURCE VOLTAGE");
-
-  //GD.ColorA(200);
-  //GD.cmd_text(x+20, y + 2 ,   29, 0, "SOURCE VOLTAGE");
-   
+  
   // primary
   VOLT_DISPLAY.renderMeasured(x + 17,y + 26, V_FILTERS.mean);
 
@@ -219,16 +216,12 @@ void voltagePanel(int x, int y) {
   GD.Tag(BUTTON_VOLT_AUTO);
   GD.cmd_button(x + 350,y + 132,95,50,29,0,"AUTO");
 
-  //rawValue
-  //renderDeviation(x + 667,y + 125, V_FILTERS.mean /*V_STATS.rawValue*/, SMU[0].getSetValuemV(), false);
-
   showStatusIndicator(x+630, y+5, "FILTER", V_FILTERS.filterSize>1, false);
   showStatusIndicator(x+720, y+5, "NULL", V_CALIBRATION.nullValue!=0.0, false);
   showStatusIndicator(x+630, y+45, "50Hz", false, false);
   showStatusIndicator(x+720, y+45, "4 1/2", false, false);
   showStatusIndicator(x+630, y+85, "COMP", SMU[0].compliance, true);
   showStatusIndicator(x+720, y+85, "UNCAL", !V_CALIBRATION.useCalibratedValues, true);
-
 }
 
  
@@ -273,8 +266,6 @@ void handleSliders(int x, int y) {
   
   y=y+40;
 
-//    GD.ColorRGB(0xffffff);
-//
   GD.Tag(TAG_FILTER_SLIDER);
   GD.cmd_slider(400+x, y+30, 300,15, OPT_FLAT, V_FILTERS.filterSize * (65535/100), 65535);
   GD.cmd_track(400+x, y+30, 300, 20, TAG_FILTER_SLIDER);
@@ -318,11 +309,7 @@ void handleSliders(int x, int y) {
 
   GD.ColorA(255);
   GD.Tag(0); // Note: Added this because other UI parts that the last button seemed to react as button
-  
 
-
-
-  
   GD.get_inputs();
   switch (GD.inputs.track_tag & 0xff) {
     case TAG_FILTER_SLIDER: {
@@ -371,10 +358,6 @@ void renderExperimental(int x, int y, float valM, float setM, bool cur) {
   }
   float degrees = -deviationInPercent * 700.0;
   renderAnalogGauge(x,y,240, degrees, deviationInPercent, "Deviation from SET");
-
- 
-
- 
 }
 
 void renderAnalogGauge(int x, int y, int size, float degrees, float value, char* title) {
@@ -408,7 +391,6 @@ void renderAnalogGauge(int x, int y, int size, float degrees, float value, char*
 
   showAnalogPin(x+gaugeRadius, y+gaugeRadius+10, gaugeRadius, 30, degrees, 0xffffff, 20, true);
 
-  
   GD.Begin(RECTS);
   GD.ColorRGB(0x223322);
   GD.ColorA(255);
@@ -419,8 +401,7 @@ void renderAnalogGauge(int x, int y, int size, float degrees, float value, char*
   GD.cmd_text(x+gaugeRadius/2, y-20, 27, 0, title);
   
   GD.ColorRGB(0xdddddd);
-
-
+  
   y=y+gaugeRadius-22;
   x=x+gaugeRadius*1.2/2;
   float deviationInPercent = abs(value);
@@ -441,8 +422,6 @@ void renderAnalogGauge(int x, int y, int size, float degrees, float value, char*
       GD.cmd_text(x+65, y, font, 0, "%");
     }
  }
-
-
 
 void renderVoltageGraph(int x,int y, bool scrolling) {
   V_STATS.renderTrend(x, y, scrolling);
@@ -601,10 +580,12 @@ void showWidget(int y, int widgetNo, int scroll) {
       if (scroll ==0){
         GD.ColorRGB(COLOR_VOLT);
         GD.cmd_text(20, yPos, 29, 0, "CAL");
+
+        float rawM = V_FILTERS.mean;
+        float setM = SMU[0].getSetValuemV();
+        V_CALIBRATION.renderCal(scroll,yPos, rawM, setM, false);
       }
-      float rawM = V_FILTERS.mean;
-      float setM = SMU[0].getSetValuemV();
-      V_CALIBRATION.renderCal(scroll,yPos, rawM, setM, false);
+      
   }
 
 }
@@ -674,7 +655,6 @@ void handleMenuScrolldown(){
 
     bluredBackground();
 
-  
     scrollMainMenu = scrollMainMenu + scrollMainMenuDir*25;
     if (scrollMainMenu > 350) {
       scrollMainMenu = 350;
@@ -712,9 +692,6 @@ void handleMenuScrolldown(){
     }
     GD.Tag(MAIN_MENU_CLOSE);
     GD.cmd_button(360,scrollMainMenu-10,80,40,28,0,"CLOSE");
-   
-
-
 
     if(GD.inputs.tag == MAIN_MENU_CLOSE && scrollMainMenuDir == 0) {
       scrollMainMenuDir = -1;
@@ -737,7 +714,6 @@ void renderDisplay() {
   int x = 0;
   int y = 2;
  
-
   // register screen for gestures on top half
   GD.Tag(GESTURE_AREA_HIGH);
   GD.Begin(RECTS);
@@ -753,10 +729,9 @@ void renderDisplay() {
   GD.Vertex2ii(0,0);
   GD.Vertex2ii(800, 22);
   
-  
   GD.ColorA(255);
   GD.ColorRGB(0xdddddd);
-  GD.cmd_text(x + 30, 2, 27, 0, "Input 25.4V / - 25.3V");
+  GD.cmd_text(x + 30, 2, 27, 0, "Input 25.4V / - 25.3V"); // NOTE: Currently only dummy info
 
   // line below top header
   y=y+23;
@@ -775,7 +750,6 @@ void renderDisplay() {
   // register screen for gestures on lower half
   GD.Tag(GESTURE_AREA_LOW);
   GD.Begin(RECTS);
-  //GD.ColorA(200);
   GD.ColorRGB(0x000000);
   GD.Vertex2ii(0,LOWER_WIDGET_Y_POS);
   GD.Vertex2ii(800, 480);
@@ -789,8 +763,13 @@ void renderDisplay() {
       showWidget(LOWER_WIDGET_Y_POS, activeWidget, 0);
     }
     else if (scrollDir == -1) {
-      showWidget(LOWER_WIDGET_Y_POS,activeWidget, scroll); 
-      showWidget(LOWER_WIDGET_Y_POS,activeWidget + 1, scroll + 800);
+      showWidget(LOWER_WIDGET_Y_POS,activeWidget, scroll);
+      if (activeWidget == noOfWidgets - 1) {
+        // swap from last to first
+        showWidget(LOWER_WIDGET_Y_POS, 0, scroll + 800);
+      } else {
+        showWidget(LOWER_WIDGET_Y_POS,activeWidget + 1, scroll + 800);
+      }
     } 
     else if (scrollDir == 1) {
       if (activeWidget == 0) { 
@@ -810,9 +789,7 @@ void renderDisplay() {
     GD.cmd_number(600, 0, 27, 6, (int)(V_STATS.rawValue / C_STATS.rawValue));
     GD.cmd_text(670, 0,  27, 0, "ohm load");
   }
-
 }
-
 
 int gestOldX = 0;
 int gestOldY = 0;
@@ -851,7 +828,6 @@ void detectGestures() {
         gestureDetected = GEST_MOVE_DOWN;
         gestDurationY = 0;
       }
-
     } 
     
   } else {
@@ -867,7 +843,6 @@ void loop()
 {
   GD.__end();
   disableSPIunits();
-
 
   int dataR = SMU[0].dataReady();
   if (dataR == -99) {
@@ -901,10 +876,9 @@ void loop()
     V_FILTERS.updateMean(Vout);
   }
   disableSPIunits();
-  //delay(1);
   GD.resume();
-  Serial.print("R=");
-  Serial.println(V_STATS.rawValue / C_STATS.rawValue);
+  //Serial.print("R=");
+  //Serial.println(V_STATS.rawValue / C_STATS.rawValue);
 
   if (!gestureDetected) {
     if (GD.inputs.tag == BUTTON_VOLT_SET) {
@@ -924,9 +898,6 @@ void loop()
     }
   }
 
-  //GD.get_inputs();
-
-  
   detectGestures();
 
   GD.Clear();
@@ -957,12 +928,11 @@ float set_dac[]  = {-2000.00, -1000.00, 0.00, 100.00, 500.00, 1000.00, 1500.00, 
 float meas_dac[] = {-1999.86, -0990.80, 0.00, 100.00, 500.013, 1000.046, 1500.07, 2000.10, 2999.99, 4000.02, 4500.10, 5000.10, 6000.11, 7000.21, 7999.31, 9000.00, 10000.00};
 
 float nonlinear_comp(float milliVolt) {
-   // Nonlinearity
-   //todo: CHECK IF THIS WORKS 
-   Serial.print("Looking up in comp table for ");
-   Serial.print(milliVolt);
-   Serial.println(" millivolt");
-   float v = milliVolt;
+  // Nonlinearity
+  Serial.print("Looking up in comp table for ");
+  Serial.print(milliVolt);
+  Serial.println(" millivolt");
+  float v = milliVolt;
   for (int i=0;i<15;i++) {
     if (v > meas_dac[i] && v <= meas_dac[i+1]) {
       float adj_factor_low = set_dac[i] - meas_dac[i];
@@ -990,7 +960,6 @@ float nonlinear_comp(float milliVolt) {
       return v;
     }
   } 
-  Serial.println("no comp");
   return milliVolt;  
 }
 
@@ -1012,7 +981,6 @@ void closeCallback(int vol_cur_type, bool cancel) {
      if (SMU[0].fltSetCommitVoltageSource(mv / 1000.0)) printError(_PRINT_ERROR_VOLTAGE_SOURCE_SETTING);
   }
   if (vol_cur_type == BUTTON_CUR_SET) {
-
      if (SMU[0].fltSetCommitCurrentSource(C_DIAL.getMv() / 1000.0, _SOURCE_AND_SINK)) printError(_PRINT_ERROR_CURRENT_SOURCE_SETTING);
   }
   GD.resume();

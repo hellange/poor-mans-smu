@@ -106,7 +106,7 @@ void CalibrationClass::renderCal(int x, int y, float valM, float setM, bool cur)
       float max_meas_value = meas_adc[adc_cal_points-1];
 
   // correction graph
-  float correction_display_factor = 1000000.0; // TODO: Make it show as ppm ?  uV ?
+  float correction_display_factor = 100000.0; // TODO: Make it show as ppm ?  uV ?
   for (int i=0;i<adc_cal_points;i++) {
       float diff = set_adc[i] - meas_adc[i];
       int xv = 300 *(set_adc[i] / max_set_value);

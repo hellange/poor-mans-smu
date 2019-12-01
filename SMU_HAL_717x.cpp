@@ -257,13 +257,13 @@ int8_t ADCClass::fltSetCommitVoltageSource(float v) {
     float v = (float) ((AD7176_regs[4].value*VFSR*1000.0)/FSR); 
     v=v-VREF*1000.0;
     // DONT INCLUDE THESE ADJUSTMENTS WHEN TESTING ONLY DAC/ADC BOARD !!!!
-     if (full_board == true) {
-     v=v/100.0; // 100 ohm shunt. Comment out if using 1ohm shunt
+    if (full_board == true) {
+      v=v/100.0; // 100 ohm shunt. Comment out if using 1ohm shunt
       v=v/10.0; // x10 amplifier
   
       // account for gain in amps
-    v = v * 0.994; // 1ohm shunt
-      //v = v * 0.9875; // 100ohm shunt
+      //v = v * 0.9941; // 1ohm shunt
+      v = v * 0.9875; // 100ohm shunt
     }
 
     v = v / 0.8;  // funnel amplifier x0.8
