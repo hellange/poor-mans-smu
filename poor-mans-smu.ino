@@ -276,17 +276,17 @@ void handleSliders(int x, int y) {
 //    GD.ColorRGB(0xffffff);
 //
   GD.Tag(TAG_FILTER_SLIDER);
-  GD.cmd_slider(500+x, y+30, 204,15, OPT_FLAT, V_FILTERS.filterSize * (65535/100), 65535);
-  GD.cmd_track(500+x, y+30, 204, 20, TAG_FILTER_SLIDER);
+  GD.cmd_slider(400+x, y+30, 300,15, OPT_FLAT, V_FILTERS.filterSize * (65535/100), 65535);
+  GD.cmd_track(400+x, y+30, 300, 20, TAG_FILTER_SLIDER);
   
   GD.Tag(TAG_FILTER_SLIDER_B);
-  GD.cmd_slider(500+x, y+90, 204,15, OPT_FLAT, V_STATS.getNrOfSamplesBeforeStore()* (65535/100), 65535);
-  GD.cmd_track(500+x, y+90, 204, 20, TAG_FILTER_SLIDER_B);
+  GD.cmd_slider(400+x, y+90, 300,15, OPT_FLAT, V_STATS.getNrOfSamplesBeforeStore()* (65535/100), 65535);
+  GD.cmd_track(400+x, y+90, 300, 20, TAG_FILTER_SLIDER_B);
   
-  GD.cmd_text(550+x,y, 27, 0, "Filter size:");
-  GD.cmd_number(630+x,y, 27, 0, V_FILTERS.filterSize);
-  GD.cmd_text(550+x,y+60, 27, 0, "Samples size:");
-  GD.cmd_number(655+x,y+60, 27, 0, V_STATS.getNrOfSamplesBeforeStore());
+  GD.cmd_text(500+x,y, 27, 0, "Filter size:");
+  GD.cmd_number(580+x,y, 27, 0, V_FILTERS.filterSize);
+  GD.cmd_text(500+x,y+60, 27, 0, "Samples size:");
+  GD.cmd_number(580+x,y+60, 27, 0, V_STATS.getNrOfSamplesBeforeStore());
   
 
   if (!anyDialogOpen()) {
@@ -610,7 +610,7 @@ void showWidget(int y, int widgetNo, int scroll) {
 }
 
 bool reduceDetails() {
-  return scrollDir != 0 || anyDialogOpen() || mainMenuActive == true;
+  return scrollDir != 0 || mainMenuActive == true;
 }
 
 
@@ -618,27 +618,37 @@ int gestureDetected = GEST_NONE;
 int scrollSpeed = 75;
 void handleWidgetScrollPosition() {
   if (gestureDetected == GEST_MOVE_LEFT) {
-    if (activeWidget == noOfWidgets -1) {
-      Serial.println("reached right end");
-    } else {
-      scrollDir = -1;
-    }
+//    if (activeWidget == noOfWidgets -1) {
+//      Serial.println("reached right end");
+//    } else {
+//      scrollDir = -1;
+//    }
+    scrollDir = -1;
   } 
   else if (gestureDetected == GEST_MOVE_RIGHT) {
-    if (activeWidget == 0) {
-      Serial.println("reached left end");
-    } else {
-      scrollDir = 1;
-    }
+//    if (activeWidget == 0) {
+//      Serial.println("reached left end");
+//    } else {
+//      scrollDir = 1;
+//    }
+    scrollDir = 1;
   } 
   
   scroll = scroll + scrollDir * scrollSpeed;
   if (scroll <= -800 && scrollDir != 0) {
     activeWidget ++;
+    if (activeWidget > noOfWidgets -1) {
+      // swap arund
+      activeWidget = 0;
+    }
     scrollDir = 0;
     scroll = 0;
   } else if (scroll >= 800 && scrollDir != 0) {
     activeWidget --;
+    if (activeWidget < 0) {
+      // swap around
+      activeWidget = noOfWidgets - 1;
+    }
     scrollDir = 0;
     scroll = 0;
   }
@@ -783,7 +793,12 @@ void renderDisplay() {
       showWidget(LOWER_WIDGET_Y_POS,activeWidget + 1, scroll + 800);
     } 
     else if (scrollDir == 1) {
-      showWidget(LOWER_WIDGET_Y_POS,activeWidget - 1, scroll - 800);
+      if (activeWidget == 0) { 
+        // swap from first to last
+        showWidget(LOWER_WIDGET_Y_POS,noOfWidgets -1 , scroll - 800);
+      } else {
+        showWidget(LOWER_WIDGET_Y_POS,activeWidget - 1, scroll - 800);
+      }
       showWidget(LOWER_WIDGET_Y_POS,activeWidget, scroll + 0);
     }   
   }

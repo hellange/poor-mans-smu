@@ -83,6 +83,9 @@ int StatsClass::getNrOfSamplesBeforeStore() {
   return maxSamplesBeforeStore;
 }
 void StatsClass::setNrOfSamplesBeforeStore(int s) {
+  if (s < 1) {
+    s = 1;
+  }
   if (s > MAX_PRELIMBUFFER_SIZE) {
     s = MAX_PRELIMBUFFER_SIZE;  //TODO: add warning ?
   }
