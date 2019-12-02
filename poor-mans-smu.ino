@@ -310,7 +310,8 @@ void handleSliders(int x, int y) {
   GD.cmd_button(x+600,y+130,95,50,29,0,"UNCAL");
 
   GD.ColorA(255);
-  GD.Tag(0); // Note: Added this because other UI parts that the last button seemed to react as button
+  GD.Tag(0); // Note: Prevents button in some cases to react also when touching other places in UI. Why ?
+
 
   GD.get_inputs();
   switch (GD.inputs.track_tag & 0xff) {
@@ -480,7 +481,7 @@ void currentPanel(int x, int y, boolean overflow) {
   GD.cmd_button(x+20,y,95,50,29,0,"LIM");
   GD.Tag(BUTTON_CUR_AUTO);
   GD.cmd_button(x+350,y,95,50,29,0,current_range==0 ? "1A" : "10mA");
-  
+  GD.Tag(0); // Note: Prevents button in some cases to react also when touching other places in UI. Why ?
 }
 
 void drawBall(int x, int y, bool set) {
@@ -885,21 +886,22 @@ void loop()
   //Serial.println(V_STATS.rawValue / C_STATS.rawValue);
 
   if (!gestureDetected) {
-    if (GD.inputs.tag == BUTTON_VOLT_SET) {
-            Serial.println("Vol set");
+    int tag = GD.inputs.tag;
 
+    if (tag == BUTTON_VOLT_SET) {
+      Serial.println("Volt set");
       V_DIAL.open(BUTTON_VOLT_SET, closeCallback, SMU[0].getSetValuemV());
-    } else if (GD.inputs.tag == BUTTON_CUR_SET) {
+    } else if (tag == BUTTON_CUR_SET) {
       Serial.println("Cur set");
       C_DIAL.open(BUTTON_CUR_SET, closeCallback, SMU[0].getSetValuemA());
-    } else if (GD.inputs.tag == BUTTON_NULL) {
+    } else if (tag == BUTTON_NULL) {
       Serial.println("Null set");
       V_CALIBRATION.toggleNullValue(V_STATS.rawValue);
       C_CALIBRATION.toggleNullValue(C_STATS.rawValue);
-    } else if (GD.inputs.tag == BUTTON_UNCAL) {
+    } else if (tag == BUTTON_UNCAL) {
       Serial.println("Uncal set");
       V_CALIBRATION.toggleCalibratedValues();
-    } else if (GD.inputs.tag == BUTTON_CUR_AUTO) {
+    } else if (tag == BUTTON_CUR_AUTO) {
       if (timeSinceLastChange + 500 < millis()){
       
         Serial.println("cur_auto set");

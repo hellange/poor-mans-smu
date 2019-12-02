@@ -273,9 +273,13 @@ int8_t ADCClass::fltSetCommitVoltageSource(float v) {
       }
       v=v/10.0; // x10 amplifier
   
-      // account for gain in amps
-      //v = v * 0.9941; // 1ohm shunt
-      v = v * 0.9878; // 100ohm shunt
+      // account for resistor value not perfect
+      if (range == 0) {
+        v = v * 0.9941; // 1ohm shunt, 1A range
+      } else {
+        v = v * 0.9878; // 100ohm shunt, 10mA range
+      }
+      
     }
 
     v = v / 0.8;  // funnel amplifier x0.8
