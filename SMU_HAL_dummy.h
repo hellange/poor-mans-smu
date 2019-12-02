@@ -18,7 +18,7 @@ class SMU_HAL_dummy
     float measureMilliVoltage();
 
     int dataReady();
-    float measureCurrent();
+    float measureCurrent(int range);
 
     float getSetValuemV();
     float getSetValuemA();

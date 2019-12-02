@@ -42,7 +42,7 @@
   return nowValueV * 1000-0;  // return millivolt
  }
  
- float SMU_HAL_dummy::measureCurrent(){
+ float SMU_HAL_dummy::measureCurrent(int range){
 
   float simulatedLoad = 10.0; //ohm
   nowValueI = nowValueV / simulatedLoad;

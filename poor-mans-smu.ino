@@ -81,6 +81,10 @@ int activeWidget = 0;
 
 #include "dial.h"
 
+
+ int current_range = 0; // TODO: get rid of global
+ int timeSinceLastChange = 0;  // TODO: get rid of global
+
 void setup()
 {
    disableSPIunits();
@@ -281,7 +285,6 @@ void handleSliders(int x, int y) {
   
 
   if (!anyDialogOpen()) {
-    GD.Tag(BUTTON_NULL);
     if (V_CALIBRATION.nullValue!=0.0) {
       GD.ColorRGB(0x00ff00);
     } else {
@@ -290,12 +293,11 @@ void handleSliders(int x, int y) {
   } else {
     GD.ColorA(100);
   }
-
+    GD.Tag(BUTTON_NULL);
   GD.cmd_button(x+700,y+130,95,50,29,0,"NULL");
 
 
   if (!anyDialogOpen()) {
-    GD.Tag(BUTTON_UNCAL);
     if (V_CALIBRATION.useCalibratedValues == false) {
       GD.ColorRGB(0x00ff00);
     } else {
@@ -304,7 +306,7 @@ void handleSliders(int x, int y) {
   } else {
     GD.ColorA(100);
   }
-
+  GD.Tag(BUTTON_UNCAL);
   GD.cmd_button(x+600,y+130,95,50,29,0,"UNCAL");
 
   GD.ColorA(255);
@@ -329,7 +331,8 @@ void handleSliders(int x, int y) {
       V_STATS.setNrOfSamplesBeforeStore(int(slider_val));
       // for now, just use same is current as for voltage
       C_STATS.setNrOfSamplesBeforeStore(int(slider_val));
-      break;}
+      break;
+    }
     default:
       break;
   }
@@ -443,7 +446,7 @@ void currentPanel(int x, int y, boolean overflow) {
   y=y+48;  
 
   GD.Begin(RECTS);
-    GD.LineWidth(10);
+  GD.LineWidth(10);
   for (int i=0;i<40;i++) {
     int percent = 100 * (abs(C_STATS.rawValue) / abs(SMU[0].getSetValuemA()));
     if (percent > i*2.5) {
@@ -476,7 +479,7 @@ void currentPanel(int x, int y, boolean overflow) {
   GD.Tag(BUTTON_CUR_SET);
   GD.cmd_button(x+20,y,95,50,29,0,"LIM");
   GD.Tag(BUTTON_CUR_AUTO);
-  GD.cmd_button(x+350,y,95,50,29,0,"AUTO");
+  GD.cmd_button(x+350,y,95,50,29,0,current_range==0 ? "1A" : "10mA");
   
 }
 
@@ -807,7 +810,7 @@ void detectGestures() {
   if ((GD.inputs.tag == GESTURE_AREA_LOW || GD.inputs.tag == GESTURE_AREA_HIGH) && gestureDetected == GEST_NONE) {
     if (touchX > 0 && touchY > LOWER_WIDGET_Y_POS && gestDistanceX < -20 && scrollDir == 0) {
       if (++gestDurationX >= 2) {
-        Serial.println("move left");
+        Serial.println("gesture = move left");
         Serial.flush();
         gestureDetected = GEST_MOVE_LEFT;
         gestDurationX = 0;
@@ -815,7 +818,7 @@ void detectGestures() {
     }
     else if (touchX > 0 && touchY > LOWER_WIDGET_Y_POS && gestDistanceX > 20 && scrollDir == 0) {
       if (++gestDurationX >= 2) {
-        Serial.println("move right");
+        Serial.println("gesture = move right");
         Serial.flush();
         gestureDetected = GEST_MOVE_RIGHT;
         gestDurationX = 0;
@@ -823,7 +826,7 @@ void detectGestures() {
     } 
     else if (touchY > 0 && touchY<150 && gestDistanceY > 10 && scrollDir == 0) {
        if (++gestDurationY >= 2) {
-        Serial.println("move down from upper");
+        Serial.println("gesture = move down from upper");
         Serial.flush();
         gestureDetected = GEST_MOVE_DOWN;
         gestDurationY = 0;
@@ -840,6 +843,7 @@ void detectGestures() {
 }
 
 void loop()
+
 {
   GD.__end();
   disableSPIunits();
@@ -850,7 +854,7 @@ void loop()
   }
   else if (dataR == 1) {
     
-    float Cout = SMU[0].measureCurrent();
+    float Cout = SMU[0].measureCurrent(current_range);
 
     Cout = Cout - C_CALIBRATION.nullValue;
 
@@ -895,6 +899,21 @@ void loop()
     } else if (GD.inputs.tag == BUTTON_UNCAL) {
       Serial.println("Uncal set");
       V_CALIBRATION.toggleCalibratedValues();
+    } else if (GD.inputs.tag == BUTTON_CUR_AUTO) {
+      if (timeSinceLastChange + 500 < millis()){
+      
+        Serial.println("cur_auto set");
+
+        // swap current range
+        if (current_range == 0) {
+          current_range = 1;
+        } else {
+          current_range = 0;
+        }
+        timeSinceLastChange = millis();
+
+      }
+
     }
   }
 

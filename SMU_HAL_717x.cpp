@@ -251,28 +251,30 @@ int8_t ADCClass::fltSetCommitVoltageSource(float v) {
  }
 
  
- float ADCClass::measureCurrent(){
+ float ADCClass::measureCurrent(int range){
 
     AD7176_ReadRegister(&AD7176_regs[4]);
     float v = (float) ((AD7176_regs[4].value*VFSR*1000.0)/FSR); 
     v=v-VREF*1000.0;
     // DONT INCLUDE THESE ADJUSTMENTS WHEN TESTING ONLY DAC/ADC BOARD !!!!
     if (full_board == true) {
-      v=v/100.0; // 100 ohm shunt. Comment out if using 1ohm shunt
+      if (range == 1) {
+        v=v/100.0; // 100 ohm shunt.
+      }
       v=v/10.0; // x10 amplifier
   
       // account for gain in amps
       //v = v * 0.9941; // 1ohm shunt
-      v = v * 0.9875; // 100ohm shunt
+      v = v * 0.9878; // 100ohm shunt
     }
 
     v = v / 0.8;  // funnel amplifier x0.8
 
     compliance = abs(setValueI) < abs(v/1000.0);
-    Serial.print("compliance setValueI:");  
-    Serial.print(abs(setValueI*1000.0));
-    Serial.print(", valueI:");
-    Serial.println(abs(v));
+//    Serial.print("compliance setValueI:");  
+//    Serial.print(abs(setValueI*1000.0));
+//    Serial.print(", valueI:");
+//    Serial.println(abs(v));
 
     return v;
  }
