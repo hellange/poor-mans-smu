@@ -12,7 +12,7 @@ static st_reg init_state[] =
 
     {0x03, 3, 0, 0x0000l, "Reg_Check"}, //Register_Check
     {0x04, 3, 0, 0x0000l, "ADC_Data "}, //Data_Register
-    {0x06, 2, 0, 0x080Cl, "GPIO_Conf"}, //IOCon_Register
+    {0x06, 2, 0, 0x080Cl, "GPIO_Conf"}, //IOCon_Register   // both gpio output low
 //     {0x06, 2, 0, 0x0800l, "GPIO_Conf"}, //IOCon_Register
 
     {0x07, 2, 0, 0x0000l, "ID_ST_Reg"}, //ID_st_reg
@@ -65,6 +65,16 @@ static st_reg init_state[] =
 
 bool full_board = true; // set to true to account for shunt and gain/offsets other places that dac/adc
 
+void ADCClass::setCurrentRange(int range) {
+  if (range == 0) {
+        AD7176_WriteRegister({0x06, 2, 0, 0x080Cl});
+
+  } else {
+        AD7176_WriteRegister({0x06, 2, 0, 0x080Dl});
+
+  }
+
+}
 
 float ADCClass::measureMilliVoltage() {
   AD7176_ReadRegister(&AD7176_regs[4]);

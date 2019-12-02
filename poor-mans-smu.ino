@@ -903,7 +903,7 @@ void loop()
       if (timeSinceLastChange + 500 < millis()){
       
         Serial.println("cur_auto set");
-
+       
         // swap current range
         if (current_range == 0) {
           current_range = 1;
@@ -911,6 +911,7 @@ void loop()
           current_range = 0;
         }
         timeSinceLastChange = millis();
+        SMU[0].setCurrentRange(current_range);
 
       }
 
