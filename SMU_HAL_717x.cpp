@@ -275,7 +275,7 @@ int8_t ADCClass::fltSetCommitVoltageSource(float v) {
       if (range == 1) {
         v=v/100.0; // 100 ohm shunt.
       } else {
-        v=v/1.1; // 1ohm shunt + resistance in range switch mosfet
+        v=v/1.185; // 1ohm shunt + resistance in range switch mosfet
       }
       v=v/10.0; // x10 amplifier
   

@@ -56,7 +56,9 @@ int scrollDir = 0;
 int scrollMainMenu = 0;
 int scrollMainMenuDir = 0;
 boolean mainMenuActive = false;
-
+int timeAtStartup;
+bool startupCalibrationDone1 = false;
+bool startupCalibrationDone2 = false;
 
 #define BUTTON_NULL 220
 #define BUTTON_UNCAL 221
@@ -101,8 +103,8 @@ void setup()
     pinMode(9,OUTPUT);
     pinMode(10,OUTPUT);
 
-    pinMode(4,OUTPUT);
-       digitalWrite(4, HIGH);
+    pinMode(4,OUTPUT); // current range io pin
+    digitalWrite(4, HIGH);
 
     
     //pinMode(11,OUTPUT);
@@ -166,6 +168,8 @@ void setup()
 
    V_DIAL.init();
    C_DIAL.init();
+
+   timeAtStartup = millis();
 }
 
 void disableSPIunits(){
@@ -846,9 +850,43 @@ void detectGestures() {
   gestOldX = GD.inputs.x;  
 }
 
+int timeBeforeAutoNull = millis() + 2000;
+void handleAutoNullAtStartup() {
+  if (!startupCalibrationDone1 && timeAtStartup + timeBeforeAutoNull < millis()) {
+    current_range = 1;
+  }
+  
+  if (!startupCalibrationDone1 && timeAtStartup + timeBeforeAutoNull + 100 < millis()) {
+    float v = V_STATS.rawValue;    
+    V_CALIBRATION.toggleNullValue(v, current_range);
+    Serial.print("Removed voltage offset from 10mA range:");  
+    Serial.println(v);  
+    v = C_STATS.rawValue;
+    C_CALIBRATION.toggleNullValue(v , current_range);
+    Serial.print("Removed current offset from 10mA range:");  
+    Serial.println(v);
+    startupCalibrationDone1 = true;
+  } 
+
+  if (!startupCalibrationDone2 && timeAtStartup + timeBeforeAutoNull + 1000 < millis()) {
+    current_range = 0;
+  }
+  if (!startupCalibrationDone2 && timeAtStartup + timeBeforeAutoNull + 1100 < millis()) {
+    float v = V_STATS.rawValue;
+    V_CALIBRATION.toggleNullValue(v, current_range);
+    Serial.print("Removed voltage offset from 1A range:");  
+    Serial.println(v);  
+    v = C_STATS.rawValue;
+    C_CALIBRATION.toggleNullValue(v,current_range);
+    Serial.print("Removed current offset from 1A current range:");  
+    Serial.println(v);  
+    startupCalibrationDone2 = true;
+  } 
+}
 void loop()
 
 {
+  handleAutoNullAtStartup();
   GD.__end();
   disableSPIunits();
 
@@ -885,9 +923,12 @@ void loop()
   }
   disableSPIunits();
   GD.resume();
+
+  
+
+  
   //Serial.print("R=");
   //Serial.println(V_STATS.rawValue / C_STATS.rawValue);
-
   if (!gestureDetected) {
     int tag = GD.inputs.tag;
 
@@ -927,6 +968,15 @@ void loop()
 
   GD.Clear();
   renderDisplay();
+  if (!startupCalibrationDone1 && !startupCalibrationDone2) {
+    GD.Begin(RECTS);
+    GD.ColorA(200);
+    GD.ColorRGB(0x222222);
+    GD.Vertex2ii(180, 160);
+    GD.Vertex2ii(620, 280);
+    GD.ColorRGB(0xffffff);
+    GD.cmd_text(250, 200 , 29, 0, "Wait for null adjustment...");
+  }
 
   if (anyDialogOpen()) {
     bluredBackground();
