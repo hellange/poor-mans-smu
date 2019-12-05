@@ -21,19 +21,19 @@ void MainMenuClass::handle() {
 
     GD.Begin(RECTS);
     GD.LineWidth(200);
-    GD.ColorA(200);
+    //GD.ColorA(255);   // allready opaque, why ?
     GD.ColorRGB(0x888888);
     GD.Vertex2ii(50,0);
     GD.Vertex2ii(750, scrollMainMenu+40);
 
     GD.Begin(RECTS);
     GD.LineWidth(180);
-    GD.ColorA(230);
+    //GD.ColorA(255);
     GD.ColorRGB(0x000000);
     GD.Vertex2ii(750, scrollMainMenu+40);
     GD.ColorRGB(0xffffff);
 
-    GD.ColorA(230);
+    //GD.ColorA(230);
 
     int buttonWidth = 200;
     int buttonHeight = 70;

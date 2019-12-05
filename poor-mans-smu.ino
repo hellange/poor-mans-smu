@@ -125,7 +125,7 @@ void setup()
    GD.cmd_romfont(1, 34); // put FT81x font 34 in slot 1
    GD.Clear();
    GD.ColorRGB(0xaaaaff);
-   GD.ColorA(120);
+   GD.ColorA(200);
    GD.cmd_text(250, 200 ,   31, 0, "Poor man's SMU");
    GD.ColorRGB(0xaaaaaa);
    GD.cmd_text(250, 240 ,   28, 0, "Designed    by    Helge Langehaug");
@@ -289,7 +289,7 @@ void handleSliders(int x, int y) {
       GD.ColorRGB(0x000000);
     }
   } else {
-    GD.ColorA(100);
+    //GD.ColorA(100);
   }
     GD.Tag(BUTTON_NULL);
   GD.cmd_button(x+700,y+130,95,50,29,0,"NULL");
@@ -302,7 +302,7 @@ void handleSliders(int x, int y) {
       GD.ColorRGB(0x000000);
     }
   } else {
-    GD.ColorA(100);
+    //GD.ColorA(100);
   }
   GD.Tag(BUTTON_UNCAL);
   GD.cmd_button(x+600,y+130,95,50,29,0,"UNCAL");
@@ -639,7 +639,7 @@ void handleWidgetScrollPosition() {
 
 void bluredBackground() {
     GD.Begin(RECTS);
-    GD.ColorA(150);
+    //GD.ColorA(150);
     GD.ColorRGB(0x000000);
     GD.Vertex2ii(0,0);
     GD.Vertex2ii(800, 480);
@@ -668,7 +668,6 @@ void renderDisplay() {
   // register screen for gestures on top half
   GD.Tag(GESTURE_AREA_HIGH);
   GD.Begin(RECTS);
-  GD.ColorA(200);
   GD.ColorRGB(0x000000);
   GD.Vertex2ii(0,0);
   GD.Vertex2ii(800, LOWER_WIDGET_Y_POS);
@@ -747,7 +746,7 @@ int gestOldY = 0;
 int gestDurationX = 0;
 int gestDurationY = 0;
 
-void detectGestures() {
+int detectGestures() {
   GD.get_inputs();
   //Serial.println(GD.inputs.tag);
   int touchX = GD.inputs.x;
@@ -788,6 +787,7 @@ void detectGestures() {
   }
   gestOldY = GD.inputs.y;  
   gestOldX = GD.inputs.x;  
+  return gestureDetected;
 }
 
 int timeBeforeAutoNull = millis() + 2000;
@@ -892,7 +892,7 @@ void loop()
   
   //Serial.print("R=");
   //Serial.println(V_STATS.rawValue / C_STATS.rawValue);
-  if (!gestureDetected) {
+  if (detectGestures() == GEST_NONE) {
     int tag = GD.inputs.tag;
 
     if (tag == BUTTON_VOLT_SET) {
@@ -927,13 +927,14 @@ void loop()
     }
   }
 
-  detectGestures();
+  //detectGestures();
 
   GD.Clear();
   renderDisplay();
   if (!startupCalibrationDone1 && !startupCalibrationDone2) {
+    
     GD.Begin(RECTS);
-    GD.ColorA(250);
+    GD.ColorA(230);  // already opaque, why ?
     GD.ColorRGB(0x222222);
     GD.Vertex2ii(180, 160);
     GD.Vertex2ii(620, 280);
