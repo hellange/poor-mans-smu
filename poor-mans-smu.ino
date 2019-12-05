@@ -19,6 +19,7 @@
 #include "tags.h"
 #include "Arduino.h"
 #include "Wire.h"
+#include "Mainmenu.h"
 
 #include "SMU_HAL_dummy.h"
 #include "SMU_HAL_717x.h"
@@ -53,9 +54,7 @@ ADCClass SMU[1] = {
 
 int scroll = 0;
 int scrollDir = 0;
-int scrollMainMenu = 0;
-int scrollMainMenuDir = 0;
-boolean mainMenuActive = false;
+
 int timeAtStartup;
 bool startupCalibrationDone1 = false;
 bool startupCalibrationDone2 = false;
@@ -67,11 +66,6 @@ StatsClass C_STATS;
 FiltersClass V_FILTERS;
 FiltersClass C_FILTERS;
 
-//CalibrationClass V_CALIBRATION;
-//CalibrationClass C_CALIBRATION;
-
-
-
 float rawMa_glob; // TODO: store in stats for analysis just as voltage
 
 float DACVout;  // TODO: Dont use global
@@ -79,13 +73,10 @@ float DACVout;  // TODO: Dont use global
 int noOfWidgets = 6;
 int activeWidget = 0;
 
-
-
 #include "dial.h"
 
-
- int current_range = 0; // TODO: get rid of global
- int timeSinceLastChange = 0;  // TODO: get rid of global
+int current_range = 0; // TODO: get rid of global
+int timeSinceLastChange = 0;  // TODO: get rid of global
 
 void setup()
 {
@@ -602,7 +593,7 @@ void showWidget(int y, int widgetNo, int scroll) {
 }
 
 bool reduceDetails() {
-  return scrollDir != 0 || mainMenuActive == true;
+  return scrollDir != 0 || MAINMENU.active == true;
 }
 
 
@@ -653,70 +644,19 @@ void bluredBackground() {
     GD.Vertex2ii(0,0);
     GD.Vertex2ii(800, 480);
 }
+
 void handleMenuScrolldown(){
 
-  if (gestureDetected == GEST_MOVE_DOWN && mainMenuActive == false) {
-    mainMenuActive = true;
-    scrollMainMenuDir = 1;
+  if (gestureDetected == GEST_MOVE_DOWN && MAINMENU.active == false) {
+    MAINMENU.activate();
     return; // start the animation etc. next time, so UI that needs to reduce details have time to reach.
   }  
-
-  // main menu
-  if (mainMenuActive) {
-
-    bluredBackground();
-
-    scrollMainMenu = scrollMainMenu + scrollMainMenuDir*25;
-    if (scrollMainMenu > 350) {
-      scrollMainMenu = 350;
-      scrollMainMenuDir = 0;
-    }
-
-    GD.Begin(RECTS);
-    GD.LineWidth(200);
-    GD.ColorA(200);
-    GD.ColorRGB(0x888888);
-    GD.Vertex2ii(50,0);
-    GD.Vertex2ii(750, scrollMainMenu+40);
-
-    GD.Begin(RECTS);
-    GD.LineWidth(180);
-    GD.ColorA(230);
-    GD.ColorRGB(0x000000);
-    GD.Vertex2ii(750, scrollMainMenu+40);
-    GD.ColorRGB(0xffffff);
-
-    GD.ColorA(230);
-
-    int buttonWidth = 200;
-    int buttonHeight = 70;
-               
-    const char * t[3][3] = {
-    {"SOURCE VOLT\0", "SOURCE CURRENT\0", "BATTERY\0"},
-    {"ELECTRONIC LOAD\0", "VOLTMETER\0", "PULSE GENERATOR\0"},
-    {"SWEEP\0", "RESISTANCE\0", "SETTINGS\0"}};
-    GD.ColorRGB(0x444444);
-    for (int y =0;y<3;y++) {
-      for (int x =0;x<3;x++) {
-        GD.cmd_button(70+(buttonWidth+30)*x,scrollMainMenu-280+(buttonHeight+20)*y,buttonWidth,buttonHeight,28,0,t[y][x]);
-      }
-    }
-    GD.Tag(MAIN_MENU_CLOSE);
-    GD.cmd_button(360,scrollMainMenu-10,80,40,28,0,"CLOSE");
-
-    if(GD.inputs.tag == MAIN_MENU_CLOSE && scrollMainMenuDir == 0) {
-      scrollMainMenuDir = -1;
-    }
-  } 
-  if (scrollMainMenuDir == -1){
-      scrollMainMenu = scrollMainMenu + scrollMainMenuDir*15;
-      if (scrollMainMenu < 0) {
-        scrollMainMenu = 0;
-        mainMenuActive = false;
-        scrollMainMenuDir = 0;
-      }
-  }
   
+  // main menu
+  if (MAINMENU.active) {
+    MAINMENU.handle();
+  }
+ 
 }
 
 
@@ -889,9 +829,9 @@ void loop()
   handleAutoNullAtStartup();
     float milliAmpere = C_STATS.rawValue;
     if (startupCalibrationDone1 && startupCalibrationDone2) {
-    Serial.print(milliAmpere,5);
-    Serial.print("mA, current range:");
-    Serial.println(current_range);
+      Serial.print(milliAmpere,5);
+      Serial.print("mA, current range:");
+      Serial.println(current_range);
       float hysteresis = 0.5;
       float switchAt = 3.0;
       
@@ -993,7 +933,7 @@ void loop()
   renderDisplay();
   if (!startupCalibrationDone1 && !startupCalibrationDone2) {
     GD.Begin(RECTS);
-    GD.ColorA(200);
+    GD.ColorA(250);
     GD.ColorRGB(0x222222);
     GD.Vertex2ii(180, 160);
     GD.Vertex2ii(620, 280);
