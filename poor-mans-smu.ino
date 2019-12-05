@@ -887,6 +887,29 @@ void loop()
 
 {
   handleAutoNullAtStartup();
+    float milliAmpere = C_STATS.rawValue;
+    if (startupCalibrationDone1 && startupCalibrationDone2) {
+    Serial.print(milliAmpere,5);
+    Serial.print("mA, current range:");
+    Serial.println(current_range);
+      float hysteresis = 0.5;
+      float switchAt = 3.0;
+      
+        // auto current range switch. TODO: Move to hardware ?
+//        if (current_range == 0 && abs(milliAmpere) < switchAt - hysteresis) {
+//          current_range = 1;
+//          SMU[0].setCurrentRange(current_range);
+//          Serial.println("switching to range 1");
+//  
+//        }
+//        // TODO: Make separate function to calculate current based on shunt and voltage!
+//        if (current_range == 1 && abs(milliAmpere) > switchAt) {
+//          current_range = 0;
+//          SMU[0].setCurrentRange(current_range);
+//          Serial.println("switching to range 0");
+//        }
+    }
+  
   GD.__end();
   disableSPIunits();
 

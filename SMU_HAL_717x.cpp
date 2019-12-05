@@ -290,6 +290,7 @@ int8_t ADCClass::fltSetCommitVoltageSource(float v) {
 
     v = v / 0.8;  // funnel amplifier x0.8
 
+    // TODO: replace with signal from actual circuit (current limit)
     compliance = abs(setValueI) < abs(v/1000.0);
 //    Serial.print("compliance setValueI:");  
 //    Serial.print(abs(setValueI*1000.0));
