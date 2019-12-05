@@ -68,9 +68,12 @@ bool full_board = true; // set to true to account for shunt and gain/offsets oth
 void ADCClass::setCurrentRange(int range) {
   if (range == 0) {
         AD7176_WriteRegister({0x06, 2, 0, 0x080Cl});
+          digitalWrite(4, HIGH);
+
 
   } else {
         AD7176_WriteRegister({0x06, 2, 0, 0x080Dl});
+  digitalWrite(4, LOW);
 
   }
 
@@ -86,7 +89,7 @@ float ADCClass::measureMilliVoltage() {
 
   if (full_board == true) {
     v = v +3.0; // offset
-    v = v*1.00034; // gain
+    v = v*1.00032; // gain
   }
   return v;
 }
@@ -214,17 +217,18 @@ uint32_t voltage_to_code_adj(float dac_voltage, float min_output, float max_outp
   
 
 dac_voltage = - dac_voltage; // analog part requires inverted input
-  
+//dac_voltage = dac_voltage / 11.05; // There is a /10 on the sense 
+
   return LTC2758_voltage_to_code(dac_voltage, min_output, max_output, serialOut);
 }
 
 
 int8_t ADCClass::fltSetCommitVoltageSource(float v) {
   setValueV = v;
-  //nowValueV = v;
+  
+  //v=v/10.93; // Have a 1:10 divider in sense input
 
-
-
+  
   //SPAN 0 = 0 to +5V
   //     1 = 0 to +10V
   //     2 = -5 to +5 V
@@ -270,12 +274,14 @@ int8_t ADCClass::fltSetCommitVoltageSource(float v) {
     if (full_board == true) {
       if (range == 1) {
         v=v/100.0; // 100 ohm shunt.
+      } else {
+        v=v/1.1; // 1ohm shunt + resistance in range switch mosfet
       }
       v=v/10.0; // x10 amplifier
   
       // account for resistor value not perfect
       if (range == 0) {
-        v = v * 0.9941; // 1ohm shunt, 1A range
+        v = v * 0.9741; // 1ohm shunt, 1A range
       } else {
         v = v * 0.9878; // 100ohm shunt, 10mA range
       }

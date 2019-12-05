@@ -8,7 +8,8 @@ CalibrationClass V_CALIBRATION;
 CalibrationClass C_CALIBRATION;
   
 void CalibrationClass::init() {
-  nullValue = 0.0;
+  nullValue[0] = 0.0;
+  nullValue[1] = 0.0;
   timeSinceLastChange = millis();
  
 }
@@ -27,14 +28,17 @@ bool CalibrationClass::toggleCalibratedValues() {
   return useCalibratedValues;
 }
 
-void CalibrationClass::toggleNullValue(float v) {
+bool CalibrationClass::nullValueIsSet(int current_range) {
+  return nullValue[current_range] != 0.0;
+}
+void CalibrationClass::toggleNullValue(float v, int current_range) {
   if (timeSinceLastChange + 1000 > millis()){
     return;
   }
-  if (nullValue != 0.0) {
-    nullValue = 0.0;
+  if (nullValue[current_range] != 0.0) {
+    nullValue[current_range] = 0.0;
   } else {
-    nullValue = v;
+    nullValue[current_range] = v;
   } 
   Serial.print("setNull to:");
   Serial.println(v);

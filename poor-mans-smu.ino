@@ -101,6 +101,10 @@ void setup()
     pinMode(9,OUTPUT);
     pinMode(10,OUTPUT);
 
+    pinMode(4,OUTPUT);
+       digitalWrite(4, HIGH);
+
+    
     //pinMode(11,OUTPUT);
     //pinMode(12,INPUT);
     //pinMode(13,OUTPUT);
@@ -221,7 +225,7 @@ void voltagePanel(int x, int y) {
   GD.cmd_button(x + 350,y + 132,95,50,29,0,"AUTO");
 
   showStatusIndicator(x+630, y+5, "FILTER", V_FILTERS.filterSize>1, false);
-  showStatusIndicator(x+720, y+5, "NULL", V_CALIBRATION.nullValue!=0.0, false);
+  showStatusIndicator(x+720, y+5, "NULL", V_CALIBRATION.nullValueIsSet(current_range), false);
   showStatusIndicator(x+630, y+45, "50Hz", false, false);
   showStatusIndicator(x+720, y+45, "4 1/2", false, false);
   showStatusIndicator(x+630, y+85, "COMP", SMU[0].compliance, true);
@@ -283,9 +287,8 @@ void handleSliders(int x, int y) {
   GD.cmd_text(500+x,y+60, 27, 0, "Samples size:");
   GD.cmd_number(605+x,y+60, 27, 0, V_STATS.getNrOfSamplesBeforeStore());
   
-
   if (!anyDialogOpen()) {
-    if (V_CALIBRATION.nullValue!=0.0) {
+    if (V_CALIBRATION.nullValueIsSet(current_range)) {
       GD.ColorRGB(0x00ff00);
     } else {
       GD.ColorRGB(0x000000);
@@ -857,7 +860,7 @@ void loop()
     
     float Cout = SMU[0].measureCurrent(current_range);
 
-    Cout = Cout - C_CALIBRATION.nullValue;
+    Cout = Cout - C_CALIBRATION.nullValue[current_range];
 
     C_STATS.addSample(Cout);
     C_FILTERS.updateMean(Cout);
@@ -875,7 +878,7 @@ void loop()
 //  Serial.println(" mV");  
 //  Serial.flush();
 
-    Vout = Vout - V_CALIBRATION.nullValue;
+    Vout = Vout - V_CALIBRATION.nullValue[current_range];
 
     V_STATS.addSample(Vout);
     V_FILTERS.updateMean(Vout);
@@ -896,8 +899,8 @@ void loop()
       C_DIAL.open(BUTTON_CUR_SET, closeCallback, SMU[0].getSetValuemA());
     } else if (tag == BUTTON_NULL) {
       Serial.println("Null set");
-      V_CALIBRATION.toggleNullValue(V_STATS.rawValue);
-      C_CALIBRATION.toggleNullValue(C_STATS.rawValue);
+      V_CALIBRATION.toggleNullValue(V_STATS.rawValue, current_range);
+      C_CALIBRATION.toggleNullValue(C_STATS.rawValue, current_range);
     } else if (tag == BUTTON_UNCAL) {
       Serial.println("Uncal set");
       V_CALIBRATION.toggleCalibratedValues();
