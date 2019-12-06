@@ -58,11 +58,6 @@ int timeAtStartup;
 bool startupCalibrationDone1 = false;
 bool startupCalibrationDone2 = false;
 
-#define BUTTON_NULL 220
-#define BUTTON_UNCAL 221
-
-
-
 float rawMa_glob; // TODO: store in stats for analysis just as voltage
 
 float DACVout;  // TODO: Dont use global
@@ -255,7 +250,20 @@ bool anyDialogOpen() {
   return V_DIAL.isDialogOpen() or C_DIAL.isDialogOpen();
 }
 
-void handleSliders(int x, int y) {
+// TODO: Move to separate util class ?
+int timeSinceIndicated = millis() + 1000;
+int indicateColor(int normalColor, int indicatorColor,int period) {
+   if (timeSinceIndicated + 100 > millis()) {
+     return indicatorColor;
+   } else {
+     return normalColor;
+   }
+}
+void startIndicator() {
+  timeSinceIndicated= millis();
+}
+
+void handleSliders(int x, int y) { 
   
   y=y+40;
 
@@ -271,6 +279,19 @@ void handleSliders(int x, int y) {
   GD.cmd_number(580+x,y, 27, 0, V_FILTERS.filterSize);
   GD.cmd_text(500+x,y+60, 27, 0, "Samples size:");
   GD.cmd_number(605+x,y+60, 27, 0, V_STATS.getNrOfSamplesBeforeStore());
+
+  if (!anyDialogOpen()) {
+   GD.Tag(BUTTON_CLEAR_BUFFER);
+//   GD.ColorRGB(0x000000);
+//   // just make sure that the button is lit a short period to indicate that you have pusked it...
+//   if (timeSinceButtonPushed + 100 > millis()) {
+//     GD.ColorRGB(0x00ff00);
+//   } else {
+//     GD.ColorRGB(0x000000);
+//   }
+    GD.ColorRGB(indicateColor(0x000000, 0x00ff00, 50));
+    GD.cmd_button(x+500,y+130,95,50,29,0,"CLEAR");
+  }
   
   if (!anyDialogOpen()) {
     if (V_CALIBRATION.nullValueIsSet(current_range)) {
@@ -281,8 +302,9 @@ void handleSliders(int x, int y) {
   } else {
     //GD.ColorA(100);
   }
-    GD.Tag(BUTTON_NULL);
+  GD.Tag(BUTTON_NULL);
   GD.cmd_button(x+700,y+130,95,50,29,0,"NULL");
+
 
 
   if (!anyDialogOpen()) {
@@ -896,6 +918,11 @@ void loop()
     } else if (tag == BUTTON_UNCAL) {
       Serial.println("Uncal set");
       V_CALIBRATION.toggleCalibratedValues();
+    } else if (tag == BUTTON_CLEAR_BUFFER) {
+      Serial.println("clearbuffer set");
+      V_STATS.clearBuffer();
+      C_STATS.clearBuffer();
+      startIndicator(); 
     } else if (tag == BUTTON_CUR_AUTO) {
       if (timeSinceLastChange + 500 < millis()){
       

@@ -22,6 +22,7 @@ private:
   const int noOfBins = 21;
 public:
   void init(int type);
+  void clearBuffer();
   void renderTrend(int x, int y, bool limitDetails);
   void renderHistogram(int x, int y, bool limitDetails);
   void addSample(float rawValue);

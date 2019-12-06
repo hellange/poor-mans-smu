@@ -9,11 +9,14 @@ StatsClass C_STATS;
 
 void StatsClass::init(int type_) {
    type = type_;
+   clearBuffer();
+}
+
+void StatsClass::clearBuffer() {
    for (int pos=0; pos<nrOfTrendPoints;pos++) { 
      value[pos] = undefinedValue;
      valueExt[pos][0] = undefinedValue;
      valueExt[pos][1] = undefinedValue;
-
    }
 }
 
