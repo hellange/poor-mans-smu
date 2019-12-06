@@ -883,7 +883,7 @@ void loop()
   disable_ADC_DAC_SPI_units();
   GD.resume();
 
-  if (detectGestures() == GEST_NONE) {
+  if (!gestureDetected) {
     int tag = GD.inputs.tag;
 
     if (tag == BUTTON_VOLT_SET) {
@@ -917,6 +917,8 @@ void loop()
 
     }
   }
+
+  detectGestures();
 
   GD.Clear();
   renderDisplay();
