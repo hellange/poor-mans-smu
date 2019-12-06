@@ -984,19 +984,14 @@ void closeCallback(int vol_cur_type, bool cancel) {
   GD.__end();
   disable_ADC_DAC_SPI_units();
   if (vol_cur_type == BUTTON_VOLT_SET) {
-
     float mv = V_DIAL.getMv(); 
-
-     if (SMU[0].fltSetCommitVoltageSource(mv)) printError(_PRINT_ERROR_VOLTAGE_SOURCE_SETTING);
+    if (SMU[0].fltSetCommitVoltageSource(mv)) printError(_PRINT_ERROR_VOLTAGE_SOURCE_SETTING);
   }
   if (vol_cur_type == BUTTON_CUR_SET) {
      if (SMU[0].fltSetCommitCurrentSource(C_DIAL.getMv() / 1000.0, _SOURCE_AND_SINK)) printError(_PRINT_ERROR_CURRENT_SOURCE_SETTING);
   }
   GD.resume();
 }
-
-
-
 
 void printError(int16_t  errorNum)
 {

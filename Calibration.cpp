@@ -3,7 +3,6 @@
 #include <SPI.h>
 #include "GD2.h"
 
-
 CalibrationClass V_CALIBRATION;
 CalibrationClass C_CALIBRATION;
   
@@ -76,11 +75,8 @@ float CalibrationClass::adc_nonlinear_compensation(float v){
       Serial.flush();
        */
       v= v + adj_factor;
-
     }
   }
- 
-  
   return v;
 }
 
@@ -123,29 +119,15 @@ float CalibrationClass::dac_nonlinear_compensation(float milliVolt) {
 }
 
 void CalibrationClass::renderCal(int x, int y, float valM, float setM, bool cur) {
-        GD.LineWidth(20);
-      GD.ColorA(150);
-      GD.ColorRGB(0x666666);
+  GD.LineWidth(20);
+  GD.Begin(LINE_STRIP);
+  GD.ColorA(255);
+  GD.ColorRGB(0xff0000);
 
-      GD.Begin(LINE_STRIP);
+  float max_set_value = set_adc[adc_cal_points-1];
+  float min_set_value = set_adc[0];
 
-      
-//      for (int i=0;i<adc_cal_points -1; i++) {
-//        GD.Vertex2ii(x+100+i*50, y + 200 - set_adc[i] / 10.0);
-//        GD.Vertex2ii(x+100+i*50, - 10 +y + 200 - set_adc[i] / 10.0);
-//        GD.Vertex2ii(x+100+i*50, y + 200 - set_adc[i] / 10.0);
-//
-//      }
-
-
-      GD.Begin(LINE_STRIP);
-      GD.ColorA(255);
-      GD.ColorRGB(0xff0000);
-
-      float max_set_value = set_adc[adc_cal_points-1];
-            float min_set_value = set_adc[0];
-
-      float max_meas_value = meas_adc[adc_cal_points-1];
+  float max_meas_value = meas_adc[adc_cal_points-1];
 
   // correction graph
   float correction_display_factor = 100000.0; // TODO: Make it show as ppm ?  uV ?
@@ -156,10 +138,10 @@ void CalibrationClass::renderCal(int x, int y, float valM, float setM, bool cur)
       GD.Vertex2ii(x+400+xv, y + 100 - yv);
   }
 
- // voltage axis
- GD.ColorRGB(0x00ff00);
- GD.Begin(LINE_STRIP);
-      GD.ColorA(100);
+  // voltage axis
+  GD.ColorRGB(0x00ff00);
+  GD.Begin(LINE_STRIP);
+  GD.ColorA(100);
   for (int i=0;i<adc_cal_points;i++) {
       //float diff = set_adc[i] - meas_adc[i];
       int xv = 300 *(set_adc[i] / max_set_value);
@@ -174,17 +156,5 @@ void CalibrationClass::renderCal(int x, int y, float valM, float setM, bool cur)
       GD.cmd_text(x+400+xv+10, y + 200, 27, 0, "V");
 
   }
-
-  
-  
-      GD.ColorA(255);
-
-      GD.ColorRGB(0xeeeeee);
-
-//  for (int i=0;i<10;i++) {
-//        
-//      GD.cmd_number(x+100+i*50 - 15, y + 210, 26, 4, (int)set_adc[i]);
-//
-//  }
   
 }

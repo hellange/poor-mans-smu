@@ -19,12 +19,10 @@ class CalibrationClass {
 
 
 public:
-    float nullValue[2];
-
+  float nullValue[2];
   bool useCalibratedValues = true;
-
-  bool toggleCalibratedValues();
   
+  bool toggleCalibratedValues();
   float dac_nonlinear_compensation(float v);
   float adc_nonlinear_compensation(float milliVolt);
   void toggleNullValue(float v, int current_range);
