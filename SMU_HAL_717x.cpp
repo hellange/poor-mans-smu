@@ -1,6 +1,8 @@
 
 #include "SMU_HAL_717x.h"
 #include "Calibration.h"
+#include "Stats.h"
+#include "Filters.h"
 
 static st_reg init_state[] = 
 {
@@ -208,7 +210,7 @@ uint32_t voltage_to_code_adj(float dac_voltage, float min_output, float max_outp
 //  dac_voltage = nonlinear_comp(dac_voltage * 1000.0) / 1000.0;
 //}
   dac_voltage = dac_voltage * 5.0/4.096; // using 4.096 ref instead of 5.0
-  dac_voltage = dac_voltage + 0.0; // offset
+  dac_voltage = dac_voltage + 0.00135; // offset (measured when connected to amplifier board)
   dac_voltage = dac_voltage * 0.99978; // gain
   
   Serial.print("voltage:");
@@ -270,6 +272,9 @@ int8_t ADCClass::fltSetCommitVoltageSource(float v) {
     AD7176_ReadRegister(&AD7176_regs[4]);
     float v = (float) ((AD7176_regs[4].value*VFSR*1000.0)/FSR); 
     v=v-VREF*1000.0;
+    
+    v = v / 0.8;  // funnel amplifier x0.8
+    
     // DONT INCLUDE THESE ADJUSTMENTS WHEN TESTING ONLY DAC/ADC BOARD !!!!
     if (full_board == true) {
       if (range == 1) {
@@ -281,14 +286,17 @@ int8_t ADCClass::fltSetCommitVoltageSource(float v) {
   
       // account for resistor value not perfect
       if (range == 0) {
-        v = v * 0.9741; // 1ohm shunt, 1A range
+        v = v *   1.043; // 1ohm shunt, 1A range
+        v = v -V_FILTERS.mean* 0.000105; // account for common mode voltage giving wrong current (give too high result)
       } else {
-        v = v * 0.9878; // 100ohm shunt, 10mA range
+        v = v * 0.985; // 100ohm shunt, 10mA range
+        v = v -V_FILTERS.mean* 0.000049; // account for common mode voltage giving wrong current (give too high result)
       }
+
+      
       
     }
 
-    v = v / 0.8;  // funnel amplifier x0.8
 
     // TODO: replace with signal from actual circuit (current limit)
     compliance = abs(setValueI) < abs(v/1000.0);

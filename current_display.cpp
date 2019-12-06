@@ -4,26 +4,41 @@
 #include "colors.h"
 #include "digit_util.h"
 
-unsigned long overflow_timer = millis();
-unsigned long old_overflow_timer = overflow_timer ;
+unsigned long compliance_blink_timer = millis();
+unsigned long old_compliance_blink_timer = compliance_blink_timer ;
 
-void CurrentDisplayClass::renderMeasured(int x, int y, float rawMa, boolean overflow) {
-  overflow_timer = millis();
-  int color = 0xff4522;
+int blinkColor(int colorHigh, int colorLow, int period) {
+  int compliance_blink_timer = millis();
+  int color = colorHigh;
+  if (compliance_blink_timer - old_compliance_blink_timer > period) {
+    old_compliance_blink_timer = compliance_blink_timer;
+  } else if (compliance_blink_timer - old_compliance_blink_timer > period/2) {
+    color = colorLow;
+  }
+  return color;
+}
 
-  if (overflow_timer - old_overflow_timer > 1000) {
-    old_overflow_timer = overflow_timer;
-  } else if (overflow_timer - old_overflow_timer > 500) {
-    color = 0x991002;
-  } 
+void CurrentDisplayClass::renderMeasured(int x, int y, float rawMa, boolean compliance) {
+ 
+  int complianceColor = blinkColor(0xff4522, 0x991002, 1000);
+  
+  
+//  // blink
+//  if (compliance_blink_timer - old_compliance_blink_timer > 1000) {
+//    old_compliance_blink_timer = compliance_blink_timer;
+//    color = 0xff4522;
+//  } else if (compliance_blink_timer - old_compliance_blink_timer > 500) {
+//    color = 0x991002;
+//  }
+   
 
   int a, ma, ua, na;
   bool neg;
   bool uA_mode_enabled = false; // set true if you want uA scale
   DIGIT_UTIL.separate2(&a, &ma, &ua, &na, &neg, rawMa);
   
-  if (overflow) {
-    GD.ColorRGB(color); //0xFF4522); //0xdd1120
+  if (compliance) {
+    GD.ColorRGB(complianceColor); //0xFF4522); //0xdd1120
   } else {
     GD.ColorRGB(COLOR_CURRENT);
   }

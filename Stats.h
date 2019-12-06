@@ -38,3 +38,6 @@ public:
   float span;
   
 };
+
+extern StatsClass V_STATS;
+extern StatsClass C_STATS;

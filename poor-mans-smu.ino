@@ -20,7 +20,6 @@
 #include "Arduino.h"
 #include "Wire.h"
 #include "Mainmenu.h"
-
 #include "SMU_HAL_dummy.h"
 #include "SMU_HAL_717x.h"
 
@@ -61,10 +60,8 @@ bool startupCalibrationDone2 = false;
 
 #define BUTTON_NULL 220
 #define BUTTON_UNCAL 221
-StatsClass V_STATS;
-StatsClass C_STATS;
-FiltersClass V_FILTERS;
-FiltersClass C_FILTERS;
+
+
 
 float rawMa_glob; // TODO: store in stats for analysis just as voltage
 
@@ -451,7 +448,7 @@ void renderBar(int x, int y, float rawValue, float setValue) {
   }
 }
 
-void currentPanel(int x, int y, boolean overflow, bool showBar) {
+void currentPanel(int x, int y, boolean compliance, bool showBar) {
   if (x >= 800) {
     return;
   }
@@ -463,7 +460,7 @@ void currentPanel(int x, int y, boolean overflow, bool showBar) {
   
   GD.ColorA(255);
 
-  CURRENT_DISPLAY.renderMeasured(x + 17, y, C_FILTERS.mean, overflow);
+  CURRENT_DISPLAY.renderMeasured(x + 17, y, C_FILTERS.mean, compliance);
   CURRENT_DISPLAY.renderSet(x+120, y+105, SMU[0].getSetValuemA());
 
   y=y+105;

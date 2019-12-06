@@ -4,6 +4,9 @@
 #include "digit_util.h"
 #include "colors.h"
 
+StatsClass V_STATS;
+StatsClass C_STATS;
+
 void StatsClass::init(int type_) {
    type = type_;
    for (int pos=0; pos<nrOfTrendPoints;pos++) { 

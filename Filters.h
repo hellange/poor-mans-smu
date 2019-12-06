@@ -13,3 +13,6 @@ public:
   float mean;
   void setFilterSize(int size);
 };
+
+extern FiltersClass V_FILTERS;
+extern FiltersClass C_FILTERS;

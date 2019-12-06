@@ -1,6 +1,9 @@
 #include "Filters.h"
 #include "Arduino.h"
 
+FiltersClass V_FILTERS;
+FiltersClass C_FILTERS;
+
 void FiltersClass::init() {
   filterSize = 1;
   Serial.print("Set initial filter length to:");
