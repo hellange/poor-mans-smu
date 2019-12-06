@@ -182,7 +182,8 @@ void showStatusIndicator(int x,int y,const char* text, bool enable, bool warn) {
   GD.cmd_text(x+ 2, y + 10, 27, 0, text);
   GD.ColorA(255);
 }
-void voltagePanel(int x, int y) {
+
+void sourceVoltagePanel(int x, int y) {
 
   // heading
   GD.ColorRGB(COLOR_VOLT);
@@ -199,7 +200,7 @@ void voltagePanel(int x, int y) {
   DIGIT_UTIL.renderValue(x + 320,  y-4 , V_STATS.rawValue, 4, DigitUtilClass::typeVoltage); 
 
   GD.ColorA(255);
-  VOLT_DISPLAY.renderSet(x + 120, y + 26 + 105, SMU[0].getSetValuemV());
+  VOLT_DISPLAY.renderSet(x + 120, y + 131, SMU[0].getSetValuemV());
 
   GD.ColorRGB(0,0,0);
   GD.cmd_fgcolor(0xaaaa90);  
@@ -208,7 +209,9 @@ void voltagePanel(int x, int y) {
   GD.cmd_button(x + 20,y + 132,95,50,29,OPT_NOTEAR,"SET");
   GD.Tag(BUTTON_VOLT_AUTO);
   GD.cmd_button(x + 350,y + 132,95,50,29,0,"AUTO");
+}
 
+void renderStatusIndicators(int x, int y) {
   showStatusIndicator(x+630, y+5, "FILTER", V_FILTERS.filterSize>1, false);
   showStatusIndicator(x+720, y+5, "NULL", V_CALIBRATION.nullValueIsSet(current_range), false);
   showStatusIndicator(x+630, y+45, "50Hz", false, false);
@@ -458,14 +461,10 @@ void currentPanel(int x, int y, boolean overflow, bool showBar) {
     y=y+12;
   }
   
-  
-  
-  
   GD.ColorA(255);
 
   CURRENT_DISPLAY.renderMeasured(x + 17, y, C_FILTERS.mean, overflow);
   CURRENT_DISPLAY.renderSet(x+120, y+105, SMU[0].getSetValuemA());
-  
 
   y=y+105;
   
@@ -691,7 +690,8 @@ void renderDisplay() {
 
   y=y+7;
   // show upper panel
-  voltagePanel(x,y);
+  sourceVoltagePanel(x,y);
+  renderStatusIndicators(x,y);
  
   // register screen for gestures on lower half
   GD.Tag(GESTURE_AREA_LOW);
