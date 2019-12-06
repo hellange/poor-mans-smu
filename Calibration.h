@@ -11,14 +11,22 @@ class CalibrationClass {
  float meas_adc[100] = {-5999.46, -4999.58, -3999.63, -2999.71, -1999.75, -0999.70, -499.85, -099.87, 0.00, 100.09, 500.07, 899.73,  999.60, 1199.78, 1499.94, 1999.90, 2499.85, 3001.00, 3503.00, 4003.00, 4502.80, 4801.93, 4900.34, 4999.55, 5494.60, 5694.50, 5998.30};
   float set_adc[100] = {-6000.00, -5000.00, -4000.00, -3000.00, -2000.00, -1000.00, -500.00, -100.00, 0.00, 100.00, 500.00, 900.00, 1000.00, 1200.00, 1500.00, 2000.00, 2500.00, 3000.00, 3500.00, 4000.00, 4500.00, 4800.00, 4900.00, 5000.00, 5500.00, 5700.00, 6000.00};
   int adc_cal_points = 27;
-  
+
+
+  float set_dac[100]  = {-2000.00, -1000.00, 0.00, 100.00, 500.00, 1000.00, 1500.00, 2000.00, 3000.00, 4000.00, 4500.00, 5000.00, 6000.00, 7000.00, 8000.00, 9000.00, 10000.00};
+  // actual output
+  float meas_dac[100] = {-1999.86, -0990.80, 0.00, 100.00, 500.013, 1000.046, 1500.07, 2000.10, 2999.99, 4000.02, 4500.10, 5000.10, 6000.11, 7000.21, 7999.31, 9000.00, 10000.00};
+
+
 public:
     float nullValue[2];
 
   bool useCalibratedValues = true;
 
   bool toggleCalibratedValues();
-  float adjust(float v);
+  
+  float dac_nonlinear_compensation(float v);
+  float adc_nonlinear_compensation(float milliVolt);
   void toggleNullValue(float v, int current_range);
   bool nullValueIsSet(int current_range);
   void renderCal(int x, int y, float valM, float setM, bool cur);

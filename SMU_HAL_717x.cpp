@@ -87,7 +87,7 @@ float ADCClass::measureMilliVoltage() {
   v=v-VREF*1000.0;
 
   v = v / 0.8;  // funnel amplifier
-  v = V_CALIBRATION.adjust(v);
+  v = V_CALIBRATION.dac_nonlinear_compensation(v);
 
   if (full_board == true) {
     v = v +3.0; // offset
@@ -225,11 +225,16 @@ uint32_t voltage_to_code_adj(float dac_voltage, float min_output, float max_outp
 }
 
 
-int8_t ADCClass::fltSetCommitVoltageSource(float v) {
-  setValueV = v;
-  
-  //v=v/10.93; // Have a 1:10 divider in sense input
+int8_t ADCClass::fltSetCommitVoltageSource(float milliVolt) {
+  float v = milliVolt / 1000.0;
+  setValueV = v; // use volt. TODO: change to millivolt ?
 
+  float mv = milliVolt;
+  if (V_CALIBRATION.useCalibratedValues == true) {
+    mv = V_CALIBRATION.adc_nonlinear_compensation(mv);
+  }
+
+  v = mv / 1000.0;
   
   //SPAN 0 = 0 to +5V
   //     1 = 0 to +10V

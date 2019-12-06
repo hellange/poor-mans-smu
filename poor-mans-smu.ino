@@ -975,49 +975,6 @@ void loop()
 
 }
 
-
-float set_dac[]  = {-2000.00, -1000.00, 0.00, 100.00, 500.00, 1000.00, 1500.00, 2000.00, 3000.00, 4000.00, 4500.00, 5000.00, 6000.00, 7000.00, 8000.00, 9000.00, 10000.00};
-  
-  // actual output
-float meas_dac[] = {-1999.86, -0990.80, 0.00, 100.00, 500.013, 1000.046, 1500.07, 2000.10, 2999.99, 4000.02, 4500.10, 5000.10, 6000.11, 7000.21, 7999.31, 9000.00, 10000.00};
-
-float nonlinear_comp(float milliVolt) {
-  // Nonlinearity
-  Serial.print("Looking up in comp table for ");
-  Serial.print(milliVolt);
-  Serial.println(" millivolt");
-  float v = milliVolt;
-  for (int i=0;i<15;i++) {
-    if (v > meas_dac[i] && v <= meas_dac[i+1]) {
-      float adj_factor_low = set_dac[i] - meas_dac[i];
-      float adj_factor_high = set_dac[i+1] - meas_dac[i+1];
-      float adj_factor_diff = adj_factor_high - adj_factor_low;
-
-      float range = set_dac[i+1] - set_dac[i];
-      float partWithinRange = ( (v-set_dac[i]) / range); /* 0 to 1. Where then 0.5 is in the middle of the range */
-      float adj_factor = adj_factor_low + adj_factor_diff * partWithinRange;
-
-      Serial.print("meas:");  
-      Serial.print(v, 4);
-      Serial.print(", range:");  
-      Serial.print(range, 4);
-      Serial.print(", part:");  
-      Serial.print(partWithinRange, 4);
-      Serial.print(", diff:");  
-      Serial.print(adj_factor_diff, 4);
-      Serial.print(", factor:");  
-      Serial.println(adj_factor, 4);
-
-      Serial.flush();
-      v = v + adj_factor; 
-      
-      return v;
-    }
-  } 
-  return milliVolt;  
-}
-
-
 void closeCallback(int vol_cur_type, bool cancel) {
    Serial.print("SET type:");
    Serial.println(vol_cur_type);
@@ -1029,10 +986,8 @@ void closeCallback(int vol_cur_type, bool cancel) {
   if (vol_cur_type == BUTTON_VOLT_SET) {
 
     float mv = V_DIAL.getMv(); 
-     if (V_CALIBRATION.useCalibratedValues == true) {
-        mv = nonlinear_comp(mv);
-     }
-     if (SMU[0].fltSetCommitVoltageSource(mv / 1000.0)) printError(_PRINT_ERROR_VOLTAGE_SOURCE_SETTING);
+
+     if (SMU[0].fltSetCommitVoltageSource(mv)) printError(_PRINT_ERROR_VOLTAGE_SOURCE_SETTING);
   }
   if (vol_cur_type == BUTTON_CUR_SET) {
      if (SMU[0].fltSetCommitCurrentSource(C_DIAL.getMv() / 1000.0, _SOURCE_AND_SINK)) printError(_PRINT_ERROR_CURRENT_SOURCE_SETTING);

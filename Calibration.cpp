@@ -46,7 +46,7 @@ void CalibrationClass::toggleNullValue(float v, int current_range) {
 
 }
 // todo: change parameter name to mv ?
-float CalibrationClass::adjust(float v){
+float CalibrationClass::adc_nonlinear_compensation(float v){
 
   if (!useCalibratedValues) {
     return v;
@@ -82,6 +82,44 @@ float CalibrationClass::adjust(float v){
  
   
   return v;
+}
+
+
+
+float CalibrationClass::dac_nonlinear_compensation(float milliVolt) {
+  // Nonlinearity
+  Serial.print("Looking up in comp table for ");
+  Serial.print(milliVolt);
+  Serial.println(" millivolt");
+  float v = milliVolt;
+  for (int i=0;i<15;i++) {
+    if (v > meas_dac[i] && v <= meas_dac[i+1]) {
+      float adj_factor_low = set_dac[i] - meas_dac[i];
+      float adj_factor_high = set_dac[i+1] - meas_dac[i+1];
+      float adj_factor_diff = adj_factor_high - adj_factor_low;
+
+      float range = set_dac[i+1] - set_dac[i];
+      float partWithinRange = ( (v-set_dac[i]) / range); /* 0 to 1. Where then 0.5 is in the middle of the range */
+      float adj_factor = adj_factor_low + adj_factor_diff * partWithinRange;
+
+      Serial.print("meas:");  
+      Serial.print(v, 4);
+      Serial.print(", range:");  
+      Serial.print(range, 4);
+      Serial.print(", part:");  
+      Serial.print(partWithinRange, 4);
+      Serial.print(", diff:");  
+      Serial.print(adj_factor_diff, 4);
+      Serial.print(", factor:");  
+      Serial.println(adj_factor, 4);
+
+      Serial.flush();
+      v = v + adj_factor; 
+      
+      return v;
+    }
+  } 
+  return milliVolt;  
 }
 
 void CalibrationClass::renderCal(int x, int y, float valM, float setM, bool cur) {
