@@ -80,7 +80,7 @@ int timeSinceLastChange = 0;  // TODO: get rid of global
 
 void setup()
 {
-   disableSPIunits();
+   disable_ADC_DAC_SPI_units();
    delay(50);
    pinMode(6,OUTPUT); // LCD powerdown pin?
    digitalWrite(6, HIGH);
@@ -137,7 +137,7 @@ void setup()
    Serial.println("...Done");
    Serial.flush();
 
-   disableSPIunits();
+   disable_ADC_DAC_SPI_units();
    delay(100);
    Serial.println("Start measuring...");
    SMU[0].init();
@@ -163,19 +163,9 @@ void setup()
    timeAtStartup = millis();
 }
 
-void disableSPIunits(){
- 
-     pinMode(7,OUTPUT);
-     pinMode(8,OUTPUT);
-     pinMode(9,OUTPUT);
-     pinMode(10,OUTPUT);
-
-// preliminary set the mux address for ADC here...
-  //pinMode(7, OUTPUT);  // mux master chip select
-  digitalWrite(7, HIGH);
- 
-  //pinMode(10, OUTPUT);   // lcd
-  //digitalWrite(10, HIGH);
+void disable_ADC_DAC_SPI_units(){
+   pinMode(7,OUTPUT); // mux master chip select
+   digitalWrite(7, HIGH);
 }
 
 
@@ -436,18 +426,11 @@ void renderHistogram(int x,int y, bool scrolling) {
   V_STATS.renderHistogram(x,y,scrolling);
 }
 
-
-void currentPanel(int x, int y, boolean overflow) {
-  if (x >= 800) {
-    return;
-  }
-  
-  y=y+48;  
-
+void renderBar(int x, int y, float rawValue, float setValue) {
   GD.Begin(RECTS);
   GD.LineWidth(10);
   for (int i=0;i<40;i++) {
-    int percent = 100 * (abs(C_STATS.rawValue) / abs(SMU[0].getSetValuemA()));
+    int percent = 100 * (abs(rawValue) / abs(setValue));
     if (percent > i*2.5) {
        GD.ColorA(255);
     } else {
@@ -463,8 +446,21 @@ void currentPanel(int x, int y, boolean overflow) {
     GD.Vertex2ii(x+20 + i*14 ,y);
     GD.Vertex2ii(x+20 + (i+1)*14 - 3, y+9);
   }
+}
+
+void currentPanel(int x, int y, boolean overflow, bool showBar) {
+  if (x >= 800) {
+    return;
+  }
+  y=y+28;
+  if (showBar) {
+    renderBar(x,y, C_STATS.rawValue, SMU[0].getSetValuemA());
+    y=y+12;
+  }
   
-  y=y+12;
+  
+  
+  
   GD.ColorA(255);
 
   CURRENT_DISPLAY.renderMeasured(x + 17, y, C_FILTERS.mean, overflow);
@@ -547,7 +543,7 @@ void showWidget(int y, int widgetNo, int scroll) {
        GD.ColorRGB(COLOR_CURRENT_TEXT);
        GD.cmd_text(20, yPos, 29, 0, "MEASURE CURRENT");
      }
-     currentPanel(scroll, yPos, SMU[0].compliance);
+     currentPanel(scroll, yPos + 20, SMU[0].compliance, true);
   } else if (widgetNo == 1) {
     if (!anyDialogOpen()){
        if (scroll ==0){
@@ -696,7 +692,7 @@ void renderDisplay() {
   y=y+7;
   // show upper panel
   voltagePanel(x,y);
-
+ 
   // register screen for gestures on lower half
   GD.Tag(GESTURE_AREA_LOW);
   GD.Begin(RECTS);
@@ -832,10 +828,11 @@ void loop()
       Serial.print(milliAmpere,5);
       Serial.print("mA, current range:");
       Serial.println(current_range);
-      float hysteresis = 0.5;
-      float switchAt = 3.0;
-      
-        // auto current range switch. TODO: Move to hardware ?
+
+//      // auto current range switch. TODO: Move to hardware ? Note that range switch also requires change in limit
+//      float hysteresis = 0.5;
+//      float switchAt = 3.0;
+//      
 //        if (current_range == 0 && abs(milliAmpere) < switchAt - hysteresis) {
 //          current_range = 1;
 //          SMU[0].setCurrentRange(current_range);
@@ -851,7 +848,6 @@ void loop()
     }
   
   GD.__end();
-  disableSPIunits();
 
   int dataR = SMU[0].dataReady();
   if (dataR == -99) {
@@ -884,14 +880,9 @@ void loop()
     V_STATS.addSample(Vout);
     V_FILTERS.updateMean(Vout);
   }
-  disableSPIunits();
+  disable_ADC_DAC_SPI_units();
   GD.resume();
 
-  
-
-  
-  //Serial.print("R=");
-  //Serial.println(V_STATS.rawValue / C_STATS.rawValue);
   if (detectGestures() == GEST_NONE) {
     int tag = GD.inputs.tag;
 
@@ -926,8 +917,6 @@ void loop()
 
     }
   }
-
-  //detectGestures();
 
   GD.Clear();
   renderDisplay();
@@ -1010,7 +999,7 @@ void closeCallback(int vol_cur_type, bool cancel) {
     return;
   }
   GD.__end();
-  disableSPIunits();
+  disable_ADC_DAC_SPI_units();
   if (vol_cur_type == BUTTON_VOLT_SET) {
 
     float mv = V_DIAL.getMv(); 
