@@ -216,8 +216,8 @@ uint32_t voltage_to_code_adj(float dac_voltage, float min_output, float max_outp
   Serial.println(" volt");
   
 
-dac_voltage = - dac_voltage; // analog part requires inverted input
-//dac_voltage = dac_voltage / 11.05; // There is a /10 on the sense 
+  dac_voltage = - dac_voltage; // analog part requires inverted input
+  dac_voltage = dac_voltage / 2.002; // There is a /2 on the sense input 
 
   return LTC2758_voltage_to_code(dac_voltage, min_output, max_output, serialOut);
 }
