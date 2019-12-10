@@ -70,6 +70,9 @@ int activeWidget = 0;
 int current_range = 0; // TODO: get rid of global
 int timeSinceLastChange = 0;  // TODO: get rid of global
 
+float MAX_CURRENT_10mA_RANGE = 3.0;
+float MAX_CURRENT_1A_RANGE = 1100.0;
+
 void setup()
 {
    disable_ADC_DAC_SPI_units();
@@ -240,12 +243,6 @@ void renderStatusIndicators(int x, int y) {
 }
 
 
-
-
-
-#define TAG_FILTER_SLIDER 123
-#define TAG_FILTER_SLIDER_B 122
-
 bool anyDialogOpen() {
   return V_DIAL.isDialogOpen() or C_DIAL.isDialogOpen();
 }
@@ -305,23 +302,18 @@ void handleSliders(int x, int y) {
   GD.Tag(BUTTON_NULL);
   GD.cmd_button(x+700,y+130,95,50,29,0,"NULL");
 
-
-
   if (!anyDialogOpen()) {
     if (V_CALIBRATION.useCalibratedValues == false) {
       GD.ColorRGB(0x00ff00);
     } else {
       GD.ColorRGB(0x000000);
     }
-  } else {
-    //GD.ColorA(100);
   }
+  
   GD.Tag(BUTTON_UNCAL);
   GD.cmd_button(x+600,y+130,95,50,29,0,"UNCAL");
 
   GD.ColorA(255);
-  GD.Tag(0); // Note: Prevents button in some cases to react also when touching other places in UI. Why ?
-
 
   GD.get_inputs();
   switch (GD.inputs.track_tag & 0xff) {
@@ -474,15 +466,22 @@ void currentPanel(int x, int y, boolean compliance, bool showBar) {
   if (x >= 800) {
     return;
   }
-  y=y+28;
-  if (showBar) {
-    renderBar(x,y, C_STATS.rawValue, SMU[0].getSetValuemA());
-    y=y+12;
-  }
   
-  GD.ColorA(255);
-
-  CURRENT_DISPLAY.renderMeasured(x + 17, y, C_FILTERS.mean, compliance);
+  y=y+28;
+  if ( (current_range == 1 && abs(C_STATS.rawValue) > MAX_CURRENT_10mA_RANGE) or (current_range == 0 && abs(C_STATS.rawValue) > MAX_CURRENT_1A_RANGE)) {
+    if (showBar) {
+      y=y+12; // dont show bar when overflow... just add extra space so the panel gets same size as without overflow...
+    }
+    GD.ColorA(255);
+    CURRENT_DISPLAY.renderOverflow(x + 17, y);
+  } else {
+    if (showBar) {
+      renderBar(x,y, C_STATS.rawValue, SMU[0].getSetValuemA());
+      y=y+12;
+    }
+    GD.ColorA(255);
+    CURRENT_DISPLAY.renderMeasured(x + 17, y, C_FILTERS.mean, compliance); 
+  }
   CURRENT_DISPLAY.renderSet(x+120, y+105, SMU[0].getSetValuemA());
 
   y=y+105;
@@ -838,19 +837,30 @@ void handleAutoNullAtStartup() {
     startupCalibrationDone2 = true;
   } 
 }
-void loop()
 
+void notification(char *text) {
+   GD.Begin(RECTS);
+    GD.ColorA(230);  // already opaque, why ?
+    GD.ColorRGB(0x222222);
+    GD.Vertex2ii(180, 160);
+    GD.Vertex2ii(620, 280);
+    GD.ColorRGB(0xffffff);
+    GD.cmd_text(250, 200 , 29, 0, text);
+}
+
+
+void loop()
 {
   handleAutoNullAtStartup();
     float milliAmpere = C_STATS.rawValue;
     if (startupCalibrationDone1 && startupCalibrationDone2) {
-      Serial.print(milliAmpere,5);
-      Serial.print("mA, current range:");
-      Serial.println(current_range);
+//      Serial.print(milliAmpere,5);
+//      Serial.print("mA, current range:");
+//      Serial.println(current_range);
 
 //      // auto current range switch. TODO: Move to hardware ? Note that range switch also requires change in limit
 //      float hysteresis = 0.5;
-//      float switchAt = 3.0;
+//      float switchAt = MAX_CURRENT_10mA_RANGE;
 //      
 //        if (current_range == 0 && abs(milliAmpere) < switchAt - hysteresis) {
 //          current_range = 1;
@@ -869,9 +879,16 @@ void loop()
   GD.__end();
 
   int dataR = SMU[0].dataReady();
+      //Serial.print("DataReady:");  
+      //Serial.println(dataR, HEX);  
+
   if (dataR == -99) {
     Serial.println("DONT USE SAMPLE!");  
+  } 
+  else if (dataR == -98) {
+    Serial.println("OVERFLOW"); // haven't been able to get this to work...
   }
+  
   else if (dataR == 1) {
     
     float Cout = SMU[0].measureCurrent(current_range);
@@ -923,10 +940,9 @@ void loop()
       V_STATS.clearBuffer();
       C_STATS.clearBuffer();
       startIndicator(); 
-    } else if (tag == BUTTON_CUR_AUTO) {
+    } else if (tag == BUTTON_CUR_AUTO) { //TODO: Change name
       if (timeSinceLastChange + 500 < millis()){
-      
-        Serial.println("cur_auto set");
+        Serial.println("current range set");
        
         // swap current range
         if (current_range == 0) {
@@ -945,16 +961,10 @@ void loop()
   detectGestures();
 
   GD.Clear();
-  renderDisplay();
+renderDisplay();
   if (!startupCalibrationDone1 && !startupCalibrationDone2) {
-    
-    GD.Begin(RECTS);
-    GD.ColorA(230);  // already opaque, why ?
-    GD.ColorRGB(0x222222);
-    GD.Vertex2ii(180, 160);
-    GD.Vertex2ii(620, 280);
-    GD.ColorRGB(0xffffff);
-    GD.cmd_text(250, 200 , 29, 0, "Wait for null adjustment...");
+    notification("Wait for null adjustment...");
+   
   }
 
   if (anyDialogOpen()) {

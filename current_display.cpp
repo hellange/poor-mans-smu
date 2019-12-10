@@ -18,6 +18,10 @@ int blinkColor(int colorHigh, int colorLow, int period) {
   return color;
 }
 
+void CurrentDisplayClass::renderOverflow(int x, int y) {
+  GD.ColorRGB(COLOR_CURRENT);
+  boldText(x, y, " Overflow A");
+}
 void CurrentDisplayClass::renderMeasured(int x, int y, float rawMa, boolean compliance) {
  
   int complianceColor = blinkColor(0xff4522, 0x991002, 1000);

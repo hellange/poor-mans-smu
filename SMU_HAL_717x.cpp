@@ -83,12 +83,14 @@ void ADCClass::setCurrentRange(int range) {
 
 float ADCClass::measureMilliVoltage() {
   AD7176_ReadRegister(&AD7176_regs[4]);
+
   float v = (float) ((AD7176_regs[4].value*VFSR*1000.0)/FSR); 
   v=v-VREF*1000.0;
 
   v = v / 0.8;  // funnel amplifier
-  v = V_CALIBRATION.dac_nonlinear_compensation(v);
-
+  v = V_CALIBRATION.adc_nonlinear_compensation(v);
+  
+  // DONT INCLUDE THESE ADJUSTMENTS WHEN TESTING ONLY DAC/ADC BOARD !!!!
   if (full_board == true) {
     v = v +3.0; // offset
     v = v*1.00032; // gain
@@ -159,51 +161,7 @@ int ADCClass::init(){
   span = (uint32_t)(choice << 2);
  */
 
- // set
- // float set_dac[]  = {-2000.00, -1000.00, 0.00, 900.00, 1000.00, 1100.00, 1200.00, 1600.00, 1800.00, 2000.00, 3000.00, 4000.00, 5000.00, 6000.00, 7000.00, 8000.00, 9000.00, 10000.00};
-  
-  // actual output
- // float meas_dac[] = {-1999.86, -0990.80, 0.00, 900.121, 1000.056, 1100.350, 1200.30, 1599.45, 1799.78, 1999.84, 2999.88, 3999.02, 4999.66, 5999.38, 6999.31, 7999.31, 9000.00, 10000.00};
 
-/*
-float nonlinear_comp(float milliVolt) {
-   // Nonlinearity
-   //todo: CHECK IF THIS WORKS 
-   Serial.print("Looking up in comp table for ");
-   Serial.print(milliVolt);
-   Serial.println(" millivolt");
-   float v = milliVolt;
-  for (int i=0;i<18;i++) {
-    if (v > meas_dac[i] && v <= meas_dac[i+1]) {
-      float adj_factor_low = set_dac[i] - meas_dac[i];
-      float adj_factor_high = set_dac[i+1] - meas_dac[i+1];
-      float adj_factor_diff = adj_factor_high - adj_factor_low;
-
-      float range = set_dac[i+1] - set_dac[i];
-      float partWithinRange = ( (v-set_dac[i]) / range); // 0 to 1. Where then 0.5 is in the middle of the range 
-      float adj_factor = adj_factor_low + adj_factor_diff * partWithinRange;
-
-      Serial.print("meas:");  
-      Serial.print(v, 4);
-      Serial.print(", range:");  
-      Serial.print(range, 4);
-      Serial.print(", part:");  
-      Serial.print(partWithinRange, 4);
-      Serial.print(", diff:");  
-      Serial.print(adj_factor_diff, 4);
-      Serial.print(", factor:");  
-      Serial.println(adj_factor, 4);
-
-      Serial.flush();
-      v = v + adj_factor; 
-      
-      return v;
-    }
-  } 
-  Serial.println("no comp");
-  return milliVolt;  
-}
-*/
 uint32_t voltage_to_code_adj(float dac_voltage, float min_output, float max_output, bool serialOut){
 
 //if (CALIBRATION.useCalibratedValues == true) {
@@ -211,15 +169,17 @@ uint32_t voltage_to_code_adj(float dac_voltage, float min_output, float max_outp
 //}
   dac_voltage = dac_voltage * 5.0/4.096; // using 4.096 ref instead of 5.0
   dac_voltage = dac_voltage + 0.00135; // offset (measured when connected to amplifier board)
-  dac_voltage = dac_voltage * 0.99978; // gain
+  dac_voltage = dac_voltage * 0.9990; // gain
   
   Serial.print("voltage:");
   Serial.print(dac_voltage);
   Serial.println(" volt");
-  
 
-  dac_voltage = - dac_voltage; // analog part requires inverted input
-  dac_voltage = dac_voltage / 2.002; // There is a /2 on the sense input 
+  // DONT INCLUDE THESE ADJUSTMENTS WHEN TESTING ONLY DAC/ADC BOARD !!!!
+  if (full_board) {
+    dac_voltage = - dac_voltage; // analog part requires inverted input
+    dac_voltage = dac_voltage / 1.9993; // There is a apprx. /2 on the sense input 
+  }
 
   return LTC2758_voltage_to_code(dac_voltage, min_output, max_output, serialOut);
 }
@@ -231,7 +191,7 @@ int8_t ADCClass::fltSetCommitVoltageSource(float milliVolt) {
 
   float mv = milliVolt;
   if (V_CALIBRATION.useCalibratedValues == true) {
-    mv = V_CALIBRATION.adc_nonlinear_compensation(mv);
+    mv = V_CALIBRATION.dac_nonlinear_compensation(mv);
   }
 
   v = mv / 1000.0;
@@ -246,22 +206,17 @@ int8_t ADCClass::fltSetCommitVoltageSource(float milliVolt) {
   float DAC_RANGE_LOW = -10.0;
   float DAC_RANGE_HIGH = 10.0;
   
-  if (abs(v) <2.0) {   // can move to 2.5 if reference voltage is 5v
-    choice = 4;
-    DAC_RANGE_LOW = -2.5;
-    DAC_RANGE_HIGH = 2.5;
-  }
+//  if (abs(v) <2.0) {   // can move to 2.5 if reference voltage is 5v
+//    choice = 4;
+//    DAC_RANGE_LOW = -2.5;
+//    DAC_RANGE_HIGH = 2.5;
+//  }
   
   uint32_t span = (uint32_t)(choice << 2);
 
-  
   LTC2758_write(LTC2758_CS, LTC2758_WRITE_SPAN_DAC, 0, span);
 
-  
   float v_adj = voltage_to_code_adj(v, DAC_RANGE_LOW, DAC_RANGE_HIGH, true);
-    
-
-
   LTC2758_write(LTC2758_CS, LTC2758_WRITE_CODE_UPDATE_DAC, 0, v_adj); 
 
  return setValueV;
@@ -279,23 +234,24 @@ int8_t ADCClass::fltSetCommitVoltageSource(float milliVolt) {
     v=v-VREF*1000.0;
     
     v = v / 0.8;  // funnel amplifier x0.8
-    
+
+    float i = v;
     // DONT INCLUDE THESE ADJUSTMENTS WHEN TESTING ONLY DAC/ADC BOARD !!!!
     if (full_board == true) {
       if (range == 1) {
-        v=v/100.0; // 100 ohm shunt.
+        i=v/100.0; // 100 ohm shunt.
       } else {
-        v=v/1.185; // 1ohm shunt + resistance in range switch mosfet
+        i=i/1.185; // 1ohm shunt + resistance in range switch mosfet
       }
-      v=v/10.0; // x10 amplifier
+      i=i/10.0; // x10 amplifier
   
       // account for resistor value not perfect
       if (range == 0) {
-        v = v *   1.043; // 1ohm shunt, 1A range
-        v = v -V_FILTERS.mean* 0.000105; // account for common mode voltage giving wrong current (give too high result)
+        i = i *   1.043; // 1ohm shunt, 1A range
+        i = i -V_FILTERS.mean* 0.0001045; // account for common mode voltage giving wrong current (give too high result)
       } else {
-        v = v * 0.985; // 100ohm shunt, 10mA range
-        v = v -V_FILTERS.mean* 0.000049; // account for common mode voltage giving wrong current (give too high result)
+        i = i * 0.985; // 100ohm shunt, 10mA range
+        i = i -V_FILTERS.mean* 0.0000505; // account for common mode voltage giving wrong current (give too high result)
       }
 
       
@@ -304,13 +260,13 @@ int8_t ADCClass::fltSetCommitVoltageSource(float milliVolt) {
 
 
     // TODO: replace with signal from actual circuit (current limit)
-    compliance = abs(setValueI) < abs(v/1000.0);
+    compliance = abs(setValueI) < abs(i/1000.0);
 //    Serial.print("compliance setValueI:");  
 //    Serial.print(abs(setValueI*1000.0));
 //    Serial.print(", valueI:");
 //    Serial.println(abs(v));
 
-    return v;
+    return i;
  }
 
  float ADCClass::getSetValuemV(){

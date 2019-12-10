@@ -30,6 +30,7 @@ bool CalibrationClass::toggleCalibratedValues() {
 bool CalibrationClass::nullValueIsSet(int current_range) {
   return nullValue[current_range] != 0.0;
 }
+
 void CalibrationClass::toggleNullValue(float v, int current_range) {
   if (timeSinceLastChange + 100 > millis()){
     return;
@@ -52,7 +53,7 @@ float CalibrationClass::adc_nonlinear_compensation(float v){
   }
   
   // Nonlinearity
-  //TODO: Does it wor for negative voltages ?
+  //TODO: Does it work for negative voltages ?
   for (int i=0;i<adc_cal_points -1; i++) {
     if (v > meas_adc[i] && v <= meas_adc[i+1]) {
       float adj_factor_low = set_adc[i] - meas_adc[i];
@@ -84,11 +85,11 @@ float CalibrationClass::adc_nonlinear_compensation(float v){
 
 float CalibrationClass::dac_nonlinear_compensation(float milliVolt) {
   // Nonlinearity
-  Serial.print("Looking up in comp table for ");
+  Serial.print("Looking up in DAC comp table for ");
   Serial.print(milliVolt);
   Serial.println(" millivolt");
   float v = milliVolt;
-  for (int i=0;i<15;i++) {
+  for (int i=0;i<dac_cal_points -1;i++) {
     if (v > meas_dac[i] && v <= meas_dac[i+1]) {
       float adj_factor_low = set_dac[i] - meas_dac[i];
       float adj_factor_high = set_dac[i+1] - meas_dac[i+1];
@@ -108,7 +109,6 @@ float CalibrationClass::dac_nonlinear_compensation(float milliVolt) {
       Serial.print(adj_factor_diff, 4);
       Serial.print(", factor:");  
       Serial.println(adj_factor, 4);
-
       Serial.flush();
       v = v + adj_factor; 
       

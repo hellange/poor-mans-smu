@@ -239,47 +239,41 @@ int AD7176_dataReady()
 {
     int32_t ret;
 
-   
+    /* Read the value of the Status Register */
+    ret = AD7176_ReadRegister(&AD7176_regs[Status_Register]);
+    if(ret < 0) {
+      Serial.print("!!! Register read error. Returned:");
+      Serial.println(ret, DEC);
+      return -99;
+    }
 
-        /* Read the value of the Status Register */
-        ret = AD7176_ReadRegister(&AD7176_regs[Status_Register]);
-        if(ret < 0) {
-            Serial.print("!!! Register read error ");
-                        //Serial.println(++reg_err, DEC);
-return -99;
-
-        }
-
-
-     byte stat = AD7176_regs[Status_Register].value;
+    byte stat = AD7176_regs[Status_Register].value;
 //         Serial.println(stat, BIN); 
 //          Serial.println(STATUS_REG_ADC_ERR, BIN); 
 //          Serial.println(STATUS_REG_CRC_ERR, BIN); 
 
-if ((stat & STATUS_REG_ADC_ERR) > 0x01) {
-            Serial.println("!!! STATUS_REG_ADC_ERR");
-                        Serial.println(stat, BIN);
-
- 
-return -99;
-}
-if ((stat & STATUS_REG_CRC_ERR) > 0x01) {
-           Serial.println("!!! STATUS_REG_CRC_ERR"); 
-return -99;
-
-}
-
-        /* Check the RDY bit in the Status Register */
-        if ((AD7176_regs[Status_Register].value & STATUS_REG_RDY) == 0) {
-          //Serial.println(AD7176_regs[Status_Register].value, BIN); 
-
-          return AD7176_regs[Status_Register].value;
-        } else {
-          return -1;
-        }
+    if ((stat & STATUS_REG_ADC_ERR) >= 0x01) {
+      // Is this when overflow ?  
+      Serial.println("!!! STATUS_REG_ADC_ERR. Returned:");
+      Serial.println(stat, BIN);
+      return -98;
+    } 
+    Serial.flush();
     
+    if ((stat & STATUS_REG_CRC_ERR) > 0x01) {
+      Serial.println("!!! STATUS_REG_CRC_ERR. Returned:"); 
+      Serial.println(stat, BIN);
+      return -99;
+    }
 
-
+    /* Check the RDY bit in the Status Register */
+    if ((AD7176_regs[Status_Register].value & STATUS_REG_RDY) == 0) {
+      //Serial.println(AD7176_regs[Status_Register].value, BIN); 
+      return AD7176_regs[Status_Register].value;
+    } else {
+      return -1;
+    }
+    
 }
 
 /***************************************************************************//**
