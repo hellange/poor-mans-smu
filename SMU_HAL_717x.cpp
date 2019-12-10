@@ -214,11 +214,11 @@ int8_t ADCClass::fltSetCommitVoltageSource(float milliVolt) {
   float DAC_RANGE_LOW = -10.0;
   float DAC_RANGE_HIGH = 10.0;
   
-//  if (abs(v) <2.0) {   // can move to 2.5 if reference voltage is 5v
-//    choice = 4;
-//    DAC_RANGE_LOW = -2.5;
-//    DAC_RANGE_HIGH = 2.5;
-//  }
+  if (abs(v) <2.0) {   // can move to 2.5 if reference voltage is 5v
+    choice = 4;
+    DAC_RANGE_LOW = -2.5;
+    DAC_RANGE_HIGH = 2.5;
+  }
   
   uint32_t span = (uint32_t)(choice << 2);
 
