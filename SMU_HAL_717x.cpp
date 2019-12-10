@@ -93,7 +93,11 @@ float ADCClass::measureMilliVoltage() {
   // DONT INCLUDE THESE ADJUSTMENTS WHEN TESTING ONLY DAC/ADC BOARD !!!!
   if (full_board == true) {
     v = v +3.0; // offset
-    v = v*1.00032; // gain
+    if (v>0) {
+      v = v*1.00032; // gain on positive
+    } else {
+      v = v*0.99945; // gain on negative
+    }
   }
   return v;
 }
@@ -177,8 +181,12 @@ uint32_t voltage_to_code_adj(float dac_voltage, float min_output, float max_outp
 
   // DONT INCLUDE THESE ADJUSTMENTS WHEN TESTING ONLY DAC/ADC BOARD !!!!
   if (full_board) {
+    if (dac_voltage>0) {
+      dac_voltage = dac_voltage / 1.9993; // There is a apprx. /2 on the sense input in addition to gain
+    } else {
+      dac_voltage = dac_voltage / 2.00048; // There is a apprx. /2 on the sense input in addition to gain 
+    }
     dac_voltage = - dac_voltage; // analog part requires inverted input
-    dac_voltage = dac_voltage / 1.9993; // There is a apprx. /2 on the sense input 
   }
 
   return LTC2758_voltage_to_code(dac_voltage, min_output, max_output, serialOut);
