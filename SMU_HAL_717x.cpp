@@ -182,7 +182,7 @@ uint32_t voltage_to_code_adj(float dac_voltage, float min_output, float max_outp
   // DONT INCLUDE THESE ADJUSTMENTS WHEN TESTING ONLY DAC/ADC BOARD !!!!
   if (full_board) {
     if (dac_voltage>0) {
-      dac_voltage = dac_voltage / 1.9993; // There is a apprx. /2 on the sense input in addition to gain
+      dac_voltage = dac_voltage / 2.0001; // There is a apprx. /2 on the sense input in addition to gain
     } else {
       dac_voltage = dac_voltage / 2.00048; // There is a apprx. /2 on the sense input in addition to gain 
     }
