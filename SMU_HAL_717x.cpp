@@ -94,7 +94,7 @@ float ADCClass::measureMilliVoltage() {
   if (full_board == true) {
     v = v +3.0; // offset
     if (v>0) {
-      v = v*1.00032; // gain on positive
+      v = v*1.00025; // gain on positive
     } else {
       v = v*0.99945; // gain on negative
     }

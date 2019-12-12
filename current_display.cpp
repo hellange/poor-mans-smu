@@ -25,20 +25,10 @@ void CurrentDisplayClass::renderOverflow(int x, int y) {
 void CurrentDisplayClass::renderMeasured(int x, int y, float rawMa, boolean compliance) {
  
   int complianceColor = blinkColor(0xff4522, 0x991002, 1000);
-  
-  
-//  // blink
-//  if (compliance_blink_timer - old_compliance_blink_timer > 1000) {
-//    old_compliance_blink_timer = compliance_blink_timer;
-//    color = 0xff4522;
-//  } else if (compliance_blink_timer - old_compliance_blink_timer > 500) {
-//    color = 0x991002;
-//  }
-   
 
   int a, ma, ua, na;
   bool neg;
-  bool uA_mode_enabled = false; // set true if you want uA scale
+  bool uA_mode_enabled = false; // set true if you want uA display scale for very low currents
   DIGIT_UTIL.separate2(&a, &ma, &ua, &na, &neg, rawMa);
   
   if (compliance) {

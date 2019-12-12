@@ -896,7 +896,7 @@ void loop()
     Cout = Cout - C_CALIBRATION.nullValue[current_range];
 
     C_STATS.addSample(Cout);
-    C_FILTERS.updateMean(Cout);
+    C_FILTERS.updateMean(Cout, false);
 
 //  Serial.print("Measured raw:");  
 //  Serial.print(CouVoutt, 3);
@@ -914,7 +914,7 @@ void loop()
     Vout = Vout - V_CALIBRATION.nullValue[current_range];
 
     V_STATS.addSample(Vout);
-    V_FILTERS.updateMean(Vout);
+    V_FILTERS.updateMean(Vout, false);
   }
   disable_ADC_DAC_SPI_units();
   GD.resume();

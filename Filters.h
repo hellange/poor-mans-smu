@@ -5,11 +5,12 @@ class FiltersClass {
 
 private:
   float meanRaws[FILTER_MAX_LENGTH];
+  int mean_samples = 0;
 public:
   void init();
   int filterSize;
 
-  float updateMean(float v);
+  float updateMean(float v, bool moving);
   float mean;
   void setFilterSize(int size);
 };
