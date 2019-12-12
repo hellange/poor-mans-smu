@@ -314,7 +314,9 @@ void handleSliders(int x, int y) {
   
   GD.Tag(BUTTON_UNCAL);
   GD.cmd_button(x+600,y+130,95,50,29,0,"UNCAL");
-
+  GD.Tag(0); // hack to avoid UNCAL button to be called when you press SET on voltage. (when the experimental widget is shown)... 
+             // Dont fully understand why this is needed...
+  
   GD.ColorA(255);
 
   GD.get_inputs();
