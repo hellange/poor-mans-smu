@@ -244,6 +244,8 @@ void renderStatusIndicators(int x, int y) {
 
 
 bool anyDialogOpen() {
+  // make sure buttons below the dialog do not reach if finger is not removed from screen
+  // when dialog disappears. Use a timer for now...
   return V_DIAL.isDialogOpen() or C_DIAL.isDialogOpen();
 }
 
@@ -652,7 +654,7 @@ void handleWidgetScrollPosition() {
 
 void bluredBackground() {
     GD.Begin(RECTS);
-    //GD.ColorA(150);
+    GD.ColorA(150);
     GD.ColorRGB(0x000000);
     GD.Vertex2ii(0,0);
     GD.Vertex2ii(800, 480);
