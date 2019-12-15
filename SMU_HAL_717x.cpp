@@ -46,8 +46,8 @@ static st_reg init_state[] =
    //  {0x28, 2, 0, 0x0213l, "FilterCf0"}, //Filter_Config_1  // 10 pr sek
     // {0x28, 2, 0, 0x0212l, "FilterCf0"}, //Filter_Config_1  // 16.66 pr sek
  {0x28, 2, 0, 0x0211l, "FilterCf0"}, //Filter_Config_1  // 20 pr sek
- //   {0x28, 2, 0, 0x0210l, "FilterCf0"}, //Filter_Config_1  // 49.96 pr sek
-    // {0x28, 2, 0, 0x020fl, "FilterCf0"}, //Filter_Config_1  // 59.92 pr sek
+   // {0x28, 2, 0, 0x0210l, "FilterCf0"}, //Filter_Config_1  // 49.96 pr sek
+     //{0x28, 2, 0, 0x020fl, "FilterCf0"}, //Filter_Config_1  // 59.92 pr sek
     // {0x28, 2, 0, 0x020el, "FilterCf0"}, //Filter_Config_1  // 100 pr sek
 
     
@@ -92,11 +92,13 @@ float ADCClass::measureMilliVoltage() {
   
   // DONT INCLUDE THESE ADJUSTMENTS WHEN TESTING ONLY DAC/ADC BOARD !!!!
   if (full_board == true) {
-    v = v +3.0; // offset
+    //v = v +3.0; // offset
     if (v>0) {
-      v = v*1.00025; // gain on positive
+      v = v*1.00161; //gain on positive
+      v = v*2.0; // divide by 2 in measurement circuit
     } else {
-      v = v*0.99945; // gain on negative
+      v = v*1.00101; // gain on negative
+      v = v*2.0; // divide by 2 in measurement circuit
     }
   }
   return v;
@@ -168,12 +170,15 @@ int ADCClass::init(){
 
 uint32_t voltage_to_code_adj(float dac_voltage, float min_output, float max_output, bool serialOut){
 
-//if (CALIBRATION.useCalibratedValues == true) {
-//  dac_voltage = nonlinear_comp(dac_voltage * 1000.0) / 1000.0;
-//}
   dac_voltage = dac_voltage * 5.0/4.096; // using 4.096 ref instead of 5.0
-  dac_voltage = dac_voltage + 0.00135; // offset (measured when connected to amplifier board)
-  dac_voltage = dac_voltage * 0.9990; // gain
+  dac_voltage = dac_voltage - 0.000825;
+  if (dac_voltage > 0) {
+    // positive
+    dac_voltage = dac_voltage * 0.999785; // gain
+  } else  {
+    // negative
+    dac_voltage = dac_voltage * 0.998750; // gain
+  }
   
   Serial.print("voltage:");
   Serial.print(dac_voltage);
@@ -181,9 +186,12 @@ uint32_t voltage_to_code_adj(float dac_voltage, float min_output, float max_outp
 
   // DONT INCLUDE THESE ADJUSTMENTS WHEN TESTING ONLY DAC/ADC BOARD !!!!
   if (full_board) {
+    dac_voltage = dac_voltage + 0.002725; // additional offset (measured when connected to amplifier board)
     if (dac_voltage>0) {
-      dac_voltage = dac_voltage / 2.0001; // There is a apprx. /2 on the sense input in addition to gain
+      // positive
+      dac_voltage = dac_voltage / 2.00265; // There is a apprx. /2 on the sense input in addition to gain
     } else {
+      // negative
       dac_voltage = dac_voltage / 2.00048; // There is a apprx. /2 on the sense input in addition to gain 
     }
     dac_voltage = - dac_voltage; // analog part requires inverted input
@@ -214,7 +222,7 @@ int8_t ADCClass::fltSetCommitVoltageSource(float milliVolt) {
   float DAC_RANGE_LOW = -10.0;
   float DAC_RANGE_HIGH = 10.0;
   
-  if (abs(v) <2.0) {   // can move to 2.5 if reference voltage is 5v
+  if (abs(v) <2.2) {   // can move to 2.5 if reference voltage is 5v
     choice = 4;
     DAC_RANGE_LOW = -2.5;
     DAC_RANGE_HIGH = 2.5;
@@ -249,19 +257,18 @@ int8_t ADCClass::fltSetCommitVoltageSource(float milliVolt) {
       if (range == 1) {
         i=v/100.0; // 100 ohm shunt.
       } else {
-        i=i/1.185; // 1ohm shunt + resistance in range switch mosfet
+        i=i/1.04600; // 1ohm shunt + resistance in range switch mosfet
       }
       i=i/10.0; // x10 amplifier
   
       // account for resistor value not perfect
       if (range == 0) {
         i = i *   1.043; // 1ohm shunt, 1A range
-        i = i -V_FILTERS.mean* 0.0001105; // account for common mode voltage giving wrong current (give too high result)
+        i = i -V_FILTERS.mean* 0.000075; // account for common mode voltage giving wrong current (give too high result)
       } else {
         i = i * 0.985; // 100ohm shunt, 10mA range
-        i = i -V_FILTERS.mean* 0.0000505; // account for common mode voltage giving wrong current (give too high result)
+        i = i -V_FILTERS.mean* 0.000075; // account for common mode voltage giving wrong current (give too high result)      
       }
-
       
       
     }
