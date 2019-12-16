@@ -5,23 +5,47 @@
 #include "GD2.h"
 
 
-DialClass V_DIAL;
-DialClass C_DIAL;
+DialClass SOURCE_DIAL;
+DialClass LIMIT_DIAL;
 
-void (*closedFn)(int type, bool cancel);
+void (*closedFn)(int type, int set_or_limit, bool cancel);
 
-void DialClass::open(int type, void (*callbackFn)(int type, bool cancel), float value ) {
+void DialClass::open(int type, int set_or_limit_, void (*callbackFn)(int type, int set_or_limit, bool cancel), float value) {
   closedFn = callbackFn;
   vol_cur_type = type;
+  set_or_limit = set_or_limit_;
   dialog=true;  
+  
+ // These settings should not be hardcoded here
+  if (vol_cur_type == SOURCE_VOLTAGE && set_or_limit == SET) {
+    digits = 1;
+    dialEntries[0] = 1; 
+    strncpy(voltDecade, "V" ,2);
+  } else if (vol_cur_type == SOURCE_CURRENT && set_or_limit == SET){
+    digits = 3;
+    dialEntries[0] = 1;  
+    dialEntries[1] = 0;  
+    dialEntries[2] = 0;  
+    strncpy(voltDecade, "mV" ,2);
+  } else if (vol_cur_type == SOURCE_VOLTAGE && set_or_limit == LIMIT){
+    digits = 3;
+    dialEntries[0] = 1;  
+    dialEntries[1] = 0;  
+    dialEntries[2] = 0;  
+    strncpy(voltDecade, "mV" ,2);
+  } else if (vol_cur_type == SOURCE_CURRENT && set_or_limit == LIMIT){
+    digits = 2;
+    dialEntries[0] = 1;
+    dialEntries[1] = 0;  
+    strncpy(voltDecade, "V" ,2);
+  }
+  
 }
 
 void DialClass::init() {
   negative = false;
   mv=0.0;
   clear();
-  digits = 1;
-  dialEntries[0] = 1;
 }
 
 float DialClass::getMv() {
@@ -40,7 +64,11 @@ void DialClass::clear() {
   error = false;
   warning = false;
   digits = 0;
-  strncpy(voltDecade, "V" ,2);
+  if (vol_cur_type == SOURCE_VOLTAGE) {
+      strncpy(voltDecade, "V" ,2);
+  } else {
+      strncpy(voltDecade, "mV" ,2);
+  }
 }
 
 void DialClass::handleKeypadDialog() {
@@ -108,11 +136,11 @@ void DialClass::checkKeypress() {
 
  
   if (GD.inputs.tag == KEYBOARD_CANCEL && dialog==true) {
-    closedFn(vol_cur_type, true);
+    closedFn(vol_cur_type, set_or_limit, true);
       dialog = false;
     }
   else if (GD.inputs.tag == KEYBOARD_OK && dialog==true && error==false) {
-    closedFn(vol_cur_type, false);
+    closedFn(vol_cur_type, set_or_limit, false);
     dialog = false;
   }
 
@@ -152,14 +180,14 @@ void DialClass::checkKeypress() {
         dialEntries[digits++] = 0;
       }
       if (GD.inputs.tag== KEYBOARD_UV) {
-          strncpy(voltDecade, "uV" ,2);
+        strncpy(voltDecade, "uV" ,2);
 
       }
       if (GD.inputs.tag== KEYBOARD_MV) {
-  strncpy(voltDecade, "mV" ,2);
+        strncpy(voltDecade, "mV" ,2);
       }
       if (GD.inputs.tag== KEYBOARD_V) {
-  strncpy(voltDecade, "V" ,2);
+        strncpy(voltDecade, "V" ,2);
       }
 
       if (GD.inputs.tag == KEYBOARD_PLUS_10MV) {
@@ -172,7 +200,7 @@ void DialClass::checkKeypress() {
       if (GD.inputs.tag== KEYBOARD_CLR) {
         digits = 0;
       }
-      if (vol_cur_type == BUTTON_VOLT_SET) {
+      if (set_or_limit == SET) {
         // Currently only allow positive current limit. It is used both for positive and negative current. Preliminary ?
         if (GD.inputs.tag== KEYBOARD_PLUSMINUS) {
           negative = !negative;
@@ -194,7 +222,7 @@ void DialClass::renderKeypad() {
   char symb[3] = "V";
   char symb_m[3] = "mV";
   char symb_u[3] = "uV";
-  if (vol_cur_type == BUTTON_CUR_SET) {
+  if ( (set_or_limit == SET and vol_cur_type == SOURCE_CURRENT) or  (set_or_limit == LIMIT and vol_cur_type == SOURCE_VOLTAGE))  {
     strncpy(symb,"A",1);
     strncpy(symb_m,"mA",2);
     strncpy(symb_u,"uA",2);
@@ -265,7 +293,7 @@ void DialClass::renderInput(bool indicateError) {
       GD.ColorRGB(COLOR_VOLT);
   }
   
-  if (vol_cur_type == BUTTON_VOLT_SET) {
+  if (set_or_limit == SET) {
     // Currently dont show sign for current. Positive value is used both for neg and pos (sink/source). Preliminary ?
     if (negative == true) {
         GD.cmd_text(posx, posy, 1, 0, "-");
@@ -285,8 +313,8 @@ void DialClass::renderInput(bool indicateError) {
     }
     
     if (i==digits-1) {
-      if (vol_cur_type == BUTTON_VOLT_SET) {
-              GD.cmd_text(posx+10, posy,1, 0, voltDecade);
+      if ( (set_or_limit == SET and vol_cur_type == SOURCE_VOLTAGE) or  (set_or_limit == LIMIT and vol_cur_type == SOURCE_CURRENT))  {
+          GD.cmd_text(posx+10, posy,1, 0, voltDecade);
       } else {
            strncpy(curDecade,"A ",2);
           if (strncmp(voltDecade,"uV",2) == 0) {

@@ -17,6 +17,7 @@
 #include "Filters.h"
 #include "digit_util.h"
 #include "tags.h"
+#include "operations.h"
 #include "Arduino.h"
 #include "Wire.h"
 #include "Mainmenu.h"
@@ -73,6 +74,21 @@ int timeSinceLastChange = 0;  // TODO: get rid of global
 float MAX_CURRENT_10mA_RANGE = 3.0;
 float MAX_CURRENT_1A_RANGE = 1100.0;
 
+
+
+
+
+int operationType = SOURCE_VOLTAGE;
+
+int getOperationType() {
+  if (digitalRead(3) == HIGH) {
+    return SOURCE_VOLTAGE;
+  } else {
+    return SOURCE_CURRENT;
+  }
+}
+
+
 void setup()
 {
    disable_ADC_DAC_SPI_units();
@@ -89,8 +105,10 @@ void setup()
     pinMode(9,OUTPUT);
     pinMode(10,OUTPUT);
 
-    pinMode(4,OUTPUT); // current range io pin
+    pinMode(4,OUTPUT); // current range io pin for switching on/off 100ohm shunt
     digitalWrite(4, HIGH);
+
+    pinMode(3,INPUT); // current range selector
 
     
     //pinMode(11,OUTPUT);
@@ -137,11 +155,19 @@ void setup()
    Serial.println("Start measuring...");
    SMU[0].init();
 
-   float setMv = 0.0;
-   float setMa = 10.0;
-   SMU[0].fltSetCommitCurrentSource(setMa / 1000.0, _SOURCE_AND_SINK); 
-   SMU[0].fltSetCommitVoltageSource(setMv / 1000.0);
+   operationType = getOperationType();
+
+   if (operationType == SOURCE_VOLTAGE) {
+     SMU[0].fltSetCommitVoltageSource(0.0);
+     Serial.println("Source voltage");
+     SMU[0].fltSetCommitLimit(0.1, _SOURCE_AND_SINK); 
+   } else {
+     SMU[0].fltSetCommitCurrentSource(0.0);
+     Serial.println("Source current");
+     SMU[0].fltSetCommitLimit(10.0, _SOURCE_AND_SINK); 
+   }
    Serial.println("Done!");
+   Serial.flush();
 
    V_STATS.init(DigitUtilClass::typeVoltage);
    C_STATS.init(DigitUtilClass::typeCurrent);
@@ -152,8 +178,8 @@ void setup()
    V_CALIBRATION.init();
    C_CALIBRATION.init();
 
-   V_DIAL.init();
-   C_DIAL.init();
+   SOURCE_DIAL.init();
+   LIMIT_DIAL.init();
 
    timeAtStartup = millis();
 }
@@ -178,6 +204,37 @@ void showStatusIndicator(int x,int y,const char* text, bool enable, bool warn) {
   GD.ColorA(255);
 }
 
+void sourceCurrentPanel(int x, int y) {
+
+  // heading
+  GD.ColorRGB(COLOR_CURRENT);
+  GD.ColorA(120);
+  GD.cmd_text(x+20, y + 2 ,   29, 0, "SOURCE CURRENT");
+  GD.cmd_text(x+20 + 1, y + 2 + 1 ,   29, 0, "SOURCE CURRENT");
+  
+  // primary
+  CURRENT_DISPLAY.renderMeasured(x + 17,y + 26, C_FILTERS.mean, false);
+
+  // secondary volt
+  GD.ColorRGB(COLOR_CURRENT);
+  GD.ColorA(180); // a bit lighter
+  DIGIT_UTIL.renderValue(x + 320,  y-4 , C_STATS.rawValue, 4, DigitUtilClass::typeCurrent); 
+
+  GD.ColorA(255);
+  CURRENT_DISPLAY.renderSet(x + 120, y + 131, SMU[0].getSetValuemV());
+
+  GD.ColorRGB(0,0,0);
+  GD.cmd_fgcolor(0xaaaa90);  
+  
+  GD.Tag(BUTTON_SOURCE_SET);
+  GD.cmd_button(x + 20,y + 132,95,50,29,OPT_NOTEAR,"SET");
+  GD.Tag(BUTTON_VOLT_AUTO);
+  GD.cmd_button(x + 350,y + 132,95,50,29,0,"AUTO");
+}
+
+
+
+
 void sourceVoltagePanel(int x, int y) {
 
   // heading
@@ -200,7 +257,7 @@ void sourceVoltagePanel(int x, int y) {
   GD.ColorRGB(0,0,0);
   GD.cmd_fgcolor(0xaaaa90);  
   
-  GD.Tag(BUTTON_VOLT_SET);
+  GD.Tag(BUTTON_SOURCE_SET);
   GD.cmd_button(x + 20,y + 132,95,50,29,OPT_NOTEAR,"SET");
   GD.Tag(BUTTON_VOLT_AUTO);
   GD.cmd_button(x + 350,y + 132,95,50,29,0,"AUTO");
@@ -246,7 +303,7 @@ void renderStatusIndicators(int x, int y) {
 bool anyDialogOpen() {
   // make sure buttons below the dialog do not reach if finger is not removed from screen
   // when dialog disappears. Use a timer for now...
-  return V_DIAL.isDialogOpen() or C_DIAL.isDialogOpen();
+  return SOURCE_DIAL.isDialogOpen() or LIMIT_DIAL.isDialogOpen();
 }
 
 // TODO: Move to separate util class ?
@@ -466,6 +523,25 @@ void renderBar(int x, int y, float rawValue, float setValue) {
   }
 }
 
+void voltagePanel(int x, int y, boolean compliance) {
+  if (x >= 800) {
+    return;
+  }
+  y=y+28;
+
+  VOLT_DISPLAY.renderMeasured(x + 17, y, V_FILTERS.mean);
+  VOLT_DISPLAY.renderSet(x+120, y+105, SMU[0].getLimitValue());
+
+   y=y+105;
+  
+  GD.ColorRGB(0,0,0);
+  GD.cmd_fgcolor(0xaaaa90);  
+  GD.Tag(BUTTON_LIM_SET);
+  GD.cmd_button(x+20,y,95,50,29,0,"LIM");
+ 
+  GD.Tag(0); // Note: Prevents button in some cases to react also when touching other places in UI. Why ?
+  
+}
 void currentPanel(int x, int y, boolean compliance, bool showBar) {
   if (x >= 800) {
     return;
@@ -480,19 +556,19 @@ void currentPanel(int x, int y, boolean compliance, bool showBar) {
     CURRENT_DISPLAY.renderOverflow(x + 17, y);
   } else {
     if (showBar) {
-      renderBar(x,y, C_STATS.rawValue, SMU[0].getSetValuemA());
+      renderBar(x,y, C_STATS.rawValue, SMU[0].getLimitValue());
       y=y+12;
     }
     GD.ColorA(255);
     CURRENT_DISPLAY.renderMeasured(x + 17, y, C_FILTERS.mean, compliance); 
   }
-  CURRENT_DISPLAY.renderSet(x+120, y+105, SMU[0].getSetValuemA());
+  CURRENT_DISPLAY.renderSet(x+120, y+105, SMU[0].getLimitValue());
 
   y=y+105;
   
   GD.ColorRGB(0,0,0);
   GD.cmd_fgcolor(0xaaaa90);  
-  GD.Tag(BUTTON_CUR_SET);
+  GD.Tag(BUTTON_LIM_SET);
   GD.cmd_button(x+20,y,95,50,29,0,"LIM");
   GD.Tag(BUTTON_CUR_AUTO);
   GD.cmd_button(x+350,y,95,50,29,0,current_range==0 ? "1A" : "10mA");
@@ -558,13 +634,18 @@ void widgetBodyHeaderTab(int y, int activeWidget) {
 
 void showWidget(int y, int widgetNo, int scroll) {
   int yPos = y-6;
-  if (widgetNo ==0) {
+  if (widgetNo ==0 && operationType == SOURCE_VOLTAGE) {
      if (scroll ==0){
-       //GD.ColorRGB(0xbbbbbb); // gray
        GD.ColorRGB(COLOR_CURRENT_TEXT);
        GD.cmd_text(20, yPos, 29, 0, "MEASURE CURRENT");
      }
      currentPanel(scroll, yPos + 20, SMU[0].compliance, true);
+  } else if (widgetNo ==0 && operationType == SOURCE_CURRENT) {
+     if (scroll ==0){
+       GD.ColorRGB(COLOR_VOLT);
+       GD.cmd_text(20, yPos, 29, 0, "MEASURE VOLTAGE");
+     }
+     voltagePanel(scroll, yPos + 20, SMU[0].compliance);
   } else if (widgetNo == 1) {
     if (!anyDialogOpen()){
        if (scroll ==0){
@@ -677,17 +758,19 @@ void handleMenuScrolldown(){
 }
 
 
-void renderDisplay() {
+void renderUpperDisplay(int operationType) {
 
   int x = 0;
   int y = 2;
  
   // register screen for gestures on top half
+  /*
   GD.Tag(GESTURE_AREA_HIGH);
   GD.Begin(RECTS);
   GD.ColorRGB(0x000000);
   GD.Vertex2ii(0,0);
   GD.Vertex2ii(800, LOWER_WIDGET_Y_POS);
+  */
 
   // top header
   GD.Begin(RECTS);
@@ -712,46 +795,13 @@ void renderDisplay() {
 
   y=y+7;
   // show upper panel
-  sourceVoltagePanel(x,y);
+  if (operationType == SOURCE_VOLTAGE) {
+      sourceVoltagePanel(x,y);
+  } else {
+      sourceCurrentPanel(x,y);
+  }
   renderStatusIndicators(x,y);
  
-  // register screen for gestures on lower half
-  GD.Tag(GESTURE_AREA_LOW);
-  GD.Begin(RECTS);
-  GD.ColorRGB(0x000000);
-  GD.Vertex2ii(0,LOWER_WIDGET_Y_POS);
-  GD.Vertex2ii(800, 480);
-  
-  handleWidgetScrollPosition();
-
-  widgetBodyHeaderTab(LOWER_WIDGET_Y_POS, activeWidget);
-
-  if (activeWidget >= 0) {
-    if (scrollDir == 0) {
-      showWidget(LOWER_WIDGET_Y_POS, activeWidget, 0);
-    }
-    else if (scrollDir == -1) {
-      showWidget(LOWER_WIDGET_Y_POS,activeWidget, scroll);
-      if (activeWidget == noOfWidgets - 1) {
-        // swap from last to first
-        showWidget(LOWER_WIDGET_Y_POS, 0, scroll + 800);
-      } else {
-        showWidget(LOWER_WIDGET_Y_POS,activeWidget + 1, scroll + 800);
-      }
-    } 
-    else if (scrollDir == 1) {
-      if (activeWidget == 0) { 
-        // swap from first to last
-        showWidget(LOWER_WIDGET_Y_POS,noOfWidgets -1 , scroll - 800);
-      } else {
-        showWidget(LOWER_WIDGET_Y_POS,activeWidget - 1, scroll - 800);
-      }
-      showWidget(LOWER_WIDGET_Y_POS,activeWidget, scroll + 0);
-    }   
-  }
-  
-  handleMenuScrolldown();
-
   if(V_STATS.rawValue > 10.0) {
     GD.ColorRGB(0xdddddd);
     GD.cmd_number(600, 0, 27, 6, (int)(V_STATS.rawValue / C_STATS.rawValue));
@@ -853,9 +903,13 @@ void notification(char *text) {
 }
 
 
+
+ 
 void loop()
 {
   handleAutoNullAtStartup();
+  operationType = getOperationType();
+
     float milliAmpere = C_STATS.rawValue;
     if (startupCalibrationDone1 && startupCalibrationDone2) {
 //      Serial.print(milliAmpere,5);
@@ -926,12 +980,12 @@ void loop()
   if (!gestureDetected) {
     int tag = GD.inputs.tag;
 
-    if (tag == BUTTON_VOLT_SET) {
-      Serial.println("Volt set");
-      V_DIAL.open(BUTTON_VOLT_SET, closeCallback, SMU[0].getSetValuemV());
-    } else if (tag == BUTTON_CUR_SET) {
-      Serial.println("Cur set");
-      C_DIAL.open(BUTTON_CUR_SET, closeCallback, SMU[0].getSetValuemA());
+    if (tag == BUTTON_SOURCE_SET) {
+      Serial.println("Source set");
+      SOURCE_DIAL.open(operationType, SET,  closeCallback, SMU[0].getSetValuemV());
+    } else if (tag == BUTTON_LIM_SET) {
+      Serial.println("Limit set");
+      LIMIT_DIAL.open(operationType, LIMIT, closeCallback, SMU[0].getLimitValue());
     } else if (tag == BUTTON_NULL) {
       Serial.println("Null set");
       V_CALIBRATION.toggleNullValue(V_STATS.rawValue, current_range);
@@ -962,10 +1016,49 @@ void loop()
     }
   }
 
-  detectGestures();
 
   GD.Clear();
-renderDisplay();
+  renderUpperDisplay(operationType);
+
+   // register screen for gestures on lower half
+  GD.Tag(GESTURE_AREA_LOW);
+  GD.Begin(RECTS);
+  GD.ColorRGB(0x000000);
+  GD.Vertex2ii(0,LOWER_WIDGET_Y_POS);
+  GD.Vertex2ii(800, 480);
+
+  detectGestures();
+
+  handleWidgetScrollPosition();
+
+  widgetBodyHeaderTab(LOWER_WIDGET_Y_POS, activeWidget);
+
+  if (activeWidget >= 0) {
+    if (scrollDir == 0) {
+      showWidget(LOWER_WIDGET_Y_POS, activeWidget, 0);
+    }
+    else if (scrollDir == -1) {
+      showWidget(LOWER_WIDGET_Y_POS,activeWidget, scroll);
+      if (activeWidget == noOfWidgets - 1) {
+        // swap from last to first
+        showWidget(LOWER_WIDGET_Y_POS, 0, scroll + 800);
+      } else {
+        showWidget(LOWER_WIDGET_Y_POS,activeWidget + 1, scroll + 800);
+      }
+    } 
+    else if (scrollDir == 1) {
+      if (activeWidget == 0) { 
+        // swap from first to last
+        showWidget(LOWER_WIDGET_Y_POS,noOfWidgets -1 , scroll - 800);
+      } else {
+        showWidget(LOWER_WIDGET_Y_POS,activeWidget - 1, scroll - 800);
+      }
+      showWidget(LOWER_WIDGET_Y_POS,activeWidget, scroll + 0);
+    }   
+  }
+  
+  handleMenuScrolldown();
+
   if (!startupCalibrationDone1 && !startupCalibrationDone2) {
     notification("Wait for null adjustment...");
    
@@ -973,12 +1066,12 @@ renderDisplay();
 
   if (anyDialogOpen()) {
     bluredBackground();
-    if (V_DIAL.isDialogOpen()){
-      V_DIAL.checkKeypress();
-      V_DIAL.handleKeypadDialog();
-    } else if (C_DIAL.isDialogOpen()) {
-      C_DIAL.checkKeypress();
-      C_DIAL.handleKeypadDialog();
+    if (SOURCE_DIAL.isDialogOpen()){
+      SOURCE_DIAL.checkKeypress();
+      SOURCE_DIAL.handleKeypadDialog();
+    } else if (LIMIT_DIAL.isDialogOpen()) {
+      LIMIT_DIAL.checkKeypress();
+      LIMIT_DIAL.handleKeypadDialog();
     }
 
   }
@@ -989,20 +1082,29 @@ renderDisplay();
 
 }
 
-void closeCallback(int vol_cur_type, bool cancel) {
-   Serial.print("SET type:");
+void closeCallback(int vol_cur_type, int set_or_limit, bool cancel) {
+   Serial.print("vol or cur:");
    Serial.println(vol_cur_type);
+   Serial.print("set or limit:");
+   Serial.println(set_or_limit);
+   Serial.flush();
   if (cancel) {
     return;
   }
   GD.__end();
   disable_ADC_DAC_SPI_units();
-  if (vol_cur_type == BUTTON_VOLT_SET) {
-    float mv = V_DIAL.getMv(); 
-    if (SMU[0].fltSetCommitVoltageSource(mv)) printError(_PRINT_ERROR_VOLTAGE_SOURCE_SETTING);
+  if (set_or_limit == SET) {
+    float mv = SOURCE_DIAL.getMv();
+    if (operationType == SOURCE_VOLTAGE) {
+       if (SMU[0].fltSetCommitVoltageSource(mv)) printError(_PRINT_ERROR_VOLTAGE_SOURCE_SETTING);
+    } else {
+       if (SMU[0].fltSetCommitCurrentSource(mv)) printError(_PRINT_ERROR_VOLTAGE_SOURCE_SETTING);
+    }
   }
-  if (vol_cur_type == BUTTON_CUR_SET) {
-     if (SMU[0].fltSetCommitCurrentSource(C_DIAL.getMv() / 1000.0, _SOURCE_AND_SINK)) printError(_PRINT_ERROR_CURRENT_SOURCE_SETTING);
+  if (set_or_limit == LIMIT) {
+    Serial.println(LIMIT_DIAL.getMv());
+    Serial.flush();
+     if (SMU[0].fltSetCommitLimit(LIMIT_DIAL.getMv() / 1000.0, _SOURCE_AND_SINK)) printError(_PRINT_ERROR_CURRENT_SOURCE_SETTING);
   }
   GD.resume();
 }

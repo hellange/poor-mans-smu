@@ -94,10 +94,10 @@ float ADCClass::measureMilliVoltage() {
   if (full_board == true) {
     //v = v +3.0; // offset
     if (v>0) {
-      v = v*1.00161; //gain on positive
+      v = v*1.00039; //gain on positive
       v = v*2.0; // divide by 2 in measurement circuit
     } else {
-      v = v*1.00101; // gain on negative
+      v = v*1.00156; // gain on negative
       v = v*2.0; // divide by 2 in measurement circuit
     }
   }
@@ -168,13 +168,13 @@ int ADCClass::init(){
  */
 
 
-uint32_t voltage_to_code_adj(float dac_voltage, float min_output, float max_output, bool serialOut){
+uint32_t sourcevoltage_to_code_adj(float dac_voltage, float min_output, float max_output, bool serialOut){
 
   dac_voltage = dac_voltage * 5.0/4.096; // using 4.096 ref instead of 5.0
   dac_voltage = dac_voltage - 0.000825;
   if (dac_voltage > 0) {
     // positive
-    dac_voltage = dac_voltage * 0.999785; // gain
+    dac_voltage = dac_voltage * 1.00103; // gain
   } else  {
     // negative
     dac_voltage = dac_voltage * 0.998750; // gain
@@ -200,6 +200,29 @@ uint32_t voltage_to_code_adj(float dac_voltage, float min_output, float max_outp
   return LTC2758_voltage_to_code(dac_voltage, min_output, max_output, serialOut);
 }
 
+uint32_t sourcecurrent_to_code_adj(float dac_voltage, float min_output, float max_output, bool serialOut){
+
+  dac_voltage = dac_voltage * 5.0/4.096; // using 4.096 ref instead of 5.0
+  dac_voltage = dac_voltage - 0.000825; // offset
+//  if (dac_voltage > 0) {
+//    // positive
+//    dac_voltage = dac_voltage * 0.999785; // gain
+//  } else  {
+//    // negative
+//    dac_voltage = dac_voltage * 0.998750; // gain
+//  }
+ 
+
+  if (full_board) {
+    //dac_voltage = dac_voltage - 0.0004; // additional offset (measured when connected to amplifier board)
+    dac_voltage = dac_voltage * 10.0; // with 1ohm shunt and x10 amplifier: 100mA range is set by 1000mV
+    dac_voltage = dac_voltage + 0.0089; // offset
+    dac_voltage = dac_voltage * 1.025;
+    dac_voltage = - dac_voltage; // analog part requires inverted input
+  }
+
+  return LTC2758_voltage_to_code(dac_voltage, min_output, max_output, serialOut);
+}
 
 int8_t ADCClass::fltSetCommitVoltageSource(float milliVolt) {
   float v = milliVolt / 1000.0;
@@ -232,13 +255,47 @@ int8_t ADCClass::fltSetCommitVoltageSource(float milliVolt) {
 
   LTC2758_write(LTC2758_CS, LTC2758_WRITE_SPAN_DAC, 0, span);
 
-  float v_adj = voltage_to_code_adj(v, DAC_RANGE_LOW, DAC_RANGE_HIGH, true);
+  float v_adj = sourcevoltage_to_code_adj(v, DAC_RANGE_LOW, DAC_RANGE_HIGH, true);
+  LTC2758_write(LTC2758_CS, LTC2758_WRITE_CODE_UPDATE_DAC, 0, v_adj); 
+
+ return setValueV;
+ }
+
+ int8_t ADCClass::fltSetCommitCurrentSource(float milliVolt) {
+  float v = milliVolt / 1000.0;
+  setValueV = v; // use volt. TODO: change to millivolt ?
+
+  float mv = milliVolt;
+  v = mv / 1000.0;
+  
+  //SPAN 0 = 0 to +5V
+  //     1 = 0 to +10V
+  //     2 = -5 to +5 V
+  //     3 = -10 to +10V
+  //     4 = -2.5 to +2.5V
+  //     5 = -2.5 to + 7.5V
+  uint32_t choice = 3;
+  float DAC_RANGE_LOW = -10.0;
+  float DAC_RANGE_HIGH = 10.0;
+  
+//  if (abs(v) <2.2) {   // can move to 2.5 if reference voltage is 5v
+//    choice = 4;
+//    DAC_RANGE_LOW = -2.5;
+//    DAC_RANGE_HIGH = 2.5;
+//  }
+  
+  uint32_t span = (uint32_t)(choice << 2);
+
+  LTC2758_write(LTC2758_CS, LTC2758_WRITE_SPAN_DAC, 0, span);
+
+  float v_adj = sourcecurrent_to_code_adj(v, DAC_RANGE_LOW, DAC_RANGE_HIGH, true);
   LTC2758_write(LTC2758_CS, LTC2758_WRITE_CODE_UPDATE_DAC, 0, v_adj); 
 
  return setValueV;
  }
  
- int8_t ADCClass::fltSetCommitCurrentSource(float fCurrent, int8_t up_down_both) {
+ 
+ int8_t ADCClass::fltSetCommitLimit(float fCurrent, int8_t up_down_both) {
   return setValueI = fCurrent;                         
  }
 
@@ -288,7 +345,7 @@ int8_t ADCClass::fltSetCommitVoltageSource(float milliVolt) {
   return setValueV * 1000.0;
  }
 
- float ADCClass::getSetValuemA(){
+ float ADCClass::getLimitValue(){
   return setValueI * 1000.0;
  }
 

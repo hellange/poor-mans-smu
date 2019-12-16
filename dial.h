@@ -1,4 +1,5 @@
 #include "tags.h"
+#include "operations.h"
 
 class DialClass {
 
@@ -12,6 +13,8 @@ class DialClass {
 
   bool error;
   bool warning;
+
+  int set_or_limit;
   
   bool keydepressed = true;
   char voltDecade[3] = "  ";
@@ -24,7 +27,7 @@ class DialClass {
 
   
 public:
-  void open(int type, void (*closedFn)(int type, bool cancel), float value);
+  void open(int type, int set_or_limit_, void (*closedFn)(int type, int set_or_limit, bool cancel), float value);
   void clear();
   bool isDialogOpen();
   void handleKeypadDialog();
@@ -41,5 +44,5 @@ private:
   void renderKeypad();
 };
 
-extern DialClass V_DIAL;
-extern DialClass C_DIAL;
+extern DialClass SOURCE_DIAL;
+extern DialClass LIMIT_DIAL;

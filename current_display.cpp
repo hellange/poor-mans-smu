@@ -30,7 +30,8 @@ void CurrentDisplayClass::renderMeasured(int x, int y, float rawMa, boolean comp
   bool neg;
   bool uA_mode_enabled = false; // set true if you want uA display scale for very low currents
   DIGIT_UTIL.separate2(&a, &ma, &ua, &na, &neg, rawMa);
-  
+
+  GD.ColorA(255);
   if (compliance) {
     GD.ColorRGB(complianceColor); //0xFF4522); //0xdd1120
   } else {

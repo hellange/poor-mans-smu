@@ -14,13 +14,13 @@ class SMU_HAL_dummy
   bool compliance;
     int init();
     int8_t fltSetCommitVoltageSource(float fVoltage);
-    int8_t fltSetCommitCurrentSource(float fCurrent, int8_t up_down_both);
+    int8_t fltSetCommitLimit(float fCurrent, int8_t up_down_both);
     float measureMilliVoltage();
 
     int dataReady();
     float measureCurrent(int range);
 
     float getSetValuemV();
-    float getSetValuemA();
+    float getLimitValue();
 
 };

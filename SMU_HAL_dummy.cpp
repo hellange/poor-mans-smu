@@ -14,7 +14,7 @@
    return nowValueV;
  }
  
- int8_t SMU_HAL_dummy::fltSetCommitCurrentSource(float fCurrent, int8_t up_down_both) {
+ int8_t SMU_HAL_dummy::fltSetCommitLimit(float fCurrent, int8_t up_down_both) {
   return setValueI = fCurrent;                         
  }
 
@@ -57,7 +57,7 @@
   return setValueV * 1000.0;
  }
 
- float SMU_HAL_dummy::getSetValuemA(){
+ float SMU_HAL_dummy::getLimitValue(){
   return setValueI * 1000.0;
  }
 
