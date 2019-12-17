@@ -8,6 +8,7 @@ class MainMenuClass {
     int scrollMainMenuDir = 0;
     
     void activate();
+    void close();
     void handle();
   };
 

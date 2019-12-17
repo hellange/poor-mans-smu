@@ -11,6 +11,11 @@ void MainMenuClass::activate() {
   active = true;
   scrollMainMenuDir = 1;
 }
+
+void MainMenuClass::close() {
+    scrollMainMenuDir = -1;
+}
+
 void MainMenuClass::handle() {
 
     scrollMainMenu = scrollMainMenu + scrollMainMenuDir*25;

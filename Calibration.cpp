@@ -27,11 +27,11 @@ bool CalibrationClass::toggleCalibratedValues() {
   return useCalibratedValues;
 }
 
-bool CalibrationClass::nullValueIsSet(int current_range) {
+bool CalibrationClass::nullValueIsSet(CURRENT_RANGE current_range) {
   return nullValue[current_range] != 0.0;
 }
 
-void CalibrationClass::toggleNullValue(float v, int current_range) {
+void CalibrationClass::toggleNullValue(float v, CURRENT_RANGE current_range) {
   if (timeSinceLastChange + 100 > millis()){
     return;
   }

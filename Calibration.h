@@ -1,4 +1,4 @@
-
+#include "operations.h"
 
 class CalibrationClass {
 
@@ -21,8 +21,8 @@ public:
   bool toggleCalibratedValues();
   float dac_nonlinear_compensation(float v);
   float adc_nonlinear_compensation(float milliVolt);
-  void toggleNullValue(float v, int current_range);
-  bool nullValueIsSet(int current_range);
+  void toggleNullValue(float v, CURRENT_RANGE current_range);
+  bool nullValueIsSet(CURRENT_RANGE current_range);
   void renderCal(int x, int y, float valM, float setM, bool cur);
   void init();
 };

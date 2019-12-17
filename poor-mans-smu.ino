@@ -23,6 +23,7 @@
 #include "Mainmenu.h"
 #include "SMU_HAL_dummy.h"
 #include "SMU_HAL_717x.h"
+#include "dial.h"
 
 #define _SOURCE_AND_SINK 111
 
@@ -32,17 +33,13 @@
 #define _PRINT_ERROR_NO_CALIBRATION_DATA_FOUND 3
 #define _PRINT_ERROR_FACTORY_CALIBRATION_RESTORE_FAILED_CATASTROPHICALLY
 
-
 #define GEST_NONE 0
 #define GEST_MOVE_LEFT 1
 #define GEST_MOVE_RIGHT 2
 #define GEST_MOVE_DOWN 3
 #define LOWER_WIDGET_Y_POS 250
 
-//!touchscreen I2C address
-#define I2C_FT6206_ADDR0    0x38
-
-//uncomment below if you want to use read AD/DA 
+//uncomment below if you want to use real AD/DA 
 ADCClass SMU[1] = {
   ADCClass()
 };
@@ -59,29 +56,22 @@ int timeAtStartup;
 bool startupCalibrationDone1 = false;
 bool startupCalibrationDone2 = false;
 
-float rawMa_glob; // TODO: store in stats for analysis just as voltage
-
-float DACVout;  // TODO: Dont use global
-
 int noOfWidgets = 6;
 int activeWidget = 0;
 
-#include "dial.h"
-
-int current_range = 0; // TODO: get rid of global
+CURRENT_RANGE current_range = AMP1; // TODO: get rid of global
 int timeSinceLastChange = 0;  // TODO: get rid of global
 
 float MAX_CURRENT_10mA_RANGE = 3.0;
 float MAX_CURRENT_1A_RANGE = 1100.0;
 
 
+OPERATION_TYPE operationType = SOURCE_VOLTAGE;
 
 
-
-int operationType = SOURCE_VOLTAGE;
 int functionType = SOURCE_DC;
 
-int getOperationType() {
+OPERATION_TYPE getOperationType() {
   if (digitalRead(3) == HIGH) {
     return SOURCE_VOLTAGE;
   } else {
@@ -213,13 +203,10 @@ void sourcePulsePanel(int x, int y) {
   GD.cmd_text(x+20 + 1, y + 2 + 1 ,   29, 0, "SOURCE PULSE");
 
   GD.__end();
-  SMU[0].pulse(-2000.0, 2000.0, 5000);
+  SMU[0].pulse(-2000.0, 2000.0, 200);
   GD.resume();
   //SMU[0].sweep(5.00, -5.00, 0.1, 5000);
-
-    GD.ColorA(255);
-
-  
+  GD.ColorA(255);
 }
 
 void sourceCurrentPanel(int x, int y) {
@@ -249,7 +236,7 @@ void sourceCurrentPanel(int x, int y) {
   
  
   GD.Tag(BUTTON_CUR_AUTO);
-  GD.cmd_button(x+350,y+132,95,50,29,0,current_range==0 ? "1A" : "10mA");
+  GD.cmd_button(x+350,y+132,95,50,29,0,current_range==AMP1 ? "1A" : "10mA");
   GD.Tag(0); // Note: Prevents button in some cases to react also when touching other places in UI. Why ?
   
 }
@@ -570,7 +557,7 @@ void measureCurrentPanel(int x, int y, boolean compliance, bool showBar) {
   }
   
   y=y+28;
-  if ( (current_range == 1 && abs(C_STATS.rawValue) > MAX_CURRENT_10mA_RANGE) or (current_range == 0 && abs(C_STATS.rawValue) > MAX_CURRENT_1A_RANGE)) {
+  if ( (current_range == MILLIAMP10 && abs(C_STATS.rawValue) > MAX_CURRENT_10mA_RANGE) or (current_range == AMP1 && abs(C_STATS.rawValue) > MAX_CURRENT_1A_RANGE)) {
     if (showBar) {
       y=y+12; // dont show bar when overflow... just add extra space so the panel gets same size as without overflow...
     }
@@ -593,7 +580,7 @@ void measureCurrentPanel(int x, int y, boolean compliance, bool showBar) {
   GD.Tag(BUTTON_LIM_SET);
   GD.cmd_button(x+20,y,95,50,29,0,"LIM");
   GD.Tag(BUTTON_CUR_AUTO);
-  GD.cmd_button(x+350,y,95,50,29,0,current_range==0 ? "1A" : "10mA");
+  GD.cmd_button(x+350,y,95,50,29,0,current_range==AMP1 ? "1A" : "10mA");
   GD.Tag(0); // Note: Prevents button in some cases to react also when touching other places in UI. Why ?
 }
 
@@ -915,7 +902,7 @@ int detectGestures() {
 int timeBeforeAutoNull = millis() + 2000;
 void handleAutoNullAtStartup() {
   if (!startupCalibrationDone1 && timeAtStartup + timeBeforeAutoNull < millis()) {
-    current_range = 1;
+    current_range = MILLIAMP10;
     SMU[0].setCurrentRange(current_range);
     if (operationType == SOURCE_VOLTAGE) {
       SMU[0].fltSetCommitVoltageSource(0.0);
@@ -937,7 +924,7 @@ void handleAutoNullAtStartup() {
   } 
 
   if (!startupCalibrationDone2 && timeAtStartup + timeBeforeAutoNull + 1100 < millis()) {
-    current_range = 0;
+    current_range = AMP1;
     SMU[0].setCurrentRange(current_range);
     if (operationType == SOURCE_VOLTAGE) {
       SMU[0].fltSetCommitVoltageSource(0.0);
@@ -1075,17 +1062,19 @@ void loop()
         Serial.println("current range set");
        
         // swap current range
-        if (current_range == 0) {
-          current_range = 1;
+        if (current_range == AMP1) {
+          current_range = MILLIAMP10;
         } else {
-          current_range = 0;
+          current_range = AMP1;
         }
         timeSinceLastChange = millis();
         SMU[0].setCurrentRange(current_range);
 
       }
+      //TODO: Move handling of menu button into menu itself ?
     } else if (tag == MENU_BUTTON_SOURCE_PULSE) {
       functionType = SOURCE_PULSE;
+      MAINMENU.close();
     } 
   }
 
@@ -1143,10 +1132,10 @@ void closeCallback(int vol_cur_type, int set_or_limit, bool cancel) {
     } else {
       // auto current range when sourcing current
       if (mv < 3.0) {
-        current_range = 1;
+        current_range = MILLIAMP10;
         SMU[0].setCurrentRange(current_range);
       } else {
-        current_range = 0;
+        current_range = AMP1;
         SMU[0].setCurrentRange(current_range);
       }
        if (SMU[0].fltSetCommitCurrentSource(mv)) printError(_PRINT_ERROR_VOLTAGE_SOURCE_SETTING);

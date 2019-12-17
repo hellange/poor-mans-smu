@@ -67,13 +67,13 @@ static st_reg init_state[] =
 
 bool full_board = true; // set to true to account for shunt and gain/offsets other places that dac/adc
 
-void ADCClass::setCurrentRange(int range) {
+void ADCClass::setCurrentRange(CURRENT_RANGE range) {
   current_range = range;
-  if (range == 0) {
-    AD7176_WriteRegister({0x06, 2, 0, 0x080Cl});
+  if (range == AMP1) {
+    AD7176_WriteRegister({0x06, 2, 0, 0x080Cl}); // GPIO pin
     digitalWrite(4, HIGH);
   } else {
-    AD7176_WriteRegister({0x06, 2, 0, 0x080Dl});
+    AD7176_WriteRegister({0x06, 2, 0, 0x080Dl}); // GPIO pin
     digitalWrite(4, LOW);
   }
 
@@ -213,11 +213,11 @@ uint32_t ADCClass::sourcecurrent_to_code_adj(float dac_voltage, float min_output
 
   if (full_board) {
     //dac_voltage = dac_voltage - 0.0004; // additional offset (measured when connected to amplifier board)
-    if (current_range == 0) {
+    if (current_range == AMP1) {
       dac_voltage = dac_voltage * 10.0; // with 1ohm shunt and x10 amplifier: 100mA is set by 1000mV
       dac_voltage = dac_voltage + 0.0008; // offset
       dac_voltage = dac_voltage * 1.137;
-    } else if (current_range == 1) {
+    } else if (current_range == MILLIAMP10) {
       dac_voltage = dac_voltage * 1000.0; // with 100ohm shunt and x10 amplifier: 1mA range is set by 1000mV
       dac_voltage = dac_voltage + 0.0010; // offset
       dac_voltage = dac_voltage * 0.975;
@@ -344,7 +344,7 @@ int8_t ADCClass::fltSetCommitVoltageSource(float milliVolt) {
  }
 
  
- float ADCClass::measureCurrent(int range){
+ float ADCClass::measureCurrent(CURRENT_RANGE range){
 
     AD7176_ReadRegister(&AD7176_regs[4]);
     float v = (float) ((AD7176_regs[4].value*VFSR*1000.0)/FSR); 
@@ -355,7 +355,7 @@ int8_t ADCClass::fltSetCommitVoltageSource(float milliVolt) {
     float i = v;
     // DONT INCLUDE THESE ADJUSTMENTS WHEN TESTING ONLY DAC/ADC BOARD !!!!
     if (full_board == true) {
-      if (range == 1) {
+      if (range == MILLIAMP10) {
         i=v/100.0; // 100 ohm shunt.
         i=i*1.05; 
       } else {
@@ -365,7 +365,7 @@ int8_t ADCClass::fltSetCommitVoltageSource(float milliVolt) {
       i=i/10.0; // x10 amplifier
 
       // account for resistor value not perfect
-      if (range == 0) {
+      if (range == AMP1) {
         i = i *   1.043; // 1ohm shunt, 1A range
         i = i -V_FILTERS.mean* 0.000075; // account for common mode voltage giving wrong current (give too high result)
       } else {
