@@ -52,15 +52,15 @@ void DigitUtilClass::renderValue(int x,int y,float val, int size = 0, int type =
        fontWidth = 29;
     }
     
-    int v, mV, uV;
+    int v, mV, uV, nV;
     bool neg;
-    DIGIT_UTIL.separate(&v, &mV, &uV, &neg, val);
+    DIGIT_UTIL.separate2(&v, &mV, &uV, &nV, &neg, val);
     if(neg) {
       GD.cmd_text(x, y, font, 0,  "-");
     }
 
     x = x + fontWidth;
-    if (v>0) {
+    if (v > 0) {
       GD.cmd_number(x, y, font, 2, v);
       x = x + fontWidth*1.7;
       GD.cmd_text(x, y, font, 0,  ".");
@@ -70,14 +70,22 @@ void DigitUtilClass::renderValue(int x,int y,float val, int size = 0, int type =
       GD.cmd_number(x, y, font, 3, uV);
       x = x + fontWidth * 2.6;
       GD.cmd_text(x, y, font, 0,  type == typeVoltage ? "V" : "A");
-    } else {
+    } else if (mV > 0 or type == typeVoltage) {
       GD.cmd_number(x, y, font, 3, mV);
       x = x + fontWidth*2.5;
-      GD.cmd_text(x, y, font, 0,  ".");
+      GD.cmd_text(x-1, y, font, 0,  ".");
       x = x + fontWidth/3;
       GD.cmd_number(x, y, font, 3, uV);
       x = x + fontWidth * 2.6;
       GD.cmd_text(x, y, font, 0,  type == typeVoltage ? "mV" : "mA");
+    } else {
+      GD.cmd_number(x, y, font, 3, uV);
+      x = x + fontWidth*2.5;
+      GD.cmd_text(x-1, y, font, 0,  ".");
+      x = x + fontWidth/3;
+      GD.cmd_number(x, y, font, 3, nV);
+      x = x + fontWidth * 2.6;
+      GD.cmd_text(x, y, font, 0,  type == typeVoltage ? "uV" : "uA");
     }
 
 }

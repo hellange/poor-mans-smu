@@ -296,8 +296,9 @@ int8_t ADCClass::fltSetCommitVoltageSource(float milliVolt) {
       currentSweepDir = +1;
      }
      currentSweepValue += step*currentSweepDir;
-
-     fltSetCommitVoltageSource(currentSweepValue);
+     
+     
+     fltSetCommitCurrentSource(currentSweepValue);
      
      //Serial.println("Set pulse low");
    } 

@@ -38,14 +38,17 @@ void MainMenuClass::handle() {
     int buttonWidth = 200;
     int buttonHeight = 70;
                
-    const char * t[3][3] = {
+    const char * text[3][3] = {
     {"SOURCE VOLT\0", "SOURCE CURRENT\0", "BATTERY\0"},
     {"ELECTRONIC LOAD\0", "VOLTMETER\0", "PULSE GENERATOR\0"},
     {"SWEEP\0", "RESISTANCE\0", "SETTINGS\0"}};
     GD.ColorRGB(0x444444);
     for (int y =0;y<3;y++) {
       for (int x =0;x<3;x++) {
-        GD.cmd_button(70+(buttonWidth+30)*x,scrollMainMenu-280+(buttonHeight+20)*y,buttonWidth,buttonHeight,28,0,t[y][x]);
+        if (y==1 && x == 2) {
+          GD.Tag(MENU_BUTTON_SOURCE_PULSE);
+        }
+        GD.cmd_button(70+(buttonWidth+30)*x,scrollMainMenu-280+(buttonHeight+20)*y,buttonWidth,buttonHeight,28,0,text[y][x]);
       }
     }
     GD.Tag(MAIN_MENU_CLOSE);

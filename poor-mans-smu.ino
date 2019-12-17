@@ -79,6 +79,7 @@ float MAX_CURRENT_1A_RANGE = 1100.0;
 
 
 int operationType = SOURCE_VOLTAGE;
+int functionType = SOURCE_DC;
 
 int getOperationType() {
   if (digitalRead(3) == HIGH) {
@@ -202,6 +203,23 @@ void showStatusIndicator(int x,int y,const char* text, bool enable, bool warn) {
   GD.ColorA(enable ? 200 : 25);
   GD.cmd_text(x+ 2, y + 10, 27, 0, text);
   GD.ColorA(255);
+}
+
+void sourcePulsePanel(int x, int y) {
+    // heading
+  GD.ColorRGB(COLOR_CURRENT);
+  GD.ColorA(120);
+  GD.cmd_text(x+20, y + 2 ,   29, 0, "SOURCE PULSE");
+  GD.cmd_text(x+20 + 1, y + 2 + 1 ,   29, 0, "SOURCE PULSE");
+
+  GD.__end();
+  SMU[0].pulse(-2000.0, 2000.0, 5000);
+  GD.resume();
+  //SMU[0].sweep(5.00, -5.00, 0.1, 5000);
+
+    GD.ColorA(255);
+
+  
 }
 
 void sourceCurrentPanel(int x, int y) {
@@ -527,7 +545,7 @@ void renderBar(int x, int y, float rawValue, float setValue) {
   }
 }
 
-void voltagePanel(int x, int y, boolean compliance) {
+void measureVoltagePanel(int x, int y, boolean compliance) {
   if (x >= 800) {
     return;
   }
@@ -536,7 +554,7 @@ void voltagePanel(int x, int y, boolean compliance) {
   VOLT_DISPLAY.renderMeasured(x + 17, y, V_FILTERS.mean);
   VOLT_DISPLAY.renderSet(x+120, y+105, SMU[0].getLimitValue());
 
-   y=y+105;
+  y=y+105;
   
   GD.ColorRGB(0,0,0);
   GD.cmd_fgcolor(0xaaaa90);  
@@ -546,7 +564,7 @@ void voltagePanel(int x, int y, boolean compliance) {
   GD.Tag(0); // Note: Prevents button in some cases to react also when touching other places in UI. Why ?
   
 }
-void currentPanel(int x, int y, boolean compliance, bool showBar) {
+void measureCurrentPanel(int x, int y, boolean compliance, bool showBar) {
   if (x >= 800) {
     return;
   }
@@ -643,13 +661,13 @@ void showWidget(int y, int widgetNo, int scroll) {
        GD.ColorRGB(COLOR_CURRENT_TEXT);
        GD.cmd_text(20, yPos, 29, 0, "MEASURE CURRENT");
      }
-     currentPanel(scroll, yPos + 20, SMU[0].compliance, true);
+     measureCurrentPanel(scroll, yPos + 20, SMU[0].compliance, true);
   } else if (widgetNo ==0 && operationType == SOURCE_CURRENT) {
      if (scroll ==0){
        GD.ColorRGB(COLOR_VOLT);
        GD.cmd_text(20, yPos, 29, 0, "MEASURE VOLTAGE");
      }
-     voltagePanel(scroll, yPos + 20, SMU[0].compliance);
+     measureVoltagePanel(scroll, yPos + 20, SMU[0].compliance);
   } else if (widgetNo == 1) {
     if (!anyDialogOpen()){
        if (scroll ==0){
@@ -791,19 +809,17 @@ void handleMenuScrolldown(){
 }
 
 
-void renderUpperDisplay(int operationType) {
+void renderUpperDisplay(int operationType, int functionType) {
 
   int x = 0;
   int y = 2;
  
-  // register screen for gestures on top half
-  /*
+  // register screen for gestures on top half, required for pulling menu from top
   GD.Tag(GESTURE_AREA_HIGH);
   GD.Begin(RECTS);
   GD.ColorRGB(0x000000);
   GD.Vertex2ii(0,0);
   GD.Vertex2ii(800, LOWER_WIDGET_Y_POS);
-  */
 
   // top header
   GD.Begin(RECTS);
@@ -828,17 +844,22 @@ void renderUpperDisplay(int operationType) {
 
   y=y+7;
   // show upper panel
-  if (operationType == SOURCE_VOLTAGE) {
-      sourceVoltagePanel(x,y);
+  if (functionType == SOURCE_DC) {
+    if (operationType == SOURCE_VOLTAGE) {
+        sourceVoltagePanel(x,y);
+    } else {
+        sourceCurrentPanel(x,y);
+    }
+    renderStatusIndicators(x,y);
+   
+    if(V_STATS.rawValue > 10.0) {
+      GD.ColorRGB(0xdddddd);
+      GD.cmd_number(600, 0, 27, 6, (int)(V_STATS.rawValue / C_STATS.rawValue));
+      GD.cmd_text(670, 0,  27, 0, "ohm load");
+    }
+   
   } else {
-      sourceCurrentPanel(x,y);
-  }
-  renderStatusIndicators(x,y);
- 
-  if(V_STATS.rawValue > 10.0) {
-    GD.ColorRGB(0xdddddd);
-    GD.cmd_number(600, 0, 27, 6, (int)(V_STATS.rawValue / C_STATS.rawValue));
-    GD.cmd_text(670, 0,  27, 0, "ohm load");
+    sourcePulsePanel(x,y);
   }
 }
 
@@ -959,7 +980,7 @@ void loop()
   // TODO: Moved pulse/sweep out as separate operationType
   if (startupCalibrationDone2) {
     //SMU[0].pulse(-4000.0, 4000.0, 5000);
-    //SMU[0].sweep(4000.0, -4000.0, 100.0, 1000);
+    //SMU[0].sweep(5.00, -5.00, 0.1, 5000);
   }
 //    if (startupCalibrationDone1 && startupCalibrationDone2) {
 //      float milliAmpere = C_STATS.rawValue;
@@ -1063,11 +1084,13 @@ void loop()
         SMU[0].setCurrentRange(current_range);
 
       }
-    }
+    } else if (tag == MENU_BUTTON_SOURCE_PULSE) {
+      functionType = SOURCE_PULSE;
+    } 
   }
 
   GD.Clear();
-  renderUpperDisplay(operationType);
+  renderUpperDisplay(operationType, functionType);
 
    // register screen for gestures on lower half
   GD.Tag(GESTURE_AREA_LOW);

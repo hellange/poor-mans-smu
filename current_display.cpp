@@ -80,13 +80,13 @@ void CurrentDisplayClass::renderSet(int x, int y, float rawMa) {
 
   if (rawMa >= 10.0) {
     GD.cmd_number(x+25, y, 31, 1, a);
-    GD.cmd_text(x+48, y, 31, 0, ".");
+    GD.cmd_text(x+50, y, 31, 0, ".");
     GD.cmd_number(x+60, y, 31, 3, ma);
     GD.cmd_number(x+140, y, 31, 1, ua / 100); // need to do it like this to show only first digit in a three digit value
     GD.cmd_text(x+170, y, 31, 0, "A");
   } else {
     GD.cmd_number(x+25, y, 31, 2, ma);
-    GD.cmd_text(x+48+20, y, 31, 0, ".");
+    GD.cmd_text(x+50+20, y, 31, 0, ".");
     GD.cmd_number(x+60+20, y, 31, 3, ua);
     GD.cmd_text(x+140+20, y, 31, 0, "mA");
   }
