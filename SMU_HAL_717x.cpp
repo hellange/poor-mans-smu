@@ -178,9 +178,9 @@ uint32_t sourcevoltage_to_code_adj(float dac_voltage, float min_output, float ma
     dac_voltage = dac_voltage * 0.998750; // gain
   }
   
-  Serial.print("voltage:");
-  Serial.print(dac_voltage);
-  Serial.println(" volt");
+  //Serial.print("voltage:");
+  //Serial.print(dac_voltage);
+  //Serial.println(" volt");
 
   // DONT INCLUDE THESE ADJUSTMENTS WHEN TESTING ONLY DAC/ADC BOARD !!!!
   if (full_board) {
@@ -260,12 +260,50 @@ int8_t ADCClass::fltSetCommitVoltageSource(float milliVolt) {
 
   LTC2758_write(LTC2758_CS, LTC2758_WRITE_SPAN_DAC, 0, span);
 
-  float v_adj = sourcevoltage_to_code_adj(v, DAC_RANGE_LOW, DAC_RANGE_HIGH, true);
+  float v_adj = sourcevoltage_to_code_adj(v, DAC_RANGE_LOW, DAC_RANGE_HIGH, false);
   LTC2758_write(LTC2758_CS, LTC2758_WRITE_CODE_UPDATE_DAC, 0, v_adj); 
 
  return setValueV;
  }
 
+ int pulseTimer = millis();
+ int pulseHigh = false;
+ void ADCClass::pulse(float high, float low, int duration) {
+
+   if (pulseHigh && pulseTimer+duration/2 < millis()) {
+     pulseHigh = false;
+     pulseTimer = millis();
+     fltSetCommitVoltageSource(low);
+     //Serial.println("Set pulse low");
+   } else if (!pulseHigh && pulseTimer+duration/2 < millis()) {
+     pulseHigh = true;
+     pulseTimer = millis();
+     fltSetCommitVoltageSource(high);
+     //Serial.println("Set pulse high");
+
+   }
+ }
+
+ float currentSweepValue = 0.0;
+ int currentSweepDir = 1;
+ void ADCClass::sweep(float high, float low, float step, int duration) {
+   
+   if (pulseTimer+duration/2 < millis()) {
+     pulseTimer = millis();
+     if (currentSweepDir == 1 && currentSweepValue > high) {
+      currentSweepDir = -1;
+     } else if (currentSweepDir == -1 && currentSweepValue < low) {
+      currentSweepDir = +1;
+     }
+     currentSweepValue += step*currentSweepDir;
+
+     fltSetCommitVoltageSource(currentSweepValue);
+     
+     //Serial.println("Set pulse low");
+   } 
+ }
+ 
+ 
  int8_t ADCClass::fltSetCommitCurrentSource(float milliVolt) {
   float v = milliVolt / 1000.0;
   setValueV = v; // use volt. TODO: change to millivolt ?
@@ -293,7 +331,7 @@ int8_t ADCClass::fltSetCommitVoltageSource(float milliVolt) {
 
   LTC2758_write(LTC2758_CS, LTC2758_WRITE_SPAN_DAC, 0, span);
 
-  float v_adj = sourcecurrent_to_code_adj(v, DAC_RANGE_LOW, DAC_RANGE_HIGH, true);
+  float v_adj = sourcecurrent_to_code_adj(v, DAC_RANGE_LOW, DAC_RANGE_HIGH, false);
   LTC2758_write(LTC2758_CS, LTC2758_WRITE_CODE_UPDATE_DAC, 0, v_adj); 
 
   return setValueV;

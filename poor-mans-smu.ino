@@ -956,7 +956,11 @@ void loop()
   handleAutoNullAtStartup();
   operationType = getOperationType();
 
-    
+  // TODO: Moved pulse/sweep out as separate operationType
+  if (startupCalibrationDone2) {
+    //SMU[0].pulse(-4000.0, 4000.0, 5000);
+    //SMU[0].sweep(4000.0, -4000.0, 100.0, 1000);
+  }
 //    if (startupCalibrationDone1 && startupCalibrationDone2) {
 //      float milliAmpere = C_STATS.rawValue;
 //      Serial.print(milliAmpere,5);
@@ -1114,7 +1118,7 @@ void closeCallback(int vol_cur_type, int set_or_limit, bool cancel) {
     if (operationType == SOURCE_VOLTAGE) {
        if (SMU[0].fltSetCommitVoltageSource(mv)) printError(_PRINT_ERROR_VOLTAGE_SOURCE_SETTING);
     } else {
-      // auto range 
+      // auto current range when sourcing current
       if (mv < 3.0) {
         current_range = 1;
         SMU[0].setCurrentRange(current_range);

@@ -85,9 +85,9 @@ float CalibrationClass::adc_nonlinear_compensation(float v){
 
 float CalibrationClass::dac_nonlinear_compensation(float milliVolt) {
   // Nonlinearity
-  Serial.print("Looking up in DAC comp table for ");
-  Serial.print(milliVolt);
-  Serial.println(" millivolt");
+  //Serial.print("Looking up in DAC comp table for ");
+  //Serial.print(milliVolt);
+  //Serial.println(" millivolt");
   float v = milliVolt;
   for (int i=0;i<dac_cal_points -1;i++) {
     if (v > meas_dac[i] && v <= meas_dac[i+1]) {

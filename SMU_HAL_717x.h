@@ -34,8 +34,13 @@ class ADCClass {
 
     int dataReady();
     float measureCurrent(int range);
+    
     float getSetValuemV();
     float getLimitValue();
+
+     void pulse(float v1, float v2, int duration);
+      void sweep(float high, float low, float step, int duration);
+
 };
 
 //extern ADCClass ADC2;

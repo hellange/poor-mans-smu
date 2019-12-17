@@ -101,8 +101,8 @@ float LTC2758_code_to_voltage(uint32_t dac_code, float min_output, float max_out
 {
   float dac_voltage;
   dac_voltage = (((float) dac_code / 262143.0) * (max_output - min_output)) + min_output;            // Calculate the dac_voltage
-  Serial.print("calculated volt");
-  Serial.println(dac_voltage);
+  //Serial.print("calculated volt");
+  //Serial.println(dac_voltage);
   return (dac_voltage);
 }
 // Calculate a LTC2758 DAC code given the desired output voltage and the minimum / maximum
