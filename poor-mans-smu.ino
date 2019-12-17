@@ -739,6 +739,35 @@ void handleWidgetScrollPosition() {
   }
 }
 
+void displayWidget() {
+   widgetBodyHeaderTab(LOWER_WIDGET_Y_POS, activeWidget);
+
+  if (activeWidget >= 0) {
+    if (scrollDir == 0) {
+      showWidget(LOWER_WIDGET_Y_POS, activeWidget, 0);
+    }
+    else if (scrollDir == -1) {
+      showWidget(LOWER_WIDGET_Y_POS,activeWidget, scroll);
+      if (activeWidget == noOfWidgets - 1) {
+        // swap from last to first
+        showWidget(LOWER_WIDGET_Y_POS, 0, scroll + 800);
+      } else {
+        showWidget(LOWER_WIDGET_Y_POS,activeWidget + 1, scroll + 800);
+      }
+    } 
+    else if (scrollDir == 1) {
+      if (activeWidget == 0) { 
+        // swap from first to last
+        showWidget(LOWER_WIDGET_Y_POS,noOfWidgets -1 , scroll - 800);
+      } else {
+        showWidget(LOWER_WIDGET_Y_POS,activeWidget - 1, scroll - 800);
+      }
+      showWidget(LOWER_WIDGET_Y_POS,activeWidget, scroll + 0);
+    }   
+  }
+  
+}
+
 void bluredBackground() {
     GD.Begin(RECTS);
     GD.ColorA(150);
@@ -874,7 +903,7 @@ void handleAutoNullAtStartup() {
     }
   }
   
-  if (!startupCalibrationDone1 && timeAtStartup + timeBeforeAutoNull + 2000 < millis()) {
+  if (!startupCalibrationDone1 && timeAtStartup + timeBeforeAutoNull + 1000 < millis()) {
     float v = V_STATS.rawValue;    
     V_CALIBRATION.toggleNullValue(v, current_range);
     Serial.print("Removed voltage offset from 10mA range:");  
@@ -886,7 +915,7 @@ void handleAutoNullAtStartup() {
     startupCalibrationDone1 = true;
   } 
 
-  if (!startupCalibrationDone2 && timeAtStartup + timeBeforeAutoNull + 5000 < millis()) {
+  if (!startupCalibrationDone2 && timeAtStartup + timeBeforeAutoNull + 1100 < millis()) {
     current_range = 0;
     SMU[0].setCurrentRange(current_range);
     if (operationType == SOURCE_VOLTAGE) {
@@ -895,7 +924,7 @@ void handleAutoNullAtStartup() {
       SMU[0].fltSetCommitCurrentSource(0.0);
     }
   }
-  if (!startupCalibrationDone2 && timeAtStartup + timeBeforeAutoNull + 7000 < millis()) {
+  if (!startupCalibrationDone2 && timeAtStartup + timeBeforeAutoNull + 2000 < millis()) {
     float v = V_STATS.rawValue;
     V_CALIBRATION.toggleNullValue(v, current_range);
     Serial.print("Removed voltage offset from 1A range:");  
@@ -927,8 +956,9 @@ void loop()
   handleAutoNullAtStartup();
   operationType = getOperationType();
 
-    float milliAmpere = C_STATS.rawValue;
-    if (startupCalibrationDone1 && startupCalibrationDone2) {
+    
+//    if (startupCalibrationDone1 && startupCalibrationDone2) {
+//      float milliAmpere = C_STATS.rawValue;
 //      Serial.print(milliAmpere,5);
 //      Serial.print("mA, current range:");
 //      Serial.println(current_range);
@@ -949,7 +979,7 @@ void loop()
 //          SMU[0].setCurrentRange(current_range);
 //          Serial.println("switching to range 0");
 //        }
-    }
+//    }
   
   GD.__end();
 
@@ -1029,10 +1059,8 @@ void loop()
         SMU[0].setCurrentRange(current_range);
 
       }
-
     }
   }
-
 
   GD.Clear();
   renderUpperDisplay(operationType);
@@ -1047,38 +1075,11 @@ void loop()
   detectGestures();
 
   handleWidgetScrollPosition();
-
-  widgetBodyHeaderTab(LOWER_WIDGET_Y_POS, activeWidget);
-
-  if (activeWidget >= 0) {
-    if (scrollDir == 0) {
-      showWidget(LOWER_WIDGET_Y_POS, activeWidget, 0);
-    }
-    else if (scrollDir == -1) {
-      showWidget(LOWER_WIDGET_Y_POS,activeWidget, scroll);
-      if (activeWidget == noOfWidgets - 1) {
-        // swap from last to first
-        showWidget(LOWER_WIDGET_Y_POS, 0, scroll + 800);
-      } else {
-        showWidget(LOWER_WIDGET_Y_POS,activeWidget + 1, scroll + 800);
-      }
-    } 
-    else if (scrollDir == 1) {
-      if (activeWidget == 0) { 
-        // swap from first to last
-        showWidget(LOWER_WIDGET_Y_POS,noOfWidgets -1 , scroll - 800);
-      } else {
-        showWidget(LOWER_WIDGET_Y_POS,activeWidget - 1, scroll - 800);
-      }
-      showWidget(LOWER_WIDGET_Y_POS,activeWidget, scroll + 0);
-    }   
-  }
-  
+  displayWidget();
   handleMenuScrolldown();
 
   if (!startupCalibrationDone2) {
     notification("Wait for null adjustment...");
-   
   }
 
   if (anyDialogOpen()) {
@@ -1094,17 +1095,15 @@ void loop()
   }
 
   GD.swap(); 
-   
   GD.__end();
-
 }
 
 void closeCallback(int vol_cur_type, int set_or_limit, bool cancel) {
-   Serial.print("vol or cur:");
-   Serial.println(vol_cur_type);
-   Serial.print("set or limit:");
-   Serial.println(set_or_limit);
-   Serial.flush();
+  Serial.print("vol or cur:");
+  Serial.println(vol_cur_type);
+  Serial.print("set or limit:");
+  Serial.println(set_or_limit);
+  Serial.flush();
   if (cancel) {
     return;
   }
@@ -1115,6 +1114,14 @@ void closeCallback(int vol_cur_type, int set_or_limit, bool cancel) {
     if (operationType == SOURCE_VOLTAGE) {
        if (SMU[0].fltSetCommitVoltageSource(mv)) printError(_PRINT_ERROR_VOLTAGE_SOURCE_SETTING);
     } else {
+      // auto range 
+      if (mv < 3.0) {
+        current_range = 1;
+        SMU[0].setCurrentRange(current_range);
+      } else {
+        current_range = 0;
+        SMU[0].setCurrentRange(current_range);
+      }
        if (SMU[0].fltSetCommitCurrentSource(mv)) printError(_PRINT_ERROR_VOLTAGE_SOURCE_SETTING);
     }
   }
