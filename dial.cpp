@@ -15,31 +15,33 @@ void DialClass::open(int type, int set_or_limit_, void (*callbackFn)(int type, i
   vol_cur_type = type;
   set_or_limit = set_or_limit_;
   dialog=true;  
-  
- // These settings should not be hardcoded here
-  if (vol_cur_type == SOURCE_VOLTAGE && set_or_limit == SET) {
-    digits = 1;
-    dialEntries[0] = 1; 
-    strncpy(voltDecade, "V" ,2);
-  } else if (vol_cur_type == SOURCE_CURRENT && set_or_limit == SET){
-    digits = 3;
-    dialEntries[0] = 1;  
-    dialEntries[1] = 0;  
-    dialEntries[2] = 0;  
-    strncpy(voltDecade, "mV" ,2);
-  } else if (vol_cur_type == SOURCE_VOLTAGE && set_or_limit == LIMIT){
-    digits = 3;
-    dialEntries[0] = 1;  
-    dialEntries[1] = 0;  
-    dialEntries[2] = 0;  
-    strncpy(voltDecade, "mV" ,2);
-  } else if (vol_cur_type == SOURCE_CURRENT && set_or_limit == LIMIT){
-    digits = 2;
-    dialEntries[0] = 1;
-    dialEntries[1] = 0;  
-    strncpy(voltDecade, "V" ,2);
+
+  // if not set, use some defaults...
+  if (digits == 0){
+  // These settings should not be hardcoded here
+    if (vol_cur_type == SOURCE_VOLTAGE && set_or_limit == SET) {
+      digits = 1;
+      dialEntries[0] = 1; 
+      strncpy(voltDecade, "V" ,2);
+    } else if (vol_cur_type == SOURCE_CURRENT && set_or_limit == SET){
+      digits = 3;
+      dialEntries[0] = 1;  
+      dialEntries[1] = 0;  
+      dialEntries[2] = 0;  
+      strncpy(voltDecade, "mV" ,2);
+    } else if (vol_cur_type == SOURCE_VOLTAGE && set_or_limit == LIMIT){
+      digits = 3;
+      dialEntries[0] = 1;  
+      dialEntries[1] = 0;  
+      dialEntries[2] = 0;  
+      strncpy(voltDecade, "mV" ,2);
+    } else if (vol_cur_type == SOURCE_CURRENT && set_or_limit == LIMIT){
+      digits = 2;
+      dialEntries[0] = 1;
+      dialEntries[1] = 0;  
+      strncpy(voltDecade, "V" ,2);
+    }
   }
-  
 }
 
 void DialClass::init() {

@@ -21,6 +21,8 @@ class ADCClass {
   private:
     float VREF = 5.0; // 2.500; //2.5357;             
     float VFSR = VREF; 
+    int current_range = 0;
+    uint32_t sourcecurrent_to_code_adj(float dac_voltage, float min_output, float max_output, bool serialOut);
   public:
     bool compliance;
     int init();

@@ -28,7 +28,7 @@ void CurrentDisplayClass::renderMeasured(int x, int y, float rawMa, boolean comp
 
   int a, ma, ua, na;
   bool neg;
-  bool uA_mode_enabled = false; // set true if you want uA display scale for very low currents
+  bool uA_mode_enabled = true; // set true if you want uA display scale for very low currents
   DIGIT_UTIL.separate2(&a, &ma, &ua, &na, &neg, rawMa);
 
   GD.ColorA(255);
@@ -61,6 +61,8 @@ void CurrentDisplayClass::renderMeasured(int x, int y, float rawMa, boolean comp
       boldText(x+162, y+30-30, ".");
       GD.cmd_number(x+192, y+2, 1, 2, (int)(na/10.0)); // use only two digit for nano amps !
       GD.cmd_text(x+320, y+2 ,  1, 0, "uA");
+      //GD.cmd_number(x+192, y+2, 1, 3, (int)(na)); 
+      //GD.cmd_text(x+355, y+2 ,  1, 0, "uA");
     }
 
 
@@ -76,11 +78,18 @@ void CurrentDisplayClass::renderSet(int x, int y, float rawMa) {
   
   GD.ColorRGB(COLOR_CURRENT);
 
-  GD.cmd_number(x+25, y, 31, 1, a);
-  GD.cmd_text(x+48, y, 31, 0, ".");
-  GD.cmd_number(x+60, y, 31, 3, ma);
-  GD.cmd_number(x+140, y, 31, 1, ua / 100); // need to do it like this to show only first digit in a three digit value
-  GD.cmd_text(x+170, y, 31, 0, "A");
+  if (rawMa >= 10.0) {
+    GD.cmd_number(x+25, y, 31, 1, a);
+    GD.cmd_text(x+48, y, 31, 0, ".");
+    GD.cmd_number(x+60, y, 31, 3, ma);
+    GD.cmd_number(x+140, y, 31, 1, ua / 100); // need to do it like this to show only first digit in a three digit value
+    GD.cmd_text(x+170, y, 31, 0, "A");
+  } else {
+    GD.cmd_number(x+25, y, 31, 2, ma);
+    GD.cmd_text(x+48+20, y, 31, 0, ".");
+    GD.cmd_number(x+60+20, y, 31, 3, ua);
+    GD.cmd_text(x+140+20, y, 31, 0, "mA");
+  }
 }
 
 void CurrentDisplayClass::boldText(int x, int y, const char* text) {

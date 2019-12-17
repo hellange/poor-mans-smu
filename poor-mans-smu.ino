@@ -228,8 +228,12 @@ void sourceCurrentPanel(int x, int y) {
   
   GD.Tag(BUTTON_SOURCE_SET);
   GD.cmd_button(x + 20,y + 132,95,50,29,OPT_NOTEAR,"SET");
-  GD.Tag(BUTTON_VOLT_AUTO);
-  GD.cmd_button(x + 350,y + 132,95,50,29,0,"AUTO");
+  
+ 
+  GD.Tag(BUTTON_CUR_AUTO);
+  GD.cmd_button(x+350,y+132,95,50,29,0,current_range==0 ? "1A" : "10mA");
+  GD.Tag(0); // Note: Prevents button in some cases to react also when touching other places in UI. Why ?
+  
 }
 
 
@@ -862,9 +866,15 @@ int timeBeforeAutoNull = millis() + 2000;
 void handleAutoNullAtStartup() {
   if (!startupCalibrationDone1 && timeAtStartup + timeBeforeAutoNull < millis()) {
     current_range = 1;
+    SMU[0].setCurrentRange(current_range);
+    if (operationType == SOURCE_VOLTAGE) {
+      SMU[0].fltSetCommitVoltageSource(0.0);
+    } else {
+      SMU[0].fltSetCommitCurrentSource(0.0);
+    }
   }
   
-  if (!startupCalibrationDone1 && timeAtStartup + timeBeforeAutoNull + 100 < millis()) {
+  if (!startupCalibrationDone1 && timeAtStartup + timeBeforeAutoNull + 2000 < millis()) {
     float v = V_STATS.rawValue;    
     V_CALIBRATION.toggleNullValue(v, current_range);
     Serial.print("Removed voltage offset from 10mA range:");  
@@ -876,10 +886,16 @@ void handleAutoNullAtStartup() {
     startupCalibrationDone1 = true;
   } 
 
-  if (!startupCalibrationDone2 && timeAtStartup + timeBeforeAutoNull + 1000 < millis()) {
+  if (!startupCalibrationDone2 && timeAtStartup + timeBeforeAutoNull + 5000 < millis()) {
     current_range = 0;
+    SMU[0].setCurrentRange(current_range);
+    if (operationType == SOURCE_VOLTAGE) {
+      SMU[0].fltSetCommitVoltageSource(0.0);
+    } else {
+      SMU[0].fltSetCommitCurrentSource(0.0);
+    }
   }
-  if (!startupCalibrationDone2 && timeAtStartup + timeBeforeAutoNull + 1100 < millis()) {
+  if (!startupCalibrationDone2 && timeAtStartup + timeBeforeAutoNull + 7000 < millis()) {
     float v = V_STATS.rawValue;
     V_CALIBRATION.toggleNullValue(v, current_range);
     Serial.print("Removed voltage offset from 1A range:");  
@@ -890,6 +906,7 @@ void handleAutoNullAtStartup() {
     Serial.println(v);  
     startupCalibrationDone2 = true;
   } 
+
 }
 
 void notification(char *text) {
@@ -1059,7 +1076,7 @@ void loop()
   
   handleMenuScrolldown();
 
-  if (!startupCalibrationDone1 && !startupCalibrationDone2) {
+  if (!startupCalibrationDone2) {
     notification("Wait for null adjustment...");
    
   }

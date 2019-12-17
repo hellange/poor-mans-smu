@@ -68,15 +68,13 @@ static st_reg init_state[] =
 bool full_board = true; // set to true to account for shunt and gain/offsets other places that dac/adc
 
 void ADCClass::setCurrentRange(int range) {
+  current_range = range;
   if (range == 0) {
-        AD7176_WriteRegister({0x06, 2, 0, 0x080Cl});
-          digitalWrite(4, HIGH);
-
-
+    AD7176_WriteRegister({0x06, 2, 0, 0x080Cl});
+    digitalWrite(4, HIGH);
   } else {
-        AD7176_WriteRegister({0x06, 2, 0, 0x080Dl});
-  digitalWrite(4, LOW);
-
+    AD7176_WriteRegister({0x06, 2, 0, 0x080Dl});
+    digitalWrite(4, LOW);
   }
 
 }
@@ -200,10 +198,10 @@ uint32_t sourcevoltage_to_code_adj(float dac_voltage, float min_output, float ma
   return LTC2758_voltage_to_code(dac_voltage, min_output, max_output, serialOut);
 }
 
-uint32_t sourcecurrent_to_code_adj(float dac_voltage, float min_output, float max_output, bool serialOut){
+uint32_t ADCClass::sourcecurrent_to_code_adj(float dac_voltage, float min_output, float max_output, bool serialOut){
 
   dac_voltage = dac_voltage * 5.0/4.096; // using 4.096 ref instead of 5.0
-  dac_voltage = dac_voltage - 0.000825; // offset
+
 //  if (dac_voltage > 0) {
 //    // positive
 //    dac_voltage = dac_voltage * 0.999785; // gain
@@ -215,9 +213,16 @@ uint32_t sourcecurrent_to_code_adj(float dac_voltage, float min_output, float ma
 
   if (full_board) {
     //dac_voltage = dac_voltage - 0.0004; // additional offset (measured when connected to amplifier board)
-    dac_voltage = dac_voltage * 10.0; // with 1ohm shunt and x10 amplifier: 100mA range is set by 1000mV
-    dac_voltage = dac_voltage + 0.0089; // offset
-    dac_voltage = dac_voltage * 1.025;
+    if (current_range == 0) {
+      dac_voltage = dac_voltage * 10.0; // with 1ohm shunt and x10 amplifier: 100mA is set by 1000mV
+      dac_voltage = dac_voltage + 0.0008; // offset
+      dac_voltage = dac_voltage * 1.137;
+    } else if (current_range == 1) {
+      dac_voltage = dac_voltage * 1000.0; // with 100ohm shunt and x10 amplifier: 1mA range is set by 1000mV
+      dac_voltage = dac_voltage + 0.0010; // offset
+      dac_voltage = dac_voltage * 0.975;
+    }
+   
     dac_voltage = - dac_voltage; // analog part requires inverted input
   }
 
@@ -291,7 +296,7 @@ int8_t ADCClass::fltSetCommitVoltageSource(float milliVolt) {
   float v_adj = sourcecurrent_to_code_adj(v, DAC_RANGE_LOW, DAC_RANGE_HIGH, true);
   LTC2758_write(LTC2758_CS, LTC2758_WRITE_CODE_UPDATE_DAC, 0, v_adj); 
 
- return setValueV;
+  return setValueV;
  }
  
  
@@ -313,11 +318,13 @@ int8_t ADCClass::fltSetCommitVoltageSource(float milliVolt) {
     if (full_board == true) {
       if (range == 1) {
         i=v/100.0; // 100 ohm shunt.
+        i=i*1.05; 
       } else {
         i=i/1.04600; // 1ohm shunt + resistance in range switch mosfet
+        i=i*0.883;
       }
       i=i/10.0; // x10 amplifier
-  
+
       // account for resistor value not perfect
       if (range == 0) {
         i = i *   1.043; // 1ohm shunt, 1A range
