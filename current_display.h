@@ -1,6 +1,6 @@
 class CurrentDisplayClass {
 public:
-  void renderMeasured(int x, int y, float rawMa, bool compliance);
+  void renderMeasured(int x, int y, float rawMa, bool compliance, bool show_nA);
   void renderOverflow(int x, int y);
   void renderSet(int x, int y, float rawMa);
   void boldText(int x, int y, const char *text);

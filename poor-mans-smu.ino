@@ -62,8 +62,8 @@ int activeWidget = 0;
 CURRENT_RANGE current_range = AMP1; // TODO: get rid of global
 int timeSinceLastChange = 0;  // TODO: get rid of global
 
-float MAX_CURRENT_10mA_RANGE = 3.0;
-float MAX_CURRENT_1A_RANGE = 1100.0;
+float MAX_CURRENT_10mA_RANGE = 5.0; // current values set because the ADC limit is 6 volt now...
+float MAX_CURRENT_1A_RANGE = 500.0;
 
 
 OPERATION_TYPE operationType = SOURCE_VOLTAGE;
@@ -237,7 +237,7 @@ void sourceCurrentPanel(int x, int y) {
   GD.cmd_text(x+20 + 1, y + 2 + 1 ,   29, 0, "SOURCE CURRENT");
   
   // primary
-  CURRENT_DISPLAY.renderMeasured(x + 17,y + 26, C_FILTERS.mean, false);
+  CURRENT_DISPLAY.renderMeasured(x + 17,y + 26, C_FILTERS.mean, false, current_range == MILLIAMP10);
 
   // secondary volt
   GD.ColorRGB(COLOR_CURRENT);
@@ -588,7 +588,7 @@ void measureCurrentPanel(int x, int y, boolean compliance, bool showBar) {
       y=y+12;
     }
     GD.ColorA(255);
-    CURRENT_DISPLAY.renderMeasured(x + 17, y, C_FILTERS.mean, compliance); 
+    CURRENT_DISPLAY.renderMeasured(x + 17, y, C_FILTERS.mean, compliance, current_range == MILLIAMP10); 
   }
   CURRENT_DISPLAY.renderSet(x+120, y+105, SMU[0].getLimitValue());
 

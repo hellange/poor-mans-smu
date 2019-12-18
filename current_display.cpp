@@ -22,13 +22,13 @@ void CurrentDisplayClass::renderOverflow(int x, int y) {
   GD.ColorRGB(COLOR_CURRENT);
   boldText(x, y, " Overflow A");
 }
-void CurrentDisplayClass::renderMeasured(int x, int y, float rawMa, boolean compliance) {
+void CurrentDisplayClass::renderMeasured(int x, int y, float rawMa, boolean compliance, bool show_nA) {
  
   int complianceColor = blinkColor(0xff4522, 0x991002, 1000);
 
   int a, ma, ua, na;
   bool neg;
-  bool uA_mode_enabled = true; // set true if you want uA display scale for very low currents
+
   DIGIT_UTIL.separate2(&a, &ma, &ua, &na, &neg, rawMa);
 
   GD.ColorA(255);
@@ -47,7 +47,7 @@ void CurrentDisplayClass::renderMeasured(int x, int y, float rawMa, boolean comp
     boldNumber(x+70, y, 3, ma);
     GD.cmd_number(x+242, y+2, 1, 3, ua);
     GD.cmd_text(x+410, y+2 ,  1, 0, "A");
-  } else if (ma > 0 or (ma==0 &&  ua>100 && uA_mode_enabled==false) or uA_mode_enabled == false){
+  } else if (ma > 0 or (ma==0 &&  ua>100 && show_nA==false) or show_nA == false){
     boldNumber(x, y, 3, ma);
     boldText(x+162, y+30-30, ".");
     GD.cmd_number(x+192, y+2, 1, 3, ua);
@@ -55,8 +55,8 @@ void CurrentDisplayClass::renderMeasured(int x, int y, float rawMa, boolean comp
     GD.cmd_number(x+370, y+2, 1, 1, (int)(na/100.0)); // use only one digit for nano amps !
     GD.cmd_text(x+470, y+2 ,  1, 0, "mA");
     } 
-    else if (uA_mode_enabled == true) {
-    // Not sure if a separate uA is needed. nA is probably ruined by noise and offset anyway...
+    else if (show_nA) {
+    // Show uA with nA decimals...
       boldNumber(x, y, 3, ua);
       boldText(x+162, y+30-30, ".");
       GD.cmd_number(x+192, y+2, 1, 2, (int)(na/10.0)); // use only two digit for nano amps !
