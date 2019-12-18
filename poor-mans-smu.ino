@@ -860,7 +860,7 @@ void renderUpperDisplay(int operationType, int functionType) {
    
     if(V_STATS.rawValue > 10.0) {
       GD.ColorRGB(0xdddddd);
-      GD.cmd_number(600, 0, 27, 6, (int)(V_STATS.rawValue / C_STATS.rawValue));
+      GD.cmd_number(600, 0, 27, 6, (int)(V_FILTERS.mean / C_FILTERS.mean));
       GD.cmd_text(670, 0,  27, 0, "ohm load");
     }
    
