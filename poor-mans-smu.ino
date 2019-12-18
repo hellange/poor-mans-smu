@@ -196,14 +196,33 @@ void showStatusIndicator(int x,int y,const char* text, bool enable, bool warn) {
 }
 
 void sourcePulsePanel(int x, int y) {
+  float max = 2000.0;
+  float min = -2000.0;
     // heading
-  GD.ColorRGB(COLOR_CURRENT);
+      GD.ColorRGB(COLOR_VOLT);
+
   GD.ColorA(120);
   GD.cmd_text(x+20, y + 2 ,   29, 0, "SOURCE PULSE");
   GD.cmd_text(x+20 + 1, y + 2 + 1 ,   29, 0, "SOURCE PULSE");
+  float hz = 2;
+  float duration = 1000.0/hz;
+  GD.ColorA(255);
+  y=y+30;
+    GD.cmd_number(x+242, y, 1, 3, hz);
+    GD.cmd_text(x+410, y ,  1, hz, "Hz");
+y=y+110;
+    if (min < 0) {
+      GD.cmd_text(x+220, y ,  31, hz, "-");
+    }
+    GD.cmd_number(x+242, y, 31, 4, abs(min));
+        GD.cmd_text(x+345, y ,  31, hz, "to");
+
+    GD.cmd_number(x+385, y, 31, 4, max);
+
+    GD.cmd_text(x+480, y ,  31, hz, "mV");
 
   GD.__end();
-  SMU[0].pulse(-2000.0, 2000.0, 200);
+  SMU[0].pulse(min, max, duration);
   GD.resume();
   //SMU[0].sweep(5.00, -5.00, 0.1, 5000);
   GD.ColorA(255);
@@ -784,7 +803,7 @@ void bluredBackground() {
 void handleMenuScrolldown(){
 
   if (gestureDetected == GEST_MOVE_DOWN && MAINMENU.active == false) {
-    MAINMENU.activate();
+    MAINMENU.open(closeMainMenuCallback);
     return; // start the animation etc. next time, so UI that needs to reduce details have time to reach.
   }  
   
@@ -845,7 +864,7 @@ void renderUpperDisplay(int operationType, int functionType) {
       GD.cmd_text(670, 0,  27, 0, "ohm load");
     }
    
-  } else {
+  } else if (functionType == SOURCE_PULSE) {
     sourcePulsePanel(x,y);
   }
 }
@@ -1041,10 +1060,10 @@ void loop()
 
     if (tag == BUTTON_SOURCE_SET) {
       Serial.println("Source set");
-      SOURCE_DIAL.open(operationType, SET,  closeCallback, SMU[0].getSetValuemV());
+      SOURCE_DIAL.open(operationType, SET,  closeDialCallback, SMU[0].getSetValuemV());
     } else if (tag == BUTTON_LIM_SET) {
       Serial.println("Limit set");
-      LIMIT_DIAL.open(operationType, LIMIT, closeCallback, SMU[0].getLimitValue());
+      LIMIT_DIAL.open(operationType, LIMIT, closeDialCallback, SMU[0].getLimitValue());
     } else if (tag == BUTTON_NULL) {
       Serial.println("Null set");
       V_CALIBRATION.toggleNullValue(V_STATS.rawValue, current_range);
@@ -1075,7 +1094,10 @@ void loop()
     } else if (tag == MENU_BUTTON_SOURCE_PULSE) {
       functionType = SOURCE_PULSE;
       MAINMENU.close();
-    } 
+    } else if (tag == MENU_BUTTON_SOURCE_DC) {
+      functionType = SOURCE_DC;
+      MAINMENU.close();
+    }
   }
 
   GD.Clear();
@@ -1114,7 +1136,12 @@ void loop()
   GD.__end();
 }
 
-void closeCallback(int vol_cur_type, int set_or_limit, bool cancel) {
+
+void closeMainMenuCallback(int type) {
+  Serial.println("Closed main menu callback");
+  Serial.flush();
+}
+void closeDialCallback(int vol_cur_type, int set_or_limit, bool cancel) {
   Serial.print("vol or cur:");
   Serial.println(vol_cur_type);
   Serial.print("set or limit:");

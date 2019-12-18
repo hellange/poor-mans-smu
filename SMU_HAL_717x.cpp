@@ -46,7 +46,7 @@ static st_reg init_state[] =
    //  {0x28, 2, 0, 0x0213l, "FilterCf0"}, //Filter_Config_1  // 10 pr sek
     // {0x28, 2, 0, 0x0212l, "FilterCf0"}, //Filter_Config_1  // 16.66 pr sek
  {0x28, 2, 0, 0x0211l, "FilterCf0"}, //Filter_Config_1  // 20 pr sek
-   // {0x28, 2, 0, 0x0210l, "FilterCf0"}, //Filter_Config_1  // 49.96 pr sek
+  //  {0x28, 2, 0, 0x0210l, "FilterCf0"}, //Filter_Config_1  // 49.96 pr sek
      //{0x28, 2, 0, 0x020fl, "FilterCf0"}, //Filter_Config_1  // 59.92 pr sek
     // {0x28, 2, 0, 0x020el, "FilterCf0"}, //Filter_Config_1  // 100 pr sek
 
@@ -269,7 +269,7 @@ int8_t ADCClass::fltSetCommitVoltageSource(float milliVolt) {
  int pulseTimer = millis();
  int pulseHigh = false;
  void ADCClass::pulse(float high, float low, int duration) {
-
+   // This is highly inaccurate. Should be implemented with hs timers and interrupts...
    if (pulseHigh && pulseTimer+duration/2 < millis()) {
      pulseHigh = false;
      pulseTimer = millis();
@@ -370,7 +370,7 @@ int8_t ADCClass::fltSetCommitVoltageSource(float milliVolt) {
         i = i -V_FILTERS.mean* 0.000075; // account for common mode voltage giving wrong current (give too high result)
       } else {
         i = i * 0.985; // 100ohm shunt, 10mA range
-        i = i -V_FILTERS.mean* 0.000075; // account for common mode voltage giving wrong current (give too high result)      
+        i = i -V_FILTERS.mean* 0.0000454; // account for common mode voltage giving wrong current (give too high result)      
       }
       
       

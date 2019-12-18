@@ -8,7 +8,6 @@
 DialClass SOURCE_DIAL;
 DialClass LIMIT_DIAL;
 
-void (*closedFn)(int type, int set_or_limit, bool cancel);
 
 void DialClass::open(int type, int set_or_limit_, void (*callbackFn)(int type, int set_or_limit, bool cancel), float value) {
   closedFn = callbackFn;

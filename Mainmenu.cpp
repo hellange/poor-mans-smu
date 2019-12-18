@@ -7,13 +7,16 @@
 
 MainMenuClass MAINMENU;
 
-void MainMenuClass::activate() {
+void MainMenuClass::open(void (*closedMenuFn)(int type)) {
   active = true;
+  closedMainMenuFn = closedMenuFn;
   scrollMainMenuDir = 1;
 }
 
 void MainMenuClass::close() {
-    scrollMainMenuDir = -1;
+  
+    scrollMainMenuDir = -1; 
+    closedMainMenuFn(999); // TODO: Add some return value
 }
 
 void MainMenuClass::handle() {
@@ -24,9 +27,10 @@ void MainMenuClass::handle() {
       scrollMainMenuDir = 0;
     }
 
+    GD.ColorA(230);   
+
     GD.Begin(RECTS);
     GD.LineWidth(200);
-    //GD.ColorA(255);   // allready opaque, why ?
     GD.ColorRGB(0x888888);
     GD.Vertex2ii(50,0);
     GD.Vertex2ii(750, scrollMainMenu+40);
@@ -52,6 +56,8 @@ void MainMenuClass::handle() {
       for (int x =0;x<3;x++) {
         if (y==1 && x == 2) {
           GD.Tag(MENU_BUTTON_SOURCE_PULSE);
+        } else if (y==0 && (x==0 or x==1)) {
+          GD.Tag(MENU_BUTTON_SOURCE_DC);
         }
         GD.cmd_button(70+(buttonWidth+30)*x,scrollMainMenu-280+(buttonHeight+20)*y,buttonWidth,buttonHeight,28,0,text[y][x]);
       }
@@ -60,7 +66,8 @@ void MainMenuClass::handle() {
     GD.cmd_button(360,scrollMainMenu-10,80,40,28,0,"CLOSE");
 
     if(GD.inputs.tag == MAIN_MENU_CLOSE && scrollMainMenuDir == 0) {
-      scrollMainMenuDir = -1;
+      //scrollMainMenuDir = -1;
+      close();
     }
   
   if (scrollMainMenuDir == -1){

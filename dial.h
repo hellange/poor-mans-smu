@@ -3,6 +3,8 @@
 
 class DialClass {
 
+  void (*closedFn)(int type, int set_or_limit, bool cancel);
+
   int screenWidth = 800;
   int screenHeight = 480;
 
