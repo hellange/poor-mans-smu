@@ -357,7 +357,7 @@ int8_t ADCClass::fltSetCommitVoltageSource(float milliVolt) {
     if (full_board == true) {
       if (range == MILLIAMP10) {
         i=v/100.0; // 100 ohm shunt.
-        i=i*1.05; 
+        i=i*1.045; 
       } else {
         i=i/1.04600; // 1ohm shunt + resistance in range switch mosfet
         i=i*0.883;
