@@ -367,10 +367,10 @@ int8_t ADCClass::fltSetCommitVoltageSource(float milliVolt) {
       // account for resistor value not perfect
       if (range == AMP1) {
         i = i *   1.043; // 1ohm shunt, 1A range
-        i = i -V_FILTERS.mean* 0.000048; // account for common mode voltage giving wrong current (give too high result)
+        i = i -V_FILTERS.mean* 0.000042; // account for common mode voltage giving wrong current (give too high result)
       } else {
         i = i * 0.985; // 100ohm shunt, 10mA range
-        i = i -V_FILTERS.mean* 0.0000454; // account for common mode voltage giving wrong current (give too high result)      
+        i = i -V_FILTERS.mean* 0.0000440; // account for common mode voltage giving wrong current (give too high result)      
       }
       
       
