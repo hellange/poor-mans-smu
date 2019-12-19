@@ -77,7 +77,6 @@ void MainMenuClass::render() {
     GD.cmd_button(360,scrollMainMenu-10,80,40,28,0,"CLOSE");
 
     if(GD.inputs.tag == MAIN_MENU_CLOSE && scrollMainMenuDir == 0) {
-      //scrollMainMenuDir = -1;
       close();
     }
   

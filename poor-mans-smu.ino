@@ -831,11 +831,29 @@ void renderUpperDisplay(int operationType, int functionType) {
         sourceCurrentPanel(x,y);
     }
     renderStatusIndicators(x,y);
-   
-    if(V_STATS.rawValue > 10.0) {
+
+
+    // calculate resistance only if the voltage and current is above some limits. Else the calculation will just be noise...
+    if(abs(V_FILTERS.mean) > 10.0 or abs(C_FILTERS.mean) > 0.010) {
+      float resistance = abs(V_FILTERS.mean / C_FILTERS.mean);
       GD.ColorRGB(0xdddddd);
-      GD.cmd_number(600, 0, 27, 6, (int)(V_FILTERS.mean / C_FILTERS.mean));
-      GD.cmd_text(670, 0,  27, 0, "ohm load");
+      int kOhm, ohm, mOhm;
+      bool neg;
+      //DIGIT_UTIL.separate(&a, &ma, &ua, &neg, rawMa);
+      DIGIT_UTIL.separate(&kOhm, &ohm, &mOhm, &neg, resistance);
+
+      if (kOhm > 0) {
+        GD.cmd_number(590, 0, 27, 3, kOhm);
+        GD.cmd_text(590+30, 0,  27, 0, ".");
+        GD.cmd_number(590+35, 0, 27, 3, ohm);
+        GD.cmd_text(590+70, 0,  27, 0, "kOhm");
+      } else {
+        GD.cmd_number(550+40, 0, 27, 3, ohm);
+        GD.cmd_text(550+70, 0,  27, 0, ".");
+        GD.cmd_number(550+75, 0, 27, 3, mOhm);
+        GD.cmd_text(550+110, 0,  27, 0, "ohm");
+      }
+
     }
    
   } else if (functionType == SOURCE_PULSE) {
@@ -1110,8 +1128,10 @@ void loop()
 
 
 void closeMainMenuCallback(int functionType_) {
-  Serial.println("Closed main menu callback");
+  Serial.print("Closed main menu callback. Selected function:");
+  Serial.println(functionType_);
   Serial.flush();
+  // TODO: Add cleanup from previous function before starting new...
   functionType = functionType_;
 }
 void closeDialCallback(int vol_cur_type, int set_or_limit, bool cancel) {
