@@ -24,6 +24,7 @@
 #include "SMU_HAL_dummy.h"
 #include "SMU_HAL_717x.h"
 #include "dial.h"
+#include "FunctionPulse.h"
 
 #define _SOURCE_AND_SINK 111
 
@@ -172,6 +173,8 @@ void setup()
    SOURCE_DIAL.init();
    LIMIT_DIAL.init();
 
+   FUNCTION_PULSE.init(SMU[0]);
+
    timeAtStartup = millis();
 }
 
@@ -196,36 +199,7 @@ void showStatusIndicator(int x,int y,const char* text, bool enable, bool warn) {
 }
 
 void sourcePulsePanel(int x, int y) {
-  float max = 2000.0;
-  float min = -2000.0;
-    // heading
-      GD.ColorRGB(COLOR_VOLT);
-
-  GD.ColorA(120);
-  GD.cmd_text(x+20, y + 2 ,   29, 0, "SOURCE PULSE");
-  GD.cmd_text(x+20 + 1, y + 2 + 1 ,   29, 0, "SOURCE PULSE");
-  float hz = 2;
-  float duration = 1000.0/hz;
-  GD.ColorA(255);
-  y=y+30;
-    GD.cmd_number(x+242, y, 1, 3, hz);
-    GD.cmd_text(x+410, y ,  1, hz, "Hz");
-y=y+110;
-    if (min < 0) {
-      GD.cmd_text(x+220, y ,  31, hz, "-");
-    }
-    GD.cmd_number(x+242, y, 31, 4, abs(min));
-        GD.cmd_text(x+345, y ,  31, hz, "to");
-
-    GD.cmd_number(x+385, y, 31, 4, max);
-
-    GD.cmd_text(x+480, y ,  31, hz, "mV");
-
-  GD.__end();
-  SMU[0].pulse(min, max, duration);
-  GD.resume();
-  //SMU[0].sweep(5.00, -5.00, 0.1, 5000);
-  GD.ColorA(255);
+  FUNCTION_PULSE.render(x,y);
 }
 
 void sourceCurrentPanel(int x, int y) {
@@ -809,7 +783,7 @@ void handleMenuScrolldown(){
   
   // main menu
   if (MAINMENU.active) {
-    MAINMENU.handle();
+    MAINMENU.render();
   }
  
 }
@@ -1090,14 +1064,12 @@ void loop()
         SMU[0].setCurrentRange(current_range);
 
       }
-      //TODO: Move handling of menu button into menu itself ?
-    } else if (tag == MENU_BUTTON_SOURCE_PULSE) {
-      functionType = SOURCE_PULSE;
-      MAINMENU.close();
-    } else if (tag == MENU_BUTTON_SOURCE_DC) {
-      functionType = SOURCE_DC;
-      MAINMENU.close();
-    }
+    } 
+    // TODO: don't need to check buttons for inactive menus or functions...
+    MAINMENU.handleButtonAction(tag);
+    FUNCTION_PULSE.handleButtonAction(tag);
+    
+    
   }
 
   GD.Clear();
@@ -1137,9 +1109,10 @@ void loop()
 }
 
 
-void closeMainMenuCallback(int type) {
+void closeMainMenuCallback(int functionType_) {
   Serial.println("Closed main menu callback");
   Serial.flush();
+  functionType = functionType_;
 }
 void closeDialCallback(int vol_cur_type, int set_or_limit, bool cancel) {
   Serial.print("vol or cur:");

@@ -1,3 +1,5 @@
+#ifndef __ADCCLASS_H__
+#define __ADCCLASS_H__
 
 #include <stdint.h>
 #include <Arduino.h>
@@ -45,4 +47,4 @@ class ADCClass {
 
 };
 
-//extern ADCClass ADC2;
+#endif

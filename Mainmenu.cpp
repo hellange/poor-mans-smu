@@ -4,6 +4,7 @@
 #include <SPI.h>
 #include "GD2.h"
 #include "tags.h"
+#include "FunctionPulse.h"
 
 MainMenuClass MAINMENU;
 
@@ -16,10 +17,20 @@ void MainMenuClass::open(void (*closedMenuFn)(int type)) {
 void MainMenuClass::close() {
   
     scrollMainMenuDir = -1; 
-    closedMainMenuFn(999); // TODO: Add some return value
+    closedMainMenuFn(functionType);
 }
 
-void MainMenuClass::handle() {
+void MainMenuClass::handleButtonAction(int inputTag) {
+    if (inputTag == MENU_BUTTON_SOURCE_PULSE) {
+      functionType = SOURCE_PULSE;
+      close();
+    } else if (inputTag == MENU_BUTTON_SOURCE_DC) {
+      functionType = SOURCE_DC;
+      close();
+    }
+}
+
+void MainMenuClass::render() {
 
     scrollMainMenu = scrollMainMenu + scrollMainMenuDir*25;
     if (scrollMainMenu > 350) {
