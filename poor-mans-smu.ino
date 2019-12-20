@@ -25,6 +25,7 @@
 #include "SMU_HAL_717x.h"
 #include "dial.h"
 #include "FunctionPulse.h"
+#include "Fan.h"
 
 #define _SOURCE_AND_SINK 111
 
@@ -102,6 +103,8 @@ void setup()
 
     pinMode(3,INPUT); // current range selector
 
+    pinMode(2,INPUT); // Fan speed feedback
+    FAN.init();
     
     //pinMode(11,OUTPUT);
     //pinMode(12,INPUT);
@@ -972,6 +975,12 @@ void notification(char *text) {
  
 void loop()
 {
+  Serial.print(FAN.getPWMFanRPM());
+  Serial.print("(");
+  Serial.print(FAN.getFanWidth());
+  Serial.println(")");
+  Serial.flush();
+
   handleAutoNullAtStartup();
   operationType = getOperationType();
 
