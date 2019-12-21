@@ -25,6 +25,7 @@
 #include "SMU_HAL_717x.h"
 #include "dial.h"
 #include "FunctionPulse.h"
+#include "FunctionSweep.h"
 #include "Fan.h"
 
 #define _SOURCE_AND_SINK 111
@@ -177,6 +178,7 @@ void setup()
    LIMIT_DIAL.init();
 
    FUNCTION_PULSE.init(SMU[0]);
+   FUNCTION_SWEEP.init(SMU[0]);
 
    timeAtStartup = millis();
 }
@@ -203,6 +205,10 @@ void showStatusIndicator(int x,int y,const char* text, bool enable, bool warn) {
 
 void sourcePulsePanel(int x, int y) {
   FUNCTION_PULSE.render(x,y);
+}
+
+void sourceSweepPanel(int x, int y) {
+  FUNCTION_SWEEP.render(x,y);
 }
 
 void sourceCurrentPanel(int x, int y) {
@@ -813,7 +819,7 @@ void renderUpperDisplay(int operationType, int functionType) {
   
   GD.ColorA(255);
   GD.ColorRGB(0xdddddd);
-  GD.cmd_text(x + 30, 2, 27, 0, "Input 25.4V / - 25.3V"); // NOTE: Currently only dummy info
+  GD.cmd_text(x + 30, 0, 27, 0, "Input 25.4V / - 25.3V"); // NOTE: Currently only dummy info
 
   // line below top header
   y=y+23;
@@ -861,7 +867,19 @@ void renderUpperDisplay(int operationType, int functionType) {
    
   } else if (functionType == SOURCE_PULSE) {
     sourcePulsePanel(x,y);
+  } else if (functionType == SOURCE_SWEEP) {
+    sourceSweepPanel(x,y);
   }
+
+  GD.cmd_text(220,0,27,0, "Fan:");
+  GD.cmd_number(250,0,27,5, FAN.getRPMValueFiltered());
+  GD.cmd_text(300,0,27,0, "RPM");
+//  Serial.print(FAN.getPWMFanRPM());
+//  Serial.print("(");
+//  Serial.print(FAN.getFanWidth());
+//  Serial.flush();
+  
+  
 }
 
 int gestOldX = 0;
@@ -975,16 +993,10 @@ void notification(char *text) {
  
 void loop()
 {
-  Serial.print(FAN.getPWMFanRPM());
-  Serial.print("(");
-  Serial.print(FAN.getFanWidth());
-  Serial.println(")");
-  Serial.flush();
 
   handleAutoNullAtStartup();
   operationType = getOperationType();
 
-  // TODO: Moved pulse/sweep out as separate operationType
   if (startupCalibrationDone2) {
     //SMU[0].pulse(-4000.0, 4000.0, 5000);
     //SMU[0].sweep(5.00, -5.00, 0.1, 5000);
@@ -1095,7 +1107,8 @@ void loop()
     // TODO: don't need to check buttons for inactive menus or functions...
     MAINMENU.handleButtonAction(tag);
     FUNCTION_PULSE.handleButtonAction(tag);
-    
+    FUNCTION_SWEEP.handleButtonAction(tag);
+
     
   }
 
@@ -1143,6 +1156,7 @@ void closeMainMenuCallback(int functionType_) {
   // TODO: Add cleanup from previous function before starting new...
   functionType = functionType_;
 }
+
 void closeDialCallback(int vol_cur_type, int set_or_limit, bool cancel) {
   Serial.print("vol or cur:");
   Serial.println(vol_cur_type);

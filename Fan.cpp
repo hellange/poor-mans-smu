@@ -41,11 +41,7 @@ uint16_t FanClass::getPWMFanRPM(){
 
 
 
-void FanClass::fanSpeedInterruptHandler() {
-//_PWMFanWidth++;
-//return;
-
-  
+void FanClass::fanSpeedInterruptHandler() {  
   static uint32_t timestamp;
   static uint8_t state=0;
   uint8_t current = (CORE_PIN2_PINREG & _BV(CORE_PIN2_BIT)) ? 1 : 0;//check tach pin is high or low
@@ -56,4 +52,13 @@ void FanClass::fanSpeedInterruptHandler() {
     _PWMFanWidth= t - timestamp;
     timestamp=t;
   }
+}
+
+
+uint16_t FanClass::getRPMValueFiltered() {
+  if (timeSinceLastRPMReadout + 1000 < millis()) {
+    storedPWMFanSpeed = getPWMFanRPM();
+    timeSinceLastRPMReadout = millis();
+  }
+  return storedPWMFanSpeed;
 }

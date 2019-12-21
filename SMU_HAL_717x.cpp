@@ -283,26 +283,6 @@ int8_t ADCClass::fltSetCommitVoltageSource(float milliVolt) {
 
    }
  }
-
- float currentSweepValue = 0.0;
- int currentSweepDir = 1;
- void ADCClass::sweep(float high, float low, float step, int duration) {
-   
-   if (pulseTimer+duration/2 < millis()) {
-     pulseTimer = millis();
-     if (currentSweepDir == 1 && currentSweepValue > high) {
-      currentSweepDir = -1;
-     } else if (currentSweepDir == -1 && currentSweepValue < low) {
-      currentSweepDir = +1;
-     }
-     currentSweepValue += step*currentSweepDir;
-     
-     
-     fltSetCommitCurrentSource(currentSweepValue);
-     
-     //Serial.println("Set pulse low");
-   } 
- }
  
  
  int8_t ADCClass::fltSetCommitCurrentSource(float milliVolt) {
