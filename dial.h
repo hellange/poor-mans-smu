@@ -3,7 +3,7 @@
 
 class DialClass {
 
-  void (*closedFn)(int type, int set_or_limit, bool cancel);
+  void (*closedFn)(int set_or_limit, bool cancel);
 
   int screenWidth = 800;
   int screenHeight = 480;
@@ -29,7 +29,7 @@ class DialClass {
 
   
 public:
-  void open(int type, int set_or_limit_, void (*closedFn)(int type, int set_or_limit, bool cancel), float value);
+  void open(int type, int set_or_limit_, void (*closedFn)(int set_or_limit, bool cancel), float value);
   void clear();
   bool isDialogOpen();
   void handleKeypadDialog();
@@ -39,6 +39,8 @@ public:
 private:
   double toMv();
   void validate(double mv);
+  void validateVoltage(double mv, int numberValue, int decimalValue, int decimalsAfterComma);
+  void validateCurrent(double mv, int numberValue, int decimalValue, int decimalsAfterComma);
   void transButton(int x, int y, int sz, const char* label, int fontsize);
   void showError(const char* text);
   void showWarning(const char* text);

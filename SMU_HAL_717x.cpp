@@ -184,7 +184,7 @@ uint32_t sourcevoltage_to_code_adj(float dac_voltage, float min_output, float ma
 
   // DONT INCLUDE THESE ADJUSTMENTS WHEN TESTING ONLY DAC/ADC BOARD !!!!
   if (full_board) {
-    dac_voltage = dac_voltage + 0.002725; // additional offset (measured when connected to amplifier board)
+    dac_voltage = dac_voltage + 0.002725 + 0.000045; // additional offset (measured when connected to amplifier board)
     if (dac_voltage>0) {
       // positive
       dac_voltage = dac_voltage / 2.00265; // There is a apprx. /2 on the sense input in addition to gain

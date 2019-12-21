@@ -4,12 +4,17 @@
 #include <SPI.h>
 #include "GD2.h"
 
-
 DialClass SOURCE_DIAL;
 DialClass LIMIT_DIAL;
 
 
-void DialClass::open(int type, int set_or_limit_, void (*callbackFn)(int type, int set_or_limit, bool cancel), float value) {
+void DialClass::open(int type, int set_or_limit_, void (*callbackFn)(int set_or_limit, bool cancel), float value) {
+  //TODO: Convert value to visible digits. Right now it uses values/digits stored in the DialClass itself !
+  //char cbuf[20];
+  //sprintf(cbuf, "%10.5f", value); 
+  //Serial.print("Set string:");
+  //Serial.println(cbuf);
+  //Serial.flush();
   closedFn = callbackFn;
   vol_cur_type = type;
   set_or_limit = set_or_limit_;
@@ -137,11 +142,11 @@ void DialClass::checkKeypress() {
 
  
   if (GD.inputs.tag == KEYBOARD_CANCEL && dialog==true) {
-    closedFn(vol_cur_type, set_or_limit, true);
+    closedFn(set_or_limit, true);
       dialog = false;
     }
   else if (GD.inputs.tag == KEYBOARD_OK && dialog==true && error==false) {
-    closedFn(vol_cur_type, set_or_limit, false);
+    closedFn(set_or_limit, false);
     dialog = false;
   }
 
@@ -330,6 +335,7 @@ void DialClass::renderInput(bool indicateError) {
 }
 
 void DialClass::showError(const char* text) {
+
   error = true;
   GD.ColorRGB(0xff0000);
   GD.cmd_text(160,107, 29, 0, text);
@@ -363,12 +369,18 @@ GD.ColorA(255);
 }
 
 void DialClass::validate(double mv) {
-
-  // get millovolt number value and decimal value
+  // get millivolt number value and decimal value
   char buf[3+10];
   int numberValue, decimalValue;
   sprintf(buf, "%.*f", 3, mv);
   sscanf(buf, "%d.%d", &numberValue, &decimalValue);
+  Serial.print("mV:");
+  Serial.print(mv,5);
+  Serial.print("Number value:");
+  Serial.print(numberValue);
+  Serial.print(", decimalValue:");
+  Serial.println(decimalValue);
+  Serial.flush();
 
   // get number of decimals in the display
   int decimalsAfterComma = -1;
@@ -378,7 +390,17 @@ void DialClass::validate(double mv) {
       break;
     }
   }
+  if (vol_cur_type == SOURCE_VOLTAGE) {
+    validateVoltage(mv, numberValue, decimalValue, decimalsAfterComma);
+  } else {
+    validateCurrent(mv, numberValue, decimalValue, decimalsAfterComma);
+  }
+  
+}
 
+
+void DialClass::validateVoltage(double mv, int numberValue, int decimalValue, int decimalsAfterComma) {
+  
   if (digits < 1) {
     showWarning("Please enter value");
     return;
@@ -417,6 +439,10 @@ void DialClass::validate(double mv) {
       showError("Max voltage in uV range is 999mV");
       return;
     }
+    else if (decimalValue < 100) {
+      showError("Lower limit is 100uV");
+      return;
+    }
     else if (decimalsAfterComma > 0) {
       showError("nV not allowed");
       return;
@@ -425,6 +451,58 @@ void DialClass::validate(double mv) {
   error = false;
   warning = false;
 }
+
+void DialClass::validateCurrent(double mv, int numberValue, int decimalValue, int decimalsAfterComma) {
+
+
+  if (digits < 1) {
+    showWarning("Please enter value");
+    return;
+  }
+  if (decimalsAfterComma == 0){
+    showWarning("Please enter a decimal after comma");
+    return;
+  }
+  // Note that in the check below, mv is mv, independent
+  // on which voltDecade is being show in the dislay
+  
+  if (strncmp(voltDecade,"V",1) == 0) {
+    if (abs(mv) > 1100) {
+      showError("Max current is 1.1A");
+      return;
+    }
+    else if (decimalsAfterComma > 4) {
+      showError("Max resolution in A range is 100uA");
+      return;
+    }
+  }
+
+  else if (strncmp(voltDecade,"mV",2) == 0) {
+    if (abs(mv) > 1100) {
+      showError("Max current is 1100mA");
+      return;
+    }
+    else if (decimalsAfterComma > 2) {
+      showError("Max resolution in mA range is 10uA ?????");
+      return;
+    }
+  }
+ 
+  else if (strncmp(voltDecade,"uV",2) == 0) {
+    if (numberValue > 999) {
+      showError("Max voltage in uA range is 999mA");
+      return;
+    }
+    else if (decimalsAfterComma > 1) {
+      showError("Max resolution in nA is 100nA");
+      return;
+    }
+  }  
+  error = false;
+  warning = false;
+}
+
+
 
 double DialClass::toMv() {
 /* calculate mv */

@@ -1073,10 +1073,10 @@ void loop()
 
     if (tag == BUTTON_SOURCE_SET) {
       Serial.println("Source set");
-      SOURCE_DIAL.open(operationType, SET,  closeDialCallback, SMU[0].getSetValuemV());
+      SOURCE_DIAL.open(operationType, SET,  closeSourceDCCallback, SMU[0].getSetValuemV());
     } else if (tag == BUTTON_LIM_SET) {
       Serial.println("Limit set");
-      LIMIT_DIAL.open(operationType, LIMIT, closeDialCallback, SMU[0].getLimitValue());
+      LIMIT_DIAL.open(operationType, LIMIT, closeSourceDCCallback, SMU[0].getLimitValue());
     } else if (tag == BUTTON_NULL) {
       Serial.println("Null set");
       V_CALIBRATION.toggleNullValue(V_STATS.rawValue, current_range);
@@ -1157,9 +1157,7 @@ void closeMainMenuCallback(int functionType_) {
   functionType = functionType_;
 }
 
-void closeDialCallback(int vol_cur_type, int set_or_limit, bool cancel) {
-  Serial.print("vol or cur:");
-  Serial.println(vol_cur_type);
+void closeSourceDCCallback(int set_or_limit, bool cancel) {
   Serial.print("set or limit:");
   Serial.println(set_or_limit);
   Serial.flush();
