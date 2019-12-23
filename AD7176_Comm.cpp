@@ -109,7 +109,8 @@ unsigned char AD7176_Read(unsigned char slaveDeviceId,
     digitalWrite(7, LOW);
   
 
-       //delayMicroseconds(1);
+    delayMicroseconds(1); // requires a small delay here in order to avoid glitches in read operation after other SPI "addresses" have been used.
+                          // Found this when testing sweep operations. In sweep the DAC is operated with another SPI "address" that ADC.
     SPI.transfer(data, bytesNumber);
        //delayMicroseconds(1);
 

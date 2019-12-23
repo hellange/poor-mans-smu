@@ -36,8 +36,8 @@ void FunctionSweepClass::render(int x, int y) {
   GD.cmd_text(x+20 + 1, y + 2 + 1 ,   29, 0, "SOURCE SWEEP");
   float high = 2000.0;
   float low = -2000.0;
-  float step = 100.0;
-  float duration = 1000;
+  float step = 50.0;
+  float duration = 100;
   GD.__end();
   operateSmu(high, low, step, duration);
   GD.resume();
