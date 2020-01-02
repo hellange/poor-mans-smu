@@ -71,6 +71,30 @@ static st_reg init_state[] =
 
 bool full_board = true; // set to true to account for shunt and gain/offsets other places that dac/adc
 
+void ADCClass::setSamplingRate(int value) {
+  // Note that two samples are needed for both voltage and current !
+  // So the "visible" sample rate will be 1/2 of set. 
+  if (value == 5) {
+      AD7176_WriteRegister({0x28, 2, 0, 0x0214l});
+  } else if (value == 10) {
+      AD7176_WriteRegister({0x28, 2, 0, 0x0213l});
+  } else if (value == 20) {
+      AD7176_WriteRegister({0x28, 2, 0, 0x0211l});
+  } else if (value == 50) {
+      AD7176_WriteRegister({0x28, 2, 0, 0x0210l});
+  } else if (value == 100) {
+      AD7176_WriteRegister({0x28, 2, 0, 0x020el});
+  } else if (value == 200) {
+      AD7176_WriteRegister({0x28, 2, 0, 0x020dl});
+  } else if (value == 500) {
+      AD7176_WriteRegister({0x28, 2, 0, 0x020bl});
+  } else {
+    Serial.print("Illegal sample value:");
+    Serial.println(value);
+    Serial.flush();
+  }
+  
+}
 void ADCClass::setCurrentRange(CURRENT_RANGE range) {
   current_range = range;
   if (range == AMP1) {

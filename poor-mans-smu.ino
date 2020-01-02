@@ -152,7 +152,7 @@ void setup()
    delay(100);
    Serial.println("Start measuring...");
    SMU[0].init();
-
+   SMU[0].setSamplingRate(200);
    operationType = getOperationType();
 
    if (operationType == SOURCE_VOLTAGE) {
@@ -1077,9 +1077,9 @@ void handleAutoRange() {
 int helgetimer = millis();
 void loop()
 {
-if (helgetimer + 10 > millis()) {
-  return;
-}
+//if (helgetimer + 10 > millis()) {
+//  return;
+//}
 helgetimer = millis();
   handleAutoNullAtStartup();
   operationType = getOperationType();

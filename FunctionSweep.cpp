@@ -47,7 +47,7 @@ void FunctionSweepClass::render(int x, int y) {
   float low = -10.0;
   float step = 0.1;
   
-  float duration = 500;
+  float duration = 5000;
   
 if (operationType == SOURCE_VOLTAGE) {
   high = 1000.0;

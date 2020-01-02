@@ -12,6 +12,9 @@ class FunctionPulseClass {
 
     int pulseTimer = millis();
     int pulseHigh = false;
+    float hz = 20;
+    float max = 2000.0;
+    float min = -2000.0;
     OPERATION_TYPE operationType;
   public:
     void init(ADCClass& smu);
