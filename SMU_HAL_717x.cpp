@@ -46,9 +46,9 @@ static st_reg init_state[] =
   //   {0x28, 2, 0, 0x0213l, "FilterCf0"}, //Filter_Config_1  // 10 pr sek
     // {0x28, 2, 0, 0x0212l, "FilterCf0"}, //Filter_Config_1  // 16.66 pr sek
  //{0x28, 2, 0, 0x0211l, "FilterCf0"}, //Filter_Config_1  // 20 pr sek
-   {0x28, 2, 0, 0x0210l, "FilterCf0"}, //Filter_Config_1  // 49.96 pr sek
+  // {0x28, 2, 0, 0x0210l, "FilterCf0"}, //Filter_Config_1  // 49.96 pr sek
      //{0x28, 2, 0, 0x020fl, "FilterCf0"}, //Filter_Config_1  // 59.92 pr sek
-    // {0x28, 2, 0, 0x020el, "FilterCf0"}, //Filter_Config_1  // 100 pr sek
+    {0x28, 2, 0, 0x020el, "FilterCf0"}, //Filter_Config_1  // 100 pr sek
 //{0x28, 2, 0, 0x020dl, "FilterCf0"}, //Filter_Config_1   // 200 pr sek
 //{0x28, 2, 0, 0x020cl, "FilterCf0"}, //Filter_Config_1   // 397.5 pr sek
 //{0x28, 2, 0, 0x020bl, "FilterCf0"}, //Filter_Config_1  // 500 pr sek
@@ -289,23 +289,7 @@ int8_t ADCClass::fltSetCommitVoltageSource(float milliVolt) {
  return setValueV;
  }
 
- int pulseTimer = millis();
- int pulseHigh = false;
- void ADCClass::pulse(float high, float low, int duration) {
-   // This is highly inaccurate. Should be implemented with hs timers and interrupts...
-   if (pulseHigh && pulseTimer+duration/2 < millis()) {
-     pulseHigh = false;
-     pulseTimer = millis();
-     fltSetCommitVoltageSource(low);
-     //Serial.println("Set pulse low");
-   } else if (!pulseHigh && pulseTimer+duration/2 < millis()) {
-     pulseHigh = true;
-     pulseTimer = millis();
-     fltSetCommitVoltageSource(high);
-     //Serial.println("Set pulse high");
 
-   }
- }
  
  
  int8_t ADCClass::fltSetCommitCurrentSource(float milliVolt) {

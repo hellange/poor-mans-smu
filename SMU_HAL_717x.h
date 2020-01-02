@@ -42,8 +42,6 @@ class ADCClass {
     float getSetValuemV();
     float getLimitValue();
 
-    void pulse(float v1, float v2, int duration);
-
 };
 
 #endif

@@ -189,7 +189,7 @@ void setup()
   // attachInterrupt(2, handleSampling, CHANGE);
 
 #ifdef SAMPLING_BY_INTERRUPT
-  myTimer.begin(handleSampling, 1000); // in microseconds
+  myTimer.begin(handleSampling, 100); // in microseconds
   SPI.usingInterrupt(myTimer);
 #endif
 } 

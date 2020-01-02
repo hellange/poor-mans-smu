@@ -72,7 +72,7 @@ if (operationType == SOURCE_VOLTAGE) {
     x=x+20;
   }
   GD.cmd_number(x+385, y, 31, 4, abs(low));
-  GD.cmd_text(x+490, y ,  31, 0, "mV");
+  GD.cmd_text(x+490, y ,  31, 0, operationType == SOURCE_VOLTAGE ? "mV": "mA");
   y=y+50;
 
   GD.cmd_number(x+242, y, 31, 4, abs(step));
@@ -81,11 +81,9 @@ if (operationType == SOURCE_VOLTAGE) {
   GD.__end();
 
   if (operationType == SOURCE_VOLTAGE) {
-      operateSmuVoltage(high, low, step, duration);
-
+    operateSmuVoltage(high, low, step, duration);
   } else {
-      operateSmuCurrent(high, low, step, duration);
-
+    operateSmuCurrent(high, low, step, duration);
   }
   GD.resume();
 }

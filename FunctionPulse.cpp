@@ -51,9 +51,27 @@ void FunctionPulseClass::render(int x, int y) {
   GD.cmd_text(x+490, y ,  31, 0, "mV");
 
   GD.__end();
-  smu.pulse(min, max, duration);
+  //smu.pulse(min, max, duration);
+  sourcePulse(min, max, duration);
   GD.resume();
   //SMU[0].sweep(5.00, -5.00, 0.1, 5000);
   GD.ColorA(255);
 
 }
+
+ 
+ void FunctionPulseClass::sourcePulse(float high, float low, int duration) {
+   // This is highly inaccurate. Should be implemented with hs timers and interrupts...
+   if (pulseHigh && pulseTimer+duration/2 < millis()) {
+     pulseHigh = false;
+     pulseTimer = millis();
+     smu.fltSetCommitVoltageSource(low);
+     //Serial.println("Set pulse low");
+   } else if (!pulseHigh && pulseTimer+duration/2 < millis()) {
+     pulseHigh = true;
+     pulseTimer = millis();
+     smu.fltSetCommitVoltageSource(high);
+     //Serial.println("Set pulse high");
+
+   }
+ }
