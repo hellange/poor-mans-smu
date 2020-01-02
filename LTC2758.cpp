@@ -73,7 +73,7 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 void LTC2758_write(uint8_t cs, uint8_t dac_command, uint8_t dac_address, uint32_t data)
 {
   //digitalWrite(LTC2758_CS,LOW);
-    //SPI.beginTransaction (SPISettings (2000000, MSBFIRST, SPI_MODE0));
+  SPI.beginTransaction (SPISettings (2000000, MSBFIRST, SPI_MODE0));
 
   SPIMuxSelectLTC2758();
   delayMicroseconds(1);

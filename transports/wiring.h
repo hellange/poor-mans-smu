@@ -183,6 +183,7 @@ public:
     __wstart(addr);
     SPI.transfer(v);
     stream();
+ //   __end();
   }
 
   uint16_t rd16(uint32_t addr)
@@ -194,6 +195,7 @@ public:
     r = SPI.transfer(0);
     r |= (SPI.transfer(0) << 8);
     stream();
+//__end();
     return r;
   }
 
@@ -204,6 +206,8 @@ public:
     SPI.transfer(v);
     SPI.transfer(v >> 8);
     stream();
+//__end();
+
   }
 
   uint32_t rd32(uint32_t addr)
@@ -292,23 +296,37 @@ public:
 
   static void __start(uint32_t addr) // start an SPI transaction to addr
   {
+delayMicroseconds(1);
+SPI.beginTransaction(SPISettings(4000000, MSBFIRST, SPI_MODE0));
     digitalWrite(CS, LOW);
+//digitalWrite(7,HIGH);
     SPI.transfer(addr >> 16);
     SPI.transfer(highByte(addr));
     SPI.transfer(lowByte(addr));  
+//digitalWrite(CS, HIGH);
+//digitalWrite(7,LOW);
+//SPI.endTransaction();
   }
 
   static void __wstart(uint32_t addr) // start an SPI write transaction to addr
   {
+delayMicroseconds(1);
+SPI.beginTransaction(SPISettings(4000000, MSBFIRST, SPI_MODE0));
     digitalWrite(CS, LOW);
+//digitalWrite(7,HIGH);
     SPI.transfer(0x80 | (addr >> 16));
     SPI.transfer(highByte(addr));
-    SPI.transfer(lowByte(addr));  
+    SPI.transfer(lowByte(addr)); 
+//digitalWrite(CS, HIGH);
+//digitalWrite(7,LOW);
+//SPI.endTransaction(); 
   }
 
   static void __end() // end the SPI transaction
   {
     digitalWrite(CS, HIGH);
+delayMicroseconds(1);
+SPI.endTransaction(); 
   }
 
   void stop() // end the SPI transaction
@@ -322,6 +340,7 @@ public:
   void stream(void) {
     __end();
     __wstart(RAM_CMD + (wp & 0xfff));
+
   }
 
   static unsigned int __rd16(uint32_t addr)

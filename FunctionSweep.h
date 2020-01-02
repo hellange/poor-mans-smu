@@ -9,11 +9,14 @@ class FunctionSweepClass {
     ADCClass smu;
     float currentSweepValue = 0.0;
     int currentSweepDir = 1;
+    OPERATION_TYPE operationType;
     int pulseTimer;
-    void operateSmu(float high, float low, float step, int duration);
+    void operateSmuVoltage(float high, float low, float step, int duration);
+    void operateSmuCurrent(float high, float low, float step, int duration);
+
   public:
     void init(ADCClass& smu);
-    void open(void (*closedFn)(int type));
+    void open(OPERATION_TYPE operationType, void (*closedFn)(int type));
     void close();
     void handleButtonAction(int inputTag);
     void render(int x, int y);

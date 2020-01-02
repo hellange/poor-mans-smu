@@ -43,12 +43,16 @@ static st_reg init_state[] =
        //  {0x28, 2, 0, 0x0216l, "FilterCf0"}, //Filter_Config_1  // 1.25 pr sek, for AD7172-2 only?
          //{0x28, 2, 0, 0x0215l, "FilterCf0"}, //Filter_Config_1  // 2.5 pr sek, for AD7172-2 only?
  //{0x28, 2, 0, 0x0214l, "FilterCf0"}, //Filter_Config_1  // 5 pr sek
-   //  {0x28, 2, 0, 0x0213l, "FilterCf0"}, //Filter_Config_1  // 10 pr sek
+  //   {0x28, 2, 0, 0x0213l, "FilterCf0"}, //Filter_Config_1  // 10 pr sek
     // {0x28, 2, 0, 0x0212l, "FilterCf0"}, //Filter_Config_1  // 16.66 pr sek
- {0x28, 2, 0, 0x0211l, "FilterCf0"}, //Filter_Config_1  // 20 pr sek
-  //  {0x28, 2, 0, 0x0210l, "FilterCf0"}, //Filter_Config_1  // 49.96 pr sek
+ //{0x28, 2, 0, 0x0211l, "FilterCf0"}, //Filter_Config_1  // 20 pr sek
+   {0x28, 2, 0, 0x0210l, "FilterCf0"}, //Filter_Config_1  // 49.96 pr sek
      //{0x28, 2, 0, 0x020fl, "FilterCf0"}, //Filter_Config_1  // 59.92 pr sek
     // {0x28, 2, 0, 0x020el, "FilterCf0"}, //Filter_Config_1  // 100 pr sek
+//{0x28, 2, 0, 0x020dl, "FilterCf0"}, //Filter_Config_1   // 200 pr sek
+//{0x28, 2, 0, 0x020cl, "FilterCf0"}, //Filter_Config_1   // 397.5 pr sek
+//{0x28, 2, 0, 0x020bl, "FilterCf0"}, //Filter_Config_1  // 500 pr sek
+//{0x28, 2, 0, 0x020al, "FilterCf0"}, //Filter_Config_1  // 1000 pr sek
 
     
     {0x29, 2, 0, 0x0214l, "FilterCf1"}, //Filter_Config_2
@@ -70,11 +74,19 @@ bool full_board = true; // set to true to account for shunt and gain/offsets oth
 void ADCClass::setCurrentRange(CURRENT_RANGE range) {
   current_range = range;
   if (range == AMP1) {
-    AD7176_WriteRegister({0x06, 2, 0, 0x080Cl}); // GPIO pin
-    digitalWrite(4, HIGH);
+   // Serial.print("range:");
+   // Serial.println("AMP1");
+   // AD7176_WriteRegister({0x06, 2, 0, 0x080Cl}); // GPIO pin
+    digitalWrite(4, HIGH); 
+  } else if (range == MILLIAMP10) {
+   // AD7176_WriteRegister({0x06, 2, 0, 0x080Dl}); // GPIO pin
+   digitalWrite(4, LOW);
+    //Serial.print("range:");
+    //Serial.println("MILLIAMP10");
   } else {
-    AD7176_WriteRegister({0x06, 2, 0, 0x080Dl}); // GPIO pin
-    digitalWrite(4, LOW);
+    Serial.println("ERROR: Unknown current range !!!");
+      Serial.flush();
+
   }
 
 }
@@ -217,10 +229,21 @@ uint32_t ADCClass::sourcecurrent_to_code_adj(float dac_voltage, float min_output
       dac_voltage = dac_voltage * 10.0; // with 1ohm shunt and x10 amplifier: 100mA is set by 1000mV
       dac_voltage = dac_voltage + 0.0008; // offset
       dac_voltage = dac_voltage * 1.137;
+      Serial.println("Calculating current to set for 1A range");
+            Serial.flush();
+
     } else if (current_range == MILLIAMP10) {
       dac_voltage = dac_voltage * 1000.0; // with 100ohm shunt and x10 amplifier: 1mA range is set by 1000mV
       dac_voltage = dac_voltage + 0.0010; // offset
       dac_voltage = dac_voltage * 0.975;
+      Serial.println("Calculating current to set for 100mA range");
+            Serial.flush();
+
+    } else {
+      Serial.print("ERROR: Unknown current range ");
+      Serial.println(current_range);
+      Serial.flush();
+
     }
    
     dac_voltage = - dac_voltage; // analog part requires inverted input

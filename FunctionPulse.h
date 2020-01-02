@@ -9,7 +9,7 @@ class FunctionPulseClass {
     ADCClass smu;
   public:
     void init(ADCClass& smu);
-    void open(void (*closedFn)(int type));
+    void open(OPERATION_TYPE operationType,void (*closedFn)(int type));
     void close();
     void handleButtonAction(int inputTag);
     void render(int x, int y);

@@ -81,7 +81,9 @@ OPERATION_TYPE getOperationType() {
     return SOURCE_CURRENT;
   }
 }
+IntervalTimer myTimer;
 
+#define SAMPLING_BY_INTERRUPT;
 
 void setup()
 {
@@ -181,7 +183,16 @@ void setup()
    FUNCTION_SWEEP.init(SMU[0]);
 
    timeAtStartup = millis();
-}
+
+  // SPI.usingInterrupt(2);
+  // pinMode(2,INPUT);
+  // attachInterrupt(2, handleSampling, CHANGE);
+
+#ifdef SAMPLING_BY_INTERRUPT
+  myTimer.begin(handleSampling, 1000); // in microseconds
+  SPI.usingInterrupt(myTimer);
+#endif
+} 
 
 void disable_ADC_DAC_SPI_units(){
    pinMode(7,OUTPUT); // mux master chip select
@@ -988,46 +999,10 @@ void notification(char *text) {
     GD.cmd_text(250, 200 , 29, 0, text);
 }
 
-
-
- 
-void loop()
-{
-
-  handleAutoNullAtStartup();
-  operationType = getOperationType();
-
-  if (startupCalibrationDone2) {
-    //SMU[0].pulse(-4000.0, 4000.0, 5000);
-    //SMU[0].sweep(5.00, -5.00, 0.1, 5000);
-  }
-//    if (startupCalibrationDone1 && startupCalibrationDone2) {
-//      float milliAmpere = C_STATS.rawValue;
-//      Serial.print(milliAmpere,5);
-//      Serial.print("mA, current range:");
-//      Serial.println(current_range);
-
-//      // auto current range switch. TODO: Move to hardware ? Note that range switch also requires change in limit
-//      float hysteresis = 0.5;
-//      float switchAt = MAX_CURRENT_10mA_RANGE;
-//      
-//        if (current_range == 0 && abs(milliAmpere) < switchAt - hysteresis) {
-//          current_range = 1;
-//          SMU[0].setCurrentRange(current_range);
-//          Serial.println("switching to range 1");
-//  
-//        }
-//        // TODO: Make separate function to calculate current based on shunt and voltage!
-//        if (current_range == 1 && abs(milliAmpere) > switchAt) {
-//          current_range = 0;
-//          SMU[0].setCurrentRange(current_range);
-//          Serial.println("switching to range 0");
-//        }
-//    }
-  
-  GD.__end();
-
-  int dataR = SMU[0].dataReady();
+float sampleBuffer[2000];
+int samplePtr = 0;
+static void handleSampling() {
+   int dataR = SMU[0].dataReady();
       //Serial.print("DataReady:");  
       //Serial.println(dataR, HEX);  
 
@@ -1046,7 +1021,12 @@ void loop()
 
     C_STATS.addSample(Cout);
     C_FILTERS.updateMean(Cout, false);
-
+    sampleBuffer[samplePtr] = Cout;
+    samplePtr++;
+    if (samplePtr > 999) {
+      samplePtr = 0;
+    }
+    
 //  Serial.print("Measured raw:");  
 //  Serial.print(CouVoutt, 3);
 //  Serial.println(" mA");  
@@ -1065,6 +1045,55 @@ void loop()
     V_STATS.addSample(Vout);
     V_FILTERS.updateMean(Vout, false);
   }
+  //handleAutoRange();
+}
+
+void handleAutoRange() {
+     if (startupCalibrationDone1 && startupCalibrationDone2) {
+      float milliAmpere = C_STATS.rawValue;
+//      Serial.print(milliAmpere,5);
+//      Serial.print("mA, current range:");
+//      Serial.println(current_ran
+      // auto current range switch. TODO: Move to hardware ? Note that range switch also requires change in limit
+      float hysteresis = 0.5;
+      float switchAt = MAX_CURRENT_10mA_RANGE;
+      
+        if (current_range == 0 && abs(milliAmpere) < switchAt - hysteresis) {
+          current_range = MILLIAMP10;
+          SMU[0].setCurrentRange(current_range);
+          Serial.println("switching to range 1");
+  
+        }
+        // TODO: Make separate function to calculate current based on shunt and voltage!
+        if (current_range == 1 && abs(milliAmpere) > switchAt) {
+          current_range = AMP1;
+          SMU[0].setCurrentRange(current_range);
+          Serial.println("switching to range 0");
+        }
+    }
+}
+
+
+int helgetimer = millis();
+void loop()
+{
+if (helgetimer + 10 > millis()) {
+  return;
+}
+helgetimer = millis();
+  handleAutoNullAtStartup();
+  operationType = getOperationType();
+
+  if (startupCalibrationDone2) {
+    //SMU[0].pulse(-4000.0, 4000.0, 5000);
+    //SMU[0].sweep(5.00, -5.00, 0.1, 5000);
+  }
+  //handleAutoRange();
+  GD.__end();
+
+  #ifndef SAMPLING_BY_INTERRUPT 
+    handleSampling();
+  #endif
   disable_ADC_DAC_SPI_units();
   GD.resume();
 
@@ -1101,6 +1130,10 @@ void loop()
         }
         timeSinceLastChange = millis();
         SMU[0].setCurrentRange(current_range);
+        if (operationType == SOURCE_CURRENT){
+          //Serial.println("SHOULD SET NEW OUTPUT WHEN SWITCHING CURRENT RANGE IN SOURCE CURRENT MODE ????");
+          //if (SMU[0].fltSetCommitCurrentSource(SMU[0].getSetValuemV())) printError(_PRINT_ERROR_VOLTAGE_SOURCE_SETTING);
+        }
 
       }
     } 
@@ -1148,6 +1181,13 @@ void loop()
   GD.__end();
 }
 
+void closedPulse(int t) {
+  
+}
+
+void closedSweep(int t) {
+  
+}
 
 void closeMainMenuCallback(int functionType_) {
   Serial.print("Closed main menu callback. Selected function:");
@@ -1155,6 +1195,11 @@ void closeMainMenuCallback(int functionType_) {
   Serial.flush();
   // TODO: Add cleanup from previous function before starting new...
   functionType = functionType_;
+  if (functionType == SOURCE_PULSE) {
+    FUNCTION_PULSE.open(operationType, closedPulse);
+  } else if (functionType == SOURCE_SWEEP) {
+    FUNCTION_SWEEP.open(operationType, closedSweep);
+  }
 }
 
 void closeSourceDCCallback(int set_or_limit, bool cancel) {
@@ -1171,15 +1216,18 @@ void closeSourceDCCallback(int set_or_limit, bool cancel) {
     if (operationType == SOURCE_VOLTAGE) {
        if (SMU[0].fltSetCommitVoltageSource(mv)) printError(_PRINT_ERROR_VOLTAGE_SOURCE_SETTING);
     } else {
+
       // auto current range when sourcing current
-      if (mv < 3.0) {
+      if (abs(mv) < 3.0) {
         current_range = MILLIAMP10;
         SMU[0].setCurrentRange(current_range);
       } else {
         current_range = AMP1;
         SMU[0].setCurrentRange(current_range);
       }
-       if (SMU[0].fltSetCommitCurrentSource(mv)) printError(_PRINT_ERROR_VOLTAGE_SOURCE_SETTING);
+                  if (SMU[0].fltSetCommitCurrentSource(mv)) printError(_PRINT_ERROR_VOLTAGE_SOURCE_SETTING);
+
+      //delayMicroseconds(1);
     }
   }
   if (set_or_limit == LIMIT) {

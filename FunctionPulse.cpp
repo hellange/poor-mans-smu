@@ -10,7 +10,7 @@ FunctionPulseClass FUNCTION_PULSE;
 void FunctionPulseClass::init(ADCClass& smu_) {
   smu = smu_;
 }
-void FunctionPulseClass::open(void (*closedFn_)(int type)) {
+void FunctionPulseClass::open(OPERATION_TYPE operationType, void (*closedFn_)(int type)) {
   closedFn = closedFn_;
 }
 
@@ -36,15 +36,19 @@ void FunctionPulseClass::render(int x, int y) {
   GD.ColorA(255);
   y=y+30;
   GD.cmd_number(x+242, y, 1, 3, hz);
-  GD.cmd_text(x+410, y ,  1, hz, "Hz");
+  GD.cmd_text(x+410, y ,  1, 0, "Hz");
   y=y+110;
   if (min < 0) {
     GD.cmd_text(x+220, y ,  31, hz, "-");
   }
   GD.cmd_number(x+242, y, 31, 4, abs(min));
-  GD.cmd_text(x+345, y ,  31, hz, "to");
-  GD.cmd_number(x+385, y, 31, 4, max);
-  GD.cmd_text(x+480, y ,  31, hz, "mV");
+  GD.cmd_text(x+345, y ,  31, 0, "to");
+
+  if (max < 0) {
+    GD.cmd_text(x+385, y ,  31, 0, "-");
+  }
+  GD.cmd_number(x+395, y, 31, 4, abs(max));
+  GD.cmd_text(x+490, y ,  31, 0, "mV");
 
   GD.__end();
   smu.pulse(min, max, duration);
