@@ -83,7 +83,7 @@ OPERATION_TYPE getOperationType() {
 }
 IntervalTimer myTimer;
 
-#define SAMPLING_BY_INTERRUPT;
+#define SAMPLING_BY_INTERRUPT
 
 void setup()
 {
@@ -1091,9 +1091,17 @@ void handleAutoRange() {
 int helgetimer = millis();
 void loop()
 {
-//if (helgetimer + 10 > millis()) {
-//  return;
-//}
+
+// No need to update display more often that the eye can detect.
+// Too often will cause jitter in the sampling because display and DAC/ADC share same SPI port.
+// Will that be improved by Teensy 4 where there are more that one SPI port ?
+//
+// Note that the scrolling speed and gesture detection speed will be affected.
+// 
+if (helgetimer + 50 > millis()) {
+  return; 
+}
+
 helgetimer = millis();
   handleAutoNullAtStartup();
   operationType = getOperationType();

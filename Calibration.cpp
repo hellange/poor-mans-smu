@@ -99,17 +99,17 @@ float CalibrationClass::dac_nonlinear_compensation(float milliVolt) {
       float partWithinRange = ( (v-set_dac[i]) / range); /* 0 to 1. Where then 0.5 is in the middle of the range */
       float adj_factor = adj_factor_low + adj_factor_diff * partWithinRange;
 
-      Serial.print("meas:");  
-      Serial.print(v, 4);
-      Serial.print(", range:");  
-      Serial.print(range, 4);
-      Serial.print(", part:");  
-      Serial.print(partWithinRange, 4);
-      Serial.print(", diff:");  
-      Serial.print(adj_factor_diff, 4);
-      Serial.print(", factor:");  
-      Serial.println(adj_factor, 4);
-      Serial.flush();
+//      Serial.print("meas:");  
+//      Serial.print(v, 4);
+//      Serial.print(", range:");  
+//      Serial.print(range, 4);
+//      Serial.print(", part:");  
+//      Serial.print(partWithinRange, 4);
+//      Serial.print(", diff:");  
+//      Serial.print(adj_factor_diff, 4);
+//      Serial.print(", factor:");  
+//      Serial.println(adj_factor, 4);
+//      Serial.flush();
       v = v + adj_factor; 
       
       return v;
