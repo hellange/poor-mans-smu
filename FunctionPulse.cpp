@@ -70,7 +70,9 @@ void FunctionPulseClass::updateSamplingPeriod(int hz) {
 int sinceLastPress = millis();
 void FunctionPulseClass::handleButtonAction(int inputTag) {
 
-  float buttonStep = operationType == SOURCE_CURRENT ? 1.0 : 100.0;
+  float buttonStep;
+
+  buttonStep = operationType == SOURCE_CURRENT ? 1.0 : 100.0;
 
   if (sinceLastPress + 100 < millis()) {
     if (inputTag == PULSE_BUTTON_INC) {
@@ -86,15 +88,38 @@ void FunctionPulseClass::handleButtonAction(int inputTag) {
       sinceLastPress = millis();
       updateSamplingPeriod(hz);
     } else if (inputTag == PULSE_BUTTON_INC2) {
+      
+      if (operationType == SOURCE_CURRENT && (min >= -1.0 and min <1.0) ) {
+        buttonStep = 0.1;
+      } else if (operationType == SOURCE_VOLTAGE && (min >= -100.0 and min <100.0) ) {
+        buttonStep = 10.0;
+      }
+  
       min = min + buttonStep;
       sinceLastPress = millis();
     }  else if (inputTag == PULSE_BUTTON_DEC2) {
+        if (operationType == SOURCE_CURRENT && (min > -1.0 and min <=1.0) ) {
+        buttonStep = 0.1;
+      } else if (operationType == SOURCE_VOLTAGE && (min > -100.0 and min <=100.0) ) {
+        buttonStep = 10.0;
+      }
       min = min - buttonStep;
       sinceLastPress = millis();
     }  else if (inputTag == PULSE_BUTTON_INC3) {
+      if (operationType == SOURCE_CURRENT && (max >= -1.0 and max <1.0) ) {
+        buttonStep = 0.1;
+      } else if (operationType == SOURCE_VOLTAGE && (max >= -100.0 and max <100.0) ) {
+        buttonStep = 10.0;
+      }
+      
       max = max + buttonStep;
       sinceLastPress = millis();
     }  else if (inputTag == PULSE_BUTTON_DEC3) {
+        if (operationType == SOURCE_CURRENT && (max > -1.0 and max <=1.0) ) {
+        buttonStep = 0.1;
+      } else if (operationType == SOURCE_VOLTAGE && (max > -100.0 and max <=100.0) ) {
+        buttonStep = 10.0;
+      }
       max = max - buttonStep;
       sinceLastPress = millis();
     }
@@ -160,21 +185,25 @@ void FunctionPulseClass::render(int x, int y) {
   GD.cmd_text(x+410, y ,  1, 0, "Hz");
   
   y=y+95;
-  if (min < 0) {
-    GD.cmd_text(x+220, y ,  31, hz, "-");
-  }
-  GD.cmd_number(x+242, y, 31, 4, abs(min));
-  GD.cmd_text(x+365, y ,  31, 0, operationType == SOURCE_VOLTAGE ? "mV" : "mA");
+//  if (min < 0) {
+//    GD.cmd_text(x+220, y ,  31, hz, "-");
+//  }
+//  GD.cmd_number(x+242, y, 31, 4, abs(min));
+  DIGIT_UTIL.renderValue(x + 220,  y, min, 4, operationType == SOURCE_VOLTAGE ? DigitUtilClass::typeVoltage : DigitUtilClass::typeCurrent); 
+
+  //GD.cmd_text(x+365, y ,  31, 0, operationType == SOURCE_VOLTAGE ? "mV" : "mA");
   DIGIT_UTIL.renderValue(x + 500,  y, measuredLow, 4, operationType == SOURCE_VOLTAGE ? DigitUtilClass::typeVoltage : DigitUtilClass::typeCurrent); 
 
 
   y=y+45;
-  if (max < 0) {
-    GD.cmd_text(x+220, y ,  31, 0, "-");
-  }
-  GD.cmd_number(x+242, y, 31, 4, abs(max));
-  
-  GD.cmd_text(x+365, y ,  31, 0, operationType == SOURCE_VOLTAGE ? "mV" : "mA");
+//  if (max < 0) {
+//    GD.cmd_text(x+220, y ,  31, 0, "-");
+//  }
+//  GD.cmd_number(x+242, y, 31, 4, abs(max));
+
+  DIGIT_UTIL.renderValue(x + 220,  y, max, 4, operationType == SOURCE_VOLTAGE ? DigitUtilClass::typeVoltage : DigitUtilClass::typeCurrent); 
+
+  //GD.cmd_text(x+365, y ,  31, 0, operationType == SOURCE_VOLTAGE ? "mV" : "mA");
   DIGIT_UTIL.renderValue(x + 500,  y, measuredHigh, 4, operationType == SOURCE_VOLTAGE ? DigitUtilClass::typeVoltage : DigitUtilClass::typeCurrent); 
 
   GD.__end();
