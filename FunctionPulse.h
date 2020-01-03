@@ -8,17 +8,19 @@ class FunctionPulseClass {
 
   private:
     ADCClass smu;
-
+    static float measuredLow;
+    static float measuredHigh;
     static void sourceVoltagePulse(float high, float low, int duration);
     static void sourceCurrentPulse(float high, float low, int duration);
      void updateSamplingPeriod(int hz);
     static int pulseTimer;
     static int pulseHigh;
-    float hz = 20;
+    static int hz;
    
     static float duration;
     static OPERATION_TYPE operationType;
   public:
+    
    static float max;
     static float min;
   static void sourcePulse();
@@ -26,7 +28,7 @@ class FunctionPulseClass {
     void open(OPERATION_TYPE operationType,void (*closedFn)(int type));
     void close();
     void handleButtonAction(int inputTag);
-    void render(int x, int y);
+    static void render(int x, int y);
   };
 
 

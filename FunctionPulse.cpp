@@ -4,16 +4,23 @@
 #include "GD2.h"
 #include "tags.h"
 #include "colors.h"
+#include "digit_util.h"
+#include "Stats.h"
 
 FunctionPulseClass FUNCTION_PULSE;
 
+
+//TODO: Clean up the static mess...
 float FunctionPulseClass::max = 2000.0;
 float FunctionPulseClass::min = -2000.0;
 //int IntervalTimer::myPulseTimer;
 int FunctionPulseClass::pulseTimer = millis();
 
 int FunctionPulseClass::pulseHigh = false;
-   
+
+float FunctionPulseClass::measuredHigh = 0.0;
+float FunctionPulseClass::measuredLow = 0.0;
+int FunctionPulseClass::hz = 20;
 float FunctionPulseClass::duration = 1000;
 OPERATION_TYPE FunctionPulseClass::operationType = SOURCE_VOLTAGE;
     
@@ -43,7 +50,8 @@ void FunctionPulseClass::open(OPERATION_TYPE operationType_, void (*closedFn_)(i
 }
 
 void FunctionPulseClass::close() {
-      closedFn(999); 
+      closedFn(999); // do we need this ?
+      myPulseTimer.end();
 }
 
 void FunctionPulseClass::updateSamplingPeriod(int hz) {
@@ -92,6 +100,7 @@ void FunctionPulseClass::handleButtonAction(int inputTag) {
     }
   }
 }
+
 
 void FunctionPulseClass::render(int x, int y) {
   
@@ -156,6 +165,8 @@ void FunctionPulseClass::render(int x, int y) {
   }
   GD.cmd_number(x+242, y, 31, 4, abs(min));
   GD.cmd_text(x+365, y ,  31, 0, operationType == SOURCE_VOLTAGE ? "mV" : "mA");
+  DIGIT_UTIL.renderValue(x + 500,  y, measuredLow, 4, operationType == SOURCE_VOLTAGE ? DigitUtilClass::typeVoltage : DigitUtilClass::typeCurrent); 
+
 
   y=y+45;
   if (max < 0) {
@@ -164,6 +175,7 @@ void FunctionPulseClass::render(int x, int y) {
   GD.cmd_number(x+242, y, 31, 4, abs(max));
   
   GD.cmd_text(x+365, y ,  31, 0, operationType == SOURCE_VOLTAGE ? "mV" : "mA");
+  DIGIT_UTIL.renderValue(x + 500,  y, measuredHigh, 4, operationType == SOURCE_VOLTAGE ? DigitUtilClass::typeVoltage : DigitUtilClass::typeCurrent); 
 
   GD.__end();
   //smu.pulse(min, max, duration);
@@ -195,6 +207,7 @@ void FunctionPulseClass::sourcePulse() {
      pulseHigh = false;
     // pulseTimer = millis();
      SMU[0].fltSetCommitVoltageSource(low, false);
+     measuredLow =  V_STATS.rawValue;
      //Serial.println("Set pulse low");
   // } else if (!pulseHigh && pulseTimer+duration/2 < millis()) {
    }
@@ -202,6 +215,7 @@ void FunctionPulseClass::sourcePulse() {
      pulseHigh = true;
      //pulseTimer = millis();
      SMU[0].fltSetCommitVoltageSource(high, false);
+     measuredHigh =  V_STATS.rawValue;
      //Serial.println("Set pulse high");
 
    }
@@ -214,6 +228,7 @@ void FunctionPulseClass::sourcePulse() {
      pulseHigh = false;
      //pulseTimer = millis();
      SMU[0].fltSetCommitCurrentSource(low);
+     measuredLow =  V_STATS.rawValue;
      //Serial.println("Set pulse low");
    }
   // } else if (!pulseHigh && pulseTimer+duration/2 < millis()) {
@@ -221,6 +236,7 @@ void FunctionPulseClass::sourcePulse() {
      pulseHigh = true;
      //pulseTimer = millis();
      SMU[0].fltSetCommitCurrentSource(high);
+     measuredHigh =  V_STATS.rawValue;
      //Serial.println("Set pulse high");
 
    }

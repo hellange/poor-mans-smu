@@ -118,9 +118,6 @@ void StatsClass::renderHistogram(int x, int y, bool limitDetails) {
 
     for (int pos=0; pos<nrOfTrendPoints;pos++) { 
       if (value[pos] == undefinedValue) {
-        value[pos] = 0.0;      
-        Serial.println(value[pos]);
-
         break;
       }
       for(int i=0;i<noOfbins;i++){

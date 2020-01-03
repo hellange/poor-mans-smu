@@ -1178,8 +1178,7 @@ helgetimer = millis();
       if (timeSinceLastChange + 500 < millis()){
         timeSinceLastChange = millis();
       }
-      SMU[0].initADC();
-      
+     
       if (tag == BUTTON_SAMPLE_RATE_5) {
         SMU[0].setSamplingRate(5);
       }
@@ -1189,8 +1188,7 @@ helgetimer = millis();
       if (tag == BUTTON_SAMPLE_RATE_100) {
         SMU[0].setSamplingRate(100);
       }
-      
-      
+
     }
     // TODO: don't need to check buttons for inactive menus or functions...
     MAINMENU.handleButtonAction(tag);
@@ -1244,10 +1242,20 @@ void closedSweep(int t) {
   
 }
 
+
 void closeMainMenuCallback(int functionType_) {
+  
   Serial.print("Closed main menu callback. Selected function:");
   Serial.println(functionType_);
   Serial.flush();
+
+  // do a close on the existing function
+  if (functionType == SOURCE_PULSE) {
+    FUNCTION_PULSE.close();
+  } else if (functionType == SOURCE_SWEEP) {
+    FUNCTION_SWEEP.close();
+  }
+   
   // TODO: Add cleanup from previous function before starting new...
   functionType = functionType_;
   if (functionType == SOURCE_PULSE) {

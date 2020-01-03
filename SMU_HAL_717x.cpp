@@ -72,6 +72,17 @@ static st_reg init_state[] =
 bool full_board = true; // set to true to account for shunt and gain/offsets other places that dac/adc
 
 void ADCClass::setSamplingRate(int value) {
+  samplingRate = value;
+  // Make sure the value is wrote into the DAC register. For example when reading current or voltage measurement.
+  // I tried to set the register directly but ended up with problems (halt, stops, exception etc.) probably due to interrupt stuff...
+  // TODO: Figure out a better way...
+}
+void ADCClass::writeSamplingRate() {
+  if (oldSamplingRate == samplingRate) {
+     return;
+  }
+  oldSamplingRate = samplingRate;
+  int value = samplingRate;
   // Note that two samples are needed for both voltage and current !
   // So the "visible" sample rate will be 1/2 of set. 
   if (value == 5) {
@@ -116,6 +127,7 @@ void ADCClass::setCurrentRange(CURRENT_RANGE range) {
 }
 
 float ADCClass::measureMilliVoltage() {
+ 
   AD7176_ReadRegister(&AD7176_regs[4]);
 
   float v = (float) ((AD7176_regs[4].value*VFSR*1000.0)/FSR); 
@@ -135,8 +147,12 @@ float ADCClass::measureMilliVoltage() {
       v = v*2.0; // divide by 2 in measurement circuit
     }
   }
+
+  writeSamplingRate();
   return v;
 }
+
+
 
 int ADCClass::dataReady() {
   return AD7176_dataReady();
