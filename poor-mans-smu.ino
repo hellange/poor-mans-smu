@@ -152,7 +152,7 @@ void setup()
    delay(100);
    Serial.println("Start measuring...");
    SMU[0].init();
-   SMU[0].setSamplingRate(200);
+   SMU[0].setSamplingRate(5);
    operationType = getOperationType();
 
    if (operationType == SOURCE_VOLTAGE) {
@@ -346,12 +346,12 @@ void handleSliders(int x, int y) {
   y=y+40;
 
   GD.Tag(TAG_FILTER_SLIDER);
-  GD.cmd_slider(400+x, y+30, 300,15, OPT_FLAT, V_FILTERS.filterSize * (65535/100), 65535);
-  GD.cmd_track(400+x, y+30, 300, 20, TAG_FILTER_SLIDER);
+  GD.cmd_slider(500+x, y+30, 280,15, OPT_FLAT, V_FILTERS.filterSize * (65535/100), 65535);
+  GD.cmd_track(500+x, y+30, 280, 20, TAG_FILTER_SLIDER);
   
   GD.Tag(TAG_FILTER_SLIDER_B);
-  GD.cmd_slider(400+x, y+90, 300,15, OPT_FLAT, V_STATS.getNrOfSamplesBeforeStore()* (65535/100), 65535);
-  GD.cmd_track(400+x, y+90, 300, 20, TAG_FILTER_SLIDER_B);
+  GD.cmd_slider(500+x, y+90, 280,15, OPT_FLAT, V_STATS.getNrOfSamplesBeforeStore()* (65535/100), 65535);
+  GD.cmd_track(500+x, y+90, 280, 20, TAG_FILTER_SLIDER_B);
   
   GD.cmd_text(500+x,y, 27, 0, "Filter size:");
   GD.cmd_number(580+x,y, 27, 0, V_FILTERS.filterSize);
@@ -446,7 +446,21 @@ void renderExperimental(int x, int y, float valM, float setM, bool cur) {
     deviationInPercent = 100;
   }
   float degrees = -deviationInPercent * 700.0;
-  renderAnalogGauge(x,y,240, degrees, deviationInPercent, "Deviation from SET");
+  renderAnalogGauge(x+90,y,240, degrees, deviationInPercent, "Deviation from SET");
+
+  GD.ColorRGB(0x000000);
+  GD.Tag(BUTTON_SAMPLE_RATE_5);
+  GD.cmd_button(x-50,y,95,40,29,0,"5Hz");
+
+  
+  GD.Tag(BUTTON_SAMPLE_RATE_20);
+  GD.cmd_button(x-50,y+50,95,40,29,0,"20Hz");
+
+  
+  GD.Tag(BUTTON_SAMPLE_RATE_100);
+  GD.cmd_button(x-50,y+100,95,40,29,0,"100Hz");
+
+  GD.Tag(0);
 }
 
 void renderAnalogGauge(int x, int y, int size, float degrees, float value, char* title) {
@@ -1136,7 +1150,24 @@ helgetimer = millis();
         }
 
       }
-    } 
+    } else if (tag == BUTTON_SAMPLE_RATE_5 or tag == BUTTON_SAMPLE_RATE_20 or tag == BUTTON_SAMPLE_RATE_100) { //TODO: Change name
+      if (timeSinceLastChange + 500 < millis()){
+        timeSinceLastChange = millis();
+      }
+      SMU[0].initADC();
+      
+      if (tag == BUTTON_SAMPLE_RATE_5) {
+        SMU[0].setSamplingRate(5);
+      }
+      if (tag == BUTTON_SAMPLE_RATE_20) {
+        SMU[0].setSamplingRate(20);
+      }
+      if (tag == BUTTON_SAMPLE_RATE_100) {
+        SMU[0].setSamplingRate(100);
+      }
+      
+      
+    }
     // TODO: don't need to check buttons for inactive menus or functions...
     MAINMENU.handleButtonAction(tag);
     FUNCTION_PULSE.handleButtonAction(tag);

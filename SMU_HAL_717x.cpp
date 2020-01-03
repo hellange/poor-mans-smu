@@ -142,7 +142,12 @@ int ADCClass::dataReady() {
   return AD7176_dataReady();
 }
 
-int ADCClass::init(){
+int ADCClass::init() {
+  initADC();
+  initDAC();
+}
+
+int ADCClass::initADC(){
   Serial.print("SETUP: ");
   AD7176_Reset;
   Serial.println(AD7176_Setup());
@@ -177,12 +182,12 @@ int ADCClass::init(){
   }
   AD7176_UpdateSettings();
 
-  LTC2758_write(LTC2758_CS, LTC2758_WRITE_SPAN_DAC, ADDRESS_DAC_ALL, 3);  // initialising all channels to -10V - 10V range
-
-  LTC2758_write(LTC2758_CS, LTC2758_WRITE_CODE_UPDATE_DAC, 0, 0x0); // init to 0;
-  
-
   return 0;
+}
+
+int ADCClass::initDAC(){
+  LTC2758_write(LTC2758_CS, LTC2758_WRITE_SPAN_DAC, ADDRESS_DAC_ALL, 3);  // initialising all channels to -10V - 10V range
+  LTC2758_write(LTC2758_CS, LTC2758_WRITE_CODE_UPDATE_DAC, 0, 0x0); // init to 0;
 }
 
 

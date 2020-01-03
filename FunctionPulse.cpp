@@ -67,37 +67,32 @@ void FunctionPulseClass::render(int x, int y) {
   GD.ColorRGB(0x000000);
 
     GD.Tag(PULSE_BUTTON_DEC);
-  GD.cmd_button(x+20,y+50,100,40,28,0,"Dec");
+  GD.cmd_button(x+20,y+50,80,40,28,0,"Dec");
   GD.Tag(0);
   
   GD.Tag(PULSE_BUTTON_INC);
-  GD.cmd_button(x+130,y+50,100,40,28,0,"Inc");
+  GD.cmd_button(x+130,y+50,80,40,28,0,"Inc");
   GD.Tag(0);
-
-
 
   y=y+50;
 
-   GD.Tag(PULSE_BUTTON_DEC2);
-  GD.cmd_button(x+20,y+50,100,40,28,0,"Dec");
+  GD.Tag(PULSE_BUTTON_DEC2);
+  GD.cmd_button(x+20,y+50,80,40,28,0,"Dec");
   GD.Tag(0);
   
   GD.Tag(PULSE_BUTTON_INC2);
-  GD.cmd_button(x+130,y+50,100,40,28,0,"Inc");
+  GD.cmd_button(x+130,y+50,80,40,28,0,"Inc");
   GD.Tag(0);
-
  
   y=y+50;
-
   
   GD.Tag(PULSE_BUTTON_DEC3);
-  GD.cmd_button(x+20,y+50,100,40,28,0,"Dec");
+  GD.cmd_button(x+20,y+50,80,40,28,0,"Dec");
   GD.Tag(0);
   
   GD.Tag(PULSE_BUTTON_INC3);
-  GD.cmd_button(x+130,y+50,100,40,28,0,"Inc");
+  GD.cmd_button(x+130,y+50,80,40,28,0,"Inc");
   GD.Tag(0);
-
 
   y=y-100;
 

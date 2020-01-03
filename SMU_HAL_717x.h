@@ -26,10 +26,13 @@ class ADCClass {
     float VFSR = VREF; 
     CURRENT_RANGE current_range = AMP1;
     uint32_t sourcecurrent_to_code_adj(float dac_voltage, float min_output, float max_output, bool serialOut);
+
   public:
 
     bool compliance;
     int init();
+    int initADC();
+    int initDAC();
     int8_t fltSetCommitVoltageSource(float fVoltage);
     int8_t fltSetCommitCurrentSource(float fVoltage);
     int8_t fltSetCommitLimit(float fCurrent, int8_t up_down_both);
