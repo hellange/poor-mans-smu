@@ -228,7 +228,7 @@ void FunctionPulseClass::sourcePulse() {
      pulseHigh = false;
      //pulseTimer = millis();
      SMU[0].fltSetCommitCurrentSource(low);
-     measuredLow =  V_STATS.rawValue;
+     measuredLow =  C_STATS.rawValue;
      //Serial.println("Set pulse low");
    }
   // } else if (!pulseHigh && pulseTimer+duration/2 < millis()) {
@@ -236,7 +236,7 @@ void FunctionPulseClass::sourcePulse() {
      pulseHigh = true;
      //pulseTimer = millis();
      SMU[0].fltSetCommitCurrentSource(high);
-     measuredHigh =  V_STATS.rawValue;
+     measuredHigh =  C_STATS.rawValue;
      //Serial.println("Set pulse high");
 
    }
