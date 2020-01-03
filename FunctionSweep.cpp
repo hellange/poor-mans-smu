@@ -99,7 +99,7 @@ void FunctionSweepClass::operateSmuVoltage(float high, float low, float step, in
       currentSweepDir = +1;
      }
      currentSweepValue += step*currentSweepDir;
-     smu.fltSetCommitVoltageSource(currentSweepValue);
+     smu.fltSetCommitVoltageSource(currentSweepValue, false);
    } 
 }
 

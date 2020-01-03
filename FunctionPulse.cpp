@@ -194,14 +194,14 @@ void FunctionPulseClass::sourcePulse() {
    if (pulseHigh) {
      pulseHigh = false;
     // pulseTimer = millis();
-     SMU[0].fltSetCommitVoltageSource(low);
+     SMU[0].fltSetCommitVoltageSource(low, false);
      //Serial.println("Set pulse low");
   // } else if (!pulseHigh && pulseTimer+duration/2 < millis()) {
    }
   else {
      pulseHigh = true;
      //pulseTimer = millis();
-     SMU[0].fltSetCommitVoltageSource(high);
+     SMU[0].fltSetCommitVoltageSource(high, false);
      //Serial.println("Set pulse high");
 
    }

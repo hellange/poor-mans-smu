@@ -156,7 +156,7 @@ void setup()
    operationType = getOperationType();
 
    if (operationType == SOURCE_VOLTAGE) {
-     SMU[0].fltSetCommitVoltageSource(0.0);
+     SMU[0].fltSetCommitVoltageSource(0.0, true);
      Serial.println("Source voltage");
      SMU[0].fltSetCommitLimit(0.1, _SOURCE_AND_SINK); 
    } else {
@@ -296,6 +296,9 @@ void renderStatusIndicators(int x, int y) {
 
  
  void showAnalogPin(int x, int y, int radius, int radiusStart, int degreeRelativeToTop, int needleColor, int lineWidth, boolean needle) {
+  if (reduceDetails()){
+    return;
+  }
   int maxDegree = 60; 
   
   degreeRelativeToTop = degreeRelativeToTop <-maxDegree ? -maxDegree: degreeRelativeToTop;
@@ -427,8 +430,8 @@ void handleSliders(int x, int y) {
 
 void renderExperimental(int x, int y, float valM, float setM, bool cur) {
 
- handleSliders(x,y);
-
+  handleSliders(x,y);
+ 
   y=y+65;
   x=x+100;
   
@@ -461,6 +464,7 @@ void renderExperimental(int x, int y, float valM, float setM, bool cur) {
   GD.cmd_button(x-50,y+100,95,40,29,0,"100Hz");
 
   GD.Tag(0);
+  
 }
 
 void renderAnalogGauge(int x, int y, int size, float degrees, float value, char* title) {
@@ -481,17 +485,20 @@ void renderAnalogGauge(int x, int y, int size, float degrees, float value, char*
       showAnalogPin(x+gaugeRadius, y+gaugeRadius+10, gaugeRadius, gaugeRadius - 10, i, needleColor, gaugeRadius/4, false);
   }
 
+ 
+    
   GD.Begin(LINE_STRIP);
   GD.ColorRGB(0x888888);
   GD.ColorA(255);
   GD.LineWidth(10);
 
+  if (x+gaugeRadius < 800) {
   GD.Vertex2ii(x, y);
   GD.Vertex2ii(x, y+gaugeRadius+10);
   GD.Vertex2ii(x+gaugeRadius*2, y+gaugeRadius+10);
   GD.Vertex2ii(x+gaugeRadius*2, y);
   GD.Vertex2ii(x, y);
-
+    
   showAnalogPin(x+gaugeRadius, y+gaugeRadius+10, gaugeRadius, 30, degrees, 0xffffff, 20, true);
 
   GD.Begin(RECTS);
@@ -504,6 +511,7 @@ void renderAnalogGauge(int x, int y, int size, float degrees, float value, char*
   GD.cmd_text(x+gaugeRadius/2, y-20, 27, 0, title);
   
   GD.ColorRGB(0xdddddd);
+  }
   
   y=y+gaugeRadius-22;
   x=x+gaugeRadius*1.2/2;
@@ -538,6 +546,9 @@ void renderHistogram(int x,int y, bool scrolling) {
 }
 
 void renderBar(int x, int y, float rawValue, float setValue) {
+  if (reduceDetails()) {
+    return;
+  }
   GD.Begin(RECTS);
   GD.LineWidth(10);
   for (int i=0;i<40;i++) {
@@ -554,8 +565,13 @@ void renderBar(int x, int y, float rawValue, float setValue) {
     }else {
        GD.ColorRGB(0x00cc00);
     }
-    GD.Vertex2ii(x+20 + i*14 ,y);
-    GD.Vertex2ii(x+20 + (i+1)*14 - 3, y+9);
+    int position_x1 = x+20 + i*14;
+    int position_x2 = position_x1 + 11;
+    if (position_x1 > 0 && position_x2 < 800) {
+      GD.Vertex2ii(position_x1 ,y);
+      GD.Vertex2ii(x+20 + (i+1)*14 - 3, y+9);
+    }
+    
   }
 }
 
@@ -962,7 +978,7 @@ void handleAutoNullAtStartup() {
     current_range = MILLIAMP10;
     SMU[0].setCurrentRange(current_range);
     if (operationType == SOURCE_VOLTAGE) {
-      SMU[0].fltSetCommitVoltageSource(0.0);
+      SMU[0].fltSetCommitVoltageSource(0.0, true);
     } else {
       SMU[0].fltSetCommitCurrentSource(0.0);
     }
@@ -984,7 +1000,7 @@ void handleAutoNullAtStartup() {
     current_range = AMP1;
     SMU[0].setCurrentRange(current_range);
     if (operationType == SOURCE_VOLTAGE) {
-      SMU[0].fltSetCommitVoltageSource(0.0);
+      SMU[0].fltSetCommitVoltageSource(0.0, true);
     } else {
       SMU[0].fltSetCommitCurrentSource(0.0);
     }
@@ -1253,7 +1269,7 @@ void closeSourceDCCallback(int set_or_limit, bool cancel) {
   if (set_or_limit == SET) {
     float mv = SOURCE_DIAL.getMv();
     if (operationType == SOURCE_VOLTAGE) {
-       if (SMU[0].fltSetCommitVoltageSource(mv)) printError(_PRINT_ERROR_VOLTAGE_SOURCE_SETTING);
+       if (SMU[0].fltSetCommitVoltageSource(mv, true)) printError(_PRINT_ERROR_VOLTAGE_SOURCE_SETTING);
     } else {
 
       // auto current range when sourcing current

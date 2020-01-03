@@ -281,7 +281,7 @@ uint32_t ADCClass::sourcecurrent_to_code_adj(float dac_voltage, float min_output
   return LTC2758_voltage_to_code(dac_voltage, min_output, max_output, serialOut);
 }
 
-int8_t ADCClass::fltSetCommitVoltageSource(float milliVolt) {
+int8_t ADCClass::fltSetCommitVoltageSource(float milliVolt, bool dynamicRange) {
   float v = milliVolt / 1000.0;
   setValueV = v; // use volt. TODO: change to millivolt ?
 
@@ -301,11 +301,16 @@ int8_t ADCClass::fltSetCommitVoltageSource(float milliVolt) {
   uint32_t choice = 3;
   float DAC_RANGE_LOW = -10.0;
   float DAC_RANGE_HIGH = 10.0;
-  
-  if (abs(v) <2.2) {   // can move to 2.5 if reference voltage is 5v
-    choice = 4;
-    DAC_RANGE_LOW = -2.5;
-    DAC_RANGE_HIGH = 2.5;
+
+  // TODO: Causes spike when changing range during ramp/pulse !!!!
+  //       Recreate by pulse with high and low in different ranges (ex 2.5V - 1.0V)
+  //       Add possibility to turn this on and off depending on what function you're in !
+  if (dynamicRange) {
+    if (abs(v) <2.2) {   // can move to 2.5 if reference voltage is 5v
+      choice = 4;
+      DAC_RANGE_LOW = -2.5;
+      DAC_RANGE_HIGH = 2.5;
+    }
   }
   
   uint32_t span = (uint32_t)(choice << 2);
