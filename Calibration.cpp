@@ -195,10 +195,14 @@ float CalibrationClass::getDacGainCompNeg() {
 
 void CalibrationClass::renderCal(int x, int y, float valM, float setM, bool cur) {
 
-   GD.Tag(BUTTON_ADC_GAIN_COMP_POS_UP);
-  GD.cmd_button(x+100,y+110,100,50,29,0,"UP");
+  GD.ColorRGB(0xaaaaaa);
+  GD.cmd_text(x+10, y + 50, 27, 0, "GAIN ADJUST");
+  GD.ColorRGB(0x000000);
+
+  GD.Tag(BUTTON_ADC_GAIN_COMP_POS_UP);
+  GD.cmd_button(x+10,y+90,100,50,29,0,"UP");
   GD.Tag(BUTTON_ADC_GAIN_COMP_POS_DOWN);
-  GD.cmd_button(x+220,y+110,100,50,29,0,"DOWN");
+  GD.cmd_button(x+10,y+150,100,50,29,0,"DOWN");
 
   
   GD.LineWidth(20);
@@ -211,13 +215,16 @@ void CalibrationClass::renderCal(int x, int y, float valM, float setM, bool cur)
 
   float max_meas_value = meas_adc[adc_cal_points-1];
 
-  // correction graph
+  float pixelsPrVolt = 200; // pixel width pr volt
+  float x_null_position = 400; // x position for 0V
   float correction_display_factor = 100000.0; // TODO: Make it show as ppm ?  uV ?
+
+  // correction graph
   for (int i=0;i<adc_cal_points;i++) {
       float diff = set_adc[i] - meas_adc[i];
-      int xv = 300 *(set_adc[i] / max_set_value);
+      int xv = pixelsPrVolt *(set_adc[i] / max_set_value);
       int yv = /*150 *(meas_adc[i] / max_meas_value) - */(diff/max_meas_value) * correction_display_factor;
-      GD.Vertex2ii(x+400+xv, y + 100 - yv);
+      GD.Vertex2ii(x+x_null_position+xv, y + 100 - yv);
   }
 
   // voltage axis
@@ -226,16 +233,21 @@ void CalibrationClass::renderCal(int x, int y, float valM, float setM, bool cur)
   GD.ColorA(100);
   for (int i=0;i<adc_cal_points;i++) {
       //float diff = set_adc[i] - meas_adc[i];
-      int xv = 300 *(set_adc[i] / max_set_value);
-      GD.Vertex2ii(x+400+xv, y + 100);
+      int xv = pixelsPrVolt *(set_adc[i] / max_set_value);
+      GD.Vertex2ii(x+x_null_position+xv, y + 100);
   }
 
   // voltage labels
-  for (int i=min_set_value/1000.0;i<=max_set_value/1000.0;i++) {
-      int xv = i* 300/(int)(max_set_value/1000.0);
-      GD.cmd_text(x+400+xv-10, y + 200, 27, 0, i<0?"-":" ");
-      GD.cmd_number(x+400+xv, y + 200, 27, 1, abs(i));
-      GD.cmd_text(x+400+xv+10, y + 200, 27, 0, "V");
+  for (int i=min_set_value/1000.0;i<=max_set_value/1000.0;i=i+2) {
+      int xv = i* pixelsPrVolt/(int)(max_set_value/1000.0);
+      GD.cmd_text(x+x_null_position+xv-10, y + 200, 27, 0, i<0?"-":" ");
+      if (abs(i) >=10.0) {
+        GD.cmd_number(x+x_null_position+xv, y + 200, 27, 2, abs(i));
+        GD.cmd_text(x+x_null_position+xv+20, y + 200, 27, 0, "V");
+      } else {
+        GD.cmd_number(x+x_null_position+xv, y + 200, 27, 1, abs(i));
+        GD.cmd_text(x+x_null_position+xv+10, y + 200, 27, 0, "V");
+      }
 
   }
   
