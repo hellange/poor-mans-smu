@@ -275,11 +275,13 @@ void CalibrationClass::renderCal(int x, int y, float valM, float setM, bool cur,
   float correction_display_factor = 100000.0; // TODO: Make it show as ppm ?  uV ?
 
   // correction graph
-  for (int i=0;i<adc_cal_points;i++) {
-      float diff = set_adc[i] - meas_adc[i];
-      int xv = pixelsPrVolt *(set_adc[i] / max_set_value);
-      int yv = /*150 *(meas_adc[i] / max_meas_value) - */(diff/max_meas_value) * correction_display_factor;
-      GD.Vertex2ii(x+x_null_position+xv, y + 100 - yv);
+  if (!reduceDetails) {
+    for (int i=0;i<adc_cal_points;i++) {
+        float diff = set_adc[i] - meas_adc[i];
+        int xv = pixelsPrVolt *(set_adc[i] / max_set_value);
+        int yv = /*150 *(meas_adc[i] / max_meas_value) - */(diff/max_meas_value) * correction_display_factor;
+        GD.Vertex2ii(x+x_null_position+xv, y + 100 - yv);
+    }
   }
 
   // voltage axis
