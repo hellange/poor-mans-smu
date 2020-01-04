@@ -1195,7 +1195,7 @@ helgetimer = millis();
 
     } 
     
-    else if (tag == BUTTON_ADC_GAIN_COMP_POS_UP) {
+    else if (tag == BUTTON_DAC_GAIN_COMP_POS_UP) {
        if (timeSinceLastChange + 500 < millis()){
         timeSinceLastChange = millis();
       } 
@@ -1211,7 +1211,7 @@ helgetimer = millis();
        if (SMU[0].fltSetCommitVoltageSource(mv, true)) printError(_PRINT_ERROR_VOLTAGE_SOURCE_SETTING);
        GD.resume();
       
-    } else if (tag == BUTTON_ADC_GAIN_COMP_POS_DOWN) {
+    } else if (tag == BUTTON_DAC_GAIN_COMP_POS_DOWN) {
        if (timeSinceLastChange + 500 < millis()){
         timeSinceLastChange = millis();
       } 
@@ -1225,6 +1225,29 @@ helgetimer = millis();
        GD.__end();
        if (SMU[0].fltSetCommitVoltageSource(mv, true)) printError(_PRINT_ERROR_VOLTAGE_SOURCE_SETTING);
        GD.resume();
+       
+    } else if (tag == BUTTON_ADC_GAIN_COMP_POS_UP) {
+       if (timeSinceLastChange + 500 < millis()){
+        timeSinceLastChange = millis();
+      } 
+       float mv = SOURCE_DIAL.getMv();
+       if (mv < 0) {
+          V_CALIBRATION.adjAdcGainCompNeg(0.000001);
+       } else {
+          V_CALIBRATION.adjAdcGainCompPos(0.000001);
+       }
+      
+    } else if (tag == BUTTON_ADC_GAIN_COMP_POS_DOWN) {
+       if (timeSinceLastChange + 500 < millis()){
+        timeSinceLastChange = millis();
+      } 
+       float mv = SOURCE_DIAL.getMv();
+         if (mv < 0) {
+          V_CALIBRATION.adjAdcGainCompNeg(-0.000001);
+       } else {
+          V_CALIBRATION.adjAdcGainCompPos(-0.000001);
+       }
+      
        
     }
     

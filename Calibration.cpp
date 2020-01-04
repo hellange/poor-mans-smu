@@ -4,6 +4,7 @@
 #include "GD2.h"
 #include "tags.h"
 #include <EEPROM.h>
+#include "eeprom_adr.h"
 
 CalibrationClass V_CALIBRATION;
 CalibrationClass C_CALIBRATION;
@@ -13,7 +14,7 @@ void CalibrationClass::init() {
   nullValue[1] = 0.0;
   timeSinceLastChange = millis();
   
-  dacGainCompPos = floatFromEeprom(0x00);
+  dacGainCompPos = floatFromEeprom(EA_DAC_GAIN_COMP_POS);
   Serial.print("Read dacGainCompPos from eeprom:");
   if (isnan(dacGainCompPos)) {
     Serial.print("Not defined. Write default value:");
@@ -22,7 +23,7 @@ void CalibrationClass::init() {
   }
   Serial.println(dacGainCompPos,7);
  
-  dacGainCompNeg = floatFromEeprom(0x04);
+  dacGainCompNeg = floatFromEeprom(EA_DAC_GAIN_COMP_NEG);
   Serial.print("Read dacGainCompNeg from eeprom:");
   if (isnan(dacGainCompNeg)) {
     Serial.print("Not defined. Write default value:");
@@ -31,7 +32,29 @@ void CalibrationClass::init() {
   }
   Serial.println(dacGainCompNeg,7);
 
+
+ adcGainCompPos = floatFromEeprom(EA_ADC_GAIN_COMP_POS);
+  Serial.print("Read adcGainCompPos from eeprom:");
+  if (isnan(adcGainCompPos)) {
+    Serial.print("Not defined. Write default value:");
+    adcGainCompPos = 1.0;
+    floatToEeprom(0x00,adcGainCompPos); // write initial default
+  }
+  Serial.println(adcGainCompPos,7);
+ 
+  adcGainCompNeg = floatFromEeprom(EA_ADC_GAIN_COMP_NEG);
+  Serial.print("Read adcGainCompNeg from eeprom:");
+  if (isnan(adcGainCompNeg)) {
+    Serial.print("Not defined. Write default value:");
+    adcGainCompNeg = 1.0;
+    floatToEeprom(0x04,adcGainCompNeg); // write initial default
+  }
+  Serial.println(adcGainCompNeg,7);
+
+
 }
+
+
 
 bool CalibrationClass::toggleCalibratedValues() {
   if (timeSinceLastChange + 100 > millis()){
@@ -169,7 +192,7 @@ float CalibrationClass::floatFromEeprom(int address) {
 
 void CalibrationClass::adjDacGainCompPos(float val) {
   dacGainCompPos += val;
-  floatToEeprom(0x00, dacGainCompPos);
+  floatToEeprom(EA_DAC_GAIN_COMP_POS, dacGainCompPos);
   Serial.print("Dac gain pos comp adjusted to:");
   Serial.println(dacGainCompPos,6);
   Serial.flush();
@@ -181,7 +204,7 @@ float CalibrationClass::getDacGainCompPos() {
 
 void CalibrationClass::adjDacGainCompNeg(float val) {
   dacGainCompNeg += val;
-  floatToEeprom(0x04, dacGainCompNeg);
+  floatToEeprom(EA_DAC_GAIN_COMP_NEG, dacGainCompNeg);
   Serial.print("Dac gain neg comp adjusted to:");
   Serial.println(dacGainCompNeg,6);
   Serial.flush();
@@ -192,17 +215,49 @@ float CalibrationClass::getDacGainCompNeg() {
 }
 
 
+void CalibrationClass::adjAdcGainCompPos(float val) {
+  adcGainCompPos += val;
+  floatToEeprom(EA_ADC_GAIN_COMP_POS, adcGainCompPos);
+  Serial.print("Adc gain pos comp adjusted to:");
+  Serial.println(adcGainCompPos,6);
+  Serial.flush();
+}
+
+float CalibrationClass::getAdcGainCompPos() {
+  return adcGainCompPos;
+}
+
+void CalibrationClass::adjAdcGainCompNeg(float val) {
+  adcGainCompNeg += val;
+  floatToEeprom(EA_ADC_GAIN_COMP_NEG, adcGainCompNeg);
+  Serial.print("Adc gain neg comp adjusted to:");
+  Serial.println(adcGainCompNeg,6);
+  Serial.flush();
+}
+
+float CalibrationClass::getAdcGainCompNeg() {
+  return adcGainCompNeg;
+}
 
 void CalibrationClass::renderCal(int x, int y, float valM, float setM, bool cur, bool reduceDetails) {
 
   GD.ColorRGB(0xaaaaaa);
-  GD.cmd_text(x+10, y + 50, 27, 0, "GAIN ADJUST");
+  GD.cmd_text(x+10, y + 50, 27, 0, "DAC GAIN");
+  GD.ColorRGB(0x000000);
+
+  GD.Tag(BUTTON_DAC_GAIN_COMP_POS_UP);
+  GD.cmd_button(x+10,y+90,100,50,29,0,"UP");
+  GD.Tag(BUTTON_DAC_GAIN_COMP_POS_DOWN);
+  GD.cmd_button(x+10,y+150,100,50,29,0,"DOWN");
+
+  GD.ColorRGB(0xaaaaaa);
+  GD.cmd_text(x+120, y + 50, 27, 0, "ADC GAIN");
   GD.ColorRGB(0x000000);
 
   GD.Tag(BUTTON_ADC_GAIN_COMP_POS_UP);
-  GD.cmd_button(x+10,y+90,100,50,29,0,"UP");
+  GD.cmd_button(x+120,y+90,100,50,29,0,"UP");
   GD.Tag(BUTTON_ADC_GAIN_COMP_POS_DOWN);
-  GD.cmd_button(x+10,y+150,100,50,29,0,"DOWN");
+  GD.cmd_button(x+120,y+150,100,50,29,0,"DOWN");
 
   
   GD.LineWidth(20);
@@ -216,7 +271,7 @@ void CalibrationClass::renderCal(int x, int y, float valM, float setM, bool cur,
   float max_meas_value = meas_adc[adc_cal_points-1];
 
   float pixelsPrVolt = 200; // pixel width pr volt
-  float x_null_position = 400; // x position for 0V
+  float x_null_position = 550; // x position for 0V
   float correction_display_factor = 100000.0; // TODO: Make it show as ppm ?  uV ?
 
   // correction graph

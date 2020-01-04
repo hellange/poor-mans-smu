@@ -1,0 +1,9 @@
+#ifndef EEPROM_ADR_H
+#define EEPROM_ADR_H
+
+#define EA_DAC_GAIN_COMP_POS 0x00
+#define EA_DAC_GAIN_COMP_NEG 0x04
+#define EA_ADC_GAIN_COMP_POS 0x08
+#define EA_ADC_GAIN_COMP_NEG 0x012
+
+#endif EEPROM_ADR_H

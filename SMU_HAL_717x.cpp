@@ -142,9 +142,12 @@ float ADCClass::measureMilliVoltage() {
     if (v>0) {
       v = v*1.00039; //gain on positive
       v = v*2.0; // divide by 2 in measurement circuit
+      v = v * V_CALIBRATION.getAdcGainCompPos();
     } else {
       v = v*1.00156; // gain on negative
       v = v*2.0; // divide by 2 in measurement circuit
+      v = v * V_CALIBRATION.getAdcGainCompNeg();
+
     }
   }
 
