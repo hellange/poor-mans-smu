@@ -36,7 +36,7 @@ public:
   float adc_nonlinear_compensation(float milliVolt);
   void toggleNullValue(float v, CURRENT_RANGE current_range);
   bool nullValueIsSet(CURRENT_RANGE current_range);
-  void renderCal(int x, int y, float valM, float setM, bool cur);
+  void renderCal(int x, int y, float valM, float setM, bool cur, bool reduceDetails);
   void init();
 };
 

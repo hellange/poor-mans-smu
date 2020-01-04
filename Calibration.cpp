@@ -193,7 +193,7 @@ float CalibrationClass::getDacGainCompNeg() {
 
 
 
-void CalibrationClass::renderCal(int x, int y, float valM, float setM, bool cur) {
+void CalibrationClass::renderCal(int x, int y, float valM, float setM, bool cur, bool reduceDetails) {
 
   GD.ColorRGB(0xaaaaaa);
   GD.cmd_text(x+10, y + 50, 27, 0, "GAIN ADJUST");
@@ -231,10 +231,17 @@ void CalibrationClass::renderCal(int x, int y, float valM, float setM, bool cur)
   GD.ColorRGB(0x00ff00);
   GD.Begin(LINE_STRIP);
   GD.ColorA(100);
-  for (int i=0;i<adc_cal_points;i++) {
-      //float diff = set_adc[i] - meas_adc[i];
-      int xv = pixelsPrVolt *(set_adc[i] / max_set_value);
-      GD.Vertex2ii(x+x_null_position+xv, y + 100);
+  if (reduceDetails){
+    int xv1 = pixelsPrVolt *(set_adc[0] / max_set_value);
+    int xv2 = pixelsPrVolt *(set_adc[adc_cal_points-1] / max_set_value);
+    GD.Vertex2ii(x+x_null_position+xv1,y+100);
+    GD.Vertex2ii(x+x_null_position+xv2,y+100);
+  } else {
+    for (int i=0;i<adc_cal_points;i++) {
+        //float diff = set_adc[i] - meas_adc[i];
+        int xv = pixelsPrVolt *(set_adc[i] / max_set_value);
+        GD.Vertex2ii(x+x_null_position+xv, y + 100);
+    }
   }
 
   // voltage labels

@@ -737,7 +737,7 @@ void showWidget(int y, int widgetNo, int scroll) {
 
         float rawM = V_FILTERS.mean;
         float setM = SMU[0].getSetValuemV();
-        V_CALIBRATION.renderCal(scroll,yPos, rawM, setM, false);
+        V_CALIBRATION.renderCal(scroll,yPos, rawM, setM, false, reduceDetails());
       }
       
   }
