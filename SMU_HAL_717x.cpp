@@ -226,7 +226,7 @@ int ADCClass::initDAC(){
 uint32_t sourcevoltage_to_code_adj(float dac_voltage, float min_output, float max_output, bool serialOut){
 
   dac_voltage = dac_voltage * 5.0/4.096; // using 4.096 ref instead of 5.0
-  dac_voltage = dac_voltage - 0.000825;
+  dac_voltage = dac_voltage - 0.000825; // adjusting offset to null
   if (dac_voltage > 0) {
     // positive
     dac_voltage = dac_voltage * 1.00103; // gain
@@ -244,10 +244,13 @@ uint32_t sourcevoltage_to_code_adj(float dac_voltage, float min_output, float ma
     dac_voltage = dac_voltage + 0.002725 + 0.000045; // additional offset (measured when connected to amplifier board)
     if (dac_voltage>0) {
       // positive
-      dac_voltage = dac_voltage / 2.00265; // There is a apprx. /2 on the sense input in addition to gain
+      dac_voltage = dac_voltage / 2.00245; // There is a apprx. /2 on the sense input in addition to gain
+      dac_voltage = dac_voltage * V_CALIBRATION.getDacGainCompPos();
     } else {
       // negative
       dac_voltage = dac_voltage / 2.00048; // There is a apprx. /2 on the sense input in addition to gain 
+      dac_voltage = dac_voltage * V_CALIBRATION.getDacGainCompNeg();
+
     }
     dac_voltage = - dac_voltage; // analog part requires inverted input
   }

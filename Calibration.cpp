@@ -2,6 +2,8 @@
 #include "Arduino.h"
 #include <SPI.h>
 #include "GD2.h"
+#include "tags.h"
+#include <EEPROM.h>
 
 CalibrationClass V_CALIBRATION;
 CalibrationClass C_CALIBRATION;
@@ -10,7 +12,25 @@ void CalibrationClass::init() {
   nullValue[0] = 0.0;
   nullValue[1] = 0.0;
   timeSinceLastChange = millis();
+  
+  dacGainCompPos = floatFromEeprom(0x00);
+  Serial.print("Read dacGainCompPos from eeprom:");
+  if (isnan(dacGainCompPos)) {
+    Serial.print("Not defined. Write default value:");
+    dacGainCompPos = 1.0;
+    floatToEeprom(0x00,dacGainCompPos); // write initial default
+  }
+  Serial.println(dacGainCompPos,7);
  
+  dacGainCompNeg = floatFromEeprom(0x04);
+  Serial.print("Read dacGainCompNeg from eeprom:");
+  if (isnan(dacGainCompNeg)) {
+    Serial.print("Not defined. Write default value:");
+    dacGainCompNeg = 1.0;
+    floatToEeprom(0x04,dacGainCompNeg); // write initial default
+  }
+  Serial.println(dacGainCompNeg,7);
+
 }
 
 bool CalibrationClass::toggleCalibratedValues() {
@@ -118,7 +138,69 @@ float CalibrationClass::dac_nonlinear_compensation(float milliVolt) {
   return milliVolt;  
 }
 
+void CalibrationClass::floatToEeprom(int address, float f) {
+  Serial.print("Trying to convert float:");
+  Serial.print(f,4);
+  Serial.println(" to bytes for eeprom storage.");
+
+  cvt eepromfloat;
+  eepromfloat.val = f;
+
+  EEPROM.write(address,eepromfloat.b[0]);
+  EEPROM.write(address+1,eepromfloat.b[1]); 
+  EEPROM.write(address+2,eepromfloat.b[2]); 
+  EEPROM.write(address+3,eepromfloat.b[3]); 
+  Serial.println(eepromfloat.b[0]);
+    Serial.println(eepromfloat.b[1]);
+  Serial.println(eepromfloat.b[2]);
+  Serial.println(eepromfloat.b[3]);
+
+}
+
+float CalibrationClass::floatFromEeprom(int address) {
+    cvt eepromfloat;
+
+  eepromfloat.b[0] = EEPROM.read(address);
+  eepromfloat.b[1] = EEPROM.read(address+1);
+  eepromfloat.b[2] = EEPROM.read(address+2);
+  eepromfloat.b[3] = EEPROM.read(address+3);
+  return eepromfloat.val;
+}
+
+void CalibrationClass::adjDacGainCompPos(float val) {
+  dacGainCompPos += val;
+  floatToEeprom(0x00, dacGainCompPos);
+  Serial.print("Dac gain pos comp adjusted to:");
+  Serial.println(dacGainCompPos,6);
+  Serial.flush();
+}
+
+float CalibrationClass::getDacGainCompPos() {
+  return dacGainCompPos;
+}
+
+void CalibrationClass::adjDacGainCompNeg(float val) {
+  dacGainCompNeg += val;
+  floatToEeprom(0x04, dacGainCompNeg);
+  Serial.print("Dac gain neg comp adjusted to:");
+  Serial.println(dacGainCompNeg,6);
+  Serial.flush();
+}
+
+float CalibrationClass::getDacGainCompNeg() {
+  return dacGainCompNeg;
+}
+
+
+
 void CalibrationClass::renderCal(int x, int y, float valM, float setM, bool cur) {
+
+   GD.Tag(BUTTON_ADC_GAIN_COMP_POS_UP);
+  GD.cmd_button(x+100,y+110,100,50,29,0,"UP");
+  GD.Tag(BUTTON_ADC_GAIN_COMP_POS_DOWN);
+  GD.cmd_button(x+220,y+110,100,50,29,0,"DOWN");
+
+  
   GD.LineWidth(20);
   GD.Begin(LINE_STRIP);
   GD.ColorA(255);

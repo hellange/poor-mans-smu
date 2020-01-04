@@ -189,7 +189,7 @@ void setup()
   // attachInterrupt(2, handleSampling, CHANGE);
 
 #ifdef SAMPLING_BY_INTERRUPT
-  myTimer.begin(handleSampling, 100); // in microseconds
+  myTimer.begin(handleSampling, 50); // in microseconds
   SPI.usingInterrupt(myTimer);
 #endif
 } 
@@ -449,7 +449,7 @@ void renderExperimental(int x, int y, float valM, float setM, bool cur) {
     deviationInPercent = 100;
   }
   float degrees = -deviationInPercent * 700.0;
-  renderAnalogGauge(x+90,y,240, degrees, deviationInPercent, "Deviation from SET");
+  renderAnalogGauge(x+90,y-20,240, degrees, deviationInPercent, "Deviation from SET");
 
   GD.ColorRGB(0x000000);
   GD.Tag(BUTTON_SAMPLE_RATE_5);
@@ -463,6 +463,8 @@ void renderExperimental(int x, int y, float valM, float setM, bool cur) {
   GD.Tag(BUTTON_SAMPLE_RATE_100);
   GD.cmd_button(x-50,y+100,95,40,29,0,"100Hz");
 
+ 
+  
   GD.Tag(0);
   
 }
@@ -748,7 +750,7 @@ bool reduceDetails() {
 
 
 int gestureDetected = GEST_NONE;
-int scrollSpeed = 75;
+int scrollSpeed = 100;
 void handleWidgetScrollPosition() {
   if (gestureDetected == GEST_MOVE_LEFT) {
 //    if (activeWidget == noOfWidgets -1) {
@@ -1035,7 +1037,9 @@ static void handleSampling() {
    int dataR = SMU[0].dataReady();
       //Serial.print("DataReady:");  
       //Serial.println(dataR, HEX);  
-
+  if (dataR == -1) {
+    return;
+  }
   if (dataR == -99) {
     Serial.println("DONT USE SAMPLE!");  
   } 
@@ -1177,7 +1181,7 @@ helgetimer = millis();
     } else if (tag == BUTTON_SAMPLE_RATE_5 or tag == BUTTON_SAMPLE_RATE_20 or tag == BUTTON_SAMPLE_RATE_100) { //TODO: Change name
       if (timeSinceLastChange + 500 < millis()){
         timeSinceLastChange = millis();
-      }
+      } 
      
       if (tag == BUTTON_SAMPLE_RATE_5) {
         SMU[0].setSamplingRate(5);
@@ -1189,7 +1193,41 @@ helgetimer = millis();
         SMU[0].setSamplingRate(100);
       }
 
+    } 
+    
+    else if (tag == BUTTON_ADC_GAIN_COMP_POS_UP) {
+       if (timeSinceLastChange + 500 < millis()){
+        timeSinceLastChange = millis();
+      } 
+       float mv = SOURCE_DIAL.getMv();
+       if (mv < 0) {
+          V_CALIBRATION.adjDacGainCompNeg(0.000001);
+       } else {
+          V_CALIBRATION.adjDacGainCompPos(0.000001);
+       }
+
+       //if (operationType == SOURCE_VOLTAGE) {
+       GD.__end();
+       if (SMU[0].fltSetCommitVoltageSource(mv, true)) printError(_PRINT_ERROR_VOLTAGE_SOURCE_SETTING);
+       GD.resume();
+      
+    } else if (tag == BUTTON_ADC_GAIN_COMP_POS_DOWN) {
+       if (timeSinceLastChange + 500 < millis()){
+        timeSinceLastChange = millis();
+      } 
+       float mv = SOURCE_DIAL.getMv();
+         if (mv < 0) {
+          V_CALIBRATION.adjDacGainCompNeg(-0.000001);
+       } else {
+          V_CALIBRATION.adjDacGainCompPos(-0.000001);
+       }
+       //if (operationType == SOURCE_VOLTAGE) {
+       GD.__end();
+       if (SMU[0].fltSetCommitVoltageSource(mv, true)) printError(_PRINT_ERROR_VOLTAGE_SOURCE_SETTING);
+       GD.resume();
+       
     }
+    
     // TODO: don't need to check buttons for inactive menus or functions...
     MAINMENU.handleButtonAction(tag);
     FUNCTION_PULSE.handleButtonAction(tag);

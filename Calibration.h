@@ -2,6 +2,11 @@
 
 class CalibrationClass {
 
+union cvt {
+float val;
+unsigned char b[4];
+};
+
   private:
   unsigned long timeSinceLastChange;
 
@@ -11,10 +16,18 @@ class CalibrationClass {
 
   float set_dac[100]  = {-5000.00, -4000.00, -3000.00, -2000.00, -1000.00, 0.00, 5.00, 50.00, 100.00, 500.00, 1000.00, 2000.00, 3000.00, 3500.00, 4000.00, 4200.00, 4500.00, 5000.00, 6000.00, 7000.00, 8000.00, 9000.00, 10000.00};
   // actual output
-  float meas_dac[100] = {-5000.00, -3999.98, -2999.90, -2000.14, -1000.07, 0.00, 4.95, 49.95,  99.95, 500.00, 0999.95, 1999.90, 3000.10, 3500.70, 4000.20, 4200.25, 4500.20, 5000.20, 6000.10, 7000.00, 8000.00, 9000.00, 10000.00};
+  float meas_dac[100] = {-5000.00, -3999.98, -2999.90, -2000.14, -1000.07, 0.00, 4.95, 49.95,  99.95, 500.00, 0999.95, 1999.90, 3000.10, 3500.70, 4000.20, 4200.25, 4500.20, 5000.20, 6000.25, 7000.25, 8000.25, 9000.25, 10000.00};
   int dac_cal_points = 22;
-
+  float dacGainCompPos;
+  float dacGainCompNeg;
+  //cvt eepromfloat;
 public:
+  void floatToEeprom(int address, float f);
+  float floatFromEeprom(int address);
+  float getDacGainCompPos();
+  void adjDacGainCompPos(float val);
+  float getDacGainCompNeg();
+  void adjDacGainCompNeg(float val);
   float nullValue[2];
   bool useCalibratedValues = true;
   

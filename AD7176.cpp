@@ -244,6 +244,8 @@ int AD7176_dataReady()
     if(ret < 0) {
       Serial.print("!!! Register read error. Returned:");
       Serial.println(ret, DEC);
+          Serial.flush();
+
       return -99;
     }
 
@@ -256,9 +258,10 @@ int AD7176_dataReady()
       // Is this when overflow ?  
       Serial.println("!!! STATUS_REG_ADC_ERR. Returned:");
       Serial.println(stat, BIN);
+          Serial.flush();
+
       return -98;
     } 
-    Serial.flush();
     
     if ((stat & STATUS_REG_CRC_ERR) > 0x01) {
       Serial.println("!!! STATUS_REG_CRC_ERR. Returned:"); 

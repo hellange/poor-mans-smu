@@ -6,6 +6,8 @@ class FunctionPulseClass {
   void (*closedFn)(int type);
   IntervalTimer myPulseTimer;
 
+
+
   private:
     ADCClass smu;
     static float measuredLow;
