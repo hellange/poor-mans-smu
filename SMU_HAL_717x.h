@@ -25,10 +25,9 @@ class ADCClass {
     float VREF = 5.0; // 2.500; //2.5357;             
     float VFSR = VREF; 
     CURRENT_RANGE current_range = AMP1;
-    uint32_t sourcecurrent_to_code_adj(float dac_voltage, float min_output, float max_output, bool serialOut);
     int samplingRate = 5;
     int oldSamplingRate = 5;
-        void writeSamplingRate();
+    void writeSamplingRate();
 
   public:
 

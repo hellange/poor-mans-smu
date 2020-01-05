@@ -226,8 +226,19 @@ int ADCClass::initDAC(){
  */
 
 
-uint32_t sourcevoltage_to_code_adj(float dac_voltage, float min_output, float max_output, bool serialOut){
 
+
+int8_t ADCClass::fltSetCommitVoltageSource(float milliVolt, bool dynamicRange) {
+  float v = milliVolt / 1000.0;
+  setValueV = v; // use volt. TODO: change to millivolt ?
+
+  float mv = milliVolt;
+  if (V_CALIBRATION.useCalibratedValues == true) {
+    mv = V_CALIBRATION.dac_nonlinear_compensation(mv);
+  }
+   
+  float dac_voltage = mv / 1000.0;  // DAC code operates with V instead of mV 
+  
   dac_voltage = dac_voltage * 5.0/4.096; // using 4.096 ref instead of 5.0
   dac_voltage = dac_voltage - 0.000825; // adjusting offset to null
   if (dac_voltage > 0) {
@@ -255,13 +266,54 @@ uint32_t sourcevoltage_to_code_adj(float dac_voltage, float min_output, float ma
       dac_voltage = dac_voltage * V_CALIBRATION.getDacGainCompNeg();
 
     }
-    dac_voltage = - dac_voltage; // analog part requires inverted input
-  }
 
-  return LTC2758_voltage_to_code(dac_voltage, min_output, max_output, serialOut);
+    //SPAN 0 = 0 to +5V
+    //     1 = 0 to +10V
+    //     2 = -5 to +5 V
+    //     3 = -10 to +10V
+    //     4 = -2.5 to +2.5V
+    //     5 = -2.5 to + 7.5V
+    uint32_t choice = 3;
+    float DAC_RANGE_LOW = -10.0;
+    float DAC_RANGE_HIGH = 10.0;
+    
+    // NOTE: Causes spike when changing range during ramp/pulse !!!!
+    //       Recreate by pulse with high and low in different ranges (ex 6.0V - 1.0V)
+    // NOTE2: Changing range might require calibration for each range... How many of the available ranges should I use ?
+    if (dynamicRange) {
+      if (abs(dac_voltage) <=2.0) {   // using 4.096 ref. Can move to 2.4 if reference voltage is 5v.
+        choice = 4;
+        DAC_RANGE_LOW = -2.5;
+        DAC_RANGE_HIGH = 2.5;
+      } else if (abs(dac_voltage) <=4.0) {   // using 4.096 ref. Can move to 4.9 if reference voltage is 5v.
+        choice = 2;
+        DAC_RANGE_LOW = -5.0;
+        DAC_RANGE_HIGH = 5.0;
+      }
+    }
+    uint32_t span = (uint32_t)(choice << 2);
+    LTC2758_write(LTC2758_CS, LTC2758_WRITE_SPAN_DAC, 0, span);
+    
+    dac_voltage = - dac_voltage; // amp board requires inverted input
+
+    bool serialOut = false;
+    float v_adj = LTC2758_voltage_to_code(dac_voltage, DAC_RANGE_LOW, DAC_RANGE_HIGH, serialOut);
+    
+    LTC2758_write(LTC2758_CS, LTC2758_WRITE_CODE_UPDATE_DAC, 0, v_adj); 
+
+    return setValueV;
+  }
 }
 
-uint32_t ADCClass::sourcecurrent_to_code_adj(float dac_voltage, float min_output, float max_output, bool serialOut){
+ 
+ 
+ int8_t ADCClass::fltSetCommitCurrentSource(float milliVolt) {
+  float v = milliVolt / 1000.0;
+  setValueV = v; // use volt. TODO: change to millivolt ?
+
+  float mv = milliVolt;
+  
+  float dac_voltage = mv / 1000.0;  // DAC code operates with V instead of mV    
 
   dac_voltage = dac_voltage * 5.0/4.096; // using 4.096 ref instead of 5.0
 
@@ -281,14 +333,14 @@ uint32_t ADCClass::sourcecurrent_to_code_adj(float dac_voltage, float min_output
       dac_voltage = dac_voltage + 0.0008; // offset
       dac_voltage = dac_voltage * 1.137;
       Serial.println("Calculating current to set for 1A range");
-            Serial.flush();
+      Serial.flush();
 
     } else if (current_range == MILLIAMP10) {
       dac_voltage = dac_voltage * 1000.0; // with 100ohm shunt and x10 amplifier: 1mA range is set by 1000mV
       dac_voltage = dac_voltage + 0.0010; // offset
       dac_voltage = dac_voltage * 0.975;
       Serial.println("Calculating current to set for 100mA range");
-            Serial.flush();
+      Serial.flush();
 
     } else {
       Serial.print("ERROR: Unknown current range ");
@@ -300,61 +352,6 @@ uint32_t ADCClass::sourcecurrent_to_code_adj(float dac_voltage, float min_output
     dac_voltage = - dac_voltage; // analog part requires inverted input
   }
 
-  return LTC2758_voltage_to_code(dac_voltage, min_output, max_output, serialOut);
-}
-
-int8_t ADCClass::fltSetCommitVoltageSource(float milliVolt, bool dynamicRange) {
-  float v = milliVolt / 1000.0;
-  setValueV = v; // use volt. TODO: change to millivolt ?
-
-  float mv = milliVolt;
-  if (V_CALIBRATION.useCalibratedValues == true) {
-    mv = V_CALIBRATION.dac_nonlinear_compensation(mv);
-  }
-
-  v = mv / 1000.0;
-  
-  //SPAN 0 = 0 to +5V
-  //     1 = 0 to +10V
-  //     2 = -5 to +5 V
-  //     3 = -10 to +10V
-  //     4 = -2.5 to +2.5V
-  //     5 = -2.5 to + 7.5V
-  uint32_t choice = 3;
-  float DAC_RANGE_LOW = -10.0;
-  float DAC_RANGE_HIGH = 10.0;
-
-  // TODO: Causes spike when changing range during ramp/pulse !!!!
-  //       Recreate by pulse with high and low in different ranges (ex 2.5V - 1.0V)
-  //       Add possibility to turn this on and off depending on what function you're in !
-  if (dynamicRange) {
-    if (abs(v) <2.2) {   // can move to 2.5 if reference voltage is 5v
-      choice = 4;
-      DAC_RANGE_LOW = -2.5;
-      DAC_RANGE_HIGH = 2.5;
-    }
-  }
-  
-  uint32_t span = (uint32_t)(choice << 2);
-
-  LTC2758_write(LTC2758_CS, LTC2758_WRITE_SPAN_DAC, 0, span);
-
-  float v_adj = sourcevoltage_to_code_adj(v, DAC_RANGE_LOW, DAC_RANGE_HIGH, false);
-  LTC2758_write(LTC2758_CS, LTC2758_WRITE_CODE_UPDATE_DAC, 0, v_adj); 
-
- return setValueV;
- }
-
-
- 
- 
- int8_t ADCClass::fltSetCommitCurrentSource(float milliVolt) {
-  float v = milliVolt / 1000.0;
-  setValueV = v; // use volt. TODO: change to millivolt ?
-
-  float mv = milliVolt;
-  v = mv / 1000.0;
-  
   //SPAN 0 = 0 to +5V
   //     1 = 0 to +10V
   //     2 = -5 to +5 V
@@ -375,7 +372,9 @@ int8_t ADCClass::fltSetCommitVoltageSource(float milliVolt, bool dynamicRange) {
 
   LTC2758_write(LTC2758_CS, LTC2758_WRITE_SPAN_DAC, 0, span);
 
-  float v_adj = sourcecurrent_to_code_adj(v, DAC_RANGE_LOW, DAC_RANGE_HIGH, false);
+  bool serialOut = false;
+  float v_adj = LTC2758_voltage_to_code(dac_voltage, DAC_RANGE_LOW, DAC_RANGE_HIGH, serialOut);
+
   LTC2758_write(LTC2758_CS, LTC2758_WRITE_CODE_UPDATE_DAC, 0, v_adj); 
 
   return setValueV;
