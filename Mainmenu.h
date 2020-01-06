@@ -2,15 +2,15 @@
 
 class MainMenuClass {
 
-  void (*closedMainMenuFn)(int type);
+  void (*closedMainMenuFn)(FUNCTION_TYPE type);
   
   private:
     int scrollMainMenu = 0;
-    int functionType = SOURCE_DC;
+    FUNCTION_TYPE functionType = SOURCE_DC;
   public:
     bool active = false;
     int scrollMainMenuDir = 0;
-    void open(void (*closedMenuFn)(int type));
+    void open(void (*closedMenuFn)(FUNCTION_TYPE type));
     void close();
     void handleButtonAction(int tag);
     void render();

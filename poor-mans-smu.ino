@@ -72,7 +72,7 @@ float MAX_CURRENT_1A_RANGE = 500.0;
 OPERATION_TYPE operationType = SOURCE_VOLTAGE;
 
 
-int functionType = SOURCE_DC;
+FUNCTION_TYPE functionType = SETTINGS;//SOURCE_DC;
 
 OPERATION_TYPE getOperationType() {
   if (digitalRead(3) == HIGH) {
@@ -870,7 +870,7 @@ void renderMainHeader() {
   GD.Vertex2ii(799, y);
   GD.ColorA(255);
 }
-void renderUpperDisplay(int operationType, int functionType) {
+void renderUpperDisplay(OPERATION_TYPE operationType, FUNCTION_TYPE functionType) {
 
   int x = 0;
   int y = 32;
@@ -1142,7 +1142,7 @@ void loopSettings() {
     //SMU[0].sweep(5.00, -5.00, 0.1, 5000);
   }
   //handleAutoRange();
-  GD.__end();
+  //GD.__end();
 
   disable_ADC_DAC_SPI_units();
   GD.resume();
@@ -1185,13 +1185,6 @@ void loopMain()
   disable_ADC_DAC_SPI_units();
   GD.resume();
 
-//  if (operationType == SETTINGS) {
-//    renderMainHeader();
-//    handleMenuScrolldown();
-//    return;
-//  }
-
-  
   if (!gestureDetected) {
     int tag = GD.inputs.tag;
 
@@ -1386,16 +1379,16 @@ void loopMain()
   GD.__end();
 }
 
-void closedPulse(int t) {
+void closedPulse(OPERATION_TYPE t) {
   
 }
 
-void closedSweep(int t) {
+void closedSweep(OPERATION_TYPE t) {
   
 }
 
 
-void closeMainMenuCallback(int functionType_) {
+void closeMainMenuCallback(FUNCTION_TYPE functionType_) {
   
   Serial.print("Closed main menu callback. Selected function:");
   Serial.println(functionType_);

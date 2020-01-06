@@ -3,7 +3,7 @@
 
 class FunctionPulseClass {
 
-  void (*closedFn)(int type);
+  void (*closedFn)(OPERATION_TYPE type);
   IntervalTimer myPulseTimer;
 
 
@@ -27,7 +27,7 @@ class FunctionPulseClass {
     static float min;
   static void sourcePulse();
     void init(ADCClass& smu);
-    void open(OPERATION_TYPE operationType,void (*closedFn)(int type));
+    void open(OPERATION_TYPE operationType,void (*closedFn)(OPERATION_TYPE type));
     void close();
     void handleButtonAction(int inputTag);
     static void render(int x, int y);

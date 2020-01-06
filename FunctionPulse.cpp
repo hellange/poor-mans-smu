@@ -34,7 +34,7 @@ void FunctionPulseClass::init(ADCClass& smu_) {
   pulseTimer = millis();
 
 }
-void FunctionPulseClass::open(OPERATION_TYPE operationType_, void (*closedFn_)(int type)) {
+void FunctionPulseClass::open(OPERATION_TYPE operationType_, void (*closedFn_)(OPERATION_TYPE type)) {
   closedFn = closedFn_;
   operationType = operationType_;
   smu.setCurrentRange(AMP1);
@@ -50,7 +50,7 @@ void FunctionPulseClass::open(OPERATION_TYPE operationType_, void (*closedFn_)(i
 }
 
 void FunctionPulseClass::close() {
-      closedFn(999); // do we need this ?
+      closedFn(operationType); // do we need this ?
       myPulseTimer.end();
 }
 

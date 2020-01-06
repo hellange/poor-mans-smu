@@ -3,7 +3,7 @@
 
 class FunctionSweepClass {
 
-  void (*closedFn)(int type);
+  void (*closedFn)(OPERATION_TYPE type);
   
   private:
     ADCClass smu;
@@ -16,7 +16,7 @@ class FunctionSweepClass {
 
   public:
     void init(ADCClass& smu);
-    void open(OPERATION_TYPE operationType, void (*closedFn)(int type));
+    void open(OPERATION_TYPE operationType, void (*closedFn)(OPERATION_TYPE type));
     void close();
     void handleButtonAction(int inputTag);
     void render(int x, int y);

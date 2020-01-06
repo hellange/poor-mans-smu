@@ -8,7 +8,7 @@
 
 MainMenuClass MAINMENU;
 
-void MainMenuClass::open(void (*closedMenuFn)(int type)) {
+void MainMenuClass::open(void (*closedMenuFn)(FUNCTION_TYPE type)) {
   active = true;
   closedMainMenuFn = closedMenuFn;
   scrollMainMenuDir = 1;

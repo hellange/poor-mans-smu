@@ -16,14 +16,14 @@ void FunctionSweepClass::init(ADCClass& smu_) {
 //TODO: Add open and close mechanism to initialize and cleanup when changing functions
 
 
-void FunctionSweepClass::open(OPERATION_TYPE operationType_, void (*closedFn_)(int type)) {
+void FunctionSweepClass::open(OPERATION_TYPE operationType_, void (*closedFn_)(OPERATION_TYPE type)) {
   closedFn = closedFn_;
   pulseTimer = millis();
   operationType = operationType_;
 }
 
 void FunctionSweepClass::close() {
-      closedFn(999); 
+      closedFn(operationType); 
 }
 
 void FunctionSweepClass::handleButtonAction(int inputTag) {
