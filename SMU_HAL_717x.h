@@ -35,6 +35,7 @@ class ADCClass {
     int init();
     int initADC();
     int initDAC();
+ 
     int8_t fltSetCommitVoltageSource(float fVoltage, bool dynamicRange);
     int8_t fltSetCommitCurrentSource(float fVoltage);
     int8_t fltSetCommitLimit(float fCurrent, int8_t up_down_both);

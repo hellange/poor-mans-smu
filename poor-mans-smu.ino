@@ -1336,22 +1336,20 @@ void closeSourceDCCallback(int set_or_limit, bool cancel) {
   GD.__end();
   disable_ADC_DAC_SPI_units();
   if (set_or_limit == SET) {
-    float mv = SOURCE_DIAL.getMv();
+    float mv = SOURCE_DIAL.getMv(); // TODO: get current value from another place ?
     if (operationType == SOURCE_VOLTAGE) {
        if (SMU[0].fltSetCommitVoltageSource(mv, true)) printError(_PRINT_ERROR_VOLTAGE_SOURCE_SETTING);
     } else {
 
       // auto current range when sourcing current
-      if (abs(mv) < 3.0) {
+      if (abs(mv) < 4.0) {
         current_range = MILLIAMP10;
         SMU[0].setCurrentRange(current_range);
       } else {
         current_range = AMP1;
         SMU[0].setCurrentRange(current_range);
       }
-                  if (SMU[0].fltSetCommitCurrentSource(mv)) printError(_PRINT_ERROR_VOLTAGE_SOURCE_SETTING);
-
-      //delayMicroseconds(1);
+      if (SMU[0].fltSetCommitCurrentSource(mv)) printError(_PRINT_ERROR_VOLTAGE_SOURCE_SETTING);
     }
   }
   if (set_or_limit == LIMIT) {

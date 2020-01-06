@@ -77,6 +77,8 @@ void ADCClass::setSamplingRate(int value) {
   // I tried to set the register directly but ended up with problems (halt, stops, exception etc.) probably due to interrupt stuff...
   // TODO: Figure out a better way...
 }
+
+
 void ADCClass::writeSamplingRate() {
   if (oldSamplingRate == samplingRate) {
      return;
@@ -134,7 +136,7 @@ float ADCClass::measureMilliVoltage() {
   v=v-VREF*1000.0;
 
   v = v / 0.8;  // funnel amplifier
-  v = V_CALIBRATION.adc_nonlinear_compensation(v);
+  //v = V_CALIBRATION.adc_nonlinear_compensation(v);
   
   // DONT INCLUDE THESE ADJUSTMENTS WHEN TESTING ONLY DAC/ADC BOARD !!!!
   if (full_board == true) {
@@ -150,6 +152,7 @@ float ADCClass::measureMilliVoltage() {
 
     }
   }
+  v = V_CALIBRATION.adc_nonlinear_compensation(v);
 
   writeSamplingRate();
   return v;
@@ -285,7 +288,8 @@ int8_t ADCClass::fltSetCommitVoltageSource(float milliVolt, bool dynamicRange) {
         choice = 4;
         DAC_RANGE_LOW = -2.5;
         DAC_RANGE_HIGH = 2.5;
-      } else if (abs(dac_voltage) <=4.0) {   // using 4.096 ref. Can move to 4.9 if reference voltage is 5v.
+      } 
+      else if (abs(dac_voltage) <=4.0) {   // using 4.096 ref. Can move to 4.9 if reference voltage is 5v.
         choice = 2;
         DAC_RANGE_LOW = -5.0;
         DAC_RANGE_HIGH = 5.0;
