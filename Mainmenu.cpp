@@ -30,12 +30,15 @@ void MainMenuClass::handleButtonAction(int inputTag) {
     } else if (inputTag == MENU_BUTTON_SOURCE_SWEEP) {
       functionType = SOURCE_SWEEP;
       close();
+    } else if (inputTag == MENU_BUTTON_SETTINGS) {
+      functionType = SETTINGS;
+      close();
     }
 }
 
 void MainMenuClass::render() {
-
-    scrollMainMenu = scrollMainMenu + scrollMainMenuDir*25;
+    int scrollSpeed = 40;
+    scrollMainMenu = scrollMainMenu + scrollMainMenuDir*scrollSpeed;
     if (scrollMainMenu > 350) {
       scrollMainMenu = 350;
       scrollMainMenuDir = 0;
@@ -74,6 +77,8 @@ void MainMenuClass::render() {
           GD.Tag(MENU_BUTTON_SOURCE_DC);
         } else if (y==2 && x==0) {
           GD.Tag(MENU_BUTTON_SOURCE_SWEEP);
+        } else if (y==2 && x==2) {
+          GD.Tag(MENU_BUTTON_SETTINGS);
         }
         GD.cmd_button(70+(buttonWidth+30)*x,scrollMainMenu-280+(buttonHeight+20)*y,buttonWidth,buttonHeight,28,0,text[y][x]);
       }

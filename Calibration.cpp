@@ -323,10 +323,10 @@ void CalibrationClass::renderCal(int x, int y, float valM, float setM, bool cur,
   GD.Begin(LINE_STRIP);
   GD.ColorA(100);
   if (reduceDetails){
-    int xv1 = pixelsPrVolt *(set_adc[0] / max_set_value);
-    int xv2 = pixelsPrVolt *(set_adc[adc_cal_points-1] / max_set_value);
-    GD.Vertex2ii(x+x_null_position+xv1,y+100);
-    GD.Vertex2ii(x+x_null_position+xv2,y+100);
+//    int xv1 = pixelsPrVolt *(set_adc[0] / max_set_value);
+//    int xv2 = pixelsPrVolt *(set_adc[adc_cal_points-1] / max_set_value);
+//    GD.Vertex2ii(x+x_null_position+xv1,y+100);
+//    GD.Vertex2ii(x+x_null_position+xv2,y+100);
   } else {
     for (int i=0;i<adc_cal_points;i++) {
         //float diff = set_adc[i] - meas_adc[i];
@@ -336,6 +336,7 @@ void CalibrationClass::renderCal(int x, int y, float valM, float setM, bool cur,
   }
 
   // voltage labels
+  if (!reduceDetails) {
   for (int i=min_set_value/1000.0;i<=max_set_value/1000.0;i=i+2) {
       int xv = i* pixelsPrVolt/(int)(max_set_value/1000.0);
       GD.cmd_text(x+x_null_position+xv-10, y + 200, 27, 0, i<0?"-":" ");
@@ -346,7 +347,7 @@ void CalibrationClass::renderCal(int x, int y, float valM, float setM, bool cur,
         GD.cmd_number(x+x_null_position+xv, y + 200, 27, 1, abs(i));
         GD.cmd_text(x+x_null_position+xv+10, y + 200, 27, 0, "V");
       }
-
+  }
   }
   
 }

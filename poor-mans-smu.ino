@@ -449,8 +449,9 @@ void renderExperimental(int x, int y, float valM, float setM, bool cur) {
     deviationInPercent = 100;
   }
   float degrees = -deviationInPercent * 700.0;
-  renderAnalogGauge(x+90,y-20,240, degrees, deviationInPercent, "Deviation from SET");
-
+  if (!reduceDetails()) {
+    renderAnalogGauge(x+90,y-20,240, degrees, deviationInPercent, "Deviation from SET");
+  }
   GD.ColorRGB(0x000000);
   GD.Tag(BUTTON_SAMPLE_RATE_5);
   GD.cmd_button(x-50,y,95,40,29,0,"5Hz");
@@ -840,12 +841,7 @@ void handleMenuScrolldown(){
  
 }
 
-
-void renderUpperDisplay(int operationType, int functionType) {
-
-  int x = 0;
-  int y = 2;
- 
+void renderMainHeader() {
   // register screen for gestures on top half, required for pulling menu from top
   GD.Tag(GESTURE_AREA_HIGH);
   GD.Begin(RECTS);
@@ -862,10 +858,10 @@ void renderUpperDisplay(int operationType, int functionType) {
   
   GD.ColorA(255);
   GD.ColorRGB(0xdddddd);
-  GD.cmd_text(x + 30, 0, 27, 0, "Input 25.4V / - 25.3V"); // NOTE: Currently only dummy info
+  GD.cmd_text(30, 0, 27, 0, "Input 25.4V / - 25.3V"); // NOTE: Currently only dummy info
 
   // line below top header
-  y=y+23;
+  int y = 25;
   GD.Begin(LINE_STRIP);
   GD.ColorA(200);
   GD.LineWidth(15);
@@ -873,8 +869,12 @@ void renderUpperDisplay(int operationType, int functionType) {
   GD.Vertex2ii(1,y);
   GD.Vertex2ii(799, y);
   GD.ColorA(255);
+}
+void renderUpperDisplay(int operationType, int functionType) {
 
-  y=y+7;
+  int x = 0;
+  int y = 32;
+ 
   // show upper panel
   if (functionType == SOURCE_DC) {
     if (operationType == SOURCE_VOLTAGE) {
@@ -1107,24 +1107,70 @@ void handleAutoRange() {
     }
 }
 
+int displayUpdateTimer = millis();
 
-int helgetimer = millis();
-void loop()
-{
 
-// No need to update display more often that the eye can detect.
-// Too often will cause jitter in the sampling because display and DAC/ADC share same SPI port.
-// Will that be improved by Teensy 4 where there are more that one SPI port ?
-//
-// Note that the scrolling speed and gesture detection speed will be affected.
-// 
-if (helgetimer + 50 > millis()) {
-  return; 
+void loop() {
+
+  // No need to update display more often that the eye can detect.
+  // Too often will cause jitter in the sampling because display and DAC/ADC share same SPI port.
+  // Will that be improved by Teensy 4 where there are more that one SPI port ?
+  //
+  // Note that the scrolling speed and gesture detection speed will be affected.
+  // 
+  if (displayUpdateTimer + 50 > millis()) {
+    return; 
+  }
+
+  displayUpdateTimer = millis();
+  
+  if (functionType == SETTINGS) {
+    loopSettings();
+  } else {
+    loopMain();
+  }
 }
 
-helgetimer = millis();
+void loopSettings() {
+ 
   handleAutoNullAtStartup();
   operationType = getOperationType();
+  
+
+  if (startupCalibrationDone2) {
+    //SMU[0].pulse(-4000.0, 4000.0, 5000);
+    //SMU[0].sweep(5.00, -5.00, 0.1, 5000);
+  }
+  //handleAutoRange();
+  GD.__end();
+
+  disable_ADC_DAC_SPI_units();
+  GD.resume();
+
+  detectGestures();
+  GD.Clear();
+  renderMainHeader();
+  VOLT_DISPLAY.renderMeasured(100,100, V_FILTERS.mean);
+  CURRENT_DISPLAY.renderMeasured(100,250, C_FILTERS.mean, false, false);
+
+  handleMenuScrolldown();
+
+  int tag = GD.inputs.tag;
+   // TODO: don't need to check buttons for inactive menus or functions...
+  MAINMENU.handleButtonAction(tag);
+  GD.swap();
+  GD.__end();
+  
+}
+
+void loopMain()
+{
+
+
+ 
+  handleAutoNullAtStartup();
+  operationType = getOperationType();
+  
 
   if (startupCalibrationDone2) {
     //SMU[0].pulse(-4000.0, 4000.0, 5000);
@@ -1139,6 +1185,13 @@ helgetimer = millis();
   disable_ADC_DAC_SPI_units();
   GD.resume();
 
+//  if (operationType == SETTINGS) {
+//    renderMainHeader();
+//    handleMenuScrolldown();
+//    return;
+//  }
+
+  
   if (!gestureDetected) {
     int tag = GD.inputs.tag;
 
@@ -1297,6 +1350,7 @@ helgetimer = millis();
   }
 
   GD.Clear();
+  renderMainHeader();
   renderUpperDisplay(operationType, functionType);
 
    // register screen for gestures on lower half

@@ -6,6 +6,7 @@
 #define SOURCE_DC 150
 #define SOURCE_PULSE 151
 #define SOURCE_SWEEP 152
+#define SETTINGS 153
 
 
 #define SET  200
