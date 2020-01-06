@@ -173,8 +173,8 @@ void setup()
    V_FILTERS.init();
    C_FILTERS.init();
    
-   V_CALIBRATION.init();
-   C_CALIBRATION.init();
+   V_CALIBRATION.init(SOURCE_VOLTAGE);
+   C_CALIBRATION.init(SOURCE_CURRENT);
 
    SOURCE_DIAL.init();
    LIMIT_DIAL.init();
@@ -1200,41 +1200,70 @@ helgetimer = millis();
         timeSinceLastChange = millis();
       } 
        float mv = SOURCE_DIAL.getMv();
-       if (mv < 0) {
-          V_CALIBRATION.adjDacGainCompNeg(0.000001);
+       if (operationType == SOURCE_VOLTAGE) {
+         if (mv < 0) {
+            V_CALIBRATION.adjDacGainCompNeg(0.000001);
+         } else {
+            V_CALIBRATION.adjDacGainCompPos(0.000001);
+         }
+         GD.__end();
+         if (SMU[0].fltSetCommitVoltageSource(mv, true)) printError(_PRINT_ERROR_VOLTAGE_SOURCE_SETTING);
+         GD.resume();
        } else {
-          V_CALIBRATION.adjDacGainCompPos(0.000001);
+          if (mv < 0) {
+            C_CALIBRATION.adjDacGainCompNeg(0.000020);
+         } else {
+            C_CALIBRATION.adjDacGainCompPos(0.000020);
+         }
+         GD.__end();
+         if (SMU[0].fltSetCommitCurrentSource(mv)) printError(_PRINT_ERROR_VOLTAGE_SOURCE_SETTING);
+         GD.resume();
        }
-
-       //if (operationType == SOURCE_VOLTAGE) {
-       GD.__end();
-       if (SMU[0].fltSetCommitVoltageSource(mv, true)) printError(_PRINT_ERROR_VOLTAGE_SOURCE_SETTING);
-       GD.resume();
       
     } else if (tag == BUTTON_DAC_GAIN_COMP_POS_DOWN) {
        if (timeSinceLastChange + 500 < millis()){
         timeSinceLastChange = millis();
       } 
        float mv = SOURCE_DIAL.getMv();
+       if (operationType == SOURCE_VOLTAGE) {
          if (mv < 0) {
-          V_CALIBRATION.adjDacGainCompNeg(-0.000001);
+            V_CALIBRATION.adjDacGainCompNeg(-0.000001);
+         } else {
+            V_CALIBRATION.adjDacGainCompPos(-0.000001);
+         }
+         //if (operationType == SOURCE_VOLTAGE) {
+         GD.__end();
+         if (SMU[0].fltSetCommitVoltageSource(mv, true)) printError(_PRINT_ERROR_VOLTAGE_SOURCE_SETTING);
+         GD.resume();
        } else {
-          V_CALIBRATION.adjDacGainCompPos(-0.000001);
+          if (mv < 0) {
+            C_CALIBRATION.adjDacGainCompNeg(-0.000001);
+         } else {
+            C_CALIBRATION.adjDacGainCompPos(-0.000001);
+         }
+         GD.__end();
+         if (SMU[0].fltSetCommitCurrentSource(mv)) printError(_PRINT_ERROR_VOLTAGE_SOURCE_SETTING);
+         GD.resume();
        }
-       //if (operationType == SOURCE_VOLTAGE) {
-       GD.__end();
-       if (SMU[0].fltSetCommitVoltageSource(mv, true)) printError(_PRINT_ERROR_VOLTAGE_SOURCE_SETTING);
-       GD.resume();
        
     } else if (tag == BUTTON_ADC_GAIN_COMP_POS_UP) {
        if (timeSinceLastChange + 500 < millis()){
         timeSinceLastChange = millis();
       } 
        float mv = SOURCE_DIAL.getMv();
-       if (mv < 0) {
-          V_CALIBRATION.adjAdcGainCompNeg(0.000001);
+       if (operationType == SOURCE_VOLTAGE) {
+  
+         if (mv < 0) {
+            V_CALIBRATION.adjAdcGainCompNeg(0.000001);
+         } else {
+            V_CALIBRATION.adjAdcGainCompPos(0.000001);
+         }
        } else {
-          V_CALIBRATION.adjAdcGainCompPos(0.000001);
+         if (mv < 0) {
+            C_CALIBRATION.adjAdcGainCompNeg(0.000001);
+         } else {
+            C_CALIBRATION.adjAdcGainCompPos(0.000001);
+         }
        }
       
     } else if (tag == BUTTON_ADC_GAIN_COMP_POS_DOWN) {
@@ -1242,10 +1271,18 @@ helgetimer = millis();
         timeSinceLastChange = millis();
       } 
        float mv = SOURCE_DIAL.getMv();
+       if (operationType == SOURCE_VOLTAGE) {
          if (mv < 0) {
-          V_CALIBRATION.adjAdcGainCompNeg(-0.000001);
+            V_CALIBRATION.adjAdcGainCompNeg(-0.000010);
+         } else {
+            V_CALIBRATION.adjAdcGainCompPos(-0.000010);
+         }
        } else {
-          V_CALIBRATION.adjAdcGainCompPos(-0.000001);
+        if (mv < 0) {
+            C_CALIBRATION.adjAdcGainCompNeg(-0.000010);
+         } else {
+            C_CALIBRATION.adjAdcGainCompPos(-0.000010);
+         }
        }
       
        

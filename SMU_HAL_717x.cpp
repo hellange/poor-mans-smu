@@ -336,6 +336,12 @@ int8_t ADCClass::fltSetCommitVoltageSource(float milliVolt, bool dynamicRange) {
       dac_voltage = dac_voltage * 10.0; // with 1ohm shunt and x10 amplifier: 100mA is set by 1000mV
       dac_voltage = dac_voltage + 0.0008; // offset
       dac_voltage = dac_voltage * 1.137;
+      if (dac_voltage < 0) {
+        dac_voltage = dac_voltage * C_CALIBRATION.getDacGainCompNeg();
+      } else {
+        dac_voltage = dac_voltage * C_CALIBRATION.getDacGainCompPos();
+      }
+
       Serial.println("Calculating current to set for 1A range");
       Serial.flush();
 
@@ -343,6 +349,11 @@ int8_t ADCClass::fltSetCommitVoltageSource(float milliVolt, bool dynamicRange) {
       dac_voltage = dac_voltage * 1000.0; // with 100ohm shunt and x10 amplifier: 1mA range is set by 1000mV
       dac_voltage = dac_voltage + 0.0010; // offset
       dac_voltage = dac_voltage * 0.975;
+      if (dac_voltage < 0) {
+        dac_voltage = dac_voltage * C_CALIBRATION.getDacGainCompNeg();
+      } else {
+        dac_voltage = dac_voltage * C_CALIBRATION.getDacGainCompPos();
+      }
       Serial.println("Calculating current to set for 100mA range");
       Serial.flush();
 
@@ -407,6 +418,11 @@ int8_t ADCClass::fltSetCommitVoltageSource(float milliVolt, bool dynamicRange) {
       } else {
         i=i/1.04600; // 1ohm shunt + resistance in range switch mosfet
         i=i*0.883;
+        if (i>0) {
+          i = i * C_CALIBRATION.getAdcGainCompPos();
+        } else {
+          i = i * C_CALIBRATION.getAdcGainCompNeg();
+        }
       }
       i=i/10.0; // x10 amplifier
 

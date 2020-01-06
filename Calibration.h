@@ -8,6 +8,7 @@ class CalibrationClass {
   };
 
   private:
+  OPERATION_TYPE operationType;
   unsigned long timeSinceLastChange;
 
   float set_adc[100] =  {-12000.00, -11000.00, -10000.00, -9000.00, -8000.00, -7000.00, -6000.00, -5000.00, -4000.00, -3500-00, -3000.00, -2500.00, -2000.00, -1000.00, -500.00, -100.00, -50.00, 0.00, 50.00, 100.00, 250.00, 400.00, 500.00, 900.00, 1000.00, 2000.00, 2500.00, 3000.00, 4000.00, 5000.00, 6000.00, 7000.00, 8000.00, 9000.00, 10000.00, 11000.00, 12000.00};
@@ -23,6 +24,11 @@ class CalibrationClass {
   float dacGainCompNeg;
   float adcGainCompPos;
   float adcGainCompNeg;
+
+  int ea_dac_gain_comp_pos;
+  int ea_dac_gain_comp_neg;
+  int ea_adc_gain_comp_pos;
+  int ea_adc_gain_comp_neg;
 public:
   void floatToEeprom(int address, float f);
   float floatFromEeprom(int address);
@@ -46,7 +52,7 @@ public:
   void toggleNullValue(float v, CURRENT_RANGE current_range);
   bool nullValueIsSet(CURRENT_RANGE current_range);
   void renderCal(int x, int y, float valM, float setM, bool cur, bool reduceDetails);
-  void init();
+  void init(OPERATION_TYPE operation_type);
 };
 
 extern CalibrationClass V_CALIBRATION;

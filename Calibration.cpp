@@ -9,45 +9,66 @@
 CalibrationClass V_CALIBRATION;
 CalibrationClass C_CALIBRATION;
   
-void CalibrationClass::init() {
+void CalibrationClass::init(OPERATION_TYPE operationType_) {
+  operationType = operationType_;
+  if (operationType == SOURCE_VOLTAGE) {
+    ea_dac_gain_comp_pos = EA_DAC_GAIN_COMP_POS_VOL;
+    ea_dac_gain_comp_neg = EA_DAC_GAIN_COMP_NEG_VOL;
+    ea_adc_gain_comp_pos = EA_ADC_GAIN_COMP_POS_VOL;
+    ea_adc_gain_comp_neg = EA_ADC_GAIN_COMP_NEG_VOL;
+  } else {
+    ea_dac_gain_comp_pos = EA_DAC_GAIN_COMP_POS_CUR;
+    ea_dac_gain_comp_neg = EA_DAC_GAIN_COMP_NEG_CUR;
+    ea_adc_gain_comp_pos = EA_ADC_GAIN_COMP_POS_CUR;
+    ea_adc_gain_comp_neg = EA_ADC_GAIN_COMP_NEG_CUR;
+  }
+
   nullValue[0] = 0.0;
   nullValue[1] = 0.0;
   timeSinceLastChange = millis();
   
-  dacGainCompPos = floatFromEeprom(EA_DAC_GAIN_COMP_POS);
-  Serial.print("Read dacGainCompPos from eeprom:");
+  dacGainCompPos = floatFromEeprom(ea_dac_gain_comp_pos);
+ Serial.print("Read dacGainCompPos from eeprom address ");
+  Serial.print(ea_dac_gain_comp_pos,HEX);
+  Serial.print(":");
   if (isnan(dacGainCompPos)) {
     Serial.print("Not defined. Write default value:");
     dacGainCompPos = 1.0;
-    floatToEeprom(0x00,dacGainCompPos); // write initial default
+    floatToEeprom(ea_dac_gain_comp_pos,dacGainCompPos); // write initial default
   }
   Serial.println(dacGainCompPos,7);
  
-  dacGainCompNeg = floatFromEeprom(EA_DAC_GAIN_COMP_NEG);
-  Serial.print("Read dacGainCompNeg from eeprom:");
+  dacGainCompNeg = floatFromEeprom(ea_dac_gain_comp_neg);
+  Serial.print("Read dacGainCompNeg from eeprom address ");
+  Serial.print(ea_dac_gain_comp_neg,HEX);
+  Serial.print(":");
   if (isnan(dacGainCompNeg)) {
     Serial.print("Not defined. Write default value:");
     dacGainCompNeg = 1.0;
-    floatToEeprom(0x04,dacGainCompNeg); // write initial default
+    floatToEeprom(ea_dac_gain_comp_neg,dacGainCompNeg); // write initial default
   }
   Serial.println(dacGainCompNeg,7);
 
 
- adcGainCompPos = floatFromEeprom(EA_ADC_GAIN_COMP_POS);
-  Serial.print("Read adcGainCompPos from eeprom:");
+ adcGainCompPos = floatFromEeprom(ea_adc_gain_comp_pos);
+ Serial.print("Read adcGainCompPos from eeprom address ");
+  Serial.print(ea_adc_gain_comp_pos,HEX);
+  Serial.print(":");  
   if (isnan(adcGainCompPos)) {
     Serial.print("Not defined. Write default value:");
     adcGainCompPos = 1.0;
-    floatToEeprom(0x00,adcGainCompPos); // write initial default
+    floatToEeprom(ea_adc_gain_comp_pos,adcGainCompPos); // write initial default
   }
   Serial.println(adcGainCompPos,7);
  
-  adcGainCompNeg = floatFromEeprom(EA_ADC_GAIN_COMP_NEG);
-  Serial.print("Read adcGainCompNeg from eeprom:");
+  adcGainCompNeg = floatFromEeprom(ea_adc_gain_comp_neg);
+ Serial.print("Read adcGainCompNeg from eeprom address ");
+  Serial.print(ea_adc_gain_comp_neg,HEX);
+  Serial.print(":");  
   if (isnan(adcGainCompNeg)) {
     Serial.print("Not defined. Write default value:");
     adcGainCompNeg = 1.0;
-    floatToEeprom(0x04,adcGainCompNeg); // write initial default
+    floatToEeprom(ea_adc_gain_comp_neg,adcGainCompNeg); // write initial default
   }
   Serial.println(adcGainCompNeg,7);
 
@@ -192,8 +213,11 @@ float CalibrationClass::floatFromEeprom(int address) {
 
 void CalibrationClass::adjDacGainCompPos(float val) {
   dacGainCompPos += val;
-  floatToEeprom(EA_DAC_GAIN_COMP_POS, dacGainCompPos);
-  Serial.print("Dac gain pos comp adjusted to:");
+  floatToEeprom(ea_dac_gain_comp_pos, dacGainCompPos);
+  Serial.println(operationType == SOURCE_CURRENT ? "Source current" : "Source voltage");
+  Serial.print("Dac gain pos comp at address ");
+  Serial.print(ea_dac_gain_comp_pos,HEX);
+  Serial.print(" adjusted to:");
   Serial.println(dacGainCompPos,6);
   Serial.flush();
 }
@@ -204,8 +228,11 @@ float CalibrationClass::getDacGainCompPos() {
 
 void CalibrationClass::adjDacGainCompNeg(float val) {
   dacGainCompNeg += val;
-  floatToEeprom(EA_DAC_GAIN_COMP_NEG, dacGainCompNeg);
-  Serial.print("Dac gain neg comp adjusted to:");
+  floatToEeprom(ea_dac_gain_comp_neg, dacGainCompNeg);
+  Serial.println(operationType == SOURCE_CURRENT ? "Source current" : "Source voltage");
+   Serial.print("Dac gain neg comp at address ");
+  Serial.print(ea_dac_gain_comp_neg,HEX);
+  Serial.print(" adjusted to:");
   Serial.println(dacGainCompNeg,6);
   Serial.flush();
 }
@@ -217,8 +244,12 @@ float CalibrationClass::getDacGainCompNeg() {
 
 void CalibrationClass::adjAdcGainCompPos(float val) {
   adcGainCompPos += val;
-  floatToEeprom(EA_ADC_GAIN_COMP_POS, adcGainCompPos);
-  Serial.print("Adc gain pos comp adjusted to:");
+  floatToEeprom(ea_adc_gain_comp_pos, adcGainCompPos);
+  Serial.print("Operation type = ");
+  Serial.println(operationType == SOURCE_CURRENT ? "Source current" : "Source voltage");
+  Serial.print("Adc gain pos comp at address ");
+  Serial.print(ea_adc_gain_comp_pos,HEX);
+  Serial.print(" adjusted to:");
   Serial.println(adcGainCompPos,6);
   Serial.flush();
 }
@@ -229,9 +260,12 @@ float CalibrationClass::getAdcGainCompPos() {
 
 void CalibrationClass::adjAdcGainCompNeg(float val) {
   adcGainCompNeg += val;
-  floatToEeprom(EA_ADC_GAIN_COMP_NEG, adcGainCompNeg);
-  Serial.print("Adc gain neg comp adjusted to:");
-  Serial.println(adcGainCompNeg,6);
+  floatToEeprom(ea_adc_gain_comp_neg, adcGainCompNeg);
+  Serial.print("Operation type = ");
+  Serial.println(operationType == SOURCE_CURRENT ? "Source current" : "Source voltage");
+  Serial.print("Adc gain neg comp at address ");
+  Serial.print(ea_adc_gain_comp_neg,HEX);
+  Serial.print(" adjusted to:");
   Serial.flush();
 }
 
