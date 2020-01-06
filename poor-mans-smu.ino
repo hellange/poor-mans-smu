@@ -745,7 +745,7 @@ void showWidget(int y, int widgetNo, int scroll) {
 }
 
 bool reduceDetails() {
-  return scrollDir != 0 || MAINMENU.active == true;
+  return scrollDir != 0 || MAINMENU.active == true or anyDialogOpen();
 }
 
 
