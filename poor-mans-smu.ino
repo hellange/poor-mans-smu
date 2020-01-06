@@ -72,7 +72,7 @@ float MAX_CURRENT_1A_RANGE = 500.0;
 OPERATION_TYPE operationType = SOURCE_VOLTAGE;
 
 
-FUNCTION_TYPE functionType = SETTINGS;//SOURCE_DC;
+FUNCTION_TYPE functionType = SOURCE_DC;
 
 OPERATION_TYPE getOperationType() {
   if (digitalRead(3) == HIGH) {
