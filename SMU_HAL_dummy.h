@@ -10,6 +10,10 @@ class SMU_HAL_dummy
   float setValueI = 0.0;
   float setValuemV = 0.0;
   int volt_current = 0;
+  float drift = 0.0;
+  int driftTimer = millis();
+  int driftDirection = 1;
+
   public:
   bool compliance;
     int init();

@@ -58,16 +58,29 @@
  
  float SMU_HAL_dummy::measureMilliVoltage(){
 
-  int r = random(2);
-  if (r == 0) {
-    nowValuemV = nowValuemV + random(20) / 10000.0;
-  } else if (r == 1) {
-    nowValuemV = nowValuemV - random(20) / 10000.0;
+  int inoise = 5 - random(9); // TODO: Find a better way to get random number from -x to x
+  
+  float noise = ((float)inoise)/1000.0; // use uV noise 
+
+  // samplingDur gets lower as sampling speed increases.
+  // simulate increasing noise for high sampling speeds
+  noise = noise * (500.0 / (float)samplingDur);
+
+  if (driftTimer + 10000 > millis()) {
+    int r = random(2);
+    if (r==0){
+      driftDirection = -1;
+    } else {
+      driftDirection = +1;
+    }
+    driftTimer = millis();
   }
+  //drift = drift + (driftDirection*(float)random(10))/1000.0;
+  
   float offset = 2.5; // simulate some mv offset
   
  
-  return nowValuemV+ offset;  // return millivolt
+  return nowValuemV+ offset + noise + drift;  // return millivolt
  }
  
  float SMU_HAL_dummy::measureCurrent(int range){
