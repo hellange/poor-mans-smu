@@ -7,8 +7,11 @@
 
 FunctionSweepClass FUNCTION_SWEEP;
 
-void FunctionSweepClass::init(ADCClass& smu_) {
-  smu = smu_;
+
+extern ADCClass SMU[];
+
+void FunctionSweepClass::init(/*ADCClass& smu_*/) {
+  //smu = smu_;
   currentSweepValue = 0.0;
   currentSweepDir = 1;
 }
@@ -99,7 +102,7 @@ void FunctionSweepClass::operateSmuVoltage(float high, float low, float step, in
       currentSweepDir = +1;
      }
      currentSweepValue += step*currentSweepDir;
-     smu.fltSetCommitVoltageSource(currentSweepValue, false);
+     SMU[0].fltSetCommitVoltageSource(currentSweepValue, false);
    } 
 }
 
@@ -113,6 +116,6 @@ void FunctionSweepClass::operateSmuCurrent(float high, float low, float step, in
       currentSweepDir = +1;
      }
      currentSweepValue += step*currentSweepDir;
-     smu.fltSetCommitCurrentSource(currentSweepValue);
+     SMU[0].fltSetCommitCurrentSource(currentSweepValue);
    } 
 }

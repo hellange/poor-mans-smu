@@ -26,7 +26,7 @@ OPERATION_TYPE FunctionPulseClass::operationType = SOURCE_VOLTAGE;
     
 extern ADCClass SMU[];
 
-void FunctionPulseClass::init(ADCClass& smu_) {
+void FunctionPulseClass::init(/*ADCClass& smu_*/) {
   
 //  smu = smu_;
   min = -2000.0;
@@ -37,7 +37,7 @@ void FunctionPulseClass::init(ADCClass& smu_) {
 void FunctionPulseClass::open(OPERATION_TYPE operationType_, void (*closedFn_)(OPERATION_TYPE type)) {
   closedFn = closedFn_;
   operationType = operationType_;
-  smu.setCurrentRange(AMP1);
+  SMU[0].setCurrentRange(AMP1);
   if (operationType == SOURCE_CURRENT) {
     max = 20.0;
     min = -20.0;

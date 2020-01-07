@@ -3,9 +3,13 @@
  *  Initial GUI prototype for
  *  P O O R  M A N ' s  S M U
  *  
- *  by Helge Langehaug (2018, 2019)
+ *  by Helge Langehaug (2018, 2019, 2020)
  * 
  *****************************************************************/
+
+//uncomment the line below if you want to use real AD/DA 
+//#define USE_SIMULATOR
+
 
 #include <SPI.h>
 #include "GD2.h"
@@ -42,15 +46,17 @@
 #define GEST_MOVE_DOWN 3
 #define LOWER_WIDGET_Y_POS 250
 
-//uncomment below if you want to use real AD/DA 
+
+
+#ifndef USE_SIMULATOR
 ADCClass SMU[1] = {
   ADCClass()
 };
-
-// uncomment below if you want to use dummy
-//SMU_HAL_dummy SMU[1] = {
-//  SMU_HAL_dummy()
-//};
+#else
+SMU_HAL_dummy SMU[1] = {
+  SMU_HAL_dummy()
+};
+#endif
 
 int scroll = 0;
 int scrollDir = 0;
@@ -179,8 +185,8 @@ void setup()
    SOURCE_DIAL.init();
    LIMIT_DIAL.init();
 
-   FUNCTION_PULSE.init(SMU[0]);
-   FUNCTION_SWEEP.init(SMU[0]);
+   FUNCTION_PULSE.init(/*SMU[0]*/);
+   FUNCTION_SWEEP.init(/*SMU[0]*/);
 
    timeAtStartup = millis();
 
@@ -1061,7 +1067,7 @@ static void handleSampling() {
     }
     
 //  Serial.print("Measured raw:");  
-//  Serial.print(CouVoutt, 3);
+//  Serial.print(Cout, 3);
 //  Serial.println(" mA");  
 //  Serial.flush();
   }
@@ -1240,7 +1246,7 @@ void loopMain()
       }
 
     } 
-    
+    #ifndef USE_SIMULATOR // dont want to mess up calibration while in simulation mode...
     else if (tag == BUTTON_DAC_GAIN_COMP_POS_UP) {
        if (timeSinceLastChange + 500 < millis()){
         timeSinceLastChange = millis();
@@ -1333,6 +1339,7 @@ void loopMain()
       
        
     }
+    #endif // end not using simulator
     
     // TODO: don't need to check buttons for inactive menus or functions...
     MAINMENU.handleButtonAction(tag);

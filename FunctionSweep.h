@@ -6,7 +6,7 @@ class FunctionSweepClass {
   void (*closedFn)(OPERATION_TYPE type);
   
   private:
-    ADCClass smu;
+    //ADCClass smu;
     float currentSweepValue = 0.0;
     int currentSweepDir = 1;
     OPERATION_TYPE operationType;
@@ -15,7 +15,7 @@ class FunctionSweepClass {
     void operateSmuCurrent(float high, float low, float step, int duration);
 
   public:
-    void init(ADCClass& smu);
+    void init(/*ADCClass& smu*/);
     void open(OPERATION_TYPE operationType, void (*closedFn)(OPERATION_TYPE type));
     void close();
     void handleButtonAction(int inputTag);

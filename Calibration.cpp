@@ -334,7 +334,6 @@ void CalibrationClass::renderCal(int x, int y, float valM, float setM, bool cur,
   GD.cmd_button(x+120,y+90,100,50,29,0,"UP");
   GD.Tag(BUTTON_ADC_GAIN_COMP_POS_DOWN);
   GD.cmd_button(x+120,y+150,100,50,29,0,"DOWN");
-
   
   GD.LineWidth(20);
   GD.Begin(LINE_STRIP);
