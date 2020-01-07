@@ -294,7 +294,6 @@ void renderStatusIndicators(int x, int y) {
   showStatusIndicator(x+720, y+85, "UNCAL", !V_CALIBRATION.useCalibratedValues, true);
 }
 
- 
  void showAnalogPin(int x, int y, int radius, int radiusStart, int degreeRelativeToTop, int needleColor, int lineWidth, boolean needle) {
   if (reduceDetails()){
     return;
@@ -1201,6 +1200,7 @@ void loopMain()
     } else if (tag == BUTTON_UNCAL) {
       Serial.println("Uncal set");
       V_CALIBRATION.toggleCalibratedValues();
+      C_CALIBRATION.toggleCalibratedValues();
     } else if (tag == BUTTON_CLEAR_BUFFER) {
       Serial.println("clearbuffer set");
       V_STATS.clearBuffer();

@@ -316,7 +316,14 @@ int8_t ADCClass::fltSetCommitVoltageSource(float milliVolt, bool dynamicRange) {
   setValueV = v; // use volt. TODO: change to millivolt ?
 
   float mv = milliVolt;
-  
+  if (C_CALIBRATION.useCalibratedValues == true) {
+    //Serial.println("USE CALIBRATED VALUES FOR CURRENT");
+    //Serial.print(mv,6);
+    mv = C_CALIBRATION.dac_nonlinear_compensation(mv);
+    //Serial.print(" adjusted to ");
+    //Serial.println(mv,6);
+
+  }
   float dac_voltage = mv / 1000.0;  // DAC code operates with V instead of mV    
 
   dac_voltage = dac_voltage * 5.0/4.096; // using 4.096 ref instead of 5.0
