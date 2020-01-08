@@ -96,7 +96,7 @@
  }
 
  float SMU_HAL_dummy::getSetValuemV(){
-  return setValuemV * 1000.0;
+  return setValuemV;// * 1000.0;
  }
 
  float SMU_HAL_dummy::getLimitValue(){

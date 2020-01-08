@@ -31,6 +31,7 @@
 #include "FunctionPulse.h"
 #include "FunctionSweep.h"
 #include "Fan.h"
+#include "RamClass.h"
 
 #define _SOURCE_AND_SINK 111
 
@@ -91,16 +92,15 @@ IntervalTimer myTimer;
 
 #define SAMPLING_BY_INTERRUPT
 
+
 void setup()
 {
    disable_ADC_DAC_SPI_units();
    delay(50);
+   //TODO: Organise pin numbers into definitions ?
    pinMode(6,OUTPUT); // LCD powerdown pin?
    digitalWrite(6, HIGH);
-   
-//  Serial.begin(115200);
-//   while(!Serial) {
-//  }
+   pinMode(5,OUTPUT); // RAM
 
     pinMode(7,OUTPUT);
     pinMode(8,OUTPUT);
@@ -187,6 +187,9 @@ void setup()
 
    FUNCTION_PULSE.init(/*SMU[0]*/);
    FUNCTION_SWEEP.init(/*SMU[0]*/);
+
+   RAM.init();
+  
 
    timeAtStartup = millis();
 
@@ -1114,9 +1117,24 @@ void handleAutoRange() {
 
 int displayUpdateTimer = millis();
 
+int LM60_getTemperature() {
+   analogReadRes(10);
+  float maxNumber = 1023;//4095.0;
+  float refV = 3.3; // LM60 connected to 3.3V
+  float ar = analogRead(1);
+  float voltage = refV*(ar/maxNumber);
+  // DM60 datasheet: Vout = (+6.25mV x t) +424mV 
+  //                 => Vout - 424mV = +6.25mV x t 
+  //                 => t = (Vout-424mV) / 6.25mV
+  int temp = (voltage - 0.424) / 0.00625;
+  //Serial.print(" ");
+  //Serial.println(temp,3);
+  return (int)temp;
+}
 
 void loop() {
 
+  
   // No need to update display more often that the eye can detect.
   // Too often will cause jitter in the sampling because display and DAC/ADC share same SPI port.
   // Will that be improved by Teensy 4 where there are more that one SPI port ?
@@ -1126,7 +1144,10 @@ void loop() {
   if (displayUpdateTimer + 50 > millis()) {
     return; 
   }
-
+  //Serial.print("Temperature:");
+  //Serial.println(LM60_getTemperature());
+ 
+   
   displayUpdateTimer = millis();
   
   if (functionType == SETTINGS) {
