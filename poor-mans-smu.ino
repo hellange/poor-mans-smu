@@ -867,7 +867,9 @@ void renderMainHeader() {
   GD.ColorA(255);
   GD.ColorRGB(0xdddddd);
   GD.cmd_text(30, 0, 27, 0, "Input 25.4V / - 25.3V"); // NOTE: Currently only dummy info
-
+  showLoadResistance(590,0);
+  showFanSpeed(220,0);
+   
   // line below top header
   int y = 25;
   GD.Begin(LINE_STRIP);
@@ -877,6 +879,40 @@ void renderMainHeader() {
   GD.Vertex2ii(1,y);
   GD.Vertex2ii(799, y);
   GD.ColorA(255);
+}
+
+void showFanSpeed(int x, int y) {
+   GD.cmd_text(x,y,27,0, "Fan:");
+  GD.cmd_number(x+30,y,27,5, FAN.getRPMValueFiltered());
+  GD.cmd_text(x+80,y,27,0, "RPM");
+//  Serial.print(FAN.getPWMFanRPM());
+//  Serial.print("(");
+//  Serial.print(FAN.getFanWidth());
+//  Serial.flush();
+}
+void showLoadResistance(int x, int y) {
+   // calculate resistance only if the voltage and current is above some limits. Else the calculation will just be noise...
+    if(abs(V_FILTERS.mean) > 10.0 or abs(C_FILTERS.mean) > 0.010) {
+      float resistance = abs(V_FILTERS.mean / C_FILTERS.mean);
+      GD.ColorRGB(0xdddddd);
+      int kOhm, ohm, mOhm;
+      bool neg;
+      //DIGIT_UTIL.separate(&a, &ma, &ua, &neg, rawMa);
+      DIGIT_UTIL.separate(&kOhm, &ohm, &mOhm, &neg, resistance);
+
+      if (kOhm > 0) {
+        GD.cmd_number(x, y, 27, 3, kOhm);
+        GD.cmd_text(x+30, y,  27, 0, ".");
+        GD.cmd_number(x+35, y, 27, 3, ohm);
+        GD.cmd_text(x+70, y,  27, 0, "kOhm");
+      } else {
+        GD.cmd_number(x, y, 27, 3, ohm);
+        GD.cmd_text(x+30, y,  27, 0, ".");
+        GD.cmd_number(x+35, y, 27, 3, mOhm);
+        GD.cmd_text(x+70, y,  27, 0, "ohm");
+      }
+
+    }
 }
 void renderUpperDisplay(OPERATION_TYPE operationType, FUNCTION_TYPE functionType) {
 
@@ -892,44 +928,11 @@ void renderUpperDisplay(OPERATION_TYPE operationType, FUNCTION_TYPE functionType
     }
     renderStatusIndicators(x,y);
 
-
-    // calculate resistance only if the voltage and current is above some limits. Else the calculation will just be noise...
-    if(abs(V_FILTERS.mean) > 10.0 or abs(C_FILTERS.mean) > 0.010) {
-      float resistance = abs(V_FILTERS.mean / C_FILTERS.mean);
-      GD.ColorRGB(0xdddddd);
-      int kOhm, ohm, mOhm;
-      bool neg;
-      //DIGIT_UTIL.separate(&a, &ma, &ua, &neg, rawMa);
-      DIGIT_UTIL.separate(&kOhm, &ohm, &mOhm, &neg, resistance);
-
-      if (kOhm > 0) {
-        GD.cmd_number(590, 0, 27, 3, kOhm);
-        GD.cmd_text(590+30, 0,  27, 0, ".");
-        GD.cmd_number(590+35, 0, 27, 3, ohm);
-        GD.cmd_text(590+70, 0,  27, 0, "kOhm");
-      } else {
-        GD.cmd_number(550+40, 0, 27, 3, ohm);
-        GD.cmd_text(550+70, 0,  27, 0, ".");
-        GD.cmd_number(550+75, 0, 27, 3, mOhm);
-        GD.cmd_text(550+110, 0,  27, 0, "ohm");
-      }
-
-    }
-   
   } else if (functionType == SOURCE_PULSE) {
     sourcePulsePanel(x,y);
   } else if (functionType == SOURCE_SWEEP) {
     sourceSweepPanel(x,y);
   }
-
-  GD.cmd_text(220,0,27,0, "Fan:");
-  GD.cmd_number(250,0,27,5, FAN.getRPMValueFiltered());
-  GD.cmd_text(300,0,27,0, "RPM");
-//  Serial.print(FAN.getPWMFanRPM());
-//  Serial.print("(");
-//  Serial.print(FAN.getFanWidth());
-//  Serial.flush();
-  
   
 }
 
