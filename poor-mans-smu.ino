@@ -866,10 +866,12 @@ void renderMainHeader() {
   
   GD.ColorA(255);
   GD.ColorRGB(0xdddddd);
-  GD.cmd_text(30, 0, 27, 0, "Input 25.4V / - 25.3V"); // NOTE: Currently only dummy info
+  GD.cmd_text(20, 0, 27, 0, "Input 25.4V / - 25.3V"); // NOTE: Currently only dummy info
   showLoadResistance(590,0);
   showFanSpeed(220,0);
-   
+  GD.cmd_number(470,0,27,3,LM60_getTemperature());
+  GD.cmd_text(500,0,27,0,"C");
+
   // line below top header
   int y = 25;
   GD.Begin(LINE_STRIP);
