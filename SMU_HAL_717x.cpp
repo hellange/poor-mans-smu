@@ -136,7 +136,6 @@ float ADCClass::measureMilliVoltage() {
   v=v-VREF*1000.0;
 
   v = v / 0.8;  // funnel amplifier
-  //v = V_CALIBRATION.adc_nonlinear_compensation(v);
   
   // DONT INCLUDE THESE ADJUSTMENTS WHEN TESTING ONLY DAC/ADC BOARD !!!!
   if (full_board == true) {
@@ -154,7 +153,7 @@ float ADCClass::measureMilliVoltage() {
   }
   v = V_CALIBRATION.adc_nonlinear_compensation(v);
 
-  writeSamplingRate();
+  writeSamplingRate();  // update sampling rate here seems to work. Doing randomly other places often fails.... for some reason...
   return v;
 }
 
@@ -445,6 +444,8 @@ int8_t ADCClass::fltSetCommitVoltageSource(float milliVolt, bool dynamicRange) {
       
     }
 
+
+    i = C_CALIBRATION.adc_nonlinear_compensation(i);
 
     // TODO: replace with signal from actual circuit (current limit)
     compliance = abs(setValueI) < abs(i/1000.0);
