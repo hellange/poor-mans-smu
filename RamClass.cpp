@@ -63,10 +63,8 @@ void RamClass::init() {
   Serial.print(maxBytes);
   Serial.println(" bytes.");
   Serial.println("RAM test success !");
-
-
-
 }
+
 float RamClass::readRAMfloat(uint32_t address) {
    flu valueRead;
    ram_read(&valueRead.b[0], address, 4);

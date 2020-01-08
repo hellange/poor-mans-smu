@@ -368,19 +368,20 @@ GD.ColorA(255);
 
 }
 
+int dialValidationTimer = millis();
 void DialClass::validate(double mv) {
   // get millivolt number value and decimal value
   char buf[3+10];
   int numberValue, decimalValue;
   sprintf(buf, "%.*f", 3, mv);
   sscanf(buf, "%d.%d", &numberValue, &decimalValue);
-  Serial.print("mV:");
-  Serial.print(mv,5);
-  Serial.print("Number value:");
-  Serial.print(numberValue);
-  Serial.print(", decimalValue:");
-  Serial.println(decimalValue);
-  Serial.flush();
+//  Serial.print("mV:");
+//  Serial.print(mv,5);
+//  Serial.print(" Number value:");
+//  Serial.print(numberValue);
+//  Serial.print(", decimalValue:");
+//  Serial.println(decimalValue);
+//  Serial.flush();
 
   // get number of decimals in the display
   int decimalsAfterComma = -1;
