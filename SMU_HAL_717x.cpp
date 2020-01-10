@@ -83,6 +83,8 @@ void ADCClass::writeSamplingRate() {
   if (oldSamplingRate == samplingRate) {
      return;
   }
+  Serial.print("Setting new sampling rate:");
+  Serial.println(samplingRate);
   oldSamplingRate = samplingRate;
   int value = samplingRate;
   // Note that two samples are needed for both voltage and current !
@@ -100,7 +102,23 @@ void ADCClass::writeSamplingRate() {
   } else if (value == 200) {
       AD7176_WriteRegister({0x28, 2, 0, 0x020dl});
   } else if (value == 500) {
-      AD7176_WriteRegister({0x28, 2, 0, 0x020bl});
+      AD7176_WriteRegister({0x28, 2, 0, 0x020bl}); 
+  } else if (value == 1000) {
+      AD7176_WriteRegister({0x28, 2, 0, 0x020al}); 
+  } else if (value == 2500) {
+      AD7176_WriteRegister({0x28, 2, 0, 0x0209l}); 
+  } else if (value == 5000) {
+      AD7176_WriteRegister({0x28, 2, 0, 0x0208l}); 
+  } else if (value == 10000) {
+      AD7176_WriteRegister({0x28, 2, 0, 0x0207l}); 
+  } else if (value == 15625) {
+      AD7176_WriteRegister({0x28, 2, 0, 0x0206l}); 
+  } else if (value == 25000) {
+      AD7176_WriteRegister({0x28, 2, 0, 0x0205l}); 
+  } else if (value == 31250) {
+      AD7176_WriteRegister({0x28, 2, 0, 0x0204l}); 
+  } else if (value == 50000) {
+      AD7176_WriteRegister({0x28, 2, 0, 0x0203l}); 
   } else {
     Serial.print("Illegal sample value:");
     Serial.println(value);
@@ -126,6 +144,19 @@ void ADCClass::setCurrentRange(CURRENT_RANGE range) {
 
   }
 
+}
+
+
+float ADCClass::measureMilliVoltageRaw() {
+  AD7176_ReadRegister(&AD7176_regs[4]);
+  
+  float v = (float) ((AD7176_regs[4].value*VFSR*1000.0)/FSR);
+
+  
+  v=v-VREF*1000.0;
+  writeSamplingRate();  // update sampling rate here seems to work. Doing randomly other places often fails.... for some reason...
+
+  return v;
 }
 
 float ADCClass::measureMilliVoltage() {

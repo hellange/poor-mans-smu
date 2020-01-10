@@ -198,7 +198,7 @@ void setup()
   // attachInterrupt(2, handleSampling, CHANGE);
 
 #ifdef SAMPLING_BY_INTERRUPT
-  myTimer.begin(handleSampling, 50); // in microseconds
+  myTimer.begin(handleSampling, 20); // in microseconds
   SPI.usingInterrupt(myTimer);
 #endif
 } 
@@ -1044,12 +1044,100 @@ void notification(char *text) {
     GD.cmd_text(250, 200 , 29, 0, text);
 }
 
-float sampleBuffer[2000];
-int samplePtr = 0;
+
+bool digitize = false;
+
+int ramAdrPtr = 0;
+int maxFloats = 32000; // 32000 is max for the ram
+int nrOfFloats = 100;
+
+bool bufferOverflow = false;
+float maxDigV = -100000.00, minDigV = 100000.00, curDigV;
+float maxDigI = -100000.00, minDigI = 100000.00, curDigI;
+int digitizeDuration = millis();
+float lastVoltage = 0.0;
+bool triggered = false;
+int count = 1;
+float sampleVolt = 10.0;
 static void handleSampling() {
-   int dataR = SMU[0].dataReady();
+
+     int dataR = SMU[0].dataReady();
       //Serial.print("DataReady:");  
-      //Serial.println(dataR, HEX);  
+      //Serial.println(dataR, HEX); 
+
+ 
+         
+   if (digitize == true && bufferOverflow==false && (dataR == 0 or dataR == 1)) {
+
+    
+//     if (count % 20== 0) {
+//       SMU[0].fltSetCommitVoltageSource(sampleVolt, false);
+//       if (sampleVolt == 2000.0) {
+//        sampleVolt = -2000.0;
+//       } else {
+//        sampleVolt = 2000.0;
+//       }
+//     }
+//     count ++;
+
+       if (dataR == 1) {
+        return;
+       }
+//     if (dataR == 1) {
+//      float i = SMU[0].measureCurrent(AMP1);   
+//      RAM.writeRAMfloat(ramAdrPtr, i);
+//      ramAdrPtr += 4;
+//      if (ramAdrPtr > maxFloats*4) {
+//        bufferOverflow = true;
+//      }
+//      //Serial.println(i);
+//      curDigI = i;
+//      if (i > maxDigI) {
+//        maxDigI= i;
+//      } 
+//      if (i < minDigI) {
+//        minDigI = i;
+//      }
+//      
+//      return;
+//     }
+
+      float v = SMU[0].measureMilliVoltage();   
+      bool continuous = true;
+      if (!triggered) {
+        if (continuous or (lastVoltage < 1000.0 && v > 1500.0)) {
+          triggered = true;
+          Serial.println("Triggered!");
+          Serial.println(lastVoltage);
+        } else {
+          lastVoltage = v;
+          return;
+        }
+      }
+      lastVoltage = v;
+
+      RAM.writeRAMfloat(ramAdrPtr, v);
+      if (ramAdrPtr == 0) {
+        digitizeDuration = millis();
+      }
+      ramAdrPtr += 4;
+      if (ramAdrPtr > nrOfFloats*4) {
+        bufferOverflow = true;
+        triggered = false;
+        //lastVoltage = 0.0;
+        Serial.println("Overflow!");
+        ramAdrPtr = 0;
+      }
+      curDigV = v;
+      if (v > maxDigV) {
+        maxDigV = v;
+      } 
+      if (v < minDigV) {
+        minDigV = v;
+      }      
+      return;
+   }
+ 
   if (dataR == -1) {
     return;
   }
@@ -1068,11 +1156,7 @@ static void handleSampling() {
 
     C_STATS.addSample(Cout);
     C_FILTERS.updateMean(Cout, false);
-    sampleBuffer[samplePtr] = Cout;
-    samplePtr++;
-    if (samplePtr > 999) {
-      samplePtr = 0;
-    }
+   
     
 //  Serial.print("Measured raw:");  
 //  Serial.print(Cout, 3);
@@ -1146,7 +1230,7 @@ void loop() {
   //
   // Note that the scrolling speed and gesture detection speed will be affected.
   // 
-  if (displayUpdateTimer + 50 > millis()) {
+  if (displayUpdateTimer + 20 > millis()) {
     return; 
   }
   //Serial.print("Temperature:");
@@ -1155,42 +1239,168 @@ void loop() {
    
   displayUpdateTimer = millis();
   
-  if (functionType == SETTINGS) {
-    loopSettings();
+  if (functionType == DIGITIZE) {
+    loopDigitize();
   } else {
     loopMain();
   }
 }
 
-void loopSettings() {
- 
-  handleAutoNullAtStartup();
-  operationType = getOperationType();
-  
 
-  if (startupCalibrationDone2) {
-    //SMU[0].pulse(-4000.0, 4000.0, 5000);
-    //SMU[0].sweep(5.00, -5.00, 0.1, 5000);
+int loopUpdateTimer = millis();
+int samplingDelayTimer = millis();
+
+void loopDigitize() {
+  if (loopUpdateTimer + 10 > millis() ) {
+    return;
   }
-  //handleAutoRange();
-  //GD.__end();
+  
+  loopUpdateTimer = millis();
+  //handleAutoNullAtStartup();
+  operationType = getOperationType();
+  disable_ADC_DAC_SPI_units();
+  
+//  if (samplingDelayTimer + 20000 > millis()) {
+//      GD.resume();
+//      GD.Clear();
+//      GD.cmd_text(250, 200 ,   31, 0, "Waiting to digitize");
+//  } else {
+   if (digitize == false && !MAINMENU.active /*&&  samplingDelayTimer + 50 < millis()*/){
+     
+    ramAdrPtr = 0;
+     minDigV = 1000000;
+     maxDigV = - 1000000;
+     minDigI = 1000000;
+     maxDigI = - 1000000;
+     SMU[0].setSamplingRate(10000);
+     nrOfFloats = 400;
+          //bufferOverflowed=false;
+     digitize = true;
+         bufferOverflow = false;
+
+     
+   }
+
+     // GD.Clear();
+     // GD.cmd_text(250, 200 ,   31, 0, "Digitizing... wait a few seconds...");
+      
+     
+
+ // }
+ 
 
   disable_ADC_DAC_SPI_units();
+  
+  if (bufferOverflow == true) {
+    digitize = false;
+    Serial.println("Initiate new samping round...");
+    samplingDelayTimer = millis();
+    
+  }
+
+  if (bufferOverflow == false && digitize == true){
+//    //GD.cmd_number(100, 100, 1, 6, ramAdrPtr);  
+//    GD.resume();
+//    GD.Clear();
+//    VOLT_DISPLAY.renderMeasured(100,200, maxDigV);
+//    VOLT_DISPLAY.renderMeasured(100,300, minDigV);
+//    //VOLT_DISPLAY.renderMeasured(100,400, curDigV);
+//    Serial.println(ramAdrPtr);
+//    GD.swap();
+//    GD.__end();
+  } else {
+         SMU[0].setSamplingRate(10);
+
+    //digitize = false; 
+    bufferOverflow = false;
+
+    
+    GD.resume();
+      GD.Clear();
+        //SMU[0].setSamplingRate(100);
+
+        
+
+    detectGestures();
+    renderMainHeader();
+    VOLT_DISPLAY.renderMeasured(10,50, minDigV);
+    VOLT_DISPLAY.renderMeasured(10,150, maxDigV);
+    CURRENT_DISPLAY.renderMeasured(10,250, minDigI, false, false);
+    CURRENT_DISPLAY.renderMeasured(10,350, maxDigI, false, false);
+
+  GD.Begin(LINE_STRIP);
+  GD.ColorA(255);
+  GD.ColorRGB(0x00ff00);
+
+  float mva[400];
+  float mia[400];
+
+  GD.__end();
+  for (int x = 0; x<nrOfFloats/2; x++) {
+    int adr = x*8;
+    mva[x] = RAM.readRAMfloat(adr);
+    mia[x] = RAM.readRAMfloat(adr+4);
+  }
   GD.resume();
+  
+  for (int x = 0; x<nrOfFloats/2; x++) {
+    int adr = x*8;
+    //GD.__end();
+    //float mv = RAM.readRAMfloat(adr);
+    //float i = RAM.readRAMfloat(adr+4);
+    //GD.resume();
+   // Serial.println(mv,5);
 
-  detectGestures();
-  GD.Clear();
-  renderMainHeader();
-  VOLT_DISPLAY.renderMeasured(100,100, V_FILTERS.mean);
-  CURRENT_DISPLAY.renderMeasured(100,250, C_FILTERS.mean, false, false);
+   if (minDigV < 100000) {
+      //float span = (maxDig - minDig);
+      float mid = (maxDigV + minDigV) /2.0;
+      float relative = mid - mva[x];
+     
+      float y = relative*50;
+     // float y = mva[x] / 100.0;
+      GD.Vertex2ii(x*4, 200 - y);
+   }
+    
+  }
 
-  handleMenuScrolldown();
+  GD.Begin(LINE_STRIP);
+  GD.ColorA(255);
+  GD.ColorRGB(0xff0000);
+
+  for (int x = 0; x<nrOfFloats/2; x++) {
+    int adr = x*8;
+    //GD.__end();
+    //float mv = RAM.readRAMfloat(adr);
+    //float i = RAM.readRAMfloat(adr+4);
+    //GD.resume();
+   // Serial.println(mv,5);
+
+    if (minDigI < 100000) {
+      float relative = minDigI - mia[x];
+      //float y = relative*50;
+      float y = mia[x]/10.0;
+      GD.Vertex2ii(x*4, 400 - y);
+    }
+    
+  }
+  
+    //VOLT_DISPLAY.renderMeasured(100,50, V_FILTERS.mean);
+    //CURRENT_DISPLAY.renderMeasured(100,150, C_FILTERS.mean, false, false);
+
+      handleMenuScrolldown();
 
   int tag = GD.inputs.tag;
    // TODO: don't need to check buttons for inactive menus or functions...
   MAINMENU.handleButtonAction(tag);
-  GD.swap();
-  GD.__end();
+   GD.swap();
+    GD.__end();
+  
+  }
+
+  
+ // if (!digitize or bufferOverflow) {
+   
+ // }
   
 }
 
@@ -1211,7 +1421,7 @@ void loopMain()
   GD.__end();
 
   #ifndef SAMPLING_BY_INTERRUPT 
-    handleSampling();
+    setsammpling();
   #endif
   disable_ADC_DAC_SPI_units();
   GD.resume();

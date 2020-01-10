@@ -40,6 +40,7 @@ class ADCClass {
     int8_t fltSetCommitCurrentSource(float fVoltage);
     int8_t fltSetCommitLimit(float fCurrent, int8_t up_down_both);
     float measureMilliVoltage();
+    float measureMilliVoltageRaw();
     void setCurrentRange(CURRENT_RANGE range);
     void setSamplingRate(int value);
     int dataReady();

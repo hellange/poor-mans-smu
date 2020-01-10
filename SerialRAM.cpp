@@ -27,7 +27,7 @@
 #define CSCONFIG() pinMode(RAM_CS, OUTPUT)
 #define CSASSERT() digitalWriteFast(RAM_CS, LOW)
 #define CSRELEASE() digitalWriteFast(RAM_CS, HIGH)
-#define SPICONFIG SPISettings(20000000, MSBFIRST, SPI_MODE0)
+#define SPICONFIG SPISettings(10000000, MSBFIRST, SPI_MODE0)
 
 
 void ram_init(void)
