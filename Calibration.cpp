@@ -543,6 +543,10 @@ void CalibrationClass::renderCal(int x, int y, float valM, float setM, bool cur,
 
     GD.Tag(BUTTON_DAC_NONLINEAR_CALIBRATE);
     GD.cmd_button(x+620,y+45,120,50,29,0,"AUTOCAL");
+
+    GD.Tag(BUTTON_DAC_ZERO_CALIBRATE);
+    GD.cmd_button(x+620,y+100,120,50,29,0,"ZEROCAL");
+    
     GD.Tag(0);
   }
   GD.LineWidth(20);
@@ -555,8 +559,8 @@ void CalibrationClass::renderCal(int x, int y, float valM, float setM, bool cur,
 
   float max_meas_value = meas_adc[adc_cal_points-1];
 
-  float pixelsPrVolt = 180; // pixel width pr volt
-  float x_null_position = 480; // x position for 0V
+  float pixelsPrVolt = 170; // pixel width pr volt
+  float x_null_position = 440; // x position for 0V
   float correction_display_factor = 80000.0; // TODO: Make it show as ppm ?  uV ?
   y=y+30;
   // correction graph
@@ -600,7 +604,7 @@ void CalibrationClass::renderCal(int x, int y, float valM, float setM, bool cur,
   y=y-50;
   // voltage labels
   if (!reduceDetails) {
-  for (int i=min_set_value/1000.0;i<=max_set_value/1000.0;i=i+2) {
+  for (int i=min_set_value/1000.0;i<=max_set_value/1000.0;i=i+4) {
       int xv = i* pixelsPrVolt/(int)(max_set_value/1000.0);
       GD.cmd_text(x+x_null_position+xv-10, y + 200, 27, 0, i<0?"-":" ");
       if (abs(i) >=10.0) {

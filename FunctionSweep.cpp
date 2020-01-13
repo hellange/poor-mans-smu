@@ -102,7 +102,11 @@ void FunctionSweepClass::operateSmuVoltage(float high, float low, float step, in
       currentSweepDir = +1;
      }
      currentSweepValue += step*currentSweepDir;
-     SMU[0].fltSetCommitVoltageSource(currentSweepValue, false);
+     // Note that DAC is calibrated based on dynamic range. If all swipe values
+     // are within a DAC softspan range, you can set this to dynamic to get better accuracy (last argument true instead of false)
+     // Note that swithing softspan range gives some glitches, so all sweep values must be inside same softspan range to use dynamic range
+     bool useBestRange = abs(high)<4500 && abs(low)<4500; // based on 2.5V DAC gives apporx 5V out
+     SMU[0].fltSetCommitVoltageSource(currentSweepValue, useBestRange);
    } 
 }
 

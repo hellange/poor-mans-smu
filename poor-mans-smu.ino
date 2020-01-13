@@ -988,11 +988,24 @@ int detectGestures() {
   return gestureDetected;
 }
 
-int timeBeforeAutoNull = millis() + 1000;
+int timeBeforeAutoNull = millis() + 5000;
+
+void forceAutoNull() {
+  Serial.println("Force auto null...");
+  timeBeforeAutoNull = millis();
+  startupCalibrationDone0 = false;
+    startupCalibrationDone1 = false;
+  startupCalibrationDone2 = false;
+
+}
 
 void handleAutoNullAtStartup() {
-
-  if (!startupCalibrationDone0 && timeAtStartup + timeBeforeAutoNull < millis()) {
+//   Serial.print("x ");
+//   Serial.print(startupCalibrationDone0);
+//   Serial.print(" ");
+//   Serial.println(timeBeforeAutoNull < millis());
+  if (!startupCalibrationDone0 && timeBeforeAutoNull < millis()) {
+    Serial.println("Performing auto null...");
     V_CALIBRATION.useCalibratedValues = false;
     current_range = MILLIAMP10;
     //Serial.println("Null calibration initiated...");
@@ -1009,7 +1022,7 @@ void handleAutoNullAtStartup() {
    
   }
   int msWaitPrCal = 5000;
-  if (!startupCalibrationDone1 && timeAtStartup + timeBeforeAutoNull + msWaitPrCal < millis()) {
+  if (!startupCalibrationDone1 && /*timeAtStartup + */timeBeforeAutoNull + msWaitPrCal < millis()) {
     //float v = V_STATS.rawValue; 
     float v = V_FILTERS.mean;   
     V_CALIBRATION.toggleNullValue(v, current_range);
@@ -1024,7 +1037,7 @@ void handleAutoNullAtStartup() {
     startupCalibrationDone1 = true;
   } 
  
-  if (!startupCalibrationDone2 && timeAtStartup + timeBeforeAutoNull + msWaitPrCal + 100 < millis()) {
+  if (!startupCalibrationDone2 && /*timeAtStartup + */timeBeforeAutoNull + msWaitPrCal + 100 < millis()) {
     current_range = AMP1;
     SMU[0].setCurrentRange(current_range);
     if (operationType == SOURCE_VOLTAGE) {
@@ -1033,7 +1046,7 @@ void handleAutoNullAtStartup() {
       SMU[0].fltSetCommitCurrentSource(0.0);
     }
   }
-  if (!startupCalibrationDone2 && timeAtStartup + timeBeforeAutoNull + msWaitPrCal*2 < millis()) {
+  if (!startupCalibrationDone2 && /*timeAtStartup +*/ timeBeforeAutoNull + msWaitPrCal*2 < millis()) {
     //float v = V_STATS.rawValue;
     float v = V_FILTERS.mean;
     V_CALIBRATION.toggleNullValue(v, current_range);
@@ -1595,6 +1608,14 @@ void loopMain()
        timeSinceLastChange = millis();
        V_CALIBRATION.startAutoCal();
     
+    } else if (tag == BUTTON_DAC_ZERO_CALIBRATE) {
+      if (timeSinceLastChange + 1000 > millis()){
+        return;
+       } 
+       Serial.println("Start zero calibration of dac....");
+       timeSinceLastChange = millis();
+       forceAutoNull();
+       
     }
     #endif // end not using simulator
     

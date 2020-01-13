@@ -255,7 +255,8 @@ void FunctionPulseClass::sourcePulse() {
    if (pulseHigh) {
      pulseHigh = false;
     // pulseTimer = millis();
-     SMU[0].fltSetCommitVoltageSource(low, false);
+     bool useDynamicRange = (abs(low)<4500 && abs(high)<4500); // if both values are within one softspan DAC range, you can use dynamic
+     SMU[0].fltSetCommitVoltageSource(low, useDynamicRange);
      measuredLow =  V_STATS.rawValue;
      //Serial.println("Set pulse low");
   // } else if (!pulseHigh && pulseTimer+duration/2 < millis()) {
