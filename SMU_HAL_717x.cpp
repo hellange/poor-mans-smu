@@ -28,8 +28,8 @@ static st_reg init_state[] =
 
     {0x12, 2, 0, 0x0000l, "Ch_Map_2 "}, //CH_Map_3
     {0x13, 2, 0, 0x0000l, "Ch_Map_3 "}, //CH_Map_4
-
-   {0x20, 2, 0, 0x1f00l, "SetupCfg0"}, //Setup_Config_1   //ext ref 
+  //helge          //f       c means disable input buffers
+   {0x20, 2, 0, 0x1c00l, "SetupCfg0"}, //Setup_Config_1   //ext ref 
    //{0x20, 2, 0, 0x1f20l, "SetupCfg0"}, //Setup_Config_1  //int ref, unipolar 
 
     {0x21, 2, 0, 0x1020l, "SetupCfg1"}, //Setup_Config_2
@@ -166,7 +166,7 @@ float ADCClass::measureMilliVoltage() {
   float v = (float) ((AD7176_regs[4].value*VFSR*1000.0)/FSR); 
   v=v-VREF*1000.0;
 
-  v = v / 0.8;  // funnel amplifier
+  v = v / 0.4;  // funnel amplifier
   
   // DONT INCLUDE THESE ADJUSTMENTS WHEN TESTING ONLY DAC/ADC BOARD !!!!
   if (full_board == true) {
@@ -266,7 +266,7 @@ int8_t ADCClass::fltSetCommitVoltageSource(float milliVolt, bool dynamicRange) {
   setValueV = v; // use volt. TODO: change to millivolt ?
 
   float mv = milliVolt;
-  if (V_CALIBRATION.useCalibratedValues == true) {
+  if (V_CALIBRATION.useDacCalibratedValues == true) {
     mv = V_CALIBRATION.dac_nonlinear_compensation(mv);
   }
    
@@ -346,7 +346,7 @@ int8_t ADCClass::fltSetCommitVoltageSource(float milliVolt, bool dynamicRange) {
   setValueV = v; // use volt. TODO: change to millivolt ?
 
   float mv = milliVolt;
-  if (C_CALIBRATION.useCalibratedValues == true) {
+  if (C_CALIBRATION.useDacCalibratedValues == true) {
     //Serial.println("USE CALIBRATED VALUES FOR CURRENT");
     //Serial.print(mv,6);
     mv = C_CALIBRATION.dac_nonlinear_compensation(mv);

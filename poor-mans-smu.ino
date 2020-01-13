@@ -63,6 +63,7 @@ int scroll = 0;
 int scrollDir = 0;
 
 int timeAtStartup;
+bool startupCalibrationDone0 = false;
 bool startupCalibrationDone1 = false;
 bool startupCalibrationDone2 = false;
 
@@ -158,7 +159,7 @@ void setup()
    delay(100);
    Serial.println("Start measuring...");
    SMU[0].init();
-   SMU[0].setSamplingRate(5);
+   SMU[0].setSamplingRate(20);
    operationType = getOperationType();
 
    if (operationType == SOURCE_VOLTAGE) {
@@ -987,31 +988,43 @@ int detectGestures() {
   return gestureDetected;
 }
 
-int timeBeforeAutoNull = millis() + 2000;
+int timeBeforeAutoNull = millis() + 1000;
+
 void handleAutoNullAtStartup() {
-  if (!startupCalibrationDone1 && timeAtStartup + timeBeforeAutoNull < millis()) {
+
+  if (!startupCalibrationDone0 && timeAtStartup + timeBeforeAutoNull < millis()) {
+    V_CALIBRATION.useCalibratedValues = false;
     current_range = MILLIAMP10;
+    //Serial.println("Null calibration initiated...");
     SMU[0].setCurrentRange(current_range);
     if (operationType == SOURCE_VOLTAGE) {
       SMU[0].fltSetCommitVoltageSource(0.0, true);
     } else {
       SMU[0].fltSetCommitCurrentSource(0.0);
     }
+    //V_FILTERS.init();
+    SMU[0].setSamplingRate(5);
+    V_FILTERS.setFilterSize(5);
+    startupCalibrationDone0 = true;
+   
   }
-  
-  if (!startupCalibrationDone1 && timeAtStartup + timeBeforeAutoNull + 1000 < millis()) {
-    float v = V_STATS.rawValue;    
+  int msWaitPrCal = 5000;
+  if (!startupCalibrationDone1 && timeAtStartup + timeBeforeAutoNull + msWaitPrCal < millis()) {
+    //float v = V_STATS.rawValue; 
+    float v = V_FILTERS.mean;   
     V_CALIBRATION.toggleNullValue(v, current_range);
     Serial.print("Removed voltage offset from 10mA range:");  
-    Serial.println(v);  
-    v = C_STATS.rawValue;
+    Serial.println(v,3);  
+    //v = C_STATS.rawValue;
+    
+    v = C_FILTERS.mean;   
     C_CALIBRATION.toggleNullValue(v , current_range);
     Serial.print("Removed current offset from 10mA range:");  
-    Serial.println(v);
+    Serial.println(v,3);
     startupCalibrationDone1 = true;
   } 
-
-  if (!startupCalibrationDone2 && timeAtStartup + timeBeforeAutoNull + 1100 < millis()) {
+ 
+  if (!startupCalibrationDone2 && timeAtStartup + timeBeforeAutoNull + msWaitPrCal + 100 < millis()) {
     current_range = AMP1;
     SMU[0].setCurrentRange(current_range);
     if (operationType == SOURCE_VOLTAGE) {
@@ -1020,16 +1033,22 @@ void handleAutoNullAtStartup() {
       SMU[0].fltSetCommitCurrentSource(0.0);
     }
   }
-  if (!startupCalibrationDone2 && timeAtStartup + timeBeforeAutoNull + 2000 < millis()) {
-    float v = V_STATS.rawValue;
+  if (!startupCalibrationDone2 && timeAtStartup + timeBeforeAutoNull + msWaitPrCal*2 < millis()) {
+    //float v = V_STATS.rawValue;
+    float v = V_FILTERS.mean;
     V_CALIBRATION.toggleNullValue(v, current_range);
     Serial.print("Removed voltage offset from 1A range:");  
-    Serial.println(v);  
-    v = C_STATS.rawValue;
+    Serial.println(v,3);  
+    //v = C_STATS.rawValue;
+    v = C_FILTERS.mean;
     C_CALIBRATION.toggleNullValue(v,current_range);
     Serial.print("Removed current offset from 1A current range:");  
-    Serial.println(v);  
+    Serial.println(v,3);  
     startupCalibrationDone2 = true;
+    V_FILTERS.init();
+    V_FILTERS.setFilterSize(5);
+    V_CALIBRATION.useCalibratedValues = true;
+
   } 
 
 }
@@ -1222,7 +1241,7 @@ int LM60_getTemperature() {
 }
 
 void loop() {
-
+  V_CALIBRATION.autoCalADCfromDAC();
   
   // No need to update display more often that the eye can detect.
   // Too often will cause jitter in the sampling because display and DAC/ADC share same SPI port.
@@ -1260,11 +1279,7 @@ void loopDigitize() {
   operationType = getOperationType();
   disable_ADC_DAC_SPI_units();
   
-//  if (samplingDelayTimer + 20000 > millis()) {
-//      GD.resume();
-//      GD.Clear();
-//      GD.cmd_text(250, 200 ,   31, 0, "Waiting to digitize");
-//  } else {
+
    if (digitize == false && !MAINMENU.active /*&&  samplingDelayTimer + 50 < millis()*/){
      
     ramAdrPtr = 0;
@@ -1281,14 +1296,6 @@ void loopDigitize() {
      
    }
 
-     // GD.Clear();
-     // GD.cmd_text(250, 200 ,   31, 0, "Digitizing... wait a few seconds...");
-      
-     
-
- // }
- 
-
   disable_ADC_DAC_SPI_units();
   
   if (bufferOverflow == true) {
@@ -1297,7 +1304,7 @@ void loopDigitize() {
     samplingDelayTimer = millis();
     
   }
-
+  //TODO: Move digitizine to a separate class
   if (bufferOverflow == false && digitize == true){
 //    //GD.cmd_number(100, 100, 1, 6, ramAdrPtr);  
 //    GD.resume();
@@ -1396,11 +1403,6 @@ void loopDigitize() {
     GD.__end();
   
   }
-
-  
- // if (!digitize or bufferOverflow) {
-   
- // }
   
 }
 
@@ -1414,14 +1416,17 @@ void loopMain()
   
 
   if (startupCalibrationDone2) {
-    //SMU[0].pulse(-4000.0, 4000.0, 5000);
-    //SMU[0].sweep(5.00, -5.00, 0.1, 5000);
+   
+    //if (!V_CALIBRATION.autoCalDone) {
+    //  V_CALIBRATION.startAutoCal();
+    //}
+    
   }
   //handleAutoRange();
   GD.__end();
 
   #ifndef SAMPLING_BY_INTERRUPT 
-    setsammpling();
+    setsammpling(); // ???? Should it be handleSampling ?
   #endif
   disable_ADC_DAC_SPI_units();
   GD.resume();
@@ -1484,9 +1489,10 @@ void loopMain()
     } 
     #ifndef USE_SIMULATOR // dont want to mess up calibration while in simulation mode...
     else if (tag == BUTTON_DAC_GAIN_COMP_POS_UP) {
-       if (timeSinceLastChange + 500 < millis()){
-        timeSinceLastChange = millis();
+       if (timeSinceLastChange + 500 > millis()){
+        return;
       } 
+       timeSinceLastChange = millis();
        float mv = SOURCE_DIAL.getMv();
        if (operationType == SOURCE_VOLTAGE) {
          if (mv < 0) {
@@ -1509,9 +1515,11 @@ void loopMain()
        }
       
     } else if (tag == BUTTON_DAC_GAIN_COMP_POS_DOWN) {
-       if (timeSinceLastChange + 500 < millis()){
-        timeSinceLastChange = millis();
+       if (timeSinceLastChange + 200 > millis()){
+        return;
       } 
+       timeSinceLastChange = millis();
+
        float mv = SOURCE_DIAL.getMv();
        if (operationType == SOURCE_VOLTAGE) {
          if (mv < 0) {
@@ -1535,9 +1543,12 @@ void loopMain()
        }
        
     } else if (tag == BUTTON_ADC_GAIN_COMP_POS_UP) {
-       if (timeSinceLastChange + 500 < millis()){
-        timeSinceLastChange = millis();
+       if (timeSinceLastChange + 200 > millis()){
+        return;
+        
       } 
+              timeSinceLastChange = millis();
+
        float mv = SOURCE_DIAL.getMv();
        if (operationType == SOURCE_VOLTAGE) {
   
@@ -1555,25 +1566,35 @@ void loopMain()
        }
       
     } else if (tag == BUTTON_ADC_GAIN_COMP_POS_DOWN) {
-       if (timeSinceLastChange + 500 < millis()){
-        timeSinceLastChange = millis();
+       if (timeSinceLastChange + 200 > millis()){
+        return;
       } 
+              timeSinceLastChange = millis();
+
        float mv = SOURCE_DIAL.getMv();
        if (operationType == SOURCE_VOLTAGE) {
          if (mv < 0) {
-            V_CALIBRATION.adjAdcGainCompNeg(-0.000010);
+            V_CALIBRATION.adjAdcGainCompNeg(-0.000001);
          } else {
-            V_CALIBRATION.adjAdcGainCompPos(-0.000010);
+            V_CALIBRATION.adjAdcGainCompPos(-0.000001);
          }
        } else {
         if (mv < 0) {
-            C_CALIBRATION.adjAdcGainCompNeg(-0.000010);
+            C_CALIBRATION.adjAdcGainCompNeg(-0.0000010);
          } else {
-            C_CALIBRATION.adjAdcGainCompPos(-0.000010);
+            C_CALIBRATION.adjAdcGainCompPos(-0.0000010);
          }
        }
       
        
+    } else if (tag == BUTTON_DAC_NONLINEAR_CALIBRATE) {
+       if (timeSinceLastChange + 1000 > millis()){
+        return;
+       } 
+       Serial.println("Start auto calibration of dac non linearity....");
+       timeSinceLastChange = millis();
+       V_CALIBRATION.startAutoCal();
+    
     }
     #endif // end not using simulator
     
@@ -1602,6 +1623,9 @@ void loopMain()
   displayWidget();
   handleMenuScrolldown();
 
+  if (V_CALIBRATION.autoCalInProgress) {
+    notification("Auto calibration in progress...");
+  }
   if (!startupCalibrationDone2) {
     notification("Wait for null adjustment...");
   }

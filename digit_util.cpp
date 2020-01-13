@@ -69,7 +69,9 @@ void DigitUtilClass::renderValue(int x,int y,float val, int size = 0, int type =
       x = x + fontWidth * 2.9;
       GD.cmd_number(x, y, font, 3, uV);
       x = x + fontWidth * 2.6;
-      GD.cmd_text(x, y, font, 0,  type == typeVoltage ? "V" : "A");
+      if (type > -1) {
+        GD.cmd_text(x, y, font, 0,  type == typeVoltage ? "V" : "A");
+      }
     } else if (mV > 0 or type == typeVoltage) {
       GD.cmd_number(x, y, font, 3, mV);
       x = x + fontWidth*2.5;
@@ -77,7 +79,9 @@ void DigitUtilClass::renderValue(int x,int y,float val, int size = 0, int type =
       x = x + fontWidth/3;
       GD.cmd_number(x, y, font, 3, uV);
       x = x + fontWidth * 2.6;
-      GD.cmd_text(x, y, font, 0,  type == typeVoltage ? "mV" : "mA");
+      if (type > -1) {
+        GD.cmd_text(x, y, font, 0,  type == typeVoltage ? "mV" : "mA");
+      }
     } else {
       GD.cmd_number(x, y, font, 3, uV);
       x = x + fontWidth*2.5;
@@ -85,7 +89,9 @@ void DigitUtilClass::renderValue(int x,int y,float val, int size = 0, int type =
       x = x + fontWidth/3;
       GD.cmd_number(x, y, font, 3, nV);
       x = x + fontWidth * 2.6;
-      GD.cmd_text(x, y, font, 0,  type == typeVoltage ? "uV" : "uA");
+      if (type > -1) {
+        GD.cmd_text(x, y, font, 0,  type == typeVoltage ? "uV" : "uA");
+      }
     }
 
 }
