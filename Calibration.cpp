@@ -542,7 +542,8 @@ void CalibrationClass::renderCal(int x, int y, float valM, float setM, bool cur,
     GD.ColorRGB(0x000000);
 
     GD.Tag(BUTTON_DAC_NONLINEAR_CALIBRATE);
-    GD.cmd_button(x+630,y+45,100,50,29,0,"AUTOCAL");
+    GD.cmd_button(x+620,y+45,120,50,29,0,"AUTOCAL");
+    GD.Tag(0);
   }
   GD.LineWidth(20);
   GD.Begin(LINE_STRIP);

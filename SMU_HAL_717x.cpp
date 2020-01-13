@@ -28,8 +28,9 @@ static st_reg init_state[] =
 
     {0x12, 2, 0, 0x0000l, "Ch_Map_2 "}, //CH_Map_3
     {0x13, 2, 0, 0x0000l, "Ch_Map_3 "}, //CH_Map_4
-  //helge          //f       c means disable input buffers
-   {0x20, 2, 0, 0x1c00l, "SetupCfg0"}, //Setup_Config_1   //ext ref 
+    
+    //              c means disable input buffers
+    {0x20, 2, 0, 0x1c00l, "SetupCfg0"}, //Setup_Config_1   //ext ref 
    //{0x20, 2, 0, 0x1f20l, "SetupCfg0"}, //Setup_Config_1  //int ref, unipolar 
 
     {0x21, 2, 0, 0x1020l, "SetupCfg1"}, //Setup_Config_2
