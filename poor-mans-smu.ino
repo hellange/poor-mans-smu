@@ -459,7 +459,7 @@ void renderExperimental(int x, int y, float valM, float setM, bool cur) {
   }
   float degrees = -deviationInPercent * 700.0;
   if (!reduceDetails()) {
-    renderAnalogGauge(x+90,y-20,240, degrees, deviationInPercent, "Deviation from SET");
+    renderAnalogGauge(x+90,y,240, degrees, deviationInPercent, "Deviation from SET");
   }
   GD.ColorRGB(0x000000);
   GD.Tag(BUTTON_SAMPLE_RATE_5);
@@ -737,9 +737,16 @@ void showWidget(int y, int widgetNo, int scroll) {
         GD.ColorRGB(COLOR_VOLT);
         GD.cmd_text(20, yPos, 29, 0, "EXPERIMENTAL");
       }
-      float rawM = V_FILTERS.mean;
-      float setM = SMU[0].getSetValuemV();
-      renderExperimental(scroll,yPos, rawM, setM, false);
+
+      if (operationType == SOURCE_VOLTAGE) {
+        float rawM = V_FILTERS.mean;
+        float setM = SMU[0].getSetValuemV();
+        renderExperimental(scroll,yPos, rawM, setM, false);
+      } else {
+        float rawM = C_FILTERS.mean;
+        float setM = SMU[0].getSetValuemV();
+        renderExperimental(scroll,yPos, rawM, setM, false);
+      }
   } else if (widgetNo == 5) {
       if (scroll ==0){
         GD.ColorRGB(COLOR_VOLT);
