@@ -127,13 +127,20 @@ void CalibrationClass::init(OPERATION_TYPE operationType_) {
   Serial.println(adcGainCompNeg,7);
 
  dacZeroComp = floatFromEeprom(ea_dac_zero_comp);
- Serial.print("Read dacNullComp from eeprom address ");
+ Serial.print("Read dacZeroComp from eeprom address ");
   Serial.print(ea_dac_zero_comp,HEX);
   Serial.print(":");
   if (isnan(dacZeroComp)) {
     Serial.print("Not defined. Write default value:");
     dacZeroComp = 0.0; // use millivolt
     floatToEeprom(ea_dac_zero_comp,dacZeroComp); // write initial default
+  } else if (abs(dacZeroComp) < -10000.0 or abs(dacZeroComp) > 10000.0) {
+    Serial.print("WARNING: Suspect dac zero value:");
+    Serial.println(dacZeroComp);
+    dacZeroComp = 0.0;
+    Serial.print("Setting dac zero to:");
+    Serial.println(dacZeroComp);
+    
   }
   Serial.println(dacZeroComp,7);
 
@@ -537,7 +544,7 @@ void CalibrationClass::renderCal(int x, int y, float valM, float setM, bool cur,
       GD.cmd_text(x+93, y + 68, 27, 0, "%");
     } else {
       GD.cmd_text(x+10, y + 45, 27, 0, "DAC GAIN +");
-      DIGIT_UTIL.renderValue(x + 0,  y+65 ,getDacGainCompPos(), 1, -1);
+      DIGIT_UTIL.renderValue(x + 0,  y+65 ,getDacGainCompPos()*100.0, 1, -1);
       GD.cmd_text(x+93, y + 68, 27, 0, "%"); 
     }
   

@@ -392,7 +392,9 @@ int8_t ADCClass::fltSetCommitVoltageSource(float milliVolt, bool dynamicRange) {
     //dac_voltage = dac_voltage - 0.0004; // additional offset (measured when connected to amplifier board)
     if (current_range == AMP1) {
       dac_voltage = dac_voltage * 10.0; // with 1ohm shunt and x10 amplifier: 100mA is set by 1000mV
-      dac_voltage = dac_voltage + 0.0008; // offset
+      //dac_voltage = dac_voltage + 0.0008; // offset
+      dac_voltage = dac_voltage + C_CALIBRATION.getDacZeroComp();
+
       dac_voltage = dac_voltage * 1.137;
       if (dac_voltage < 0) {
         dac_voltage = dac_voltage * C_CALIBRATION.getDacGainCompNeg();
@@ -495,7 +497,6 @@ int8_t ADCClass::fltSetCommitVoltageSource(float milliVolt, bool dynamicRange) {
       
       
     }
-
 
     i = C_CALIBRATION.adc_nonlinear_compensation(i);
 

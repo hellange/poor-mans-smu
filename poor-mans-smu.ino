@@ -745,9 +745,15 @@ void showWidget(int y, int widgetNo, int scroll) {
         GD.ColorRGB(COLOR_VOLT);
         GD.cmd_text(20, yPos, 29, 0, "CAL");
 
-        float rawM = V_FILTERS.mean;
-        float setM = SMU[0].getSetValuemV();
-        V_CALIBRATION.renderCal(scroll,yPos, rawM, setM, false, reduceDetails());
+        if (operationType == SOURCE_VOLTAGE) {
+          float rawM = V_FILTERS.mean;
+          float setM = SMU[0].getSetValuemV();
+          V_CALIBRATION.renderCal(scroll,yPos, rawM, setM, false, reduceDetails());
+        } else {
+          float rawM = C_FILTERS.mean;
+          float setM = SMU[0].getSetValuemV();
+          C_CALIBRATION.renderCal(scroll,yPos, rawM, setM, false, reduceDetails());
+        }
       }
       
   }
@@ -1572,9 +1578,9 @@ void loopMain()
          }
        } else {
          if (mv < 0) {
-            C_CALIBRATION.adjAdcGainCompNeg(0.000001);
+            C_CALIBRATION.adjAdcGainCompNeg(0.00001);
          } else {
-            C_CALIBRATION.adjAdcGainCompPos(0.000001);
+            C_CALIBRATION.adjAdcGainCompPos(0.00001);
          }
        }
       
@@ -1587,15 +1593,15 @@ void loopMain()
        float mv = SOURCE_DIAL.getMv();
        if (operationType == SOURCE_VOLTAGE) {
          if (mv < 0) {
-            V_CALIBRATION.adjAdcGainCompNeg(-0.000002);
+            V_CALIBRATION.adjAdcGainCompNeg(-0.000001);
          } else {
-            V_CALIBRATION.adjAdcGainCompPos(-0.000002);
+            V_CALIBRATION.adjAdcGainCompPos(-0.000001);
          }
        } else {
         if (mv < 0) {
-            C_CALIBRATION.adjAdcGainCompNeg(-0.000002);
+            C_CALIBRATION.adjAdcGainCompNeg(-0.00001);
          } else {
-            C_CALIBRATION.adjAdcGainCompPos(-0.000002);
+            C_CALIBRATION.adjAdcGainCompPos(-0.00001);
          }
        }
       
