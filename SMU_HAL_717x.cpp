@@ -7,7 +7,10 @@
 static st_reg init_state[] = 
 {
     {0x00, 1, 0, 0x00l,   "Stat_Reg "}, //Status_Register
+
+    //{0x01, 2, 0, 0xa000l, "ADCModReg"}, //ADC_Mode_Register, sincle cyc
     {0x01, 2, 0, 0x8000l, "ADCModReg"}, //ADC_Mode_Register
+    
     //{0x01, 2, 0, 0x0040l, "ADCModReg"}, //ADC_Mode_Register - internal calibration
 
     {0x02, 2, 0, 0x0000l, "IfModeReg"}, //Interface_Mode_Register
@@ -90,16 +93,32 @@ void ADCClass::writeSamplingRate() {
   int value = samplingRate;
   // Note that two samples are needed for both voltage and current !
   // So the "visible" sample rate will be 1/2 of set. 
+
+
+  // Experimenting with filters ????
+  //15        SINC3_MAP_0
+  //[14:12]   reserved
+  //11        ENHFILTEN0
+  //[10:8]    ENHFILT0
+  //7         reserved
+  //[6:5]     ORDER0      00 = Sinc5+Sinc1 (default), 11=sinc3
+  //[4:0]     ORD0        sampling speed
+  //
+  //
+  //unsigned int ENHFILTERN0 = 0x0800l;
+  //unsigned int ENHFILT0_20SPS = 0x0500;
+
+  
   if (value == 5) {
-      AD7176_WriteRegister({0x28, 2, 0, 0x0214l});
+      AD7176_WriteRegister({0x28, 2, 0, 0x0214l  });
   } else if (value == 10) {
-      AD7176_WriteRegister({0x28, 2, 0, 0x0213l});
+      AD7176_WriteRegister({0x28, 2, 0, 0x0213l  });
   } else if (value == 20) {
-      AD7176_WriteRegister({0x28, 2, 0, 0x0211l});
+      AD7176_WriteRegister({0x28, 2, 0, 0x0211l  });
   } else if (value == 50) {
-      AD7176_WriteRegister({0x28, 2, 0, 0x0210l});
+      AD7176_WriteRegister({0x28, 2, 0, 0x0210l  });
   } else if (value == 100) {
-      AD7176_WriteRegister({0x28, 2, 0, 0x020el});
+      AD7176_WriteRegister({0x28, 2, 0, 0x020el  });
   } else if (value == 200) {
       AD7176_WriteRegister({0x28, 2, 0, 0x020dl});
   } else if (value == 500) {
@@ -274,7 +293,8 @@ int8_t ADCClass::fltSetCommitVoltageSource(float milliVolt, bool dynamicRange) {
   float dac_voltage = mv / 1000.0;  // DAC code operates with V instead of mV 
   
   dac_voltage = dac_voltage * 5.0/4.096; // using 4.096 ref instead of 5.0
-  dac_voltage = dac_voltage - 0.000825; // adjusting offset to null
+  //dac_voltage = dac_voltage - 0.000825; // adjusting offset to null
+  dac_voltage = dac_voltage + V_CALIBRATION.getDacZeroComp();
   if (dac_voltage > 0) {
     // positive
     dac_voltage = dac_voltage * 1.00103; // gain

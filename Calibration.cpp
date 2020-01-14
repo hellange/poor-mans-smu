@@ -52,24 +52,29 @@ void CalibrationClass::init(OPERATION_TYPE operationType_) {
     ea_adc_gain_comp_pos = EA_ADC_GAIN_COMP_POS_VOL;
     ea_adc_gain_comp_neg = EA_ADC_GAIN_COMP_NEG_VOL;
 
+    ea_dac_zero_comp = EA_DAC_ZERO_COMP_VOL;
+
     readAdcCalFromEeprom();
   } else {
 
         // set value
-    adc_cal_points = 15;
-    Serial.println("Current measurement nonlinearity:");
-    float_array_init(set_adc, adc_cal_points, -500.00, -400.00, -300.00, -200.00, -100.00, -50.00, -10.00, 0.00, 10.00, 50.00, 100.00, 200.00, 300.00, 400.00, 500.00 );
-    float_array_init(meas_adc, adc_cal_points,-500.00, -400.17, -300.09, -199.93, -099.96, -50.00, -10.00, 0.00, 10.02, 50.10, 100.18, 200.36, 300.69, 400.88, 500.00 );
-
-    dac_cal_points = 15;
-    Serial.println("Current source nonlinearity:");
-    float_array_init(set_dac, dac_cal_points,   -500.00, -400.00, -300.00, -200.00, -100.00, -50.00, -10.000, 0.00, 10.00, 50.00, 100.00, 200.00, 300.00, 400.00, 500.00);
-    float_array_init(meas_dac, dac_cal_points,  -500.00, -399.94, -299.90, -199.93, -099.94, -49.92, -10.006, 0.00, 10.00, 49.99, 099.96, 199.93, 299.97, 399.94, 500.00);
+//    adc_cal_points = 15;
+//    Serial.println("Current measurement nonlinearity:");
+//    float_array_init(set_adc, adc_cal_points, -500.00, -400.00, -300.00, -200.00, -100.00, -50.00, -10.00, 0.00, 10.00, 50.00, 100.00, 200.00, 300.00, 400.00, 500.00 );
+//    float_array_init(meas_adc, adc_cal_points,-500.00, -400.17, -300.09, -199.93, -099.96, -50.00, -10.00, 0.00, 10.02, 50.10, 100.18, 200.36, 300.69, 400.88, 500.00 );
+//
+//    dac_cal_points = 15;
+//    Serial.println("Current source nonlinearity:");
+//    float_array_init(set_dac, dac_cal_points,   -500.00, -400.00, -300.00, -200.00, -100.00, -50.00, -10.000, 0.00, 10.00, 50.00, 100.00, 200.00, 300.00, 400.00, 500.00);
+//    float_array_init(meas_dac, dac_cal_points,  -500.00, -399.94, -299.90, -199.93, -099.94, -49.92, -10.006, 0.00, 10.00, 49.99, 099.96, 199.93, 299.97, 399.94, 500.00);
 
     ea_dac_gain_comp_pos = EA_DAC_GAIN_COMP_POS_CUR;
     ea_dac_gain_comp_neg = EA_DAC_GAIN_COMP_NEG_CUR;
     ea_adc_gain_comp_pos = EA_ADC_GAIN_COMP_POS_CUR;
     ea_adc_gain_comp_neg = EA_ADC_GAIN_COMP_NEG_CUR;
+
+    ea_dac_zero_comp = EA_DAC_ZERO_COMP_CUR;
+
   }
 
   nullValue[0] = 0.0;
@@ -121,6 +126,16 @@ void CalibrationClass::init(OPERATION_TYPE operationType_) {
   }
   Serial.println(adcGainCompNeg,7);
 
+ dacZeroComp = floatFromEeprom(ea_dac_zero_comp);
+ Serial.print("Read dacNullComp from eeprom address ");
+  Serial.print(ea_dac_zero_comp,HEX);
+  Serial.print(":");
+  if (isnan(dacZeroComp)) {
+    Serial.print("Not defined. Write default value:");
+    dacZeroComp = 0.0; // use millivolt
+    floatToEeprom(ea_dac_zero_comp,dacZeroComp); // write initial default
+  }
+  Serial.println(dacZeroComp,7);
 
 }
 
@@ -486,12 +501,32 @@ void CalibrationClass::adjAdcGainCompNeg(float val) {
   Serial.print("Adc gain neg comp at address ");
   Serial.print(ea_adc_gain_comp_neg,HEX);
   Serial.print(" adjusted to:");
+  Serial.println(adcGainCompNeg,6);
   Serial.flush();
 }
 
 float CalibrationClass::getAdcGainCompNeg() {
   return adcGainCompNeg;
 }
+
+void CalibrationClass::adjDacZeroComp(float val) {
+  dacZeroComp += val;
+  floatToEeprom(ea_dac_zero_comp, dacZeroComp);
+  Serial.print("Operation type = ");
+  Serial.println(operationType == SOURCE_CURRENT ? "Source current" : "Source voltage");
+  Serial.print("Dac zero comp at address ");
+  Serial.print(ea_dac_zero_comp,HEX);
+  Serial.print(" adjusted to:");  
+  Serial.println(dacZeroComp,6);
+
+  Serial.flush();
+}
+
+float CalibrationClass::getDacZeroComp() {
+  return dacZeroComp;
+}
+
+
 
 void CalibrationClass::renderCal(int x, int y, float valM, float setM, bool cur, bool reduceDetails) {
   if (!reduceDetails) {
@@ -513,7 +548,7 @@ void CalibrationClass::renderCal(int x, int y, float valM, float setM, bool cur,
     GD.Tag(BUTTON_DAC_GAIN_COMP_POS_DOWN);
     GD.cmd_button(x+10,y+150,100,50,29,0,"DOWN");
   
-    x=x+50;
+    x=x+10;
     GD.ColorRGB(0xaaaaaa);
     if (V_FILTERS.mean < 0) {
       GD.cmd_text(x+120, y + 45, 27, 0, "ADC GAIN -");
@@ -532,11 +567,31 @@ void CalibrationClass::renderCal(int x, int y, float valM, float setM, bool cur,
     GD.Tag(BUTTON_ADC_GAIN_COMP_POS_DOWN);
     GD.cmd_button(x+120,y+150,100,50,29,0,"DOWN");
 
+
+ x=x+120;
+    GD.ColorRGB(0xaaaaaa);
+    
+      GD.cmd_text(x+120, y + 45, 27, 0, "DAC zero");
+      DIGIT_UTIL.renderValue(x + 110,  y+65 ,getDacZeroComp(), 1, -1); 
+      GD.cmd_text(x+203, y + 68, 27, 0, "");
+   
+    GD.ColorRGB(0x000000);
+  
+    GD.Tag(BUTTON_DAC_ZERO_COMP_UP);
+    GD.cmd_button(x+120,y+90,100,50,29,0,"UP");
+    GD.Tag(BUTTON_DAC_ZERO_COMP_DOWN);
+    GD.cmd_button(x+120,y+150,100,50,29,0,"DOWN");
+
+
+
+x=x-70;
+    
+
     GD.ColorRGB(0xaaaaaa);
 
-    GD.cmd_text(x+300,y+45,27,0,"Null(1A)");
+    GD.cmd_text(x+300,y+45,27,0,"ADC Null(1A)");
     DIGIT_UTIL.renderValue(x + 300,  y+60 ,nullValue[0], 1, -1); 
-    GD.cmd_text(x+450,y+45,27,0,"Null(10mA)");
+    GD.cmd_text(x+450,y+45,27,0,"ADC Null(10mA)");
     DIGIT_UTIL.renderValue(x + 450,  y+60 ,nullValue[1], 1, -1); 
 
     GD.ColorRGB(0x000000);
@@ -559,10 +614,10 @@ void CalibrationClass::renderCal(int x, int y, float valM, float setM, bool cur,
 
   float max_meas_value = meas_adc[adc_cal_points-1];
 
-  float pixelsPrVolt = 170; // pixel width pr volt
-  float x_null_position = 440; // x position for 0V
+  float pixelsPrVolt = 145; // pixel width pr volt
+  float x_null_position = 450; // x position for 0V
   float correction_display_factor = 80000.0; // TODO: Make it show as ppm ?  uV ?
-  y=y+30;
+  y=y+30+10;
   // correction graph
   if (!reduceDetails) {
     for (int i=0;i<adc_cal_points;i++) {

@@ -199,7 +199,7 @@ void setup()
   // attachInterrupt(2, handleSampling, CHANGE);
 
 #ifdef SAMPLING_BY_INTERRUPT
-  myTimer.begin(handleSampling, 20); // in microseconds
+  myTimer.begin(handleSampling, 30); // in microseconds
   SPI.usingInterrupt(myTimer);
 #endif
 } 
@@ -1587,20 +1587,73 @@ void loopMain()
        float mv = SOURCE_DIAL.getMv();
        if (operationType == SOURCE_VOLTAGE) {
          if (mv < 0) {
-            V_CALIBRATION.adjAdcGainCompNeg(-0.000001);
+            V_CALIBRATION.adjAdcGainCompNeg(-0.000002);
          } else {
-            V_CALIBRATION.adjAdcGainCompPos(-0.000001);
+            V_CALIBRATION.adjAdcGainCompPos(-0.000002);
          }
        } else {
         if (mv < 0) {
-            C_CALIBRATION.adjAdcGainCompNeg(-0.0000010);
+            C_CALIBRATION.adjAdcGainCompNeg(-0.000002);
          } else {
-            C_CALIBRATION.adjAdcGainCompPos(-0.0000010);
+            C_CALIBRATION.adjAdcGainCompPos(-0.000002);
          }
        }
       
        
-    } else if (tag == BUTTON_DAC_NONLINEAR_CALIBRATE) {
+    } else if (tag == BUTTON_DAC_ZERO_COMP_UP) {
+       if (timeSinceLastChange + 200 > millis()){
+        return;
+      } 
+       timeSinceLastChange = millis();
+
+       float mv = SOURCE_DIAL.getMv();
+       if (operationType == SOURCE_VOLTAGE) {
+          V_CALIBRATION.adjDacZeroComp(+0.000002);
+
+          GD.__end();
+         if (SMU[0].fltSetCommitVoltageSource(mv, true)) printError(_PRINT_ERROR_VOLTAGE_SOURCE_SETTING);
+         GD.resume();
+         
+       } else {
+          C_CALIBRATION.adjDacZeroComp(+0.000002);
+          GD.__end();
+         if (SMU[0].fltSetCommitCurrentSource(mv)) printError(_PRINT_ERROR_VOLTAGE_SOURCE_SETTING);
+         GD.resume();
+
+          
+       }
+
+       
+       
+    }
+    else if (tag == BUTTON_DAC_ZERO_COMP_DOWN) {
+       if (timeSinceLastChange + 200 > millis()){
+        return;
+      } 
+       timeSinceLastChange = millis();
+
+       float mv = SOURCE_DIAL.getMv();
+       if (operationType == SOURCE_VOLTAGE) {
+          V_CALIBRATION.adjDacZeroComp(-0.000002);
+
+          GD.__end();
+         if (SMU[0].fltSetCommitVoltageSource(mv, true)) printError(_PRINT_ERROR_VOLTAGE_SOURCE_SETTING);
+         GD.resume();
+         
+       } else {
+          C_CALIBRATION.adjDacZeroComp(-0.000002);
+          GD.__end();
+         if (SMU[0].fltSetCommitCurrentSource(mv)) printError(_PRINT_ERROR_VOLTAGE_SOURCE_SETTING);
+         GD.resume();
+
+          
+       }
+
+       
+       
+    }
+    
+    else if (tag == BUTTON_DAC_NONLINEAR_CALIBRATE) {
        if (timeSinceLastChange + 1000 > millis()){
         return;
        } 

@@ -24,11 +24,15 @@ class CalibrationClass {
   float adcGainCompPos;
   float adcGainCompNeg;
 
+  float dacZeroComp;
+
   int ea_dac_gain_comp_pos;
   int ea_dac_gain_comp_neg;
   int ea_adc_gain_comp_pos;
   int ea_adc_gain_comp_neg;
 
+  int ea_dac_zero_comp;
+  
   void readAdcCalFromEeprom();
   void writeAdcCalToEeprom(int nrOfPoints);
 public:
@@ -47,6 +51,9 @@ public:
   void adjAdcGainCompPos(float val);
   float getAdcGainCompNeg();
   void adjAdcGainCompNeg(float val);
+
+  float getDacZeroComp();
+  void adjDacZeroComp(float val);
   
   float nullValue[2];
   bool useCalibratedValues = true;
