@@ -402,8 +402,8 @@ int8_t ADCClass::fltSetCommitVoltageSource(float milliVolt, bool dynamicRange) {
         dac_voltage = dac_voltage * C_CALIBRATION.getDacGainCompPos();
       }
 
-      Serial.println("Calculating current to set for 1A range");
-      Serial.flush();
+      //Serial.println("Calculating current to set for 1A range");
+      //Serial.flush();
 
     } else if (current_range == MILLIAMP10) {
       dac_voltage = dac_voltage * 1000.0; // with 100ohm shunt and x10 amplifier: 1mA range is set by 1000mV

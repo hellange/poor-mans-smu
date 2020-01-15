@@ -53,8 +53,14 @@ void CalibrationClass::init(OPERATION_TYPE operationType_) {
     ea_adc_gain_comp_neg = EA_ADC_GAIN_COMP_NEG_VOL;
 
     ea_dac_zero_comp = EA_DAC_ZERO_COMP_VOL;
+    ea_adc_nonlinear_comp_nr = EA_ADC_NONLINEAR_COMP_NR_VOL;
+    ea_adc_nonlinear_comp_start = EA_ADC_NONLINEAR_COMP_START_VOL;
+
+    FILTERS = &V_FILTERS;
 
     readAdcCalFromEeprom();
+
+    
   } else {
 
         // set value
@@ -74,6 +80,13 @@ void CalibrationClass::init(OPERATION_TYPE operationType_) {
     ea_adc_gain_comp_neg = EA_ADC_GAIN_COMP_NEG_CUR;
 
     ea_dac_zero_comp = EA_DAC_ZERO_COMP_CUR;
+
+    ea_adc_nonlinear_comp_nr = EA_ADC_NONLINEAR_COMP_NR_CUR;
+    ea_adc_nonlinear_comp_start = EA_ADC_NONLINEAR_COMP_START_CUR;
+
+    FILTERS = &C_FILTERS;
+
+    readAdcCalFromEeprom();
 
   }
 
@@ -158,16 +171,25 @@ int autoCalArrayPointer = 0;
  float maxValueCal = 16000.00;
  float minValueCal = -16000.00;
  float stepValueCal = 1000.00;
+ 
 void CalibrationClass::startAutoCal() {
+  // use different values for current
+  if (operationType == SOURCE_CURRENT) {
+    maxValueCal = 400.0;
+    minValueCal = -400.0;
+    stepValueCal = 50.0;
+  }
+  
   if (!autoCalInProgress) {
-    Serial.println("STARTING AUTO CALIBRATION OF ADC !");
+    Serial.print("STARTING AUTO CALIBRATION OF ADC FOR ");
+    Serial.println(operationType == SOURCE_CURRENT ? "CURRENT SOURCE" : "VOLTAGE SOURCE");
     autoCalInProgress = true;
     autoCalDacTimer = millis();
     autoCalV = minValueCal;
     useCalibratedValues = false;
     autoCalArrayPointer = 0;
     SMU[0].setSamplingRate(20);
-    V_FILTERS.setFilterSize(5);
+    FILTERS->setFilterSize(5);
 
     // clear existing cals from ram
     int calPtr = 0;
@@ -182,10 +204,10 @@ void CalibrationClass::startAutoCal() {
 }
 
 void CalibrationClass::readAdcCalFromEeprom() {
-  Serial.println(" READING CALIBRATION ENTRIES FROM EEPROM");
-  Serial.println(" =======================================");
+  Serial.println(" READING NONLINEAR CALIBRATION ENTRIES FROM EEPROM");
+  Serial.println(" ==================================================");
   int dataPtr = 0;
-  float nr = floatFromEeprom(EA_ADC_NONLINEAR_COMP_NR);
+  float nr = floatFromEeprom(ea_adc_nonlinear_comp_nr);
   if (isnan(nr)) {
     Serial.println("WARNING: No calibration data found in eeprom. Use default values...");
     return;
@@ -197,12 +219,12 @@ void CalibrationClass::readAdcCalFromEeprom() {
   }
  
   int nrOfPoints = (int)nr;
-   Serial.print("Expecting ");
+  Serial.print("Expecting ");
   Serial.print(nrOfPoints);
   Serial.println(" calibration entries in eeprom!");
   adc_cal_points = nrOfPoints;
   
-  for (int adr = EA_ADC_NONLINEAR_COMP_START; adr < EA_ADC_NONLINEAR_COMP_START + nrOfPoints*8; adr = adr + 8) {
+  for (int adr = ea_adc_nonlinear_comp_start; adr < ea_adc_nonlinear_comp_start + nrOfPoints*8; adr = adr + 8) {
     float set = floatFromEeprom(adr);
     float meas = floatFromEeprom(adr+4);
     if (isnan(set) or isnan(meas)) {
@@ -224,16 +246,16 @@ void CalibrationClass::readAdcCalFromEeprom() {
   Serial.print("Read ");
   Serial.print(nrOfPoints);
   Serial.print(" calibration entries from address ");
-  Serial.print(EA_ADC_NONLINEAR_COMP_START);
+  Serial.print(ea_adc_nonlinear_comp_start);
   Serial.print(" to ");
-  Serial.println(EA_ADC_NONLINEAR_COMP_START + nrOfPoints*8);
+  Serial.println(ea_adc_nonlinear_comp_start + nrOfPoints*8);
   useCalibratedValues = true;
   }
 
 void CalibrationClass::writeAdcCalToEeprom(int nrOfPoints) {
   int dataPtr = 0;
-  floatToEeprom(EA_ADC_NONLINEAR_COMP_NR, (float)nrOfPoints);
-  for (int adr = EA_ADC_NONLINEAR_COMP_START; adr < EA_ADC_NONLINEAR_COMP_START + nrOfPoints*8; adr = adr + 8) {
+  floatToEeprom(ea_adc_nonlinear_comp_nr, (float)nrOfPoints);
+  for (int adr = ea_adc_nonlinear_comp_start; adr <= ea_adc_nonlinear_comp_start + nrOfPoints*8; adr = adr + 8) {
     floatToEeprom(adr, set_adc[dataPtr]);
     floatToEeprom(adr+4, meas_adc[dataPtr]);
     Serial.print("Address:");
@@ -247,9 +269,9 @@ void CalibrationClass::writeAdcCalToEeprom(int nrOfPoints) {
   Serial.print("Wrote ");
   Serial.print(nrOfPoints);
   Serial.print(" calibration entries from address ");
-  Serial.print(EA_ADC_NONLINEAR_COMP_START);
+  Serial.print(ea_adc_nonlinear_comp_start);
   Serial.print(" to ");
-  Serial.println(EA_ADC_NONLINEAR_COMP_START + adc_cal_points*8);
+  Serial.println(ea_adc_nonlinear_comp_start + adc_cal_points*8);
   
 }
 
@@ -261,10 +283,14 @@ void CalibrationClass::autoCalADCfromDAC() {
   
 
   if (!autoCalDone1 && autoCalDacTimer + 500 < millis()) {
-    Serial.print("Set voltage to:");
+    Serial.print("Set value to:");
     Serial.println(autoCalV);
     GD.__end();
-    SMU[0].fltSetCommitVoltageSource(autoCalV, true);
+    if (operationType == SOURCE_VOLTAGE) {
+       SMU[0].fltSetCommitVoltageSource(autoCalV, true);
+    } else {
+       SMU[0].fltSetCommitCurrentSource(autoCalV);
+    }
     GD.resume();
 
     set_adc[autoCalArrayPointer] = autoCalV;
@@ -274,10 +300,14 @@ void CalibrationClass::autoCalADCfromDAC() {
   }
   if (autoCalDacTimer + 5000 < millis()) {
 
-    float v = V_FILTERS.mean;
+    float v = FILTERS->mean;
   
     Serial.print(" > ");
-    Serial.println(v);
+    Serial.print(v);
+    Serial.print(" (filter id:");
+    Serial.print(FILTERS->id);
+    Serial.println(")");
+
 
     Serial.print("Changed cal:");
     Serial.print(meas_adc[autoCalArrayPointer]);
@@ -292,9 +322,13 @@ void CalibrationClass::autoCalADCfromDAC() {
       autoCalInProgress = false;
       autoCalDone = true;
       useCalibratedValues = true;
-      adc_cal_points = autoCalArrayPointer -1;
-      V_FILTERS.setFilterSize(5);
-      writeAdcCalToEeprom(33); // TODO: autoCalArrayPointer ?
+      adc_cal_points = autoCalArrayPointer;
+      FILTERS->setFilterSize(5);
+      Serial.print("DONE nonlinear calibration of ");
+      Serial.print(adc_cal_points);
+      Serial.println(" points");
+      //writeAdcCalToEeprom(33); // TODO: autoCalArrayPointer ?
+      writeAdcCalToEeprom(adc_cal_points);
     } else {
       autoCalDacTimer = millis();
       autoCalDone1 = false;
@@ -351,7 +385,6 @@ float CalibrationClass::adc_nonlinear_compensation(float v){
   }
   
   // Nonlinearity
-  //TODO: Does it work for negative voltages ?
   for (int i=0;i<adc_cal_points -1; i++) {
    // if (v > meas_adc[i] && v <= meas_adc[i+1]) {
     if (v > set_adc[i] && v <= set_adc[i+1]) {
@@ -538,7 +571,7 @@ float CalibrationClass::getDacZeroComp() {
 void CalibrationClass::renderCal(int x, int y, float valM, float setM, bool cur, bool reduceDetails) {
   if (!reduceDetails) {
     GD.ColorRGB(0xaaaaaa);
-    if (V_FILTERS.mean < 0) {
+    if (FILTERS->mean < 0) {
       GD.cmd_text(x+10, y + 45, 27, 0, "DAC GAIN -");
       DIGIT_UTIL.renderValue(x + 0,  y+65 ,getDacGainCompNeg()*100.0, 1, -1); 
       GD.cmd_text(x+93, y + 68, 27, 0, "%");
@@ -557,7 +590,7 @@ void CalibrationClass::renderCal(int x, int y, float valM, float setM, bool cur,
   
     x=x+10;
     GD.ColorRGB(0xaaaaaa);
-    if (V_FILTERS.mean < 0) {
+    if (FILTERS->mean < 0) {
       GD.cmd_text(x+120, y + 45, 27, 0, "ADC GAIN -");
       DIGIT_UTIL.renderValue(x + 110,  y+65 ,getAdcGainCompNeg() * 100.0, 1, -1); 
       GD.cmd_text(x+203, y + 68, 27, 0, "%");
@@ -621,8 +654,15 @@ x=x-70;
 
   float max_meas_value = meas_adc[adc_cal_points-1];
 
+  //TODO Do real calculations to find these values based on number of points, width of graph etc....   
   float pixelsPrVolt = 145; // pixel width pr volt
+  if (operationType == SOURCE_CURRENT) {
+    pixelsPrVolt = 140;
+  }
   float x_null_position = 450; // x position for 0V
+  if (operationType == SOURCE_CURRENT) {
+    x_null_position = 465;
+  }
   float correction_display_factor = 80000.0; // TODO: Make it show as ppm ?  uV ?
   y=y+30+10;
   // correction graph
@@ -666,17 +706,25 @@ x=x-70;
   y=y-50;
   // voltage labels
   if (!reduceDetails) {
-  for (int i=min_set_value/1000.0;i<=max_set_value/1000.0;i=i+4) {
-      int xv = i* pixelsPrVolt/(int)(max_set_value/1000.0);
-      GD.cmd_text(x+x_null_position+xv-10, y + 200, 27, 0, i<0?"-":" ");
-      if (abs(i) >=10.0) {
-        GD.cmd_number(x+x_null_position+xv, y + 200, 27, 2, abs(i));
-        //GD.cmd_text(x+x_null_position+xv+20, y + 200, 27, 0, "V");
-      } else {
-        GD.cmd_number(x+x_null_position+xv, y + 200, 27, 1, abs(i));
-        //GD.cmd_text(x+x_null_position+xv+10, y + 200, 27, 0, "V");
+    if (operationType == SOURCE_VOLTAGE){
+      for (int i=min_set_value/1000.0;i<=max_set_value/1000.0;i=i+4) {
+          int xv = i* pixelsPrVolt/(int)(max_set_value/1000.0);
+          GD.cmd_text(x+x_null_position+xv-10, y + 200, 27, 0, i<0?"-":" ");
+          if (abs(i) >=10.0) {
+            GD.cmd_number(x+x_null_position+xv, y + 200, 27, 2, abs(i));
+          } else {
+            GD.cmd_number(x+x_null_position+xv, y + 200, 27, 1, abs(i));
+          }
       }
-  }
+    } else {
+       for (int i=min_set_value/100.0;i<=max_set_value/100.0;i=i+1) {
+          int xv = i* pixelsPrVolt/(int)(max_set_value/100.0);
+          GD.cmd_text(x+x_null_position+xv-10, y + 200, 27, 0, i<0?"-":" ");
+         
+          GD.cmd_number(x+x_null_position+xv, y + 200, 27, 3, abs(i*100));
+         
+      }
+    }
   }
   
 }

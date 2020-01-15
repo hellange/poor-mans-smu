@@ -1,5 +1,5 @@
 #include "operations.h"
-
+#include "Filters.h"
 class CalibrationClass {
 
   union cvt {
@@ -8,6 +8,8 @@ class CalibrationClass {
   };
 
   private:
+  
+  FiltersClass *FILTERS;
   OPERATION_TYPE operationType;
   unsigned long timeSinceLastChange;
 
@@ -30,6 +32,8 @@ class CalibrationClass {
   int ea_dac_gain_comp_neg;
   int ea_adc_gain_comp_pos;
   int ea_adc_gain_comp_neg;
+  int ea_adc_nonlinear_comp_nr;
+  int ea_adc_nonlinear_comp_start;
 
   int ea_dac_zero_comp;
   

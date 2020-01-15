@@ -177,8 +177,8 @@ void setup()
    V_STATS.init(DigitUtilClass::typeVoltage);
    C_STATS.init(DigitUtilClass::typeCurrent);
    
-   V_FILTERS.init();
-   C_FILTERS.init();
+   V_FILTERS.init(1234);
+   C_FILTERS.init(5678);
    
    V_CALIBRATION.init(SOURCE_VOLTAGE);
    C_CALIBRATION.init(SOURCE_CURRENT);
@@ -297,11 +297,19 @@ void sourceVoltagePanel(int x, int y) {
 
 void renderStatusIndicators(int x, int y) {
   showStatusIndicator(x+630, y+5, "FILTER", V_FILTERS.filterSize>1, false);
-  showStatusIndicator(x+720, y+5, "NULL", V_CALIBRATION.nullValueIsSet(current_range), false);
+  if (operationType == SOURCE_VOLTAGE) {
+    showStatusIndicator(x+720, y+5, "NULL_V", V_CALIBRATION.nullValueIsSet(current_range), false);
+  } else {
+    showStatusIndicator(x+720, y+5, "NULL_C", C_CALIBRATION.nullValueIsSet(current_range), false);
+  }
   showStatusIndicator(x+630, y+45, "50Hz", false, false);
   showStatusIndicator(x+720, y+45, "4 1/2", false, false);
   showStatusIndicator(x+630, y+85, "COMP", SMU[0].compliance, true);
-  showStatusIndicator(x+720, y+85, "UNCAL", !V_CALIBRATION.useCalibratedValues, true);
+    if (operationType == SOURCE_VOLTAGE) {
+      showStatusIndicator(x+720, y+85, "UNCAL_V", !V_CALIBRATION.useCalibratedValues, true);
+    } else {
+      showStatusIndicator(x+720, y+85, "UNCAL_C", !C_CALIBRATION.useCalibratedValues, true);
+    }
 }
 
  void showAnalogPin(int x, int y, int radius, int radiusStart, int degreeRelativeToTop, int needleColor, int lineWidth, boolean needle) {
@@ -1071,8 +1079,10 @@ void handleAutoNullAtStartup() {
     Serial.print("Removed current offset from 1A current range:");  
     Serial.println(v,3);  
     startupCalibrationDone2 = true;
-    V_FILTERS.init();
+    V_FILTERS.init(1234);
     V_FILTERS.setFilterSize(5);
+    C_FILTERS.init(2345);
+    C_FILTERS.setFilterSize(5);
     V_CALIBRATION.useCalibratedValues = true;
 
   } 
@@ -1202,10 +1212,12 @@ static void handleSampling() {
     C_STATS.addSample(Cout);
     C_FILTERS.updateMean(Cout, false);
    
-    
+//    
 //  Serial.print("Measured raw:");  
 //  Serial.print(Cout, 3);
-//  Serial.println(" mA");  
+//  Serial.print(" mA");  
+//  Serial.print(", mean:");
+//  Serial.println(C_FILTERS.mean);
 //  Serial.flush();
   }
   else if(dataR == 0) {
@@ -1268,7 +1280,7 @@ int LM60_getTemperature() {
 
 void loop() {
   V_CALIBRATION.autoCalADCfromDAC();
-  
+  C_CALIBRATION.autoCalADCfromDAC();
   // No need to update display more often that the eye can detect.
   // Too often will cause jitter in the sampling because display and DAC/ADC share same SPI port.
   // Will that be improved by Teensy 4 where there are more that one SPI port ?
@@ -1531,9 +1543,9 @@ void loopMain()
          GD.resume();
        } else {
           if (mv < 0) {
-            C_CALIBRATION.adjDacGainCompNeg(0.000020);
+            C_CALIBRATION.adjDacGainCompNeg(0.00001);
          } else {
-            C_CALIBRATION.adjDacGainCompPos(0.000020);
+            C_CALIBRATION.adjDacGainCompPos(0.00001);
          }
          GD.__end();
          if (SMU[0].fltSetCommitCurrentSource(mv)) printError(_PRINT_ERROR_VOLTAGE_SOURCE_SETTING);
@@ -1559,9 +1571,9 @@ void loopMain()
          GD.resume();
        } else {
           if (mv < 0) {
-            C_CALIBRATION.adjDacGainCompNeg(-0.000001);
+            C_CALIBRATION.adjDacGainCompNeg(-0.00001);
          } else {
-            C_CALIBRATION.adjDacGainCompPos(-0.000001);
+            C_CALIBRATION.adjDacGainCompPos(-0.00001);
          }
          GD.__end();
          if (SMU[0].fltSetCommitCurrentSource(mv)) printError(_PRINT_ERROR_VOLTAGE_SOURCE_SETTING);
@@ -1670,9 +1682,17 @@ void loopMain()
        if (timeSinceLastChange + 1000 > millis()){
         return;
        } 
-       Serial.println("Start auto calibration of dac non linearity....");
        timeSinceLastChange = millis();
-       V_CALIBRATION.startAutoCal();
+       if (operationType == SOURCE_VOLTAGE) {
+               Serial.println("Start auto calibration of dac non linearity in voltage source mode");
+
+         V_CALIBRATION.startAutoCal();
+       } else {
+                       Serial.println("Start auto calibration of dac non linearity in current source mode");
+
+         C_CALIBRATION.startAutoCal();
+       }
+       
     
     } else if (tag == BUTTON_DAC_ZERO_CALIBRATE) {
       if (timeSinceLastChange + 1000 > millis()){

@@ -4,7 +4,8 @@
 FiltersClass V_FILTERS;
 FiltersClass C_FILTERS;
 
-void FiltersClass::init() {
+void FiltersClass::init(int id_) {
+  id = id_;
   filterSize = 5; // start out with a bit of filtering
   Serial.print("Set initial filter length to:");
   Serial.println(filterSize);
