@@ -202,7 +202,11 @@ float ADCClass::measureMilliVoltage() {
 
     }
   }
+  //Serial.print("Voltage nonlinear comp ");
+  //Serial.print(v);
   v = V_CALIBRATION.adc_nonlinear_compensation(v);
+  //Serial.print(" -> ");
+  //Serial.println(v); 
 
   writeSamplingRate();  // update sampling rate here seems to work. Doing randomly other places often fails.... for some reason...
   return v;
@@ -498,8 +502,11 @@ int8_t ADCClass::fltSetCommitVoltageSource(float milliVolt, bool dynamicRange) {
       
     }
 
+    //Serial.print("Current nonlinear comp ");
+    //Serial.print(i);
     i = C_CALIBRATION.adc_nonlinear_compensation(i);
-
+    //Serial.print(" -> ");
+    //Serial.println(i);
     // TODO: replace with signal from actual circuit (current limit)
     compliance = abs(setValueI) < abs(i/1000.0);
 //    Serial.print("compliance setValueI:");  

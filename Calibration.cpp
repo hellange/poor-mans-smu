@@ -177,7 +177,7 @@ void CalibrationClass::startAutoCal() {
   if (operationType == SOURCE_CURRENT) {
     maxValueCal = 400.0;
     minValueCal = -400.0;
-    stepValueCal = 50.0;
+    stepValueCal = 25.0;
   }
   
   if (!autoCalInProgress) {
@@ -388,7 +388,10 @@ float CalibrationClass::adc_nonlinear_compensation(float v){
   for (int i=0;i<adc_cal_points -1; i++) {
    // if (v > meas_adc[i] && v <= meas_adc[i+1]) {
     if (v > set_adc[i] && v <= set_adc[i+1]) {
-
+//      Serial.print("Found within range ");
+//      Serial.print(set_adc[i]);
+//      Serial.print(":");
+//      Serial.println(set_adc[i+1]);
       float adj_factor_low = set_adc[i] - meas_adc[i];
       float adj_factor_high = set_adc[i+1] - meas_adc[i+1];
       float adj_factor_diff = adj_factor_high - adj_factor_low;
@@ -401,7 +404,6 @@ float CalibrationClass::adc_nonlinear_compensation(float v){
         Serial.println("ERROR: calibration partWithinRange gave negative value...");
       }
       float adj_factor = adj_factor_low + adj_factor_diff * partWithinRange;
- 
 //      Serial.print("meas:");  
 //      Serial.print(v, 3);
 //      Serial.print(", range:");  
@@ -410,10 +412,11 @@ float CalibrationClass::adc_nonlinear_compensation(float v){
 //      Serial.print(partWithinRange, 3);
 //      Serial.print(", factor:");  
 //      Serial.println(adj_factor, 3);
-
-      Serial.flush();
+//
+//      Serial.flush();
        
       v= v + adj_factor;
+      return v;
     }
   }
   return v;
