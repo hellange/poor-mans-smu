@@ -62,6 +62,9 @@ SMU_HAL_dummy SMU[1] = {
 int scroll = 0;
 int scrollDir = 0;
 
+
+bool autoNullStarted = false;
+
 int timeAtStartup;
 bool startupCalibrationDone0 = false;
 bool startupCalibrationDone1 = false;
@@ -74,7 +77,7 @@ CURRENT_RANGE current_range = AMP1; // TODO: get rid of global
 int timeSinceLastChange = 0;  // TODO: get rid of global
 
 float MAX_CURRENT_10mA_RANGE = 5.0; // current values set because the ADC limit is 6 volt now...
-float MAX_CURRENT_1A_RANGE = 500.0;
+float MAX_CURRENT_1A_RANGE = 1100.0;
 
 
 OPERATION_TYPE operationType = SOURCE_VOLTAGE;
@@ -1015,17 +1018,19 @@ void forceAutoNull() {
   Serial.println("Force auto null...");
   timeBeforeAutoNull = millis();
   startupCalibrationDone0 = false;
-    startupCalibrationDone1 = false;
+  startupCalibrationDone1 = false;
   startupCalibrationDone2 = false;
+  autoNullStarted = true;
 
 }
 
 void handleAutoNullAtStartup() {
+
 //   Serial.print("x ");
 //   Serial.print(startupCalibrationDone0);
 //   Serial.print(" ");
 //   Serial.println(timeBeforeAutoNull < millis());
-  if (!startupCalibrationDone0 && timeBeforeAutoNull < millis()) {
+  if (autoNullStarted && !startupCalibrationDone0 && timeBeforeAutoNull < millis()) {
     Serial.println("Performing auto null...");
     V_CALIBRATION.useCalibratedValues = false;
     current_range = MILLIAMP10;
@@ -1043,7 +1048,7 @@ void handleAutoNullAtStartup() {
    
   }
   int msWaitPrCal = 5000;
-  if (!startupCalibrationDone1 && /*timeAtStartup + */timeBeforeAutoNull + msWaitPrCal < millis()) {
+  if (autoNullStarted && !startupCalibrationDone1 && /*timeAtStartup + */timeBeforeAutoNull + msWaitPrCal < millis()) {
     //float v = V_STATS.rawValue; 
     float v = V_FILTERS.mean;   
     V_CALIBRATION.toggleNullValue(v, current_range);
@@ -1058,7 +1063,7 @@ void handleAutoNullAtStartup() {
     startupCalibrationDone1 = true;
   } 
  
-  if (!startupCalibrationDone2 && /*timeAtStartup + */timeBeforeAutoNull + msWaitPrCal + 100 < millis()) {
+  if (autoNullStarted && !startupCalibrationDone2 && /*timeAtStartup + */timeBeforeAutoNull + msWaitPrCal + 100 < millis()) {
     current_range = AMP1;
     SMU[0].setCurrentRange(current_range);
     if (operationType == SOURCE_VOLTAGE) {
@@ -1067,7 +1072,7 @@ void handleAutoNullAtStartup() {
       SMU[0].fltSetCommitCurrentSource(0.0);
     }
   }
-  if (!startupCalibrationDone2 && /*timeAtStartup +*/ timeBeforeAutoNull + msWaitPrCal*2 < millis()) {
+  if (autoNullStarted && !startupCalibrationDone2 && /*timeAtStartup +*/ timeBeforeAutoNull + msWaitPrCal*2 < millis()) {
     //float v = V_STATS.rawValue;
     float v = V_FILTERS.mean;
     V_CALIBRATION.toggleNullValue(v, current_range);
@@ -1079,11 +1084,12 @@ void handleAutoNullAtStartup() {
     Serial.print("Removed current offset from 1A current range:");  
     Serial.println(v,3);  
     startupCalibrationDone2 = true;
-    V_FILTERS.init(1234);
+    //V_FILTERS.init(1234);
     V_FILTERS.setFilterSize(5);
-    C_FILTERS.init(2345);
+    //C_FILTERS.init(2345);
     C_FILTERS.setFilterSize(5);
     V_CALIBRATION.useCalibratedValues = true;
+    autoNullStarted = false;
 
   } 
 
@@ -1233,27 +1239,39 @@ static void handleSampling() {
     V_STATS.addSample(Vout);
     V_FILTERS.updateMean(Vout, false);
   }
-  //handleAutoRange();
+  // Auto range current measurement while sourcing voltage. 
+  // Note that this gives small glitches in voltage.
+  // TODO: Find out how large glitches and if it's a real problem...
+  // TODO: Not in digitizing?  Other functions where it should be disabled ?
+  if (operationType == SOURCE_VOLTAGE) {
+      handleAutoCurrentRange();
+  }
+  
 }
 
-void handleAutoRange() {
-     if (startupCalibrationDone1 && startupCalibrationDone2) {
+void handleAutoCurrentRange() {
+     if (!autoNullStarted && !V_CALIBRATION.autoCalInProgress && !C_CALIBRATION.autoCalInProgress) {
       float milliAmpere = C_STATS.rawValue;
 //      Serial.print(milliAmpere,5);
 //      Serial.print("mA, current range:");
-//      Serial.println(current_ran
+//      Serial.println(current_range);
+
       // auto current range switch. TODO: Move to hardware ? Note that range switch also requires change in limit
       float hysteresis = 0.5;
       float switchAt = MAX_CURRENT_10mA_RANGE;
       
-        if (current_range == 0 && abs(milliAmpere) < switchAt - hysteresis) {
+        if (current_range == AMP1 && abs(milliAmpere) < switchAt - hysteresis) {
           current_range = MILLIAMP10;
           SMU[0].setCurrentRange(current_range);
           Serial.println("switching to range 1");
   
         }
         // TODO: Make separate function to calculate current based on shunt and voltage!
-        if (current_range == 1 && abs(milliAmpere) > switchAt) {
+        Serial.print("Check 10mA range and if it should switch to 1A... ma=");
+        Serial.print(milliAmpere);
+        Serial.print(" ");
+        Serial.println(switchAt);
+        if (current_range == MILLIAMP10 && abs(milliAmpere) > switchAt) {
           current_range = AMP1;
           SMU[0].setCurrentRange(current_range);
           Serial.println("switching to range 0");
@@ -1460,7 +1478,12 @@ void loopMain()
     //}
     
   }
-  //handleAutoRange();
+  // Auto range current measurement while sourcing voltage. 
+  // Note that this gives small glitches in voltage.
+  // TODO: Find out how large glitches and if it's a real problem...
+  //if (operationType == SOURCE_VOLTAGE) {
+  //    handleAutoCurrentRange();
+  //}
   GD.__end();
 
   #ifndef SAMPLING_BY_INTERRUPT 
@@ -1730,10 +1753,10 @@ void loopMain()
   displayWidget();
   handleMenuScrolldown();
 
-  if (V_CALIBRATION.autoCalInProgress) {
+  if (V_CALIBRATION.autoCalInProgress or C_CALIBRATION.autoCalInProgress) {
     notification("Auto calibration in progress...");
   }
-  if (!startupCalibrationDone2) {
+  if (autoNullStarted && !startupCalibrationDone2) {
     notification("Wait for null adjustment...");
   }
 
@@ -1800,7 +1823,7 @@ void closeSourceDCCallback(int set_or_limit, bool cancel) {
     } else {
 
       // auto current range when sourcing current
-      if (abs(mv) < 4.0) {
+      if (abs(mv) < 8.0) {  // TODO: move to 10.0 when DAC has full range (5v ref instead of 4.096)
         current_range = MILLIAMP10;
         SMU[0].setCurrentRange(current_range);
       } else {
