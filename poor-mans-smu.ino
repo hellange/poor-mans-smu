@@ -1237,14 +1237,14 @@ static void handleSampling() {
     Vout = Vout - V_CALIBRATION.nullValue[current_range];
 
     V_STATS.addSample(Vout);
-    V_FILTERS.updateMean(Vout, false);
+    V_FILTERS.updateMean(Vout, true);
   }
   // Auto range current measurement while sourcing voltage. 
   // Note that this gives small glitches in voltage.
   // TODO: Find out how large glitches and if it's a real problem...
   // TODO: Not in digitizing?  Other functions where it should be disabled ?
   if (operationType == SOURCE_VOLTAGE) {
-      handleAutoCurrentRange();
+      //handleAutoCurrentRange();
   }
   
 }
@@ -1487,7 +1487,7 @@ void loopMain()
   GD.__end();
 
   #ifndef SAMPLING_BY_INTERRUPT 
-    setsammpling(); // ???? Should it be handleSampling ?
+    handleSampling(); 
   #endif
   disable_ADC_DAC_SPI_units();
   GD.resume();
@@ -1557,9 +1557,9 @@ void loopMain()
        float mv = SOURCE_DIAL.getMv();
        if (operationType == SOURCE_VOLTAGE) {
          if (mv < 0) {
-            V_CALIBRATION.adjDacGainCompNeg(0.000001);
+            V_CALIBRATION.adjDacGainCompNeg(0.000005);
          } else {
-            V_CALIBRATION.adjDacGainCompPos(0.000001);
+            V_CALIBRATION.adjDacGainCompPos(0.000005);
          }
          GD.__end();
          if (SMU[0].fltSetCommitVoltageSource(mv, true)) printError(_PRINT_ERROR_VOLTAGE_SOURCE_SETTING);

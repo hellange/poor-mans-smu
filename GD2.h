@@ -487,11 +487,11 @@ public:
   void polar(int &x, int &y, int16_t r, uint16_t th);
   uint16_t atan2(int16_t y, int16_t x);
 
-#if !defined(ESP8266)
-  void copy(const PROGMEM uint8_t *src, int count);
-#else
+//#if !defined(ESP8266)
+//  void copy(const PROGMEM uint8_t *src, int count);
+//#else
   void copy(const uint8_t *src, int count);
-#endif
+//#endif
   void copyram(byte *src, int count);
 
   void self_calibrate(void);

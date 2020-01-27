@@ -10,12 +10,13 @@
 #include "LTC2758.h"
 #include "operations.h"
 
-#define FSR (((long int)1<<23)-1)
+//#define FSR (((long int)1<<23)-1)
 
 // goal is to be "compatible" with the Poor Mans SMU hardware abstraction layer API
 // to make it easy to test different ADC without changing the application software...
 class ADCClass {
 
+  long int FSR = (((long int)1<<23)-1);
   unsigned long lastSampleMilli;
 
   float setValueI = 0.0;

@@ -76,14 +76,15 @@ void LTC2758_write(uint8_t cs, uint8_t dac_command, uint8_t dac_address, uint32_
   SPI.beginTransaction (SPISettings (2000000, MSBFIRST, SPI_MODE0));
 
   SPIMuxSelectLTC2758();
-  delayMicroseconds(1);
-
+  delayMicroseconds(5); // Had problems with teensy 4.0 without some delay here. Got random overflow in the ADC (not the DAC!)
+                        // TODO: Find out why! Speed/timing differences because 4.0 is so much faster that 3.2 ?
   SPI.transfer(dac_command|dac_address);
   SPI.transfer((uint8_t)((data >> 10) & 0xFF));  // D17:D10
   SPI.transfer((uint8_t)((data >> 2) & 0xFF));     // D9:D2
   SPI.transfer((uint8_t)((data << 6) & 0xFF));     // D1:D0
 
-  //delayMicroseconds(1);
+  delayMicroseconds(5); // Had problems with teensy 4.0 without some delay here. Got random overflow in the ADC (not the DAC!)
+                        // TODO: Find out why! Speed/timing differences because 4.0 is so much faster that 3.2 ?
 
   digitalWrite(7, HIGH);
   SPI.endTransaction();

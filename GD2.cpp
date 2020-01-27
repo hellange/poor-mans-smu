@@ -822,11 +822,11 @@ void GDClass::cs(const char *s) {
   align(count + 1);
 }
 
-#if !defined(ESP8266)
-void GDClass::copy(const PROGMEM uint8_t *src, int count) {
-#else
+//#if !defined(ESP8266)
+//void GDClass::copy(const PROGMEM uint8_t *src, int count) {
+//#else
 void GDClass::copy(const uint8_t *src, int count) {
-#endif
+//#endif
   byte a = count & 3;
   while (count--) {
     GDTR.cmdbyte(pgm_read_byte_near(src));

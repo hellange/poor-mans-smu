@@ -169,7 +169,7 @@ void ADCClass::setCurrentRange(CURRENT_RANGE range) {
 
 float ADCClass::measureMilliVoltageRaw() {
   AD7176_ReadRegister(&AD7176_regs[4]);
-  
+     
   float v = (float) ((AD7176_regs[4].value*VFSR*1000.0)/FSR);
 
   
@@ -396,10 +396,11 @@ int8_t ADCClass::fltSetCommitVoltageSource(float milliVolt, bool dynamicRange) {
   if (full_board) {
     if (current_range == AMP1) {
       dac_voltage = dac_voltage * 10.0; // with 1ohm shunt and x10 amplifier: 100mA is set by 1000mV
+      dac_voltage = dac_voltage / 2.0; // if using 0.5ohm shunt instead of 1ohm shunt
       //dac_voltage = dac_voltage + 0.0008; // offset
       dac_voltage = dac_voltage + C_CALIBRATION.getDacZeroComp();
 
-      dac_voltage = dac_voltage * 1.160;
+      dac_voltage = dac_voltage * 1.290;
       if (dac_voltage < 0) {
         dac_voltage = dac_voltage * C_CALIBRATION.getDacGainCompNeg();
       } else {
@@ -482,7 +483,8 @@ int8_t ADCClass::fltSetCommitVoltageSource(float milliVolt, bool dynamicRange) {
         i=i*1.045; 
       } else {
         i=i/1.04600; // 1ohm shunt + resistance in range switch mosfet
-        i=i*0.863;
+        i=i*2.0; // if 0.5 ohm shunt instead of ohm shunt;
+        i=i*0.776;
         if (i>0) {
           i = i * C_CALIBRATION.getAdcGainCompPos();
         } else {
