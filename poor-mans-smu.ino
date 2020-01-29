@@ -897,6 +897,8 @@ void renderMainHeader() {
   GD.cmd_number(470,0,27,3,LM60_getTemperature());
   GD.cmd_text(500,0,27,0,"C");
 
+  GD.cmd_number(370,0,27,0,RAM.getCurrentLogAddress());
+
   // line below top header
   int y = 25;
   GD.Begin(LINE_STRIP);
@@ -1120,6 +1122,7 @@ float lastVoltage = 0.0;
 bool triggered = false;
 int count = 1;
 float sampleVolt = 10.0;
+int logTimer = millis();
 static void handleSampling() {
 
      int dataR = SMU[0].dataReady();
@@ -1237,7 +1240,18 @@ static void handleSampling() {
     Vout = Vout - V_CALIBRATION.nullValue[current_range];
 
     V_STATS.addSample(Vout);
+
+
+
+    
     V_FILTERS.updateMean(Vout, true);
+
+    // store now and then
+    if (logTimer + 60000 < millis()) {
+     logTimer = millis();
+     RAM.logData(V_FILTERS.mean);
+    }
+    
   }
   // Auto range current measurement while sourcing voltage. 
   // Note that this gives small glitches in voltage.
@@ -1316,13 +1330,141 @@ void loop() {
   
   if (functionType == DIGITIZE) {
     loopDigitize();
-  } else {
+  } else if (functionType == GRAPH) {
+   loopGraph();
+  }
+    else {
     loopMain();
   }
 }
 
-
 int loopUpdateTimer = millis();
+
+
+void loopGraph() {
+  if (loopUpdateTimer + 10 > millis() ) {
+    return;
+  }
+  loopUpdateTimer = millis();
+  operationType = getOperationType();
+    disable_ADC_DAC_SPI_units();
+
+ GD.resume();
+      GD.Clear();
+detectGestures();
+    renderMainHeader();
+
+ int logAddress = RAM.getCurrentLogAddress();
+ int pixels = 400;
+ int max = RAM.getMaxLogAddress();
+
+ GD.LineWidth(20);
+  GD.Begin(LINE_STRIP);
+  GD.ColorA(255);
+  GD.ColorRGB(0xff0000);
+  uint16_t logAdr = logAddress;
+ float maxV = -1000000.0;
+ float minV = 1000000.0;
+ int x = 0;
+ float span;
+
+
+ for (int adr = logAddress<200 ? 0: logAddress - 200; adr<logAddress; adr++) {
+ timedLog logData;
+   GD.__end();
+
+   logData = RAM.readLogData(adr);
+   GD.resume();
+   
+   float v = logData.value.val;
+   if (v>maxV) {
+    maxV = v;
+   } else if (v<minV) {
+    minV = v;
+   }
+ }
+
+  GD.ColorRGB(0xffffff);
+
+ float mid;
+ for (int adr = logAddress<200 ? 0: logAddress - 200; adr<logAddress; adr++) {
+
+   timedLog logData;
+   GD.__end();
+
+   logData = RAM.readLogData(adr);
+   GD.resume();
+   
+   float v = logData.value.val;
+//   if (v>maxV) {
+//    maxV = v;
+//   } else if (v<minV) {
+//    minV = v;
+//   }
+   span = maxV - minV;
+   // don't use span less that 100uV
+  // if (abs(span)<0.100) {
+  //  span = 0.100; 
+  // }
+   mid = maxV - (span/2.0);
+
+   float y =  (mid - v) *300.0 / span;
+   
+  // y=y/1000.0;  // go get volt
+   
+//   if (y>200-0) {
+//    y=200.0;
+//   }
+//   if (y<-200.0) {
+//    y=-200.0;
+//   }
+
+   
+   GD.Vertex2ii(150+x, 240 + (int)y);
+   x=x+3;
+
+ }
+ //VOLT_DISPLAY.renderMeasured(100,200, span);
+
+
+DIGIT_UTIL.renderValue(10,  80 ,maxV, 1, 1); 
+DIGIT_UTIL.renderValue(10,  80+150 ,mid, 1, 1); 
+DIGIT_UTIL.renderValue(10,  80+150+30 ,span, 1, 1); 
+DIGIT_UTIL.renderValue(10,  80+300 ,minV, 1, 1); 
+
+ //VOLT_DISPLAY.renderMeasured(100,10, maxV);
+ //VOLT_DISPLAY.renderMeasured(100,400, minV);
+
+ 
+ x = 0;
+ 
+ for (int adr = logAddress<200 ? 0: logAddress - 200; adr<logAddress; adr=adr+40) {   
+
+ timedLog logData;
+   GD.__end();
+
+   logData = RAM.readLogData(adr);
+   GD.resume();
+   float volt = logData.value.val;
+   uint32_t t = logData.time.val;
+  GD.cmd_number(150+x,400, 27, 0, t/1000);
+   x=x+3*40;
+
+  
+ }
+
+
+      handleMenuScrolldown();
+
+ int tag = GD.inputs.tag;
+  // // TODO: don't need to check buttons for inactive menus or functions...
+  MAINMENU.handleButtonAction(tag);
+ 
+      GD.swap();
+      GD.__end();
+}
+
+
 int samplingDelayTimer = millis();
 
 void loopDigitize() {
@@ -1476,6 +1618,8 @@ void loopMain()
     //if (!V_CALIBRATION.autoCalDone) {
     //  V_CALIBRATION.startAutoCal();
     //}
+
+    RAM.startLog();
     
   }
   // Auto range current measurement while sourcing voltage. 

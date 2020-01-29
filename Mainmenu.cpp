@@ -39,6 +39,9 @@ void MainMenuClass::handleButtonAction(int inputTag) {
     } else if (inputTag == MENU_BUTTON_DIGITIZE) {
       functionType = DIGITIZE;
       close();
+    } else if (inputTag == MENU_BUTTON_GRAPH) {
+      functionType = GRAPH;
+      close();
     }
 }
 
@@ -73,7 +76,7 @@ void MainMenuClass::render() {
     const char * text[3][3] = {
     {"SOURCE VOLT\0", "SOURCE CURRENT\0", "BATTERY\0"},
     {"ELECTRONIC LOAD\0", "VOLTMETER\0", "PULSE GENERATOR\0"},
-    {"SWEEP\0", "RESISTANCE\0", "DIGITIZE\0"}};
+    {"SWEEP\0", "GRAPH\0", "DIGITIZE\0"}};
     GD.ColorRGB(0x444444);
     for (int y =0;y<3;y++) {
       for (int x =0;x<3;x++) {
@@ -85,6 +88,8 @@ void MainMenuClass::render() {
           GD.Tag(MENU_BUTTON_SOURCE_SWEEP);
         } else if (y==2 && x==2) {
           GD.Tag(MENU_BUTTON_DIGITIZE);
+        } else if (y==2 && x==1) {
+          GD.Tag(MENU_BUTTON_GRAPH);
         }
         GD.cmd_button(70+(buttonWidth+30)*x,scrollMainMenu-280+(buttonHeight+20)*y,buttonWidth,buttonHeight,28,0,text[y][x]);
       }
