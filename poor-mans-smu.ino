@@ -1247,7 +1247,7 @@ static void handleSampling() {
     V_FILTERS.updateMean(Vout, true);
 
     // store now and then
-    if (logTimer + 60000 < millis()) {
+    if (logTimer + 30000 < millis()) {
      logTimer = millis();
      RAM.logData(V_FILTERS.mean);
     }
@@ -1369,7 +1369,10 @@ detectGestures();
  float span;
 
 
- for (int adr = logAddress<200 ? 0: logAddress - 200; adr<logAddress; adr++) {
+ int adr = RAM.getCurrentLogAddress();
+ //for (int adr = logAddress<200 ? 0: logAddress - 200; adr<logAddress; adr++) {
+ for (int i = 0; i< 200; i++) {
+
  timedLog logData;
    GD.__end();
 
@@ -1382,13 +1385,27 @@ detectGestures();
    } else if (v<minV) {
     minV = v;
    }
+    adr = RAM.nextAdr(adr);
+    if (adr == -1) {
+    //  break;
+    }
+
  }
 
   GD.ColorRGB(0xffffff);
 
  float mid;
- for (int adr = logAddress<200 ? 0: logAddress - 200; adr<logAddress; adr++) {
+ adr = RAM.getCurrentLogAddress();
 
+ //for (int adr = logAddress<200 ? 0: logAddress - 200; adr<logAddress; adr++) {
+ for (int i = 0; i< 200; i++) {
+
+    adr = RAM.nextAdr(adr);
+    if (adr == -1) {
+      continue;
+    }
+
+    
    timedLog logData;
    GD.__end();
 
@@ -1396,32 +1413,19 @@ detectGestures();
    GD.resume();
    
    float v = logData.value.val;
-//   if (v>maxV) {
-//    maxV = v;
-//   } else if (v<minV) {
-//    minV = v;
-//   }
+
    span = maxV - minV;
-   // don't use span less that 100uV
-  // if (abs(span)<0.100) {
-  //  span = 0.100; 
-  // }
+  
    mid = maxV - (span/2.0);
 
    float y =  (mid - v) *300.0 / span;
    
-  // y=y/1000.0;  // go get volt
-   
-//   if (y>200-0) {
-//    y=200.0;
-//   }
-//   if (y<-200.0) {
-//    y=-200.0;
-//   }
+
 
    
-   GD.Vertex2ii(150+x, 240 + (int)y);
+   GD.Vertex2ii(150 + 600-x, 240 + (int)y);
    x=x+3;
+
 
  }
  //VOLT_DISPLAY.renderMeasured(100,200, span);
@@ -1437,9 +1441,17 @@ DIGIT_UTIL.renderValue(10,  80+300 ,minV, 1, 1);
 
  
  x = 0;
- 
- for (int adr = logAddress<200 ? 0: logAddress - 200; adr<logAddress; adr=adr+40) {   
+  adr = RAM.getCurrentLogAddress();
 
+ //for (int adr = logAddress<200 ? 0: logAddress - 200; adr<logAddress; adr=adr+40) {   
+for (int i = 0; i< 200; i++) {
+
+    adr = RAM.nextAdr(adr);
+    if (adr == -1) {
+      continue;
+    }
+    if (adr%40 == 0) {
+    
  timedLog logData;
    GD.__end();
 
@@ -1447,9 +1459,32 @@ DIGIT_UTIL.renderValue(10,  80+300 ,minV, 1, 1);
    GD.resume();
    float volt = logData.value.val;
    uint32_t t = logData.time.val;
-  GD.cmd_number(150+x,400, 27, 0, t/1000);
-   x=x+3*40;
 
+
+
+
+unsigned long allSeconds=t/1000;
+int runHours= allSeconds/3600;
+int secsRemaining=allSeconds%3600;
+int runMinutes=secsRemaining/60;
+int runSeconds=secsRemaining%60;
+
+char buf[21];
+sprintf(buf,"Runtime%02d:%02d:%02d",runHours,runMinutes,runSeconds);
+Serial.println(buf);
+
+
+  GD.cmd_number(150+600-x-30,400, 27, 2, runHours);
+     GD.cmd_text(150+600-x+20-30, 400 ,   27, 0, ":");
+
+  GD.cmd_number(150+600-x+ 25-30,400, 27, 2, runMinutes);
+       GD.cmd_text(150+600-x+45-30, 400 ,   27, 0, ":");
+
+  GD.cmd_number(150+600-x+ 50-30 ,400, 27, 2, runSeconds);
+
+  //GD.cmd_number(150+600-x,400, 27, 0, t/1000);
+   x=x+3*40;
+    }
   
  }
 

@@ -133,7 +133,6 @@ void RamClass::startLog() {
   timeElapsed = 0;
 }
 
-boolean full = false;
 int oldestLogAddress;
 void RamClass::logData(float value) {
   uint32_t t = timeElapsed;
@@ -152,13 +151,29 @@ void RamClass::logData(float value) {
   if (full) {
     oldestLogAddress = currentLogAddress -1;
     if (oldestLogAddress < 0) {
-      oldestLogAddress = 0;
+      oldestLogAddress = maxLogAddress ;
     }
   } else {
     oldestLogAddress = 0;
   }
 }
 
+int RamClass::nextAdr(float adr_) {
+  int adr = adr_;
+  adr = adr -1;
+  //Serial.print(adr);
+  if (adr < 0 && full) {
+    adr = maxLogAddress;
+    //Serial.print("!!!!!!!!!!!!!!!  1 ");
+    //Serial.print("Adr is");
+   // Serial.print(adr);
+  }
+  if (adr < 0 && !full) {
+    adr = -1; //currentLogAddress;
+    //Serial.print("!!!!!!!!!!!!!!!  2");
+  }
+  return adr;
+}
 
 
 

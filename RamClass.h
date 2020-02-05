@@ -23,12 +23,13 @@ class RamClass {
 
 private:
 
-  int maxLogAddress = 16000;
+  int maxLogAddress = 300; //16000;
   int currentLogAddress;
   uint32_t logStartAddress = 0;
   void testReadWriteLogData();
   
 public:
+  boolean full = false;
 
   void init();
   float readRAMfloat(uint32_t address);
@@ -42,6 +43,8 @@ public:
 
   int getCurrentLogAddress();
   int getMaxLogAddress();
+
+  int nextAdr(float adr_);
 };
 
 extern RamClass RAM;
