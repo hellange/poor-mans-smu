@@ -205,6 +205,10 @@ void setup()
   myTimer.begin(handleSampling, 30); // in microseconds
   SPI.usingInterrupt(myTimer);
 #endif
+
+
+  //TC74 
+  Wire.begin();
 } 
 
 void disable_ADC_DAC_SPI_units(){
@@ -894,7 +898,9 @@ void renderMainHeader() {
   GD.cmd_text(20, 0, 27, 0, "Input 25.4V / - 25.3V"); // NOTE: Currently only dummy info
   showLoadResistance(590,0);
   showFanSpeed(220,0);
-  GD.cmd_number(470,0,27,3,LM60_getTemperature());
+  //GD.cmd_number(470,0,27,3,LM60_getTemperature());
+  GD.cmd_number(470,0,27,3,TC74_getTemperature());
+
   GD.cmd_text(500,0,27,0,"C");
 
   GD.cmd_number(370,0,27,0,RAM.getCurrentLogAddress());
@@ -1295,6 +1301,25 @@ void handleAutoCurrentRange() {
 
 int displayUpdateTimer = millis();
 
+int TC74_getTemperature() {
+  // I2C based
+  int temperature;
+    Wire.beginTransmission(72);
+    //start the transmission
+
+   byte val = 0;
+    Wire.write(val);
+
+    Wire.requestFrom(72, 1);
+    if (Wire.available()) {
+    temperature = Wire.read();
+    //Serial.println(temperature);
+    }
+  Wire.endTransmission();
+  return temperature;
+  
+}
+
 int LM60_getTemperature() {
    analogReadRes(10);
   float maxNumber = 1023;//4095.0;
@@ -1311,6 +1336,10 @@ int LM60_getTemperature() {
 }
 
 void loop() {
+
+
+
+  
   V_CALIBRATION.autoCalADCfromDAC();
   C_CALIBRATION.autoCalADCfromDAC();
   // No need to update display more often that the eye can detect.
