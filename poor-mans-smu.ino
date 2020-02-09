@@ -131,26 +131,42 @@ void rotaryloop() {
     }
 
     bool stepless_dynamic = false;  // decide if the dynamic speed shall be directly dependent on rotation speed or if there shall just be a few different speeds 
-
+    float resolution = 0.1;    // 0.1 = uV resolution, 1 = mV resolution;
+    float feely = 0.6;  // how fast will value change when you turn the knob.  High value changes faster that low value
+   
     if (stepless_dynamic) {
       speed = millis() - millisSinceLastStep;
       if (speed > 100) {
         speed = 100;
       }
-      speed = 101 - speed;
-    } else {
+      speed = 1001 - speed * 10;
        
-      if (millisSinceLastStep + 25 > millis()) {
+    } else {
+
+      if (millisSinceLastStep + 10 * feely > millis()) {
+        speed = 10000;
+      } else
+      if (millisSinceLastStep + 30 * feely > millis()) {
+        speed = 1000;
+      } else
+      if (millisSinceLastStep + 80 * feely > millis()) {
+        speed = 500;
+      } 
+      else if (millisSinceLastStep + 130 * feely > millis()) {
         speed = 100;
       } 
-      else if (millisSinceLastStep + 50 > millis()) {
+      else if (millisSinceLastStep + 220 * feely > millis()) {
         speed = 10;
       } else {
         speed = 1;
       }
+      
     
     }
     
+    if (resolution == 1) {
+      speed = speed * 10;
+    }
    
 
     
@@ -171,7 +187,7 @@ void rotaryloop() {
     
     float mv = SMU[0].getSetValuemV();
 
-    float newVoltage = mv + speed*dir;
+    float newVoltage = mv + speed*dir / 10.0;
     
       if (operationType == SOURCE_VOLTAGE) {
         if (SMU[0].fltSetCommitVoltageSource(newVoltage, true)) printError(_PRINT_ERROR_VOLTAGE_SOURCE_SETTING);
@@ -1451,10 +1467,11 @@ void loop() {
   //
   // Note that the scrolling speed and gesture detection speed will be affected.
   // 
+   rotaryloop();
   if (displayUpdateTimer + 20 > millis()) {
     return; 
   }
-   rotaryloop();
+  
 
 
   //Serial.print("Temperature:");
