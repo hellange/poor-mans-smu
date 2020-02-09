@@ -360,16 +360,25 @@ bool CalibrationClass::nullValueIsSet(CURRENT_RANGE current_range) {
   return nullValue[current_range] != 0.0;
 }
 
-void CalibrationClass::toggleNullValue(float v, CURRENT_RANGE current_range) {
+bool CalibrationClass::relativeValueIsSet(CURRENT_RANGE current_range) {
+  return relativeValue[current_range] != 0.0;
+}
+
+void CalibrationClass::setNullValue(float v, CURRENT_RANGE current_range) {
+  nullValue[current_range] = v;
+}
+
+
+void CalibrationClass::toggleRelativeValue(float v, CURRENT_RANGE current_range) {
   if (timeSinceLastChange + 100 > millis()){
     return;
   }
-  if (nullValue[current_range] != 0.0) {
-    nullValue[current_range] = 0.0;
+  if (relativeValue[current_range] != 0.0) {
+    relativeValue[current_range] = 0.0;
   } else {
-    nullValue[current_range] = v;
+    relativeValue[current_range] = v;
   } 
-  Serial.print("setNull to:");
+  Serial.print("setRelativeValue to:");
   Serial.println(v);
   timeSinceLastChange = millis();
 
@@ -624,7 +633,6 @@ void CalibrationClass::renderCal(int x, int y, float valM, float setM, bool cur,
     GD.cmd_button(x+120,y+90,100,50,29,0,"UP");
     GD.Tag(BUTTON_DAC_ZERO_COMP_DOWN);
     GD.cmd_button(x+120,y+150,100,50,29,0,"DOWN");
-
 
 
 x=x-70;

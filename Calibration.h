@@ -60,6 +60,7 @@ public:
   void adjDacZeroComp(float val);
   
   float nullValue[2];
+  float relativeValue[2];
   bool useCalibratedValues = true;
   bool useDacCalibratedValues = true;
 
@@ -70,8 +71,11 @@ public:
   bool toggleCalibratedValues();
   float dac_nonlinear_compensation(float v);
   float adc_nonlinear_compensation(float milliVolt);
-  void toggleNullValue(float v, CURRENT_RANGE current_range);
+  void setNullValue(float v, CURRENT_RANGE current_range);
+  void toggleRelativeValue(float v, CURRENT_RANGE current_range);
   bool nullValueIsSet(CURRENT_RANGE current_range);
+  bool relativeValueIsSet(CURRENT_RANGE current_range);
+
   void renderCal(int x, int y, float valM, float setM, bool cur, bool reduceDetails);
   void init(OPERATION_TYPE operation_type);
 

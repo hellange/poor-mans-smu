@@ -69,9 +69,9 @@ int scrollDir = 0;
 bool autoNullStarted = false;
 
 int timeAtStartup;
-bool startupCalibrationDone0 = false;
-bool startupCalibrationDone1 = false;
-bool startupCalibrationDone2 = false;
+bool nullCalibrationDone0 = false;
+bool nullCalibrationDone1 = false;
+bool nullCalibrationDone2 = false;
 
 int noOfWidgets = 6;
 int activeWidget = 0;
@@ -422,11 +422,14 @@ void renderStatusIndicators(int x, int y) {
   showStatusIndicator(x+630, y+5, "FILTER", V_FILTERS.filterSize>1, false);
   if (operationType == SOURCE_VOLTAGE) {
     showStatusIndicator(x+720, y+5, "NULL_V", V_CALIBRATION.nullValueIsSet(current_range), false);
+    showStatusIndicator(x+720, y+45, "REL_V", V_CALIBRATION.relativeValueIsSet(current_range), false);
+
   } else {
     showStatusIndicator(x+720, y+5, "NULL_C", C_CALIBRATION.nullValueIsSet(current_range), false);
+    showStatusIndicator(x+720, y+45, "REL_C", C_CALIBRATION.relativeValueIsSet(current_range), false);
+
   }
   showStatusIndicator(x+630, y+45, "50Hz", false, false);
-  showStatusIndicator(x+720, y+45, "4 1/2", false, false);
   showStatusIndicator(x+630, y+85, "COMP", SMU[0].compliance, true);
     if (operationType == SOURCE_VOLTAGE) {
       showStatusIndicator(x+720, y+85, "UNCAL_V", !V_CALIBRATION.useCalibratedValues, true);
@@ -515,7 +518,7 @@ void handleSliders(int x, int y) {
   }
   
   if (!anyDialogOpen()) {
-    if (V_CALIBRATION.nullValueIsSet(current_range)) {
+    if (V_CALIBRATION.relativeValueIsSet(current_range)) {
       GD.ColorRGB(0x00ff00);
     } else {
       GD.ColorRGB(0x000000);
@@ -523,8 +526,8 @@ void handleSliders(int x, int y) {
   } else {
     //GD.ColorA(100);
   }
-  GD.Tag(BUTTON_NULL);
-  GD.cmd_button(x+700,y+130,95,50,29,0,"NULL");
+  GD.Tag(BUTTON_REL);
+  GD.cmd_button(x+700,y+130,95,50,29,0,"REL");
 
   if (!anyDialogOpen()) {
     if (V_CALIBRATION.useCalibratedValues == false) {
@@ -1138,23 +1141,30 @@ int detectGestures() {
 
 int timeBeforeAutoNull = millis() + 5000;
 
-void forceAutoNull() {
+void startNullCalibration() {
   Serial.println("Force auto null...");
   timeBeforeAutoNull = millis();
-  startupCalibrationDone0 = false;
-  startupCalibrationDone1 = false;
-  startupCalibrationDone2 = false;
+  nullCalibrationDone0 = false;
+  nullCalibrationDone1 = false;
+  nullCalibrationDone2 = false;
   autoNullStarted = true;
+
+  // set null to 0
+  V_CALIBRATION.setNullValue(0.0, MILLIAMP10);
+  V_CALIBRATION.setNullValue(0.0, AMP1);
+  //TODO: WHat about current  ????
+  
+
 
 }
 
 void handleAutoNullAtStartup() {
 
 //   Serial.print("x ");
-//   Serial.print(startupCalibrationDone0);
+//   Serial.print(nullCalibrationDone0);
 //   Serial.print(" ");
 //   Serial.println(timeBeforeAutoNull < millis());
-  if (autoNullStarted && !startupCalibrationDone0 && timeBeforeAutoNull < millis()) {
+  if (autoNullStarted && !nullCalibrationDone0 && timeBeforeAutoNull < millis()) {
     Serial.println("Performing auto null...");
     V_CALIBRATION.useCalibratedValues = false;
     current_range = MILLIAMP10;
@@ -1166,28 +1176,28 @@ void handleAutoNullAtStartup() {
       SMU[0].fltSetCommitCurrentSource(0.0);
     }
     //V_FILTERS.init();
-    SMU[0].setSamplingRate(5);
-    V_FILTERS.setFilterSize(5);
-    startupCalibrationDone0 = true;
+    V_FILTERS.setFilterSize(10);
+    SMU[0].setSamplingRate(20);
+    nullCalibrationDone0 = true;
    
   }
   int msWaitPrCal = 5000;
-  if (autoNullStarted && !startupCalibrationDone1 && /*timeAtStartup + */timeBeforeAutoNull + msWaitPrCal < millis()) {
+  if (autoNullStarted && !nullCalibrationDone1 && /*timeAtStartup + */timeBeforeAutoNull + msWaitPrCal < millis()) {
     //float v = V_STATS.rawValue; 
     float v = V_FILTERS.mean;   
-    V_CALIBRATION.toggleNullValue(v, current_range);
+    V_CALIBRATION.setNullValue(v, current_range);
     Serial.print("Removed voltage offset from 10mA range:");  
     Serial.println(v,3);  
     //v = C_STATS.rawValue;
     
     v = C_FILTERS.mean;   
-    C_CALIBRATION.toggleNullValue(v , current_range);
+    C_CALIBRATION.setNullValue(v , current_range);
     Serial.print("Removed current offset from 10mA range:");  
     Serial.println(v,3);
-    startupCalibrationDone1 = true;
+    nullCalibrationDone1 = true;
   } 
  
-  if (autoNullStarted && !startupCalibrationDone2 && /*timeAtStartup + */timeBeforeAutoNull + msWaitPrCal + 100 < millis()) {
+  if (autoNullStarted && !nullCalibrationDone2 && /*timeAtStartup + */timeBeforeAutoNull + msWaitPrCal + 100 < millis()) {
     current_range = AMP1;
     SMU[0].setCurrentRange(current_range);
     if (operationType == SOURCE_VOLTAGE) {
@@ -1196,18 +1206,18 @@ void handleAutoNullAtStartup() {
       SMU[0].fltSetCommitCurrentSource(0.0);
     }
   }
-  if (autoNullStarted && !startupCalibrationDone2 && /*timeAtStartup +*/ timeBeforeAutoNull + msWaitPrCal*2 < millis()) {
+  if (autoNullStarted && !nullCalibrationDone2 && /*timeAtStartup +*/ timeBeforeAutoNull + msWaitPrCal*2 < millis()) {
     //float v = V_STATS.rawValue;
     float v = V_FILTERS.mean;
-    V_CALIBRATION.toggleNullValue(v, current_range);
+    V_CALIBRATION.setNullValue(v, current_range);
     Serial.print("Removed voltage offset from 1A range:");  
     Serial.println(v,3);  
     //v = C_STATS.rawValue;
     v = C_FILTERS.mean;
-    C_CALIBRATION.toggleNullValue(v,current_range);
+    C_CALIBRATION.setNullValue(v,current_range);
     Serial.print("Removed current offset from 1A current range:");  
     Serial.println(v,3);  
-    startupCalibrationDone2 = true;
+    nullCalibrationDone2 = true;
     //V_FILTERS.init(1234);
     V_FILTERS.setFilterSize(5);
     //C_FILTERS.init(2345);
@@ -1339,6 +1349,7 @@ static void handleSampling() {
     float Cout = SMU[0].measureCurrent(current_range);
 
     Cout = Cout - C_CALIBRATION.nullValue[current_range];
+    Cout = Cout - C_CALIBRATION.relativeValue[current_range];
 
     C_STATS.addSample(Cout);
     C_FILTERS.updateMean(Cout, false);
@@ -1360,6 +1371,7 @@ static void handleSampling() {
 //  Serial.flush();
 
     Vout = Vout - V_CALIBRATION.nullValue[current_range];
+    Vout = Vout - V_CALIBRATION.relativeValue[current_range];
 
     V_STATS.addSample(Vout);
 
@@ -1803,7 +1815,7 @@ void loopMain()
   operationType = getOperationType();
   
 
-  if (startupCalibrationDone2) {
+  if (nullCalibrationDone2) {
    
     //if (!V_CALIBRATION.autoCalDone) {
     //  V_CALIBRATION.startAutoCal();
@@ -1835,10 +1847,10 @@ void loopMain()
     } else if (tag == BUTTON_LIM_SET) {
       Serial.println("Limit set");
       LIMIT_DIAL.open(operationType, LIMIT, closeSourceDCCallback, SMU[0].getLimitValue());
-    } else if (tag == BUTTON_NULL) {
+    } else if (tag == BUTTON_REL) {
       Serial.println("Null set");
-      V_CALIBRATION.toggleNullValue(V_STATS.rawValue, current_range);
-      C_CALIBRATION.toggleNullValue(C_STATS.rawValue, current_range);
+      V_CALIBRATION.toggleRelativeValue(V_STATS.rawValue, current_range);
+      C_CALIBRATION.toggleRelativeValue(C_STATS.rawValue, current_range);
     } else if (tag == BUTTON_UNCAL) {
       Serial.println("Uncal set");
       V_CALIBRATION.toggleCalibratedValues();
@@ -2057,7 +2069,7 @@ void loopMain()
        } 
        Serial.println("Start zero calibration of dac....");
        timeSinceLastChange = millis();
-       forceAutoNull();
+       startNullCalibration();
        
     }
     #endif // end not using simulator
@@ -2090,7 +2102,7 @@ void loopMain()
   if (V_CALIBRATION.autoCalInProgress or C_CALIBRATION.autoCalInProgress) {
     notification("Auto calibration in progress...");
   }
-  if (autoNullStarted && !startupCalibrationDone2) {
+  if (autoNullStarted && !nullCalibrationDone2) {
     notification("Wait for null adjustment...");
   }
 
