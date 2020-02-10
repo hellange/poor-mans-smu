@@ -32,9 +32,8 @@
 #include "FunctionSweep.h"
 #include "Fan.h"
 #include "RamClass.h"
+#include "RotaryEncoder.h"
 
-
-#include "Encoder.h"
 
 #define _SOURCE_AND_SINK 111
 
@@ -100,120 +99,21 @@ IntervalTimer myTimer;
 #define SAMPLING_BY_INTERRUPT
 
 
-// Rotary Encoder Inputs
-#define CLK 14
-#define DT 15
-#define SW 16
-
-// Change these pin numbers to the pins connected to your encoder.
-//   Best Performance: both pins have interrupt capability
-//   Good Performance: only the first pin has interrupt capability
-//   Low Performance:  neither pin has interrupt capability
-Encoder knobLeft(DT, CLK);
-//Encoder knobRight(7, 8);
-
-long positionLeft  = -999;
-//long positionRight = -999;
-
-int millisSinceLastStep = millis();
-int millisSinceLastVoltageCommit = millis();
-void rotaryloop() {
- long newLeft, newRight;
- int speed = 0;
- int dir = 0;
-  newLeft = knobLeft.read()/2;
-  //newRight = knobRight.read();
-  if (newLeft != positionLeft /*|| newRight != positionRight*/) {
-    if (newLeft < positionLeft) {
-      dir=-1;
-    } else {
-      dir=+1;
-    }
-
-    bool stepless_dynamic = false;  // decide if the dynamic speed shall be directly dependent on rotation speed or if there shall just be a few different speeds 
-    float resolution = 0.1;    // 0.1 = uV resolution, 1 = mV resolution;
-    float feely = 0.4;  // how fast will value change when you turn the knob.  High value changes faster than low value
-   
-    if (stepless_dynamic) {
-      speed = millis() - millisSinceLastStep;
-      if (speed > 100) {
-        speed = 100;
-      }
-      speed = 1001 - speed * 10;
-       
-    } else {
-
-      if (millisSinceLastStep + 10 * feely > millis()) {
-        speed = 10000;
-      } else
-      if (millisSinceLastStep + 50 * feely > millis()) {
-        speed = 1000;
-      } else
-      if (millisSinceLastStep + 100 * feely > millis()) {
-        speed = 500;
-      } 
-      else if (millisSinceLastStep + 150 * feely > millis()) {
-        speed = 100;
-      } 
-      else if (millisSinceLastStep + 250 * feely > millis()) {
-        speed = 10;
-      } else {
-        speed = 1;
-      }
+void rotaryChangedFn(float changeVal) {
+ 
+   float mv = SMU[0].getSetValuemV();
+   float newVoltage = mv + changeVal;
+    
+   if (operationType == SOURCE_VOLTAGE) {
+     if (SMU[0].fltSetCommitVoltageSource(newVoltage, true)) printError(_PRINT_ERROR_VOLTAGE_SOURCE_SETTING);
+   }
       
-    
-    }
-    
-    if (resolution == 1) {
-      speed = speed * 10;
-    }
-   
-
-    
-    millisSinceLastStep = millis();
-    Serial.print("Left = ");
-    Serial.print(newLeft);
-    //Serial.print(", Right = ");
-    //Serial.print(newRight);
-    Serial.print(" speed= ");
-    Serial.print( speed);
-      Serial.print(" dir= ");
-    Serial.print( dir);
-    
-    Serial.println();
-    positionLeft = newLeft;
-
-
-    
-    float mv = SMU[0].getSetValuemV();
-
-    float newVoltage = mv + speed*dir / 10.0;
-    
-      if (operationType == SOURCE_VOLTAGE) {
-        if (SMU[0].fltSetCommitVoltageSource(newVoltage, true)) printError(_PRINT_ERROR_VOLTAGE_SOURCE_SETTING);
-      }
-      millisSinceLastVoltageCommit = millis();
-    
-
-
-    
-    //positionRight = newRight;
-  }
- 
-
- 
 }
-
-
-
-
-
-
 
 void setup()
 {
 
-
+  
   
    disable_ADC_DAC_SPI_units();
    delay(50);
@@ -281,6 +181,9 @@ void setup()
    SMU[0].setSamplingRate(20);
    operationType = getOperationType();
 
+   V_CALIBRATION.init(SOURCE_VOLTAGE);
+   C_CALIBRATION.init(SOURCE_CURRENT);
+   
    if (operationType == SOURCE_VOLTAGE) {
      SMU[0].fltSetCommitVoltageSource(0.0, true);
      Serial.println("Source voltage");
@@ -299,8 +202,7 @@ void setup()
    V_FILTERS.init(1234);
    C_FILTERS.init(5678);
    
-   V_CALIBRATION.init(SOURCE_VOLTAGE);
-   C_CALIBRATION.init(SOURCE_CURRENT);
+
 
    SOURCE_DIAL.init();
    LIMIT_DIAL.init();
@@ -322,7 +224,8 @@ void setup()
   SPI.usingInterrupt(myTimer);
 #endif
 
-
+  ROTARY_ENCODER.init(rotaryChangedFn);
+ 
   //TC74 
   Wire.begin();
 } 
@@ -1479,7 +1382,8 @@ void loop() {
   //
   // Note that the scrolling speed and gesture detection speed will be affected.
   // 
-   rotaryloop();
+  ROTARY_ENCODER.handle();
+  
   if (displayUpdateTimer + 20 > millis()) {
     return; 
   }
