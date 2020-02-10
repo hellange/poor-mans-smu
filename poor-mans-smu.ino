@@ -132,7 +132,7 @@ void rotaryloop() {
 
     bool stepless_dynamic = false;  // decide if the dynamic speed shall be directly dependent on rotation speed or if there shall just be a few different speeds 
     float resolution = 0.1;    // 0.1 = uV resolution, 1 = mV resolution;
-    float feely = 0.6;  // how fast will value change when you turn the knob.  High value changes faster that low value
+    float feely = 0.4;  // how fast will value change when you turn the knob.  High value changes faster than low value
    
     if (stepless_dynamic) {
       speed = millis() - millisSinceLastStep;
@@ -146,16 +146,16 @@ void rotaryloop() {
       if (millisSinceLastStep + 10 * feely > millis()) {
         speed = 10000;
       } else
-      if (millisSinceLastStep + 30 * feely > millis()) {
+      if (millisSinceLastStep + 50 * feely > millis()) {
         speed = 1000;
       } else
-      if (millisSinceLastStep + 80 * feely > millis()) {
+      if (millisSinceLastStep + 100 * feely > millis()) {
         speed = 500;
       } 
-      else if (millisSinceLastStep + 130 * feely > millis()) {
+      else if (millisSinceLastStep + 150 * feely > millis()) {
         speed = 100;
       } 
-      else if (millisSinceLastStep + 220 * feely > millis()) {
+      else if (millisSinceLastStep + 250 * feely > millis()) {
         speed = 10;
       } else {
         speed = 1;
