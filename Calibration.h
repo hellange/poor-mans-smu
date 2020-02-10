@@ -36,7 +36,11 @@ class CalibrationClass {
   int ea_adc_nonlinear_comp_start;
 
   int ea_dac_zero_comp;
-  int ea_adc_zero_comp;
+
+  
+  int ea_adc_zero_comp_vol;
+  int ea_adc_zero_comp_cur;
+
   
   void readAdcCalFromEeprom();
   void writeAdcCalToEeprom(int nrOfPoints);
@@ -59,8 +63,9 @@ public:
 
   float getDacZeroComp();
   void adjDacZeroComp(float val);
-  
-  float nullValue[2];
+
+  float nullValueVol[2];
+  float nullValueCur[2];
   float relativeValue[2];
   bool useCalibratedValues = true;
   bool useDacCalibratedValues = true;
@@ -72,7 +77,9 @@ public:
   bool toggleCalibratedValues();
   float dac_nonlinear_compensation(float v);
   float adc_nonlinear_compensation(float milliVolt);
-  void setNullValue(float v, CURRENT_RANGE current_range);
+  void setNullValueVol(float v, CURRENT_RANGE current_range);
+  void setNullValueCur(float v, CURRENT_RANGE current_range);
+
   void toggleRelativeValue(float v, CURRENT_RANGE current_range);
   bool nullValueIsSet(CURRENT_RANGE current_range);
   bool relativeValueIsSet(CURRENT_RANGE current_range);

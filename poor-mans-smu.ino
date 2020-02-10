@@ -1053,9 +1053,11 @@ void startNullCalibration() {
   autoNullStarted = true;
 
   // set null to 0
-  V_CALIBRATION.setNullValue(0.0, MILLIAMP10);
-  V_CALIBRATION.setNullValue(0.0, AMP1);
-  //TODO: WHat about current  ????
+  V_CALIBRATION.setNullValueVol(0.0, MILLIAMP10);
+  V_CALIBRATION.setNullValueVol(0.0, AMP1);
+  V_CALIBRATION.setNullValueCur(0.0, MILLIAMP10);
+  V_CALIBRATION.setNullValueCur(0.0, AMP1);
+  //TODO: Do the same when calibration on constant current mode as well !
   
 
 
@@ -1088,13 +1090,13 @@ void handleAutoNullAtStartup() {
   if (autoNullStarted && !nullCalibrationDone1 && /*timeAtStartup + */timeBeforeAutoNull + msWaitPrCal < millis()) {
     //float v = V_STATS.rawValue; 
     float v = V_FILTERS.mean;   
-    V_CALIBRATION.setNullValue(v, current_range);
+    V_CALIBRATION.setNullValueVol(v, current_range);
     Serial.print("Removed voltage offset from 10mA range:");  
     Serial.println(v,3);  
     //v = C_STATS.rawValue;
     
     v = C_FILTERS.mean;   
-    C_CALIBRATION.setNullValue(v , current_range);
+    V_CALIBRATION.setNullValueCur(v , current_range);
     Serial.print("Removed current offset from 10mA range:");  
     Serial.println(v,3);
     nullCalibrationDone1 = true;
@@ -1112,12 +1114,12 @@ void handleAutoNullAtStartup() {
   if (autoNullStarted && !nullCalibrationDone2 && /*timeAtStartup +*/ timeBeforeAutoNull + msWaitPrCal*2 < millis()) {
     //float v = V_STATS.rawValue;
     float v = V_FILTERS.mean;
-    V_CALIBRATION.setNullValue(v, current_range);
+    V_CALIBRATION.setNullValueVol(v, current_range);
     Serial.print("Removed voltage offset from 1A range:");  
     Serial.println(v,3);  
     //v = C_STATS.rawValue;
     v = C_FILTERS.mean;
-    C_CALIBRATION.setNullValue(v,current_range);
+    V_CALIBRATION.setNullValueCur(v,current_range);
     Serial.print("Removed current offset from 1A current range:");  
     Serial.println(v,3);  
     nullCalibrationDone2 = true;
@@ -1251,7 +1253,9 @@ static void handleSampling() {
     
     float Cout = SMU[0].measureCurrent(current_range);
 
-    Cout = Cout - C_CALIBRATION.nullValue[current_range];
+    //TODO: DIffer between constant current and constant voltage nulling
+    Cout = Cout - V_CALIBRATION.nullValueCur[current_range];
+    
     Cout = Cout - C_CALIBRATION.relativeValue[current_range];
 
     C_STATS.addSample(Cout);
@@ -1273,7 +1277,10 @@ static void handleSampling() {
 //  Serial.println(" mV");  
 //  Serial.flush();
 
-    Vout = Vout - V_CALIBRATION.nullValue[current_range];
+    // TODO: Differ between constant current and constant voltage nulling
+    Vout = Vout - V_CALIBRATION.nullValueVol[current_range];
+
+    
     Vout = Vout - V_CALIBRATION.relativeValue[current_range];
 
     V_STATS.addSample(Vout);

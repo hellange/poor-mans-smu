@@ -35,6 +35,14 @@ extern ADCClass SMU[];
 
 void CalibrationClass::init(OPERATION_TYPE operationType_) {
   operationType = operationType_;
+
+  ea_dac_zero_comp = EA_DAC_ZERO_COMP_VOL;
+
+  // TODO: Differ between constant current and constant voltage nulling
+  ea_adc_zero_comp_vol = EA_ADC_ZERO_COMP_VOL;
+  ea_adc_zero_comp_cur = EA_ADC_ZERO_COMP_CUR;
+
+  
   if (operationType == SOURCE_VOLTAGE) {
     // set value
 //    adc_cal_points = 37;
@@ -52,8 +60,7 @@ void CalibrationClass::init(OPERATION_TYPE operationType_) {
     ea_adc_gain_comp_pos = EA_ADC_GAIN_COMP_POS_VOL;
     ea_adc_gain_comp_neg = EA_ADC_GAIN_COMP_NEG_VOL;
 
-    ea_dac_zero_comp = EA_DAC_ZERO_COMP_VOL;
-    ea_adc_zero_comp = EA_ADC_ZERO_COMP_VOL;
+  
 
     ea_adc_nonlinear_comp_nr = EA_ADC_NONLINEAR_COMP_NR_VOL;
     ea_adc_nonlinear_comp_start = EA_ADC_NONLINEAR_COMP_START_VOL;
@@ -81,8 +88,7 @@ void CalibrationClass::init(OPERATION_TYPE operationType_) {
     ea_adc_gain_comp_pos = EA_ADC_GAIN_COMP_POS_CUR;
     ea_adc_gain_comp_neg = EA_ADC_GAIN_COMP_NEG_CUR;
 
-    ea_dac_zero_comp = EA_DAC_ZERO_COMP_CUR;
-    ea_adc_zero_comp = EA_ADC_ZERO_COMP_CUR;
+   
 
     ea_adc_nonlinear_comp_nr = EA_ADC_NONLINEAR_COMP_NR_CUR;
     ea_adc_nonlinear_comp_start = EA_ADC_NONLINEAR_COMP_START_CUR;
@@ -93,8 +99,10 @@ void CalibrationClass::init(OPERATION_TYPE operationType_) {
 
   }
 
-  nullValue[0] = 0.0;
-  nullValue[1] = 0.0;
+  nullValueVol[0] = 0.0;
+  nullValueVol[1] = 0.0;
+  nullValueCur[0] = 0.0;
+  nullValueCur[1] = 0.0;
   timeSinceLastChange = millis();
   
   dacGainCompPos = floatFromEeprom(ea_dac_gain_comp_pos);
@@ -164,27 +172,54 @@ void CalibrationClass::init(OPERATION_TYPE operationType_) {
 
 
 
-  float adcZeroComp = floatFromEeprom(ea_adc_zero_comp);
+ float adcZeroCompVol = floatFromEeprom(ea_adc_zero_comp_vol);
   
- Serial.print("Read adcZeroComp from eeprom address ");
-  Serial.print(ea_adc_zero_comp,HEX);
+ Serial.print("Read adcZeroCompVol from eeprom address ");
+  Serial.print(ea_adc_zero_comp_vol,HEX);
   Serial.print(":");
-  if (isnan(adcZeroComp)) {
+  if (isnan(adcZeroCompVol)) {
     Serial.print("Not defined. Write default value:");
-    adcZeroComp = 0.0; // use millivolt
-    floatToEeprom(ea_adc_zero_comp,adcZeroComp); // write initial default
-  } else if (abs(adcZeroComp) < -10000.0 or abs(adcZeroComp) > 10000.0) {
+    adcZeroCompVol = 0.0; // use millivolt
+    floatToEeprom(ea_adc_zero_comp_vol,adcZeroCompVol); // write initial default
+  } else if (abs(adcZeroCompVol) < -10000.0 or abs(adcZeroCompVol) > 10000.0) {
     Serial.print("WARNING: Suspect adc zero value:");
-    Serial.println(adcZeroComp);
-    adcZeroComp = 0.0;
+    Serial.println(adcZeroCompVol);
+    adcZeroCompVol = 0.0;
     Serial.print("Setting adc zero to:");
-    Serial.println(adcZeroComp);
+    Serial.println(adcZeroCompVol);
     
   }
-  Serial.println(adcZeroComp,7);
+  Serial.println(adcZeroCompVol,7);
   //TODO: Differ between the two null value (ranges)
-  nullValue[0] = adcZeroComp;
-  nullValue[1] = adcZeroComp;
+  nullValueVol[0] = adcZeroCompVol;
+  nullValueVol[1] = adcZeroCompVol;
+
+
+
+
+
+   float adcZeroCompCur = floatFromEeprom(ea_adc_zero_comp_cur);
+  
+ Serial.print("Read adcZeroCompVolCurfrom eeprom address ");
+  Serial.print(ea_adc_zero_comp_cur,HEX);
+  Serial.print(":");
+  if (isnan(adcZeroCompCur)) {
+    Serial.print("Not defined. Write default value:");
+    adcZeroCompCur = 0.0; // use millivolt
+    floatToEeprom(ea_adc_zero_comp_cur, adcZeroCompCur); // write initial default
+  } else if (abs(adcZeroCompCur) < -10000.0 or abs(adcZeroCompCur) > 10000.0) {
+    Serial.print("WARNING: Suspect adc zero value:");
+    Serial.println(adcZeroCompCur);
+    adcZeroCompCur = 0.0;
+    Serial.print("Setting adc zero to:");
+    Serial.println(adcZeroCompCur);
+    
+  }
+  Serial.println(adcZeroCompCur,7);
+  //TODO: Differ between the two null value (ranges)
+  nullValueCur[0] = adcZeroCompCur;
+  nullValueCur[1] = adcZeroCompCur;
+  
 
 }
 
@@ -386,16 +421,21 @@ bool CalibrationClass::toggleCalibratedValues() {
 }
 
 bool CalibrationClass::nullValueIsSet(CURRENT_RANGE current_range) {
-  return nullValue[current_range] != 0.0;
+  return nullValueVol[current_range] != 0.0 or nullValueCur[current_range] != 0.0;
 }
 
 bool CalibrationClass::relativeValueIsSet(CURRENT_RANGE current_range) {
   return relativeValue[current_range] != 0.0;
 }
 
-void CalibrationClass::setNullValue(float v, CURRENT_RANGE current_range) {
-  nullValue[current_range] = v;
-  floatToEeprom(ea_adc_zero_comp, v);
+void CalibrationClass::setNullValueVol(float v, CURRENT_RANGE current_range) {
+  nullValueVol[current_range] = v;
+  floatToEeprom(ea_adc_zero_comp_vol, v);
+}
+
+void CalibrationClass::setNullValueCur(float v, CURRENT_RANGE current_range) {
+  nullValueCur[current_range] = v;
+  floatToEeprom(ea_adc_zero_comp_cur, v);
 }
 
 
@@ -670,11 +710,17 @@ x=x-70;
 
     GD.ColorRGB(0xaaaaaa);
 
-    GD.cmd_text(x+300,y+45,27,0,"ADC Null(1A)");
-    DIGIT_UTIL.renderValue(x + 300,  y+60 ,nullValue[0], 1, -1); 
-    GD.cmd_text(x+450,y+45,27,0,"ADC Null(10mA)");
-    DIGIT_UTIL.renderValue(x + 450,  y+60 ,nullValue[1], 1, -1); 
+    GD.cmd_text(x+300,y+45,27,0,"ADC NullV(1A)");
+    DIGIT_UTIL.renderValue(x + 300,  y+60 ,nullValueVol[0], 1, -1); 
+    GD.cmd_text(x+450,y+45,27,0,"ADC NullV(10mA)");
+    DIGIT_UTIL.renderValue(x + 450,  y+60 ,nullValueVol[1], 1, -1); 
 
+    GD.cmd_text(x+300,y+45+60,27,0,"ADC NullC(1A)");
+    DIGIT_UTIL.renderValue(x + 300,  y+120 ,nullValueCur[0], 1, -1); 
+    GD.cmd_text(x+450,y+45+60,27,0,"ADC NullC(10mA)");
+    DIGIT_UTIL.renderValue(x + 450,  y+120 ,nullValueCur[1], 1, -1); 
+
+    
     GD.ColorRGB(0x000000);
 
     GD.Tag(BUTTON_DAC_NONLINEAR_CALIBRATE);
@@ -683,7 +729,7 @@ x=x-70;
     GD.Tag(BUTTON_DAC_ZERO_CALIBRATE);
     GD.cmd_button(x+620,y+100,120,50,29,0,"ZEROCAL");
     
-    GD.Tag(0);
+    //GD.Tag(0);
   }
   GD.LineWidth(20);
   GD.Begin(LINE_STRIP);
