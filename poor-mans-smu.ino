@@ -144,15 +144,11 @@ void setup()
 
     // bootup FT8xx
     // Drive the PD_N pin high
-    Serial.flush();
-
-    //brief reset on the LCD clear pin
-    delay(200);
+    // brief reset on the LCD clear pin
     digitalWrite(6, LOW);
-    delay(200);
+    delay(100);
     digitalWrite(6, HIGH);
-    delay(200);
-
+    delay(100);
 
    GD.begin(0);
    delay(100);

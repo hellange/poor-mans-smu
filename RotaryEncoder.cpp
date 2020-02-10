@@ -34,7 +34,7 @@ void RotaryEncoderClass::handle() {
     }
 
     bool stepless_dynamic = false;  // decide if the dynamic speed shall be directly dependent on rotation speed or if there shall just be a few different speeds 
-    float resolution = 0.1;    // 0.1 = uV resolution, 1 = mV resolution;
+    float resolution = 0.1;    // 0.1 = 100uV resolution, 1 = mV resolution;
     float feely = 0.4;  // how fast will value change when you turn the knob.  High value changes faster than low value
    
     if (stepless_dynamic) {
