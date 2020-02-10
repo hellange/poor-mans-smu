@@ -53,6 +53,8 @@ void CalibrationClass::init(OPERATION_TYPE operationType_) {
     ea_adc_gain_comp_neg = EA_ADC_GAIN_COMP_NEG_VOL;
 
     ea_dac_zero_comp = EA_DAC_ZERO_COMP_VOL;
+    ea_adc_zero_comp = EA_ADC_ZERO_COMP_VOL;
+
     ea_adc_nonlinear_comp_nr = EA_ADC_NONLINEAR_COMP_NR_VOL;
     ea_adc_nonlinear_comp_start = EA_ADC_NONLINEAR_COMP_START_VOL;
 
@@ -80,6 +82,7 @@ void CalibrationClass::init(OPERATION_TYPE operationType_) {
     ea_adc_gain_comp_neg = EA_ADC_GAIN_COMP_NEG_CUR;
 
     ea_dac_zero_comp = EA_DAC_ZERO_COMP_CUR;
+    ea_adc_zero_comp = EA_ADC_ZERO_COMP_CUR;
 
     ea_adc_nonlinear_comp_nr = EA_ADC_NONLINEAR_COMP_NR_CUR;
     ea_adc_nonlinear_comp_start = EA_ADC_NONLINEAR_COMP_START_CUR;
@@ -156,6 +159,32 @@ void CalibrationClass::init(OPERATION_TYPE operationType_) {
     
   }
   Serial.println(dacZeroComp,7);
+
+
+
+
+
+  float adcZeroComp = floatFromEeprom(ea_adc_zero_comp);
+  
+ Serial.print("Read adcZeroComp from eeprom address ");
+  Serial.print(ea_adc_zero_comp,HEX);
+  Serial.print(":");
+  if (isnan(adcZeroComp)) {
+    Serial.print("Not defined. Write default value:");
+    adcZeroComp = 0.0; // use millivolt
+    floatToEeprom(ea_adc_zero_comp,adcZeroComp); // write initial default
+  } else if (abs(adcZeroComp) < -10000.0 or abs(adcZeroComp) > 10000.0) {
+    Serial.print("WARNING: Suspect adc zero value:");
+    Serial.println(adcZeroComp);
+    adcZeroComp = 0.0;
+    Serial.print("Setting adc zero to:");
+    Serial.println(adcZeroComp);
+    
+  }
+  Serial.println(adcZeroComp,7);
+  //TODO: Differ between the two null value (ranges)
+  nullValue[0] = adcZeroComp;
+  nullValue[1] = adcZeroComp;
 
 }
 
@@ -366,6 +395,7 @@ bool CalibrationClass::relativeValueIsSet(CURRENT_RANGE current_range) {
 
 void CalibrationClass::setNullValue(float v, CURRENT_RANGE current_range) {
   nullValue[current_range] = v;
+  floatToEeprom(ea_adc_zero_comp, v);
 }
 
 
@@ -482,7 +512,7 @@ void CalibrationClass::floatToEeprom(int address, float f) {
   EEPROM.write(address+2,eepromfloat.b[2]); 
   EEPROM.write(address+3,eepromfloat.b[3]); 
   Serial.println(eepromfloat.b[0]);
-    Serial.println(eepromfloat.b[1]);
+  Serial.println(eepromfloat.b[1]);
   Serial.println(eepromfloat.b[2]);
   Serial.println(eepromfloat.b[3]);
 

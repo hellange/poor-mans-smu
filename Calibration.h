@@ -36,6 +36,7 @@ class CalibrationClass {
   int ea_adc_nonlinear_comp_start;
 
   int ea_dac_zero_comp;
+  int ea_adc_zero_comp;
   
   void readAdcCalFromEeprom();
   void writeAdcCalToEeprom(int nrOfPoints);
