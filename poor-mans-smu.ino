@@ -85,14 +85,31 @@ float MAX_CURRENT_1A_RANGE = 1100.0;
 OPERATION_TYPE operationType = SOURCE_VOLTAGE;
 
 
-FUNCTION_TYPE functionType = SOURCE_DC;
+FUNCTION_TYPE functionType = SOURCE_DC_VOLTAGE;
+
+
+FUNCTION_TYPE prevFuncType = SOURCE_DC_VOLTAGE;
 
 OPERATION_TYPE getOperationType() {
-  if (digitalRead(3) == HIGH) {
-    return SOURCE_VOLTAGE;
+  OPERATION_TYPE ot;
+  //TODO:  This is messy! Based on older concept where function and operation were different stuff... this has slightly changed....
+
+  if (functionType == SOURCE_DC_CURRENT) {
+    ot = SOURCE_CURRENT;
   } else {
-    return SOURCE_CURRENT;
+    ot = SOURCE_VOLTAGE;
   }
+
+  // Only update the GPIO bit when operation has changed!  Originally put this in the callback from menu selection, but it failed... not sure why. Investigate.
+  if (functionType != prevFuncType) {
+    SMU[0].setGPIO(0, ot != SOURCE_VOLTAGE);
+Serial.println("Changing mode !");
+
+  }
+    prevFuncType = functionType;
+
+  return ot;
+
 }
 IntervalTimer myTimer;
 
@@ -100,13 +117,42 @@ IntervalTimer myTimer;
 
 
 void rotaryChangedFn(float changeVal) {
- 
-   float mv = SMU[0].getSetValuemV();
-   float newVoltage = mv + changeVal;
-    
+
    if (operationType == SOURCE_VOLTAGE) {
-     if (SMU[0].fltSetCommitVoltageSource(newVoltage, true)) printError(_PRINT_ERROR_VOLTAGE_SOURCE_SETTING);
+    
+     if(SOURCE_DIAL.isDialogOpen()) {
+       float mv = SOURCE_DIAL.getMv();
+       float newVoltage = mv + changeVal;
+       SOURCE_DIAL.setMv(newVoltage);
+     } else {
+       float mv = SMU[0].getSetValuemV();
+       float newVoltage = mv + changeVal;
+       if (SMU[0].fltSetCommitVoltageSource(newVoltage, true)) printError(_PRINT_ERROR_VOLTAGE_SOURCE_SETTING);
+     }
+
+   } else {
+
+    float mv;
+    if(SOURCE_DIAL.isDialogOpen()) {
+      mv = SOURCE_DIAL.getMv();
+    } else {
+      mv = SMU[0].getSetValuemV();
+    }
+     if (current_range == MILLIAMP10) {
+       changeVal = changeVal / 10.0;
+     }
+     
+     float newVoltage = mv + changeVal/10.0;
+
+     if(SOURCE_DIAL.isDialogOpen()) {
+       SOURCE_DIAL.setMv(newVoltage);
+     } else {
+       fltCommitCurrentSourceAutoRange(newVoltage, false);
+     }
+
+     //if (SMU[0].fltSetCommitCurrentSource(newVoltage)) printError(_PRINT_ERROR_VOLTAGE_SOURCE_SETTING);
    }
+
       
 }
 
@@ -130,9 +176,14 @@ void setup()
     pinMode(4,OUTPUT); // current range io pin for switching on/off 100ohm shunt
     digitalWrite(4, HIGH);
 
-    pinMode(3,INPUT); // current range selector
 
-    pinMode(2,INPUT); // Fan speed feedback
+    // Changed in later revisions to be inpur for limits
+    pinMode(3,INPUT); // (NO) current range selector
+    pinMode(2,INPUT); // (NO) Fan speed feedback
+
+
+    
+    
     FAN.init();
     
     //pinMode(11,OUTPUT);
@@ -146,9 +197,13 @@ void setup()
     // Drive the PD_N pin high
     // brief reset on the LCD clear pin
     digitalWrite(6, LOW);
-    delay(100);
+    delay(200);
     digitalWrite(6, HIGH);
-    delay(100);
+    delay(200);
+    digitalWrite(6, LOW);
+    delay(200);
+    digitalWrite(6, HIGH);
+    delay(200);
 
    GD.begin(0);
    delay(100);
@@ -174,6 +229,10 @@ void setup()
    delay(100);
    Serial.println("Start measuring...");
    SMU[0].init();
+
+   SMU[0].setGPIO(1,true); // gpio1:  true = low bandwidth
+  // SMU[0].setGPIO(0,true);
+
    SMU[0].setSamplingRate(20);
    operationType = getOperationType();
 
@@ -181,13 +240,13 @@ void setup()
    C_CALIBRATION.init(SOURCE_CURRENT);
    
    if (operationType == SOURCE_VOLTAGE) {
-     SMU[0].fltSetCommitVoltageSource(0.0, true);
+     SMU[0].fltSetCommitVoltageSource(4000.0, true);
      Serial.println("Source voltage");
-     SMU[0].fltSetCommitLimit(0.1, _SOURCE_AND_SINK); 
+     SMU[0].fltSetCommitCurrentLimit(0.1, _SOURCE_AND_SINK); 
    } else {
      SMU[0].fltSetCommitCurrentSource(0.0);
      Serial.println("Source current");
-     SMU[0].fltSetCommitLimit(10.0, _SOURCE_AND_SINK); 
+     SMU[0].fltSetCommitCurrentLimit(10.0, _SOURCE_AND_SINK); 
    }
    Serial.println("Done!");
    Serial.flush();
@@ -224,6 +283,16 @@ void setup()
  
   //TC74 
   Wire.begin();
+
+
+
+
+  
+
+
+
+
+    
 } 
 
 void disable_ADC_DAC_SPI_units(){
@@ -265,10 +334,10 @@ void sourceCurrentPanel(int x, int y) {
   // primary
   CURRENT_DISPLAY.renderMeasured(x + 17,y + 26, C_FILTERS.mean, false, current_range == MILLIAMP10);
 
-  // secondary volt
+  // secondary
   GD.ColorRGB(COLOR_CURRENT);
   GD.ColorA(180); // a bit lighter
-  DIGIT_UTIL.renderValue(x + 320,  y-4 , C_STATS.rawValue, 4, DigitUtilClass::typeCurrent); 
+  DIGIT_UTIL.renderValue(x + 290,  y-4 , C_STATS.rawValue, 4, DigitUtilClass::typeCurrent); 
 
   GD.ColorA(255);
   CURRENT_DISPLAY.renderSet(x + 120, y + 131, SMU[0].getSetValuemV());
@@ -298,23 +367,51 @@ void sourceVoltagePanel(int x, int y) {
   GD.cmd_text(x+20 + 1, y + 2 + 1 ,   29, 0, "SOURCE VOLTAGE");
   
   // primary
-  VOLT_DISPLAY.renderMeasured(x + 17,y + 26, V_FILTERS.mean);
+  VOLT_DISPLAY.renderMeasured(x + 17,y + 26, V_FILTERS.mean, false);
 
-  // secondary volt
+  // secondary
   GD.ColorRGB(COLOR_VOLT);
   GD.ColorA(180); // a bit lighter
-  DIGIT_UTIL.renderValue(x + 320,  y-4 , V_STATS.rawValue, 4, DigitUtilClass::typeVoltage); 
+  DIGIT_UTIL.renderValue(x + 300,  y-4 , V_STATS.rawValue, 4, DigitUtilClass::typeVoltage); 
 
   GD.ColorA(255);
   VOLT_DISPLAY.renderSet(x + 120, y + 131, SMU[0].getSetValuemV());
 
+  float uVstep = 1000000.0/ powf(2.0,18.0); // for 1V 18bit DAC
+
+  if (!reduceDetails()) {
+    y=y+5;
+    if (abs(SMU[0].DAC_RANGE_LOW)== 5.0 && abs(SMU[0].DAC_RANGE_HIGH) == 5.0) {
+      uVstep = uVstep *20.0;
+        GD.cmd_text(x+120,y+170, 27, 0, "+/-10V [step:");
+        DIGIT_UTIL.renderValue(x + 205,  y+173 , uVstep, 0, -1 /*DigitUtilClass::typeVoltage*/); 
+        GD.cmd_text(x+270,y+170, 27, 0, "uV]");
+    }
+    else if (abs(SMU[0].DAC_RANGE_LOW) == 2.5 && abs(SMU[0].DAC_RANGE_HIGH) == 2.5) {
+        uVstep = uVstep *10.0;
+        GD.cmd_text(x+120,y+170, 27, 0, "+/- 5V  [step:");
+        DIGIT_UTIL.renderValue(x + 205,  y+173 , uVstep, 0, -1/*DigitUtilClass::typeVoltage*/);
+        GD.cmd_text(x+270,y+170, 27, 0, "uV]");
+    } else if (abs(SMU[0].DAC_RANGE_LOW) == 10.0&& abs(SMU[0].DAC_RANGE_HIGH) == 10.0){
+        uVstep = uVstep *40.0;
+        GD.cmd_text(x+120,y+170, 27, 0, "+/- 20V [step:");
+        DIGIT_UTIL.renderValue(x + 205 + 15,  y+173 , uVstep, 0, -1/*DigitUtilClass::typeVoltage*/); 
+        GD.cmd_text(x+270+ 15,y+170, 27, 0, "uV]");
+    } else {
+         GD.cmd_text(x+120,y+170, 27, 0, " ?");
+    }
+    y=y-5;
+  }
   GD.ColorRGB(0,0,0);
   GD.cmd_fgcolor(0xaaaa90);  
+
+  
+
   
   GD.Tag(BUTTON_SOURCE_SET);
   GD.cmd_button(x + 20,y + 132,95,50,29,OPT_NOTEAR,"SET");
   GD.Tag(BUTTON_VOLT_AUTO);
-  GD.cmd_button(x + 350,y + 132,95,50,29,0,"AUTO");
+  GD.cmd_button(x + 350+20,y + 132 ,95,50,29,0,"AUTO");
 }
 
 void renderStatusIndicators(int x, int y) {
@@ -626,7 +723,7 @@ void measureVoltagePanel(int x, int y, boolean compliance) {
   }
   y=y+28;
 
-  VOLT_DISPLAY.renderMeasured(x + 17, y, V_FILTERS.mean);
+  VOLT_DISPLAY.renderMeasured(x + 17, y, V_FILTERS.mean, compliance);
   VOLT_DISPLAY.renderSet(x+120, y+105, SMU[0].getLimitValue());
 
   y=y+105;
@@ -731,7 +828,13 @@ void widgetBodyHeaderTab(int y, int activeWidget) {
 
 void showWidget(int y, int widgetNo, int scroll) {
   int yPos = y-6;
-  if (widgetNo ==0 && operationType == SOURCE_VOLTAGE) {
+  if (widgetNo ==0 && functionType == SOURCE_SWEEP) {
+     if (scroll ==0){
+       GD.ColorRGB(COLOR_VOLT);
+       GD.cmd_text(20, yPos, 29, 0, "MEASURE VOLTAGE");
+     }
+     measureVoltagePanel(scroll, yPos + 20, SMU[0].compliance);
+  } else if (widgetNo ==0 && operationType == SOURCE_VOLTAGE) {
      if (scroll ==0){
        GD.ColorRGB(COLOR_CURRENT_TEXT);
        GD.cmd_text(20, yPos, 29, 0, "MEASURE CURRENT");
@@ -973,7 +1076,7 @@ void renderUpperDisplay(OPERATION_TYPE operationType, FUNCTION_TYPE functionType
   int y = 32;
  
   // show upper panel
-  if (functionType == SOURCE_DC) {
+  if (functionType == SOURCE_DC_VOLTAGE || functionType == SOURCE_DC_CURRENT) {
     if (operationType == SOURCE_VOLTAGE) {
         sourceVoltagePanel(x,y);
     } else {
@@ -1248,7 +1351,8 @@ static void handleSampling() {
   else if (dataR == 1) {
     
     float Cout = SMU[0].measureCurrent(current_range);
-
+//Serial.print("Current raw:");
+//Serial.println(Cout);
     //TODO: DIffer between constant current and constant voltage nulling
     Cout = Cout - V_CALIBRATION.nullValueCur[current_range];
     
@@ -1372,11 +1476,9 @@ int LM60_getTemperature() {
 }
 */
 
+
 void loop() {
 
-
-
-  
   V_CALIBRATION.autoCalADCfromDAC();
   C_CALIBRATION.autoCalADCfromDAC();
   // No need to update display more often that the eye can detect.
@@ -1385,7 +1487,7 @@ void loop() {
   //
   // Note that the scrolling speed and gesture detection speed will be affected.
   // 
-  ROTARY_ENCODER.handle();
+  ROTARY_ENCODER.handle(SMU[0].use100uVSetResolution());
   
   if (displayUpdateTimer + 20 > millis()) {
     return; 
@@ -1634,8 +1736,8 @@ void loopDigitize() {
 
     detectGestures();
     renderMainHeader();
-    VOLT_DISPLAY.renderMeasured(10,50, minDigV);
-    VOLT_DISPLAY.renderMeasured(10,150, maxDigV);
+    VOLT_DISPLAY.renderMeasured(10,50, minDigV, false);
+    VOLT_DISPLAY.renderMeasured(10,150, maxDigV, false);
     CURRENT_DISPLAY.renderMeasured(10,250, minDigI, false, false);
     CURRENT_DISPLAY.renderMeasured(10,350, maxDigI, false, false);
 
@@ -1803,7 +1905,7 @@ void loopMain()
     } 
     #ifndef USE_SIMULATOR // dont want to mess up calibration while in simulation mode...
     else if (tag == BUTTON_DAC_GAIN_COMP_POS_UP) {
-       if (timeSinceLastChange + 500 > millis()){
+       if (timeSinceLastChange + 200 > millis()){
         return;
       } 
        timeSinceLastChange = millis();
@@ -1819,9 +1921,9 @@ void loopMain()
          GD.resume();
        } else {
           if (mv < 0) {
-            C_CALIBRATION.adjDacGainCompNeg(0.00001);
+            C_CALIBRATION.adjDacGainCompNeg(0.00005);
          } else {
-            C_CALIBRATION.adjDacGainCompPos(0.00001);
+            C_CALIBRATION.adjDacGainCompPos(0.00005);
          }
          GD.__end();
          if (SMU[0].fltSetCommitCurrentSource(mv)) printError(_PRINT_ERROR_VOLTAGE_SOURCE_SETTING);
@@ -1847,9 +1949,9 @@ void loopMain()
          GD.resume();
        } else {
           if (mv < 0) {
-            C_CALIBRATION.adjDacGainCompNeg(-0.00001);
+            C_CALIBRATION.adjDacGainCompNeg(-0.00005);
          } else {
-            C_CALIBRATION.adjDacGainCompPos(-0.00001);
+            C_CALIBRATION.adjDacGainCompPos(-0.00005);
          }
          GD.__end();
          if (SMU[0].fltSetCommitCurrentSource(mv)) printError(_PRINT_ERROR_VOLTAGE_SOURCE_SETTING);
@@ -1873,9 +1975,9 @@ void loopMain()
          }
        } else {
          if (mv < 0) {
-            C_CALIBRATION.adjAdcGainCompNeg(0.00001);
+            C_CALIBRATION.adjAdcGainCompNeg(0.0001);
          } else {
-            C_CALIBRATION.adjAdcGainCompPos(0.00001);
+            C_CALIBRATION.adjAdcGainCompPos(0.0001);
          }
        }
       
@@ -1894,9 +1996,9 @@ void loopMain()
          }
        } else {
         if (mv < 0) {
-            C_CALIBRATION.adjAdcGainCompNeg(-0.00001);
+            C_CALIBRATION.adjAdcGainCompNeg(-0.0001);
          } else {
-            C_CALIBRATION.adjAdcGainCompPos(-0.00001);
+            C_CALIBRATION.adjAdcGainCompPos(-0.0001);
          }
        }
       
@@ -2050,6 +2152,13 @@ void closeMainMenuCallback(FUNCTION_TYPE functionType_) {
   } else if (functionType == SOURCE_SWEEP) {
     FUNCTION_SWEEP.close();
   }
+  /*
+  if (functionType == SOURCE_DC_CURRENT) {
+    SMU[0].setGPIO(0, true);
+  } else {
+    SMU[0].setGPIO(0, false);
+  }
+  */
    
   // TODO: Add cleanup from previous function before starting new...
   functionType = functionType_;
@@ -2058,6 +2167,24 @@ void closeMainMenuCallback(FUNCTION_TYPE functionType_) {
   } else if (functionType == SOURCE_SWEEP) {
     FUNCTION_SWEEP.open(operationType, closedSweep);
   }
+}
+
+void fltCommitCurrentSourceAutoRange(float mv, bool autoRange) {
+   // auto current range when sourcing current
+   if (autoRange) {
+      if (abs(mv) < 8.0 ) {  // TODO: should theoretically be 10mA full scale, but there seem to be some limitations... i.e. reference volt a bit less that 5V...
+        current_range = MILLIAMP10;
+        SMU[0].setCurrentRange(current_range);
+      } else {
+        current_range = AMP1;
+        SMU[0].setCurrentRange(current_range);
+      }
+      if (SMU[0].fltSetCommitCurrentSource(mv)) printError(_PRINT_ERROR_VOLTAGE_SOURCE_SETTING);
+   }
+   else {
+          if (SMU[0].fltSetCommitCurrentSource(mv)) printError(_PRINT_ERROR_VOLTAGE_SOURCE_SETTING);
+
+   }
 }
 
 void closeSourceDCCallback(int set_or_limit, bool cancel) {
@@ -2075,21 +2202,19 @@ void closeSourceDCCallback(int set_or_limit, bool cancel) {
        if (SMU[0].fltSetCommitVoltageSource(mv, true)) printError(_PRINT_ERROR_VOLTAGE_SOURCE_SETTING);
     } else {
 
-      // auto current range when sourcing current
-      if (abs(mv) < 8.0) {  // TODO: move to 10.0 when DAC has full range (5v ref instead of 4.096)
-        current_range = MILLIAMP10;
-        SMU[0].setCurrentRange(current_range);
-      } else {
-        current_range = AMP1;
-        SMU[0].setCurrentRange(current_range);
-      }
-      if (SMU[0].fltSetCommitCurrentSource(mv)) printError(_PRINT_ERROR_VOLTAGE_SOURCE_SETTING);
+      fltCommitCurrentSourceAutoRange(mv, false);
+      
     }
   }
   if (set_or_limit == LIMIT) {
     Serial.println(LIMIT_DIAL.getMv());
     Serial.flush();
-     if (SMU[0].fltSetCommitLimit(LIMIT_DIAL.getMv() / 1000.0, _SOURCE_AND_SINK)) printError(_PRINT_ERROR_CURRENT_SOURCE_SETTING);
+    if (operationType == SOURCE_VOLTAGE) {
+     if (SMU[0].fltSetCommitCurrentLimit(LIMIT_DIAL.getMv() / 1000.0, _SOURCE_AND_SINK)) printError(_PRINT_ERROR_CURRENT_SOURCE_SETTING);
+    } else {
+           if (SMU[0].fltSetCommitVoltageLimit(LIMIT_DIAL.getMv() / 1000.0, _SOURCE_AND_SINK)) printError(_PRINT_ERROR_CURRENT_SOURCE_SETTING);
+
+    }
   }
   GD.resume();
 }

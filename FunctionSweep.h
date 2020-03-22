@@ -20,6 +20,11 @@ class FunctionSweepClass {
     void close();
     void handleButtonAction(int inputTag);
     void render(int x, int y);
+    float duration = 5000;
+  float step = 100.0;
+  float high = 1000.0;
+  float low = -1000.0;
+
   };
 
 extern FunctionSweepClass FUNCTION_SWEEP;

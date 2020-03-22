@@ -15,11 +15,17 @@ void DialClass::open(int type, int set_or_limit_, void (*callbackFn)(int set_or_
   //Serial.print("Set string:");
   //Serial.println(cbuf);
   //Serial.flush();
+
+ 
+  
+  
   closedFn = callbackFn;
   vol_cur_type = type;
   set_or_limit = set_or_limit_;
   dialog=true;  
 
+  setMv(value);
+  /*
   // if not set, use some defaults...
   if (digits == 0){
   // These settings should not be hardcoded here
@@ -46,12 +52,70 @@ void DialClass::open(int type, int set_or_limit_, void (*callbackFn)(int set_or_
       strncpy(voltDecade, "V" ,2);
     }
   }
+  */
 }
 
 void DialClass::init() {
   negative = false;
   mv=0.0;
   clear();
+}
+
+void DialClass::setMv(float mv) {
+  if (mv < 0.0) {
+    negative = true;
+  } else {
+    negative = false;
+  }
+
+  mv = abs(mv);
+  
+  char outstr[15];
+  int nrOfDigitsBeforeComma = 1;
+  if (mv>9999) {
+    nrOfDigitsBeforeComma = 5;
+  }
+  else if (mv>999) {
+    nrOfDigitsBeforeComma = 4;
+  }
+  else if (mv>99) {
+    nrOfDigitsBeforeComma = 3;
+  }
+  else if (mv>9) {
+    nrOfDigitsBeforeComma = 2;
+  }
+  int nfOfDigitsAfterComma = 2; // TODO: Adhere to the rules on number of digits "allowed" in various situations.
+
+
+//  if (mv == 0.0) {
+//    dialEntries[0] = '0';
+//    digits = 1;
+//      strncpy(voltDecade, "mV" ,2);
+//
+//    
+//  }
+
+  dtostrf(mv,nrOfDigitsBeforeComma + nfOfDigitsAfterComma, 4, outstr);
+  Serial.print("CONVERTED VALUE FROM ");
+  Serial.println(mv,5);
+  int dialEntriesIndex = 0;
+  for (int i=0; i< nrOfDigitsBeforeComma + nfOfDigitsAfterComma + 1 ; i++) {
+    if (outstr[i]!=0x20 && outstr[i]!='-') {
+      Serial.println(outstr[i]);
+      if (outstr[i] == '.') {
+        dialEntries[dialEntriesIndex++] = KEYBOARD_COMMA;
+      } else {
+        dialEntries[dialEntriesIndex++] = outstr[i] - '0';
+
+      }
+    }
+   
+  }
+  digits = dialEntriesIndex;
+  Serial.print("Digits:");
+  Serial.println(dialEntriesIndex);
+  
+  strncpy(voltDecade, "mV" ,2);
 }
 
 float DialClass::getMv() {
@@ -150,13 +214,80 @@ void DialClass::checkKeypress() {
     dialog = false;
   }
 
- 
+  
+
+  
   if ( 1 == 1) {  // for now, allow to enter digits also when in error
   //if (error == false) {
     if (GD.inputs.tag != 0 && keydepressed==true) {
       keydepressed = false;
      // if (digits > 0 && GD.inputs.tag == KEYBOARD_OK) {
      // }
+
+
+      if (GD.inputs.tag == KEYBOARD_TIMES10) {
+        for (int i=0; i<digits;i++) {
+          if (dialEntries[i] == KEYBOARD_COMMA) {
+            if (i < digits -2) {
+              dialEntries[i] = dialEntries[i+1];
+              dialEntries[i+1] = KEYBOARD_COMMA;
+            } else {
+              dialEntries[i] = dialEntries[i+1];
+              digits --;
+            }
+            break;
+          } 
+        }
+      }
+
+      
+      if (GD.inputs.tag == KEYBOARD_DIVIDE10) {
+        bool commaFound = false;
+        for (int i=0; i<digits;i++) {
+          if (dialEntries[i] == KEYBOARD_COMMA) {
+            if (i>1) {
+              dialEntries[i] = dialEntries[i-1];
+              dialEntries[i-1] = KEYBOARD_COMMA;
+            }
+            else {
+              dialEntries[i] = dialEntries[i-1];
+              dialEntries[i-1] = KEYBOARD_COMMA;
+              digits ++;
+              for (int j = digits; j>=0;j--) {
+                dialEntries[j] = dialEntries[j-1];
+              }
+              dialEntries[0] = 0;
+            }
+            commaFound = true;
+
+            // don't have to many digits after comma
+            if (digits > i + 2) {
+              digits --;
+            }
+            
+            break;
+          }
+
+        
+          
+
+          
+        }
+
+        if (!commaFound) {
+          Serial.println("COMMA NOT FOUND !");
+          dialEntries[digits] = dialEntries[digits-1];
+          dialEntries[digits-1] = KEYBOARD_COMMA;
+          digits ++;
+        }
+
+
+
+        
+      }
+
+
+      
       if (digits == 0 && GD.inputs.tag == KEYBOARD_COMMA) {
         dialEntries[digits++] = 0;
       }
@@ -391,11 +522,16 @@ void DialClass::validate(double mv) {
       break;
     }
   }
-  if (vol_cur_type == SOURCE_VOLTAGE) {
+  if (vol_cur_type == SOURCE_VOLTAGE && set_or_limit == SET) {
     validateVoltage(mv, numberValue, decimalValue, decimalsAfterComma);
-  } else {
+  } else if (vol_cur_type == SOURCE_CURRENT && set_or_limit == SET)  {
     validateCurrent(mv, numberValue, decimalValue, decimalsAfterComma);
+  } else if (vol_cur_type == SOURCE_VOLTAGE && set_or_limit == LIMIT)  {
+    validateCurrentLimit(mv, numberValue, decimalValue, decimalsAfterComma);
+  } else if (vol_cur_type == SOURCE_CURRENT && set_or_limit == LIMIT)  {
+    validateVoltageLimit(mv, numberValue, decimalValue, decimalsAfterComma);
   }
+  
   
 }
 
@@ -429,8 +565,8 @@ void DialClass::validateVoltage(double mv, int numberValue, int decimalValue, in
       showError("Max voltage is 30V");
       return;
     }
-    else if (decimalsAfterComma > 1) {
-      showError("Max resolution in mV range is 100uV");
+    else if (decimalsAfterComma > 2) {
+      showError("Max resolution in mV range is 10uV");
       return;
     }
   }
@@ -453,7 +589,122 @@ void DialClass::validateVoltage(double mv, int numberValue, int decimalValue, in
   warning = false;
 }
 
+
+
+
+void DialClass::validateVoltageLimit(double mv, int numberValue, int decimalValue, int decimalsAfterComma) {
+  
+  if (digits < 1) {
+    showWarning("Please enter value");
+    return;
+  }
+  if (decimalsAfterComma == 0){
+    showWarning("Please enter a decimal after comma");
+    return;
+  }
+  // Note that in the check below, mv is mv, independent
+  // on which voltDecade is being show in the dislay
+  
+  if (strncmp(voltDecade,"V",1) == 0) {
+    if (abs(mv) > 30000) {
+      showError("Max voltage is 30V");
+      return;
+    }
+    else if (decimalsAfterComma > 4) {
+      showError("Max resolution in V range is 100uV");
+      return;
+    }
+  }
+
+  else if (strncmp(voltDecade,"mV",2) == 0) {
+    if (abs(mv) > 30000) {
+      showError("Max voltage is 30V");
+      return;
+    }
+    else if (decimalsAfterComma > 2) {
+      showError("Max resolution in mV range is 10uV");
+      return;
+    }
+  }
+ 
+  else if (strncmp(voltDecade,"uV",2) == 0) {
+    if (numberValue > 999) {
+      showError("Max voltage in uV range is 999mV");
+      return;
+    }
+    else if (decimalValue < 100) {
+      showError("Lower limit is 100uV");
+      return;
+    }
+    else if (decimalsAfterComma > 0) {
+      showError("nV not allowed");
+      return;
+    }
+  }  
+  error = false;
+  warning = false;
+}
+
+
+
+
+
 void DialClass::validateCurrent(double mv, int numberValue, int decimalValue, int decimalsAfterComma) {
+
+
+  if (digits < 1) {
+    showWarning("Please enter value");
+    return;
+  }
+  if (decimalsAfterComma == 0){
+    showWarning("Please enter a decimal after comma");
+    return;
+  }
+  // Note that in the check below, mv is mv, independent
+  // on which voltDecade is being show in the dislay
+  
+  if (strncmp(voltDecade,"V",1) == 0) {
+    if (abs(mv) > 1100) {
+      showError("Max current is 1.1A");
+      return;
+    }
+    else if (decimalsAfterComma > 4) {
+      showError("Max resolution in A range is 100uA");
+      return;
+    }
+  }
+
+  else if (strncmp(voltDecade,"mV",2) == 0) {
+    if (abs(mv) > 1100) {
+      showError("Max current is 1100mA");
+      return;
+    }
+    else if (decimalsAfterComma > 4 && mv < 10) {
+      showError("Max resolution in mA range is 0.1uA");
+      return;
+    }
+    else if (decimalsAfterComma > 2 && mv > 10) {
+      showError("Max resolution in mA range is 10uA when >=10mA");
+      return;
+    }
+  }
+ 
+  else if (strncmp(voltDecade,"uV",2) == 0) {
+    if (numberValue > 999) {
+      showError("Max voltage in uA range is 999mA");
+      return;
+    }
+    else if (decimalsAfterComma > 1) {
+      showError("Max resolution in nA is 100nA");
+      return;
+    }
+  }  
+  error = false;
+  warning = false;
+}
+
+
+void DialClass::validateCurrentLimit(double mv, int numberValue, int decimalValue, int decimalsAfterComma) {
 
 
   if (digits < 1) {

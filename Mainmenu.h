@@ -6,7 +6,7 @@ class MainMenuClass {
   
   private:
     int scrollMainMenu = 0;
-    FUNCTION_TYPE functionType = SOURCE_DC;
+    FUNCTION_TYPE functionType = SOURCE_DC_VOLTAGE;
   public:
     bool active = false;
     int scrollMainMenuDir = 0;

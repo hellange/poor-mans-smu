@@ -29,9 +29,40 @@ void FunctionSweepClass::close() {
       closedFn(operationType); 
 }
 
-void FunctionSweepClass::handleButtonAction(int inputTag) {
-}
 
+
+
+int sinceLastPress2 = millis();
+void FunctionSweepClass::handleButtonAction(int inputTag) {
+
+  float buttonStep;
+
+  buttonStep = operationType == SOURCE_CURRENT ? 1.0 : 100.0;
+
+  if (sinceLastPress2 + 100 < millis()) {
+    if (inputTag == SWEEP_BUTTON_INC) {
+       duration = duration +100;
+    } else if (inputTag == SWEEP_BUTTON_DEC) {
+       duration = duration -100;
+    } else if (inputTag == SWEEP_BUTTON_STEP_INC) {
+       step = step + 10;
+    } else if (inputTag == SWEEP_BUTTON_STEP_DEC) {
+       step = step - 10;
+    } else if (inputTag == SWEEP_BUTTON_VOLT_INC) {
+       high = high + 100;
+       low = low - 100;
+    } else if (inputTag == SWEEP_BUTTON_VOLT_DEC) {
+       high = high -100;
+       low = low + 100;
+    } else if (inputTag == SWEEP_BUTTON_CLEAR) {
+     currentSweepValue = 0.0;
+     currentSweepDir = 1; 
+    }
+
+    
+    sinceLastPress2 =millis();
+  }
+}
 void FunctionSweepClass::render(int x, int y) {
 
 
@@ -46,16 +77,13 @@ void FunctionSweepClass::render(int x, int y) {
   GD.cmd_text(x+20, y + 2 ,   29, 0, "SOURCE SWEEP");
   GD.cmd_text(x+20 + 1, y + 2 + 1 ,   29, 0, "SOURCE SWEEP");
 
- float high = 10.0;
-  float low = -10.0;
-  float step = 0.1;
+ 
   
-  float duration = 5000;
   
 if (operationType == SOURCE_VOLTAGE) {
-  high = 1000.0;
-  low = -1000.0;
-  step = 100.0;
+  //high = 1000.0;
+  //low = -1000.0;
+  //step = 100.0;
 } else {
   
 }
@@ -76,10 +104,51 @@ if (operationType == SOURCE_VOLTAGE) {
   }
   GD.cmd_number(x+385, y, 31, 4, abs(low));
   GD.cmd_text(x+490, y ,  31, 0, operationType == SOURCE_VOLTAGE ? "mV": "mA");
+
+
+   GD.Tag(SWEEP_BUTTON_VOLT_DEC);
+  GD.cmd_button(x+20,y,80,40,28,0,"Dec");
+  GD.Tag(0);
+  
+  GD.Tag(SWEEP_BUTTON_VOLT_INC);
+  GD.cmd_button(x+120,y,80,40,28,0,"Inc");
+  GD.Tag(0);
+
+  
   y=y+50;
 
   GD.cmd_number(x+242, y, 31, 4, abs(step));
   GD.cmd_text(x+345, y ,  31, 0, "step");
+
+  GD.Tag(SWEEP_BUTTON_STEP_DEC);
+  GD.cmd_button(x+20,y,80,40,28,0,"Dec");
+  GD.Tag(0);
+  
+  GD.Tag(SWEEP_BUTTON_STEP_INC);
+  GD.cmd_button(x+120,y,80,40,28,0,"Inc");
+  GD.Tag(0);
+  
+  
+  y=y+50;
+  GD.cmd_number(x+242, y, 31, 4, abs(duration));
+  GD.cmd_text(x+345, y ,  31, 0, "duration");
+
+
+   GD.ColorRGB(0x000000);
+
+  GD.Tag(SWEEP_BUTTON_DEC);
+  GD.cmd_button(x+20,y,80,40,28,0,"Dec");
+  GD.Tag(0);
+  
+  GD.Tag(SWEEP_BUTTON_INC);
+  GD.cmd_button(x+120,y,80,40,28,0,"Inc");
+  GD.Tag(0);
+
+
+  GD.Tag(SWEEP_BUTTON_CLEAR);
+  GD.cmd_button(x+600,y,80,40,28,0,"Clear");
+  GD.Tag(0);
+
 
   GD.__end();
 
@@ -106,6 +175,9 @@ void FunctionSweepClass::operateSmuVoltage(float high, float low, float step, in
      // are within a DAC softspan range, you can set this to dynamic to get better accuracy (last argument true instead of false)
      // Note that swithing softspan range gives some glitches, so all sweep values must be inside same softspan range to use dynamic range
      bool useBestRange = abs(high)<4500 && abs(low)<4500; // based on 2.5V DAC gives apporx 5V out
+
+     useBestRange = true; // do it anyway. Gives better accuracy. Ok as long as the sweep is slow...
+     
      SMU[0].fltSetCommitVoltageSource(currentSweepValue, useBestRange);
    } 
 }

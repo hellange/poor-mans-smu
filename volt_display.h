@@ -1,6 +1,6 @@
 class VoltDisplayClass {
 public:
-  void renderMeasured(int x, int y, float rawMv);
+  void renderMeasured(int x, int y, float rawMv, bool compliance);
   void renderSet(int x, int y, float rawMv);
   void boldText(int x, int y, const char *text);
   void boldNumber(int x, int y, int digits, int number);
@@ -11,4 +11,3 @@ private:
 };
 
 extern VoltDisplayClass VOLT_DISPLAY;
-

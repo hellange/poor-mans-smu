@@ -4,6 +4,7 @@
 #include "colors.h"
 #include "digit_util.h"
 
+/*
 unsigned long compliance_blink_timer = millis();
 unsigned long old_compliance_blink_timer = compliance_blink_timer ;
 
@@ -17,6 +18,7 @@ int blinkColor(int colorHigh, int colorLow, int period) {
   }
   return color;
 }
+*/
 
 void CurrentDisplayClass::renderOverflow(int x, int y) {
   GD.ColorRGB(COLOR_CURRENT);
@@ -24,7 +26,7 @@ void CurrentDisplayClass::renderOverflow(int x, int y) {
 }
 void CurrentDisplayClass::renderMeasured(int x, int y, float rawMa, boolean compliance, bool show_nA) {
  
-  int complianceColor = blinkColor(0xff4522, 0x991002, 1000);
+  int complianceColor = DIGIT_UTIL.blinkColor(0xff4522, 0x991002, 1000);
 
   int a, ma, ua, na;
   bool neg;
@@ -71,10 +73,12 @@ void CurrentDisplayClass::renderMeasured(int x, int y, float rawMa, boolean comp
 
 void CurrentDisplayClass::renderSet(int x, int y, float rawMa) {
   
-  int a, ma, ua;
+  int a, ma, ua, na;
   bool neg;
 
-  DIGIT_UTIL.separate(&a, &ma, &ua, &neg, rawMa);
+  //DIGIT_UTIL.separate(&a, &ma, &ua, &neg, rawMa);
+  DIGIT_UTIL.separate2(&a, &ma, &ua, &na, &neg, rawMa);
+
   
   GD.ColorRGB(COLOR_CURRENT);
   //Serial.print("RENDER SET:");
@@ -88,13 +92,18 @@ void CurrentDisplayClass::renderSet(int x, int y, float rawMa) {
     GD.cmd_number(x+25-20, y, 31, 1, a);
     GD.cmd_text(x+50-20, y, 31, 0, ".");
     GD.cmd_number(x+60-20, y, 31, 3, ma);
-    GD.cmd_number(x+140-20, y, 31, 1, ua / 100); // need to do it like this to show only first digit in a three digit value
-    GD.cmd_text(x+170-20, y, 31, 0, "A");
+    //GD.cmd_number(x+140-20, y, 31, 1, ua / 100); // need to do it like this to show only first digit in a three digit value
+    GD.cmd_number(x+140-20, y, 31, 2, ua / 10); // need to do it like this to show only first two digit in a three digit value
+
+    GD.cmd_text(x+170-20+15, y, 31, 0, "A");
   } else {
     GD.cmd_number(x+25-20, y, 31, 2, ma);
     GD.cmd_text(x+50+20-20, y, 31, 0, ".");
     GD.cmd_number(x+60+20-20, y, 31, 3, ua);
-    GD.cmd_text(x+140+20-20, y, 31, 0, "mA");
+    
+        GD.cmd_number(x+136, y, 31, 1, na/100); // need to do it like this to show only first digit in a three digit value
+
+    GD.cmd_text(x+160, y, 31, 0, "mA");
   }
 }
 

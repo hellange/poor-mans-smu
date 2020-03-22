@@ -70,12 +70,12 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 
 // Transmits 32 bit input stream: 4-bit command + 4-bit don't-care + 18-bit data + 6 don't care
-void LTC2758_write(uint8_t cs, uint8_t dac_command, uint8_t dac_address, uint32_t data)
+void LTC2758_write(int nr, uint8_t cs, uint8_t dac_command, uint8_t dac_address, uint32_t data)
 {
   //digitalWrite(LTC2758_CS,LOW);
   SPI.beginTransaction (SPISettings (2000000, MSBFIRST, SPI_MODE0));
 
-  SPIMuxSelectLTC2758();
+  SPIMuxSelectLTC2758(nr);
   delayMicroseconds(5); // Had problems with teensy 4.0 without some delay here. Got random overflow in the ADC (not the DAC!)
                         // TODO: Find out why! Speed/timing differences because 4.0 is so much faster that 3.2 ?
   SPI.transfer(dac_command|dac_address);
@@ -131,10 +131,15 @@ uint32_t LTC2758_voltage_to_code(float dac_voltage, float min_output, float max_
 }
 
 //TODO: Move to somewhere else
-void SPIMuxSelectLTC2758(){
-    //pinMode(8, OUTPUT);  // cs adr 0
+void SPIMuxSelectLTC2758(int nr){
+
+    if (nr == 0) {
     digitalWrite(8, LOW);
-    //pinMode(9, OUTPUT); // cs adr 1
     digitalWrite(9, HIGH);
+    }
+    else {
+    digitalWrite(8, HIGH);
+    digitalWrite(9, LOW);
+    }
     digitalWrite(7, LOW);
 }

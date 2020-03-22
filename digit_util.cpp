@@ -73,12 +73,33 @@ void DigitUtilClass::renderValue(int x,int y,float val, int size = 0, int type =
         GD.cmd_text(x, y, font, 0,  type == typeVoltage ? "V" : "A");
       }
     } else if (mV > 0 or type == typeVoltage) {
-      GD.cmd_number(x, y, font, 3, mV);
-      x = x + fontWidth*2.5;
+      
+      if (mV < 100) {
+        x = x + fontWidth*0.8;
+        GD.cmd_number(x, y, font, 2, mV); // show only two least significant digits. Not the leading zero
+              x = x + fontWidth*1.7;
+
+      } else {
+        GD.cmd_number(x, y, font, 3, mV);
+              x = x + fontWidth*2.5;
+
+      }
+
+      
       GD.cmd_text(x-1, y, font, 0,  ".");
       x = x + fontWidth/3;
       GD.cmd_number(x, y, font, 3, uV);
       x = x + fontWidth * 2.6;
+
+      // can show more resolution on current when using low current range....
+      //TODO: Use different resolutions depending on range, not only measured value !
+      if (type == typeCurrent) {
+        x=x+5;
+       GD.cmd_number(x, y, font, 2, nV / 10); // show two digits
+        x = x + fontWidth * 1.9;
+      }
+
+      
       if (type > -1) {
         GD.cmd_text(x, y, font, 0,  type == typeVoltage ? "mV" : "mA");
       }
@@ -95,5 +116,22 @@ void DigitUtilClass::renderValue(int x,int y,float val, int size = 0, int type =
     }
 
 }
+
+
+unsigned long compliance_blink_timer = millis();
+unsigned long old_compliance_blink_timer = compliance_blink_timer ;
+
+int DigitUtilClass::blinkColor(int colorHigh, int colorLow, int period) {
+  int compliance_blink_timer = millis();
+  int color = colorHigh;
+  if (compliance_blink_timer - old_compliance_blink_timer > period) {
+    old_compliance_blink_timer = compliance_blink_timer;
+  } else if (compliance_blink_timer - old_compliance_blink_timer > period/2) {
+    color = colorLow;
+  }
+  return color;
+}
+
+
 
 DigitUtilClass DIGIT_UTIL;

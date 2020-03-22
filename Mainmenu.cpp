@@ -30,10 +30,13 @@ void MainMenuClass::handleButtonAction(int inputTag) {
     if (inputTag == MENU_BUTTON_SOURCE_PULSE) {
       functionType = SOURCE_PULSE;
       close();
-    } else if (inputTag == MENU_BUTTON_SOURCE_DC) {
-      functionType = SOURCE_DC;
+    } else if (inputTag == MENU_BUTTON_SOURCE_DC_VOLTAGE) {
+      functionType = SOURCE_DC_VOLTAGE;
       close();
-    } else if (inputTag == MENU_BUTTON_SOURCE_SWEEP) {
+    } else if (inputTag == MENU_BUTTON_SOURCE_DC_CURRENT) {
+      functionType = SOURCE_DC_CURRENT;
+      close();
+    }else if (inputTag == MENU_BUTTON_SOURCE_SWEEP) {
       functionType = SOURCE_SWEEP;
       close();
     } else if (inputTag == MENU_BUTTON_DIGITIZE) {
@@ -82,9 +85,12 @@ void MainMenuClass::render() {
       for (int x =0;x<3;x++) {
         if (y==1 && x == 2) {
           GD.Tag(MENU_BUTTON_SOURCE_PULSE);
-        } else if (y==0 && (x==0 or x==1)) {
-          GD.Tag(MENU_BUTTON_SOURCE_DC);
-        } else if (y==2 && x==0) {
+        } else if (y==0 && (x==0)) {
+          GD.Tag(MENU_BUTTON_SOURCE_DC_VOLTAGE);
+        } 
+        else if (y==0 && (x==1)) {
+          GD.Tag(MENU_BUTTON_SOURCE_DC_CURRENT);
+        }else if (y==2 && x==0) {
           GD.Tag(MENU_BUTTON_SOURCE_SWEEP);
         } else if (y==2 && x==2) {
           GD.Tag(MENU_BUTTON_DIGITIZE);

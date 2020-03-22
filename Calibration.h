@@ -1,5 +1,9 @@
+
 #include "operations.h"
 #include "Filters.h"
+
+
+  
 class CalibrationClass {
 
   union cvt {
@@ -40,6 +44,7 @@ class CalibrationClass {
   
   int ea_adc_zero_comp_vol;
   int ea_adc_zero_comp_cur;
+  int ea_adc_zero_comp_cur2;
 
   
   void readAdcCalFromEeprom();
@@ -64,8 +69,11 @@ public:
   float getDacZeroComp();
   void adjDacZeroComp(float val);
 
-  float nullValueVol[2];
-  float nullValueCur[2];
+  // using static to share among instances. TODO: Fix this mess
+  static float nullValueVol[2]; 
+  static float nullValueCur[2];
+
+  
   float relativeValue[2];
   bool useCalibratedValues = true;
   bool useDacCalibratedValues = true;

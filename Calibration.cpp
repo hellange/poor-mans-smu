@@ -14,6 +14,7 @@ CalibrationClass C_CALIBRATION;
 
 extern ADCClass SMU[];
 
+  
   void float_array_init(float *a, const int ct, ...) {
   va_list args;
   va_start(args, ct);
@@ -33,6 +34,10 @@ extern ADCClass SMU[];
   va_end(args);
 }
 
+// using static to share among instances. TODO: Fix this mess
+float CalibrationClass::nullValueVol[2];
+float CalibrationClass::nullValueCur[2];
+
 void CalibrationClass::init(OPERATION_TYPE operationType_) {
   operationType = operationType_;
 
@@ -41,6 +46,7 @@ void CalibrationClass::init(OPERATION_TYPE operationType_) {
   // TODO: Differ between constant current and constant voltage nulling
   ea_adc_zero_comp_vol = EA_ADC_ZERO_COMP_VOL;
   ea_adc_zero_comp_cur = EA_ADC_ZERO_COMP_CUR;
+  ea_adc_zero_comp_cur2 = EA_ADC_ZERO_COMP_CUR2;
 
   
   if (operationType == SOURCE_VOLTAGE) {
@@ -199,8 +205,9 @@ void CalibrationClass::init(OPERATION_TYPE operationType_) {
 
 
    float adcZeroCompCur = floatFromEeprom(ea_adc_zero_comp_cur);
+   float adcZeroCompCur2 = floatFromEeprom(ea_adc_zero_comp_cur2);
   
- Serial.print("Read adcZeroCompVolCurfrom eeprom address ");
+  Serial.print("Read adcZeroCompCur from eeprom address ");
   Serial.print(ea_adc_zero_comp_cur,HEX);
   Serial.print(":");
   if (isnan(adcZeroCompCur)) {
@@ -213,13 +220,31 @@ void CalibrationClass::init(OPERATION_TYPE operationType_) {
     adcZeroCompCur = 0.0;
     Serial.print("Setting adc zero to:");
     Serial.println(adcZeroCompCur);
-    
   }
   Serial.println(adcZeroCompCur,7);
   //TODO: Differ between the two null value (ranges)
   nullValueCur[0] = adcZeroCompCur;
-  nullValueCur[1] = adcZeroCompCur;
-  
+
+
+
+
+ Serial.print("Read adcZeroCompCur2 from eeprom address ");
+  Serial.print(ea_adc_zero_comp_cur2,HEX);
+  Serial.print(":");
+  if (isnan(adcZeroCompCur2)) {
+    Serial.print("Not defined. Write default value:");
+    adcZeroCompCur2 = 0.0; // use millivolt
+    floatToEeprom(ea_adc_zero_comp_cur2, adcZeroCompCur2); // write initial default
+  } else if (abs(adcZeroCompCur2) < -10000.0 or abs(adcZeroCompCur2) > 10000.0) {
+    Serial.print("WARNING: Suspect adc zero value:");
+    Serial.println(adcZeroCompCur2);
+    adcZeroCompCur = 0.0;
+    Serial.print("Setting adc zero to:");
+    Serial.println(adcZeroCompCur2);
+  }
+  Serial.println(adcZeroCompCur2,7);
+  nullValueCur[1] = adcZeroCompCur2;
+
 
 }
 
@@ -344,7 +369,7 @@ void CalibrationClass::autoCalADCfromDAC() {
   if (autoCalInProgress == false) {
     return;
   } 
-  
+
 
   if (!autoCalDone1 && autoCalDacTimer + 500 < millis()) {
     Serial.print("Set value to:");
@@ -435,7 +460,12 @@ void CalibrationClass::setNullValueVol(float v, CURRENT_RANGE current_range) {
 
 void CalibrationClass::setNullValueCur(float v, CURRENT_RANGE current_range) {
   nullValueCur[current_range] = v;
-  floatToEeprom(ea_adc_zero_comp_cur, v);
+  //TODO: Store different ranges in different locations
+  if (current_range == 0) {
+    floatToEeprom(ea_adc_zero_comp_cur, v);
+  } else {
+    floatToEeprom(ea_adc_zero_comp_cur2, v);
+  }
 }
 
 

@@ -138,7 +138,7 @@ void FunctionPulseClass::render(int x, int y) {
 
   GD.ColorRGB(0x000000);
 
-    GD.Tag(PULSE_BUTTON_DEC);
+  GD.Tag(PULSE_BUTTON_DEC);
   GD.cmd_button(x+20,y+50,80,40,28,0,"Dec");
   GD.Tag(0);
   

@@ -21,9 +21,10 @@ class ADCClass {
 
   float setValueI = 0.0;
   float setValueV = 0.0;
+
   
   private:
-    float VREF = 5.0;            
+    float VREF = 4.96625;            
     float VFSR = VREF; 
     CURRENT_RANGE current_range = AMP1;
     int samplingRate = 5;
@@ -31,7 +32,8 @@ class ADCClass {
     void writeSamplingRate();
 
   public:
-
+float DAC_RANGE_LOW;
+  float DAC_RANGE_HIGH;
     bool compliance;
     int init();
     int initADC();
@@ -39,7 +41,9 @@ class ADCClass {
  
     int8_t fltSetCommitVoltageSource(float fVoltage, bool dynamicRange);
     int8_t fltSetCommitCurrentSource(float fVoltage);
-    int8_t fltSetCommitLimit(float fCurrent, int8_t up_down_both);
+    int8_t fltSetCommitCurrentLimit(float fCurrent, int8_t up_down_both);
+        int8_t fltSetCommitVoltageLimit(float fCurrent, int8_t up_down_both);
+
     float measureMilliVoltage();
     float measureMilliVoltageRaw();
     void setCurrentRange(CURRENT_RANGE range);
@@ -50,6 +54,9 @@ class ADCClass {
     float getSetValuemV();
     float getLimitValue();
 
+    void setGPIO(int nr, bool on);
+
+    bool use100uVSetResolution();
 };
 
 #endif

@@ -11,7 +11,8 @@ Encoder knobLeft(DT, CLK);
 void RotaryEncoderClass::init(void (*changedFn_)(float value)) {
   changedFn = changedFn_;
 }
-void RotaryEncoderClass::handle() {
+void RotaryEncoderClass::handle(bool use100uVSetResolution)
+{
  long newLeft, newRight;
  int speed = 0;
  int dir = 0;
@@ -34,8 +35,10 @@ void RotaryEncoderClass::handle() {
     }
 
     bool stepless_dynamic = false;  // decide if the dynamic speed shall be directly dependent on rotation speed or if there shall just be a few different speeds 
-    float resolution = 0.1;    // 0.1 = 100uV resolution, 1 = mV resolution;
-    float feely = 0.4;  // how fast will value change when you turn the knob.  High value changes faster than low value
+
+   
+   
+    float feely = 0.6;  // how fast will value change when you turn the knob.  High value changes faster than low value
    
     if (stepless_dynamic) {
       speed = millis() - millisSinceLastStep;
@@ -58,7 +61,7 @@ void RotaryEncoderClass::handle() {
       else if (millisSinceLastStep + 150 * feely > millis()) {
         speed = 100;
       } 
-      else if (millisSinceLastStep + 250 * feely > millis()) {
+      else if (millisSinceLastStep + 200 * feely > millis()) {
         speed = 10;
       } else {
         speed = 1;
@@ -66,10 +69,11 @@ void RotaryEncoderClass::handle() {
       
     
     }
-    
-    if (resolution == 1) {
-      speed = speed * 10;
+
+    if (!use100uVSetResolution) {
+      speed = speed * 2.0;
     }
+   
    
 
     
@@ -87,8 +91,8 @@ void RotaryEncoderClass::handle() {
     positionLeft = newLeft;
 
 
-
-    changedFn(speed*dir / 10.0);
+    changedFn(speed*dir / 100.0); // minimum step is 10uV
+    //changedFn(speed*dir / 10.0); // minimum step is 100uV
 /*
     float mv = SMU[0].getSetValuemV();
 

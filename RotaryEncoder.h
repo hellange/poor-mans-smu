@@ -20,7 +20,7 @@ class RotaryEncoderClass {
     boolean ready = false;
   public:
     void init(void (*changedFn)(float value));
-    void handle();
+    void handle(bool use100uVSetResolution);
 };
 
 

@@ -4,14 +4,25 @@
 #include "colors.h"
 #include "digit_util.h"
 
-void VoltDisplayClass::renderMeasured(int x, int y, float rawMv) {
+void VoltDisplayClass::renderMeasured(int x, int y, float rawMv, bool compliance) {
 
   int v, mv, uv;
   bool neg;
   DIGIT_UTIL.separate(&v, &mv, &uv, &neg, rawMv);
 
-  GD.ColorRGB(COLOR_VOLT);
+
+  //int complianceColor = 0xff4522; //blinkColor(0xff4522, 0x991002, 1000);
+  int complianceColor = DIGIT_UTIL.blinkColor(0xff4522, 0x991002, 1000);
+
+
   GD.ColorA(255);
+
+  if (compliance) {
+    GD.ColorRGB(complianceColor);
+  } else {
+    GD.ColorRGB(COLOR_VOLT);
+  }
+  
 
   GD.cmd_text(x, y,  1, 0, neg ? "-":"+");
   x = x + 55;
@@ -41,7 +52,7 @@ void VoltDisplayClass::renderMeasured(int x, int y, float rawMv) {
     GD.cmd_number(x+194, y+2, 1, 2, uv/10.0);
     GD.cmd_text(x+360, y+2,  1, 0, "mV"); 
   }
- 
+ GD.ColorRGB(COLOR_VOLT);
 }
 
 void VoltDisplayClass::renderSet(int x, int y, float rawMv) {
@@ -56,11 +67,13 @@ void VoltDisplayClass::renderSet(int x, int y, float rawMv) {
   } else {
       GD.cmd_text(x, y, 31, 3, "+");
   }
+  GD.cmd_number(x+25, y, 31, 2, v);
   GD.cmd_number(x+85, y, 31, 3, mv);
   GD.cmd_text(x+73, y, 31, 0, ".");
-  GD.cmd_number(x+165, y, 31, 1, uv / 100); // need to do it like this to show only first digit in a three digit value
-  GD.cmd_number(x+25, y, 31, 2, v);
-  GD.cmd_text(x+195, y, 31, 0, "V");
+  //GD.cmd_number(x+165, y, 31, 1, uv / 100); // need to do it like this to show only first digit in a three digit value
+  GD.cmd_number(x+165, y, 31, 2, uv / 10); // need to do it like this to show only two first digit in a three digit value
+
+  GD.cmd_text(x+195+20, y, 31, 0, "V");
 }
 
 void VoltDisplayClass::boldText(int x, int y, const char* text) {

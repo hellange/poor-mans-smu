@@ -113,7 +113,7 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 //! Transmits 32 bit input stream: 4-bit command + 4-bit don't-care + 18-bit data + 6 don't care
 //! @return void
-void LTC2758_write(uint8_t cs, uint8_t dac_command, uint8_t dac_address, uint32_t data);
+void LTC2758_write(int nr, uint8_t cs, uint8_t dac_command, uint8_t dac_address, uint32_t data);
 
 //! Calculate the LTC2758 DAC output voltage given the DAC code and and the minimum / maximum
 //! outputs for a given softspan range.
@@ -125,5 +125,5 @@ float LTC2758_code_to_voltage(uint32_t dac_code, float min_output, float max_out
 //! @return 32 bit data
 uint32_t LTC2758_voltage_to_code(float dac_voltage, float min_output, float max_output, bool serialOut);
 
-void SPIMuxSelectLTC2758();
+void SPIMuxSelectLTC2758(int nr);
 #endif  //  LTC2758_H

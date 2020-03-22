@@ -35,12 +35,15 @@ public:
   void handleKeypadDialog();
   void checkKeypress();
   float getMv();
+  void setMv(float mv);
   void init();
 private:
   double toMv();
   void validate(double mv);
   void validateVoltage(double mv, int numberValue, int decimalValue, int decimalsAfterComma);
   void validateCurrent(double mv, int numberValue, int decimalValue, int decimalsAfterComma);
+   void validateVoltageLimit(double mv, int numberValue, int decimalValue, int decimalsAfterComma);
+  void validateCurrentLimit(double mv, int numberValue, int decimalValue, int decimalsAfterComma);
   void transButton(int x, int y, int sz, const char* label, int fontsize);
   void showError(const char* text);
   void showWarning(const char* text);
