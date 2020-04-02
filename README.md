@@ -6,4 +6,4 @@ The code in this repo is currently only a UI prototype. It uses displays and lib
 
 
 The schematics directory contains various schematics that have been scanned from other sources.
-Just to keep it somewhere. The scehematics are not related to the code at all.
+Just to keep it somewhere. The schematics are not related to the code at all.
