@@ -78,7 +78,7 @@ int activeWidget = 0;
 CURRENT_RANGE current_range = AMP1; // TODO: get rid of global
 int timeSinceLastChange = 0;  // TODO: get rid of global
 
-float MAX_CURRENT_10mA_RANGE = 5.0; // current values set because the ADC limit is 6 volt now...
+float MAX_CURRENT_10mA_RANGE = 2.0; // current values set because the ADC limit is 6 volt now...
 float MAX_CURRENT_1A_RANGE = 1100.0;
 
 
@@ -592,16 +592,32 @@ void renderExperimental(int x, int y, float valM, float setM, bool cur) {
     renderAnalogGauge(x+90,y,240, degrees, deviationInPercent, "Deviation from SET");
   }
   GD.ColorRGB(0x000000);
+
+  // Visible number on button is half, because the sampling is effectlively the halv because
+  // current and voltage is not sampled simultanously in the AD converter !
+
+  int sr = SMU[0].getSamplingRate();
+
+
+  GD.ColorRGB(sr==5?0x00ff00:0x0000);
   GD.Tag(BUTTON_SAMPLE_RATE_5);
-  GD.cmd_button(x-50,y,95,40,29,0,"5Hz");
+  GD.cmd_button(x-50,y-20,95,40,29,0,"2.5Hz");
 
-  
+
+    GD.ColorRGB(sr==20?0x00ff00:0x0000);
+
   GD.Tag(BUTTON_SAMPLE_RATE_20);
-  GD.cmd_button(x-50,y+50,95,40,29,0,"20Hz");
+  GD.cmd_button(x-50,y+40-15,95,40,29,0,"10Hz");
 
-  
+  GD.ColorRGB(sr==50?0x00ff00:0x0000);
+
+  GD.Tag(BUTTON_SAMPLE_RATE_50);
+  GD.cmd_button(x-50,y+80-15+5,95,40,29,0,"25Hz");
+
+    GD.ColorRGB(sr==100?0x00ff00:0x0000);
+
   GD.Tag(BUTTON_SAMPLE_RATE_100);
-  GD.cmd_button(x-50,y+100,95,40,29,0,"100Hz");
+  GD.cmd_button(x-50,y+120-15+10,95,40,29,0,"50Hz");
 
  
   
@@ -1397,14 +1413,7 @@ static void handleSampling() {
     }
     
   }
-  // Auto range current measurement while sourcing voltage. 
-  // Note that this gives small glitches in voltage.
-  // TODO: Find out how large glitches and if it's a real problem...
-  // TODO: Not in digitizing?  Other functions where it should be disabled ?
-  if (operationType == SOURCE_VOLTAGE) {
-      //handleAutoCurrentRange();
-  }
-  
+
 }
 
 void handleAutoCurrentRange() {
@@ -1422,7 +1431,11 @@ void handleAutoCurrentRange() {
           current_range = MILLIAMP10;
           SMU[0].setCurrentRange(current_range);
           Serial.println("switching to range 1");
-  
+           //TODO: Use getLimitValue from SMU instead of LIMIT_DIAL ?
+          if (operationType == SOURCE_VOLTAGE){
+            if (SMU[0].fltSetCommitCurrentLimit(LIMIT_DIAL.getMv()/1000.0, _SOURCE_AND_SINK)) printError(_PRINT_ERROR_VOLTAGE_SOURCE_SETTING);
+          } 
+
         }
         // TODO: Make separate function to calculate current based on shunt and voltage!
         Serial.print("Check 10mA range and if it should switch to 1A... ma=");
@@ -1433,6 +1446,12 @@ void handleAutoCurrentRange() {
           current_range = AMP1;
           SMU[0].setCurrentRange(current_range);
           Serial.println("switching to range 0");
+           //TODO: Use getLimitValue from SMU instead of LIMIT_DIAL ?
+          if (operationType == SOURCE_VOLTAGE){
+            if (SMU[0].fltSetCommitCurrentLimit(LIMIT_DIAL.getMv()/1000.0, _SOURCE_AND_SINK)) printError(_PRINT_ERROR_VOLTAGE_SOURCE_SETTING);
+          } 
+
+          
         }
     }
 }
@@ -1833,13 +1852,15 @@ void loopMain()
     RAM.startLog();
     
   }
+
+    GD.__end();
+
   // Auto range current measurement while sourcing voltage. 
   // Note that this gives small glitches in voltage.
   // TODO: Find out how large glitches and if it's a real problem...
-  //if (operationType == SOURCE_VOLTAGE) {
-  //    handleAutoCurrentRange();
-  //}
-  GD.__end();
+  if (operationType == SOURCE_VOLTAGE) {
+      //handleAutoCurrentRange();
+  }
 
   #ifndef SAMPLING_BY_INTERRUPT 
     handleSampling(); 
@@ -1880,14 +1901,41 @@ void loopMain()
           current_range = AMP1;
         }
         timeSinceLastChange = millis();
+        
+        // update limit setting 
+        //TODO: Update the limit value when changing current range.
+        //      Messy to to it here because if requires to switch between UI and DAC/ADC.
+        //      Move all operations to change DAC/ADC stuff to a common place when it needs to change? And only have that parth within the SPI settings ?
+        GD.__end();
+        disable_ADC_DAC_SPI_units(); 
+        Serial.print("When switching current range, limit value use is:");
+        Serial.println(SMU[0].getLimitValue());
+        
         SMU[0].setCurrentRange(current_range);
+
+        //TODO: Use getLimitValue from SMU instead of LIMIT_DIAL ?
+        if (operationType == SOURCE_CURRENT){
+   
+          if (SMU[0].fltSetCommitVoltageLimit(LIMIT_DIAL.getMv()/1000.0, _SOURCE_AND_SINK)) printError(_PRINT_ERROR_VOLTAGE_SOURCE_SETTING);
+
+        } else {
+          if (SMU[0].fltSetCommitCurrentLimit(LIMIT_DIAL.getMv()/1000.0, _SOURCE_AND_SINK)) printError(_PRINT_ERROR_VOLTAGE_SOURCE_SETTING);
+
+         }
+        GD.resume();
+
+        
         if (operationType == SOURCE_CURRENT){
           //Serial.println("SHOULD SET NEW OUTPUT WHEN SWITCHING CURRENT RANGE IN SOURCE CURRENT MODE ????");
           //if (SMU[0].fltSetCommitCurrentSource(SMU[0].getSetValuemV())) printError(_PRINT_ERROR_VOLTAGE_SOURCE_SETTING);
         }
 
+
+
+        
+
       }
-    } else if (tag == BUTTON_SAMPLE_RATE_5 or tag == BUTTON_SAMPLE_RATE_20 or tag == BUTTON_SAMPLE_RATE_100) { //TODO: Change name
+    } else if (tag == BUTTON_SAMPLE_RATE_5 or tag == BUTTON_SAMPLE_RATE_20 or tag == BUTTON_SAMPLE_RATE_50 or tag == BUTTON_SAMPLE_RATE_100) { //TODO: Change name
       if (timeSinceLastChange + 500 < millis()){
         timeSinceLastChange = millis();
       } 
@@ -1898,7 +1946,10 @@ void loopMain()
       if (tag == BUTTON_SAMPLE_RATE_20) {
         SMU[0].setSamplingRate(20);
       }
-      if (tag == BUTTON_SAMPLE_RATE_100) {
+      if (tag == BUTTON_SAMPLE_RATE_50) {
+        SMU[0].setSamplingRate(50);
+      }
+       if (tag == BUTTON_SAMPLE_RATE_100) {
         SMU[0].setSamplingRate(100);
       }
 
@@ -2179,12 +2230,18 @@ void fltCommitCurrentSourceAutoRange(float mv, bool autoRange) {
         current_range = AMP1;
         SMU[0].setCurrentRange(current_range);
       }
+      
+
       if (SMU[0].fltSetCommitCurrentSource(mv)) printError(_PRINT_ERROR_VOLTAGE_SOURCE_SETTING);
    }
    else {
           if (SMU[0].fltSetCommitCurrentSource(mv)) printError(_PRINT_ERROR_VOLTAGE_SOURCE_SETTING);
 
    }
+
+
+
+    
 }
 
 void closeSourceDCCallback(int set_or_limit, bool cancel) {

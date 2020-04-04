@@ -85,6 +85,9 @@ void ADCClass::setSamplingRate(int value) {
   // I tried to set the register directly but ended up with problems (halt, stops, exception etc.) probably due to interrupt stuff...
   // TODO: Figure out a better way...
 }
+int ADCClass::getSamplingRate() {
+  return samplingRate;
+}
 
 
 void ADCClass::writeSamplingRate() {
