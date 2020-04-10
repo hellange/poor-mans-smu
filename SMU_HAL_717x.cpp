@@ -115,6 +115,16 @@ void ADCClass::writeSamplingRate() {
   //unsigned int ENHFILTERN0 = 0x0800l;
   //unsigned int ENHFILT0_20SPS = 0x0500;
 
+
+  if (value == 1) { //1.25, AD7172 only
+      AD7176_WriteRegister({0x28, 2, 0, 0x0216l  });
+  }
+  else if (value == 2) { //2.5, AD7172 only
+      AD7176_WriteRegister({0x28, 2, 0, 0x0215l  });
+  }
+  
+  else 
+  
   
   if (value == 5) {
       AD7176_WriteRegister({0x28, 2, 0, 0x0214l  });
@@ -210,9 +220,20 @@ void ADCClass::setCurrentRange(CURRENT_RANGE range) {
    // Serial.print("range:");
    // Serial.println("AMP1");
    // AD7176_WriteRegister({0x06, 2, 0, 0x080Cl}); // GPIO pin
+
+
     digitalWrite(4, HIGH); 
+    Serial.println("WARNING !!!!!!!!!!!!!!!!  Had to add delay here to avoid voltage drop when changing from 10mA to 1A");
+    delay(5); // WARNING !!!! Had to add delay here to avoid voltage drop when changing from 10mA to 1A.
+               //              Why?
+               //              TODO: Find out why setting the current limit right after switch causes spike !!!!
+               //              With the 10ms delay, there is 10ms where the current limit is too high (as set for the 10mA range!)
+    fltSetCommitCurrentLimit(setValueI/*LIMIT_DIAL.getMv()/1000.0*/, _SOURCE_AND_SINK);//printError(_PRINT_ERROR_VOLTAGE_SOURCE_SETTING);
+
+
   } else if (range == MILLIAMP10) {
    // AD7176_WriteRegister({0x06, 2, 0, 0x080Dl}); // GPIO pin
+   fltSetCommitCurrentLimit(setValueI/*LIMIT_DIAL.getMv()/1000.0*/, _SOURCE_AND_SINK);// printError(_PRINT_ERROR_VOLTAGE_SOURCE_SETTING);
    digitalWrite(4, LOW);
     //Serial.print("range:");
     //Serial.println("MILLIAMP10");
@@ -226,6 +247,9 @@ void ADCClass::setCurrentRange(CURRENT_RANGE range) {
 
 
 float ADCClass::measureMilliVoltageRaw() {
+
+
+  
   AD7176_ReadRegister(&AD7176_regs[4]);
      
   float v = (float) ((AD7176_regs[4].value*VFSR*1000.0)/FSR);
@@ -237,8 +261,13 @@ float ADCClass::measureMilliVoltageRaw() {
   return v;
 }
 
+bool ADCClass::hasCompliance() {
+  return (digitalRead(2) == LOW or digitalRead(3) == LOW);
+}
+
 float ADCClass::measureMilliVoltage() {
- 
+
+
   AD7176_ReadRegister(&AD7176_regs[4]);
 
   float v = (float) ((AD7176_regs[4].value*VFSR*1000.0)/FSR); 
@@ -483,7 +512,7 @@ int8_t ADCClass::fltSetCommitVoltageSource(float milliVolt, bool dynamicRange) {
       }
 
 
-      dac_voltage = dac_voltage * 3.125; // after using 3 opamp diff amplifier before 1997-3.... hmm...
+      //dac_voltage = dac_voltage * 3.125; // after using 3 opamp diff amplifier before 1997-3.... hmm...
 
  dac_voltage = dac_voltage *1.15;
  dac_voltage = dac_voltage *1.023;
@@ -501,7 +530,7 @@ int8_t ADCClass::fltSetCommitVoltageSource(float milliVolt, bool dynamicRange) {
 
       dac_voltage = dac_voltage * 0.970;
 
-      dac_voltage = dac_voltage * 3.125; // after using 3 opamp diff amplifier before 1997-3.... hmm...
+      //dac_voltage = dac_voltage * 3.125; // after using 3 opamp diff amplifier before 1997-3.... hmm...
  dac_voltage = dac_voltage /1.015;
 
       if (dac_voltage < 0) {
@@ -658,7 +687,7 @@ int8_t ADCClass::fltSetCommitVoltageSource(float milliVolt, bool dynamicRange) {
 
   //dac_voltage = dac_voltage - 0.753; 
   //TODO: Account for more amplification in current after adding two opamps in front of 1997-3 .....  hmmmm  
-  dac_voltage = dac_voltage *3.125;
+  //dac_voltage = dac_voltage *3.125;
 
   LTC2758_write(1, LTC2758_CS, LTC2758_WRITE_SPAN_DAC, 0, span);
   float v_adj = LTC2758_voltage_to_code(dac_voltage, DAC_RANGE_LOW, DAC_RANGE_HIGH, serialOut);
@@ -671,6 +700,8 @@ int8_t ADCClass::fltSetCommitVoltageSource(float milliVolt, bool dynamicRange) {
 
  
  float ADCClass::measureCurrent(CURRENT_RANGE range){
+
+
 
     AD7176_ReadRegister(&AD7176_regs[4]);
     float v = (float) ((AD7176_regs[4].value*VFSR*1000.0)/FSR); 
@@ -685,7 +716,7 @@ int8_t ADCClass::fltSetCommitVoltageSource(float milliVolt, bool dynamicRange) {
       if (range == MILLIAMP10) {
         i=v/100.0; // 100 ohm shunt.
         //i=i*0.79;// apprx.... why? 
-        i=i/3.125; // After using two opamps in fromt of 1997-3....   Why did that give 3.125 gain ????
+        //i=i/3.125; // After using two opamps in fromt of 1997-3....   Why did that give 3.125 gain ????
 
         i=i*1.05;
 
@@ -703,7 +734,7 @@ int8_t ADCClass::fltSetCommitVoltageSource(float milliVolt, bool dynamicRange) {
           i = i * C_CALIBRATION.getAdcGainCompNeg();
         }
 
-              i=i/3.125; // After using two opamps in fromt of 1997-3....   Why did that give 3.125 gain ????
+              //i=i/3.125; // After using two opamps in fromt of 1997-3....   Why did that give 3.125 gain ????
 
       }
       i=i/10.0; // x10 amplifier
@@ -726,16 +757,6 @@ int8_t ADCClass::fltSetCommitVoltageSource(float milliVolt, bool dynamicRange) {
 //    i = C_CALIBRATION.adc_nonlinear_compensation(i);
     //Serial.print(" -> ");
     //Serial.println(i);
-    
-    // dummy!
-    // compiance = abs(setValueI) < abs(i/1000.0);
-    // from HW signal !
-    compliance = (digitalRead(2) == LOW or digitalRead(3) == LOW);
-
-//    Serial.print("compliance setValueI:");  
-//    Serial.print(abs(setValueI*1000.0));
-//    Serial.print(", valueI:");
-//    Serial.println(abs(v));
 
     return i;
  }

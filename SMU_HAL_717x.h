@@ -34,7 +34,6 @@ class ADCClass {
   public:
 float DAC_RANGE_LOW;
   float DAC_RANGE_HIGH;
-    bool compliance;
     int init();
     int initADC();
     int initDAC();
@@ -51,7 +50,8 @@ float DAC_RANGE_LOW;
     int getSamplingRate();
     int dataReady();
     float measureCurrent(CURRENT_RANGE range);
-    
+
+    bool hasCompliance();
     float getSetValuemV();
     float getLimitValue();
 

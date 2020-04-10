@@ -14,7 +14,7 @@ void FanClass::init() {
   attachInterrupt(fanSpeedPin, fanSpeedInterruptHandler, CHANGE);
 
   // For now, just hardcode a value for testing
-  analogWriteFrequency(fanPin,25000);
+  analogWriteFrequency(fanPin,10000);
   analogWrite(fanPin,100); 
 }
 

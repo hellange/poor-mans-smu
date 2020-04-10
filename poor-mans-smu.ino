@@ -35,7 +35,7 @@
 #include "RotaryEncoder.h"
 
 
-#define _SOURCE_AND_SINK 111
+//#define _SOURCE_AND_SINK 111
 
 #define _PRINT_ERROR_VOLTAGE_SOURCE_SETTING 0
 #define _PRINT_ERROR_CURRENT_SOURCE_SETTING 1
@@ -78,7 +78,7 @@ int activeWidget = 0;
 CURRENT_RANGE current_range = AMP1; // TODO: get rid of global
 int timeSinceLastChange = 0;  // TODO: get rid of global
 
-float MAX_CURRENT_10mA_RANGE = 2.0; // current values set because the ADC limit is 6 volt now...
+float MAX_CURRENT_10mA_RANGE = 5.0; // current values set because the ADC limit is 6 volt now...
 float MAX_CURRENT_1A_RANGE = 1100.0;
 
 
@@ -165,7 +165,7 @@ void setup()
    delay(50);
    //TODO: Organise pin numbers into definitions ?
    pinMode(6,OUTPUT); // LCD powerdown pin?
-   digitalWrite(6, HIGH);
+   digitalWrite(6, LOW);
    pinMode(5,OUTPUT); // RAM
 
     pinMode(7,OUTPUT);
@@ -196,17 +196,17 @@ void setup()
     // bootup FT8xx
     // Drive the PD_N pin high
     // brief reset on the LCD clear pin
+    //TODO: Does not work yet.... why ?  Need to reconnect USB (power cycle)...
+    for (int i=0;i<2;i++) {
     digitalWrite(6, LOW);
     delay(200);
     digitalWrite(6, HIGH);
     delay(200);
-    digitalWrite(6, LOW);
-    delay(200);
-    digitalWrite(6, HIGH);
-    delay(200);
+    }
+
 
    GD.begin(0);
-   delay(100);
+   delay(50);
 
    Serial.println("...begin...");
    Serial.flush();
@@ -230,8 +230,8 @@ void setup()
    Serial.println("Start measuring...");
    SMU[0].init();
 
-   SMU[0].setGPIO(1,true); // gpio1:  true = low bandwidth
-  // SMU[0].setGPIO(0,true);
+  SMU[0].setGPIO(1,true); // gpio1:  true = low bandwidth
+  //SMU[0].setGPIO(0,true);
 
    SMU[0].setSamplingRate(20);
    operationType = getOperationType();
@@ -240,9 +240,9 @@ void setup()
    C_CALIBRATION.init(SOURCE_CURRENT);
    
    if (operationType == SOURCE_VOLTAGE) {
-     SMU[0].fltSetCommitVoltageSource(4000.0, true);
+     SMU[0].fltSetCommitVoltageSource(1234.5, true);
      Serial.println("Source voltage");
-     SMU[0].fltSetCommitCurrentLimit(0.1, _SOURCE_AND_SINK); 
+     SMU[0].fltSetCommitCurrentLimit(100/1000.0, _SOURCE_AND_SINK); 
    } else {
      SMU[0].fltSetCommitCurrentSource(0.0);
      Serial.println("Source current");
@@ -275,7 +275,7 @@ void setup()
   // attachInterrupt(2, handleSampling, CHANGE);
 
 #ifdef SAMPLING_BY_INTERRUPT
-  myTimer.begin(handleSampling, 30); // in microseconds
+  myTimer.begin(handleSampling, 20); // in microseconds
   SPI.usingInterrupt(myTimer);
 #endif
 
@@ -332,7 +332,8 @@ void sourceCurrentPanel(int x, int y) {
   GD.cmd_text(x+20 + 1, y + 2 + 1 ,   29, 0, "SOURCE CURRENT");
   
   // primary
-  CURRENT_DISPLAY.renderMeasured(x + 17,y + 26, C_FILTERS.mean, false, current_range == MILLIAMP10);
+  bool shownA = current_range == MILLIAMP10;
+  CURRENT_DISPLAY.renderMeasured(x + 17,y + 26, C_FILTERS.mean, false, shownA);
 
   // secondary
   GD.ColorRGB(COLOR_CURRENT);
@@ -426,7 +427,7 @@ void renderStatusIndicators(int x, int y) {
 
   }
   showStatusIndicator(x+630, y+45, "50Hz", false, false);
-  showStatusIndicator(x+630, y+85, "COMP", SMU[0].compliance, true);
+  showStatusIndicator(x+630, y+85, "COMP", SMU[0].hasCompliance(), true);
     if (operationType == SOURCE_VOLTAGE) {
       showStatusIndicator(x+720, y+85, "UNCAL_V", !V_CALIBRATION.useCalibratedValues, true);
     } else {
@@ -770,7 +771,8 @@ void measureCurrentPanel(int x, int y, boolean compliance, bool showBar) {
       y=y+12;
     }
     GD.ColorA(255);
-    CURRENT_DISPLAY.renderMeasured(x + 17, y, C_FILTERS.mean, compliance, current_range == MILLIAMP10); 
+    bool shownA = current_range == MILLIAMP10;
+    CURRENT_DISPLAY.renderMeasured(x + 17, y, C_FILTERS.mean, compliance, shownA); 
   }
   CURRENT_DISPLAY.renderSet(x+120, y+105, SMU[0].getLimitValue());
 
@@ -849,19 +851,19 @@ void showWidget(int y, int widgetNo, int scroll) {
        GD.ColorRGB(COLOR_VOLT);
        GD.cmd_text(20, yPos, 29, 0, "MEASURE VOLTAGE");
      }
-     measureVoltagePanel(scroll, yPos + 20, SMU[0].compliance);
+     measureVoltagePanel(scroll, yPos + 20, SMU[0].hasCompliance());
   } else if (widgetNo ==0 && operationType == SOURCE_VOLTAGE) {
      if (scroll ==0){
        GD.ColorRGB(COLOR_CURRENT_TEXT);
        GD.cmd_text(20, yPos, 29, 0, "MEASURE CURRENT");
      }
-     measureCurrentPanel(scroll, yPos + 20, SMU[0].compliance, true);
+     measureCurrentPanel(scroll, yPos + 20, SMU[0].hasCompliance(), true);
   } else if (widgetNo ==0 && operationType == SOURCE_CURRENT) {
      if (scroll ==0){
        GD.ColorRGB(COLOR_VOLT);
        GD.cmd_text(20, yPos, 29, 0, "MEASURE VOLTAGE");
      }
-     measureVoltagePanel(scroll, yPos + 20, SMU[0].compliance);
+     measureVoltagePanel(scroll, yPos + 20, SMU[0].hasCompliance());
   } else if (widgetNo == 1) {
     if (!anyDialogOpen()){
        if (scroll ==0){
@@ -1015,6 +1017,85 @@ void handleMenuScrolldown(){
  
 }
 
+
+int     buttonDetected =0;
+  int buttonDetectedTimer = millis();
+  int buttonFunction = 0;
+  int buttonDepressed = 0;
+  int prevButtonFunction = 0;
+  int color = 0x0000ff;
+  int keydownTimer = 0;
+int handleButtons() {
+  
+  int buttonValue = analogRead(3)/10;
+
+  // Based on how the voltage divider is constructed using the x number of buttons.
+  // Measure and adjust...
+  // Using 8 bit analog input on Teensy, it should be possible to "detect" many buttons
+  // with just an analog input...
+  if (buttonDetectedTimer + 50 < millis()) {
+    buttonDetectedTimer = millis();
+    if (buttonValue >95 && buttonValue <105) {
+      buttonFunction = 0;
+    }
+    else if (buttonValue >82 && buttonValue <94) {
+      buttonFunction = 1;
+    }
+    else if (buttonValue >70 && buttonValue <81) {
+      buttonFunction = 2;  
+    }
+    else if (buttonValue >50 && buttonValue <70) {
+      buttonFunction = 3;  
+    }
+   else  if (buttonValue <10) {
+      buttonFunction = 4;
+    }
+
+    if (buttonFunction != prevButtonFunction) {
+      prevButtonFunction = buttonFunction;
+      if (buttonFunction != 0) {
+        //we have detected a button pressed down !
+        buttonDetected ++;
+        keydownTimer = millis();
+      }
+      else {
+        //we have detected button released !
+        buttonDepressed ++;
+        keydownTimer = 0;
+      }
+    }
+    if (keydownTimer + 1000 < millis() && buttonFunction != 0){
+      color = 0xff0000;
+    } else {
+      color = 0x00ff00;
+    }
+  }
+
+  if (buttonFunction != 0) {
+    GD.Begin(RECTS);
+  GD.ColorA(255);
+  GD.ColorRGB(color);
+  int y=(buttonFunction-1)*110;
+  GD.Vertex2ii(0,50+y);
+  GD.Vertex2ii(70,120+y, 22);
+  }
+
+
+
+
+  
+  
+  
+  GD.cmd_number(730,0,27,0,buttonFunction);
+  GD.cmd_number(750,0,27,0,buttonDetected);
+  GD.cmd_number(780,0,27,0,buttonDepressed);
+
+
+
+}
+
+
+
 void renderMainHeader() {
   // register screen for gestures on top half, required for pulling menu from top
   GD.Tag(GESTURE_AREA_HIGH);
@@ -1042,6 +1123,8 @@ void renderMainHeader() {
 
   GD.cmd_number(370,0,27,0,RAM.getCurrentLogAddress());
 
+  
+  
   // line below top header
   int y = 25;
   GD.Begin(LINE_STRIP);
@@ -1263,8 +1346,11 @@ void notification(char *text) {
 bool digitize = false;
 
 int ramAdrPtr = 0;
+
+float ramEmulator[1000];
+
 int maxFloats = 32000; // 32000 is max for the ram
-int nrOfFloats = 100;
+int nrOfFloats = 400;
 
 bool bufferOverflow = false;
 float maxDigV = -100000.00, minDigV = 100000.00, curDigV;
@@ -1275,16 +1361,22 @@ bool triggered = false;
 int count = 1;
 float sampleVolt = 10.0;
 int logTimer = millis();
+int digitizeCounter = 0;
+int msDigit = 0;
+float simulatedWaveform;
 static void handleSampling() {
 
      int dataR = SMU[0].dataReady();
       //Serial.print("DataReady:");  
       //Serial.println(dataR, HEX); 
 
- 
-         
+   
+
+
    if (digitize == true && bufferOverflow==false && (dataR == 0 or dataR == 1)) {
 
+
+ digitizeCounter ++;
     
 //     if (count % 20== 0) {
 //       SMU[0].fltSetCommitVoltageSource(sampleVolt, false);
@@ -1318,13 +1410,21 @@ static void handleSampling() {
 //      return;
 //     }
 
-      float v = SMU[0].measureMilliVoltage();   
+
+
+      float v = SMU[0].measureMilliVoltage();  
+     // float v=100.0 + random(10)/100.0;
+     // simulatedWaveform += 0.1;
+    //  v = v + sin(simulatedWaveform);
+
+
+      
       bool continuous = true;
       if (!triggered) {
         if (continuous or (lastVoltage < 1000.0 && v > 1500.0)) {
           triggered = true;
-          Serial.println("Triggered!");
-          Serial.println(lastVoltage);
+          //Serial.println("Triggered!");
+          //Serial.println(lastVoltage);
         } else {
           lastVoltage = v;
           return;
@@ -1332,7 +1432,8 @@ static void handleSampling() {
       }
       lastVoltage = v;
 
-      RAM.writeRAMfloat(ramAdrPtr, v);
+      //RAM.writeRAMfloat(ramAdrPtr, v);
+      ramEmulator[ramAdrPtr/4] = v;
       if (ramAdrPtr == 0) {
         digitizeDuration = millis();
       }
@@ -1341,8 +1442,13 @@ static void handleSampling() {
         bufferOverflow = true;
         triggered = false;
         //lastVoltage = 0.0;
-        Serial.println("Overflow!");
+        //Serial.println("Overflow!");
         ramAdrPtr = 0;
+        //Serial.print("Digitize duration:");
+        //Serial.println(millis() - digitizeDuration);
+        //Serial.print("Adr:");
+        //Serial.println(ramAdrPtr);
+        
       }
       curDigV = v;
       if (v > maxDigV) {
@@ -1417,6 +1523,7 @@ static void handleSampling() {
 }
 
 void handleAutoCurrentRange() {
+     return;
      if (!autoNullStarted && !V_CALIBRATION.autoCalInProgress && !C_CALIBRATION.autoCalInProgress) {
       float milliAmpere = C_STATS.rawValue;
 //      Serial.print(milliAmpere,5);
@@ -1433,22 +1540,22 @@ void handleAutoCurrentRange() {
           Serial.println("switching to range 1");
            //TODO: Use getLimitValue from SMU instead of LIMIT_DIAL ?
           if (operationType == SOURCE_VOLTAGE){
-            if (SMU[0].fltSetCommitCurrentLimit(LIMIT_DIAL.getMv()/1000.0, _SOURCE_AND_SINK)) printError(_PRINT_ERROR_VOLTAGE_SOURCE_SETTING);
+            if (SMU[0].fltSetCommitCurrentLimit(SMU[0].getLimitValue()/1000.0/*LIMIT_DIAL.getMv()*/, _SOURCE_AND_SINK)) printError(_PRINT_ERROR_VOLTAGE_SOURCE_SETTING);
           } 
 
         }
         // TODO: Make separate function to calculate current based on shunt and voltage!
-        Serial.print("Check 10mA range and if it should switch to 1A... ma=");
-        Serial.print(milliAmpere);
-        Serial.print(" ");
-        Serial.println(switchAt);
+//        Serial.print("Check 10mA range and if it should switch to 1A... ma=");
+//        Serial.print(milliAmpere);
+//        Serial.print(" ");
+//        Serial.println(switchAt);
         if (current_range == MILLIAMP10 && abs(milliAmpere) > switchAt) {
           current_range = AMP1;
           SMU[0].setCurrentRange(current_range);
           Serial.println("switching to range 0");
            //TODO: Use getLimitValue from SMU instead of LIMIT_DIAL ?
           if (operationType == SOURCE_VOLTAGE){
-            if (SMU[0].fltSetCommitCurrentLimit(LIMIT_DIAL.getMv()/1000.0, _SOURCE_AND_SINK)) printError(_PRINT_ERROR_VOLTAGE_SOURCE_SETTING);
+            if (SMU[0].fltSetCommitCurrentLimit(SMU[0].getLimitValue()/1000.0/*LIMIT_DIAL.getMv()/1000.0*/, _SOURCE_AND_SINK)) printError(_PRINT_ERROR_VOLTAGE_SOURCE_SETTING);
           } 
 
           
@@ -1704,7 +1811,7 @@ void loopDigitize() {
   operationType = getOperationType();
   disable_ADC_DAC_SPI_units();
   
-
+int fullSamplePeriod;
    if (digitize == false && !MAINMENU.active /*&&  samplingDelayTimer + 50 < millis()*/){
      
     ramAdrPtr = 0;
@@ -1717,12 +1824,13 @@ void loopDigitize() {
           //bufferOverflowed=false;
      digitize = true;
          bufferOverflow = false;
+    
 
+  msDigit= millis();
      
    }
 
   disable_ADC_DAC_SPI_units();
-  
   if (bufferOverflow == true) {
     digitize = false;
     Serial.println("Initiate new samping round...");
@@ -1741,7 +1849,8 @@ void loopDigitize() {
 //    GD.swap();
 //    GD.__end();
   } else {
-         SMU[0].setSamplingRate(10);
+    fullSamplePeriod = millis()-msDigit;
+//         SMU[0].setSamplingRate(10);
 
     //digitize = false; 
     bufferOverflow = false;
@@ -1760,6 +1869,11 @@ void loopDigitize() {
     CURRENT_DISPLAY.renderMeasured(10,250, minDigI, false, false);
     CURRENT_DISPLAY.renderMeasured(10,350, maxDigI, false, false);
 
+   // VOLT_DISPLAY.renderMeasured(10,50, digitizeCounter, false);
+    //    VOLT_DISPLAY.renderMeasured(10,200, fullSamplePeriod, false);
+
+digitizeCounter = 0;
+
   GD.Begin(LINE_STRIP);
   GD.ColorA(255);
   GD.ColorRGB(0x00ff00);
@@ -1770,8 +1884,9 @@ void loopDigitize() {
   GD.__end();
   for (int x = 0; x<nrOfFloats/2; x++) {
     int adr = x*8;
-    mva[x] = RAM.readRAMfloat(adr);
-    mia[x] = RAM.readRAMfloat(adr+4);
+    mva[x] = ramEmulator[adr/4]; //RAM.readRAMfloat(adr);
+    
+    mia[x] = ramEmulator[adr/4 + 1]; //RAM.readRAMfloat(adr+4);
   }
   GD.resume();
   
@@ -1859,7 +1974,7 @@ void loopMain()
   // Note that this gives small glitches in voltage.
   // TODO: Find out how large glitches and if it's a real problem...
   if (operationType == SOURCE_VOLTAGE) {
-      //handleAutoCurrentRange();
+      handleAutoCurrentRange();
   }
 
   #ifndef SAMPLING_BY_INTERRUPT 
@@ -1872,13 +1987,15 @@ void loopMain()
     int tag = GD.inputs.tag;
 
     if (tag == BUTTON_SOURCE_SET) {
-      Serial.println("Source set");
+      Serial.println("open dial to set source, start with value ");
+      Serial.println(SMU[0].getSetValuemV());
       SOURCE_DIAL.open(operationType, SET,  closeSourceDCCallback, SMU[0].getSetValuemV());
     } else if (tag == BUTTON_LIM_SET) {
-      Serial.println("Limit set");
+      Serial.println("open dial to set limit, start with value ");
+      Serial.println(SMU[0].getLimitValue());
       LIMIT_DIAL.open(operationType, LIMIT, closeSourceDCCallback, SMU[0].getLimitValue());
     } else if (tag == BUTTON_REL) {
-      Serial.println("Null set");
+      Serial.println("Set relative");
       V_CALIBRATION.toggleRelativeValue(V_STATS.rawValue, current_range);
       C_CALIBRATION.toggleRelativeValue(C_STATS.rawValue, current_range);
     } else if (tag == BUTTON_UNCAL) {
@@ -1910,18 +2027,22 @@ void loopMain()
         disable_ADC_DAC_SPI_units(); 
         Serial.print("When switching current range, limit value use is:");
         Serial.println(SMU[0].getLimitValue());
+
         
         SMU[0].setCurrentRange(current_range);
 
+        // NOTE: The current limit update is now automatically handled by the setCurrentRange function
+        /*
         //TODO: Use getLimitValue from SMU instead of LIMIT_DIAL ?
         if (operationType == SOURCE_CURRENT){
    
           if (SMU[0].fltSetCommitVoltageLimit(LIMIT_DIAL.getMv()/1000.0, _SOURCE_AND_SINK)) printError(_PRINT_ERROR_VOLTAGE_SOURCE_SETTING);
 
         } else {
-          if (SMU[0].fltSetCommitCurrentLimit(LIMIT_DIAL.getMv()/1000.0, _SOURCE_AND_SINK)) printError(_PRINT_ERROR_VOLTAGE_SOURCE_SETTING);
+          if (SMU[0].fltSetCommitCurrentLimit(*LIMIT_DIAL.getMv()/1000.0, _SOURCE_AND_SINK)) printError(_PRINT_ERROR_VOLTAGE_SOURCE_SETTING);
 
          }
+        */
         GD.resume();
 
         
@@ -1941,7 +2062,7 @@ void loopMain()
       } 
      
       if (tag == BUTTON_SAMPLE_RATE_5) {
-        SMU[0].setSamplingRate(5);
+        SMU[0].setSamplingRate(5); 
       }
       if (tag == BUTTON_SAMPLE_RATE_20) {
         SMU[0].setSamplingRate(20);
@@ -2158,6 +2279,8 @@ void loopMain()
   handleWidgetScrollPosition();
   displayWidget();
   handleMenuScrolldown();
+
+handleButtons();
 
   if (V_CALIBRATION.autoCalInProgress or C_CALIBRATION.autoCalInProgress) {
     notification("Auto calibration in progress...");

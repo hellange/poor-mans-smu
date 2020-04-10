@@ -10,7 +10,7 @@ unsigned long old_compliance_blink_timer = compliance_blink_timer ;
 
 int blinkColor(int colorHigh, int colorLow, int period) {
   int compliance_blink_timer = millis();
-  int color = colorHigh;
+  int color = colorHigh;n
   if (compliance_blink_timer - old_compliance_blink_timer > period) {
     old_compliance_blink_timer = compliance_blink_timer;
   } else if (compliance_blink_timer - old_compliance_blink_timer > period/2) {
@@ -61,7 +61,10 @@ void CurrentDisplayClass::renderMeasured(int x, int y, float rawMa, boolean comp
     // Show uA with nA decimals...
       boldNumber(x, y, 3, ua);
       boldText(x+162, y+30-30, ".");
+     
       GD.cmd_number(x+192, y+2, 1, 2, (int)(na/10.0)); // use only two digit for nano amps !
+      //GD.cmd_number(x+192, y+2, 1, 3, na); // show three digits in nA
+
       GD.cmd_text(x+320, y+2 ,  1, 0, "uA");
       //GD.cmd_number(x+192, y+2, 1, 3, (int)(na)); 
       //GD.cmd_text(x+355, y+2 ,  1, 0, "uA");

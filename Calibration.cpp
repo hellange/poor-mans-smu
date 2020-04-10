@@ -759,7 +759,7 @@ x=x-70;
     GD.Tag(BUTTON_DAC_ZERO_CALIBRATE);
     GD.cmd_button(x+620,y+100,120,50,29,0,"ZEROCAL");
     
-    //GD.Tag(0);
+    GD.Tag(0);
   }
   GD.LineWidth(20);
   GD.Begin(LINE_STRIP);
