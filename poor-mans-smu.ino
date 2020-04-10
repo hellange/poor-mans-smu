@@ -179,10 +179,12 @@ void setup()
 
 
     // Changed in later revisions to be inpur for limits
-    pinMode(3,INPUT); // (NO) current range selector
-    pinMode(2,INPUT); // (NO) Fan speed feedback
+    // TODO: Fix this mess
+    pinMode(3,INPUT); // (NO!) current range selector
+    pinMode(2,INPUT); // (NO!) Fan speed feedback
 
 
+    PUSHBUTTONS.init(3); // bushbuttons based on analog pin 3
     
     
     FAN.init();

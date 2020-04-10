@@ -5,15 +5,17 @@
 
 PushbuttonsClass PUSHBUTTONS;
 
-void PushbuttonsClass::init() {
-   Serial.println("Init Pushbuttons");
+void PushbuttonsClass::init(int analogPin_) {
+  analogPin = analogPin_;
+  Serial.print("Init Pushbuttons using analog pin ");
+  Serial.println(analogPin);
 }
 
 
 
 void PushbuttonsClass::handle() {
   
-  int buttonValue = analogRead(3)/10;
+  int buttonValue = analogRead(analogPin)/10;
 
   // Based on how the voltage divider is constructed using the x number of buttons.
   // Measure and adjust...

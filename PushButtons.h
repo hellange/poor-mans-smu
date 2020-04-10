@@ -12,9 +12,10 @@ private:
   int prevButtonFunction = 0;
   int color = 0x0000ff;
   int keydownTimer = 0;
+  int analogPin = 0;
 public:
  
-  void init();
+  void init(int analogPin);
   void handle();
  
 };
