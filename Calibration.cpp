@@ -699,7 +699,7 @@ void CalibrationClass::renderCal(int x, int y, float valM, float setM, bool cur,
     GD.cmd_button(x+10,y+90,100,50,29,0,"UP");
     GD.Tag(BUTTON_DAC_GAIN_COMP_POS_DOWN);
     GD.cmd_button(x+10,y+150,100,50,29,0,"DOWN");
-  
+  GD.Tag(0);
     x=x+10;
     GD.ColorRGB(0xaaaaaa);
     if (FILTERS->mean < 0) {
@@ -718,7 +718,7 @@ void CalibrationClass::renderCal(int x, int y, float valM, float setM, bool cur,
     GD.cmd_button(x+120,y+90,100,50,29,0,"UP");
     GD.Tag(BUTTON_ADC_GAIN_COMP_POS_DOWN);
     GD.cmd_button(x+120,y+150,100,50,29,0,"DOWN");
-
+GD.Tag(0);
 
  x=x+120;
     GD.ColorRGB(0xaaaaaa);
@@ -733,6 +733,8 @@ void CalibrationClass::renderCal(int x, int y, float valM, float setM, bool cur,
     GD.cmd_button(x+120,y+90,100,50,29,0,"UP");
     GD.Tag(BUTTON_DAC_ZERO_COMP_DOWN);
     GD.cmd_button(x+120,y+150,100,50,29,0,"DOWN");
+    
+    GD.Tag(0); // Seems to fix problem with function calles when touching a special place on the screen... why ????
 
 
 x=x-70;
