@@ -30,6 +30,7 @@ class DialClass {
   
 public:
   void open(int type, int set_or_limit_, void (*closedFn)(int set_or_limit, bool cancel), float value);
+  void close();
   void clear();
   bool isDialogOpen();
   void handleKeypadDialog();

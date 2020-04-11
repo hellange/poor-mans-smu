@@ -167,6 +167,9 @@ void pushButtonInterrupt(int key, bool quickPress, bool holdAfterLongPress, bool
   Serial.println(releaseAfterLongPress==true?"RELEASED AFTER HOLDING" : "");
 
   if (quickPress && key ==1 && MAINMENU.active == false) {
+    if (anyDialogOpen()) {
+      closeAllOpenDialogs();
+    }
     Serial.println("OPENING MAIN MENU BASED ON KEYPRSS !!!");
     MAINMENU.open(closeMainMenuCallback);
   }
@@ -490,6 +493,15 @@ bool anyDialogOpen() {
   // make sure buttons below the dialog do not reach if finger is not removed from screen
   // when dialog disappears. Use a timer for now...
   return SOURCE_DIAL.isDialogOpen() or LIMIT_DIAL.isDialogOpen();
+}
+
+bool closeAllOpenDialogs() {
+  if ( SOURCE_DIAL.isDialogOpen() ) {
+    SOURCE_DIAL.close();
+  }
+  if (LIMIT_DIAL.isDialogOpen() ) {
+    LIMIT_DIAL.close();
+  }
 }
 
 // TODO: Move to separate util class ?

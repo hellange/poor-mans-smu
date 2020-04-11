@@ -7,6 +7,9 @@
 DialClass SOURCE_DIAL;
 DialClass LIMIT_DIAL;
 
+void DialClass::close() {
+    dialog = false;
+}
 
 void DialClass::open(int type, int set_or_limit_, void (*callbackFn)(int set_or_limit, bool cancel), float value) {
   //TODO: Convert value to visible digits. Right now it uses values/digits stored in the DialClass itself !
