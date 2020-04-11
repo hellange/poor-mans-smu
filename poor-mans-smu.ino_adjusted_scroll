@@ -587,10 +587,10 @@ void handleSliders(int x, int y) {
 }
 
 
-void renderExperimental(int x, int y, float valM, float setM, bool cur, bool lessDetails) {
+void renderExperimental(int x, int y, float valM, float setM, bool cur) {
 
   handleSliders(x,y);
-
+ 
   y=y+65;
   x=x+100;
   
@@ -608,11 +608,9 @@ void renderExperimental(int x, int y, float valM, float setM, bool cur, bool les
     deviationInPercent = 100;
   }
   float degrees = -deviationInPercent * 700.0;
-  if (!lessDetails) {
+  if (!reduceDetails()) {
     renderAnalogGauge(x+90,y,240, degrees, deviationInPercent, "Deviation from SET");
   }
-
-
   GD.ColorRGB(0x000000);
 
   // Visible number on button is half, because the sampling is effectlively the halv because
@@ -621,12 +619,9 @@ void renderExperimental(int x, int y, float valM, float setM, bool cur, bool les
   int sr = SMU[0].getSamplingRate();
 
 
-
-
   GD.ColorRGB(sr==5?0x00ff00:0x0000);
   GD.Tag(BUTTON_SAMPLE_RATE_5);
   GD.cmd_button(x-50,y-20,95,40,29,0,"2.5Hz");
-
 
 
     GD.ColorRGB(sr==20?0x00ff00:0x0000);
@@ -639,19 +634,12 @@ void renderExperimental(int x, int y, float valM, float setM, bool cur, bool les
   GD.Tag(BUTTON_SAMPLE_RATE_50);
   GD.cmd_button(x-50,y+80-15+5,95,40,29,0,"25Hz");
 
-
-// Adding another button gives problems when the main menu scrolls down... 
-   if (lessDetails) {
-  return; 
-}
-
     GD.ColorRGB(sr==100?0x00ff00:0x0000);
 
   GD.Tag(BUTTON_SAMPLE_RATE_100);
   GD.cmd_button(x-50,y+120-15+10,95,40,29,0,"50Hz");
 
-
-
+ 
   
   GD.Tag(0);
   
@@ -926,11 +914,11 @@ void showWidget(int y, int widgetNo, int scroll) {
       if (operationType == SOURCE_VOLTAGE) {
         float rawM = V_FILTERS.mean;
         float setM = SMU[0].getSetValuemV();
-        renderExperimental(scroll,yPos, rawM, setM, false, reduceDetails());
+        renderExperimental(scroll,yPos, rawM, setM, false);
       } else {
         float rawM = C_FILTERS.mean;
         float setM = SMU[0].getSetValuemV();
-        renderExperimental(scroll,yPos, rawM, setM, false, reduceDetails());
+        renderExperimental(scroll,yPos, rawM, setM, false);
       }
   } else if (widgetNo == 5) {
       if (scroll ==0){
@@ -1053,15 +1041,12 @@ void handleMenuScrolldown(){
 
 
 void renderMainHeader() {
-  
   // register screen for gestures on top half, required for pulling menu from top
-  /*
   GD.Tag(GESTURE_AREA_HIGH);
   GD.Begin(RECTS);
   GD.ColorRGB(0x000000);
   GD.Vertex2ii(0,0);
   GD.Vertex2ii(800, LOWER_WIDGET_Y_POS);
-  */
 
   // top header
   GD.Begin(RECTS);
@@ -1155,25 +1140,48 @@ int gestOldY = 0;
 int gestDurationX = 0;
 int gestDurationY = 0;
 
+int gestureDetectTimer = millis();
 int detectGestures() {
+  /*
+  if (gestureDetectTimer +1000 > millis()) {
+    return;
+  }
+  gestureDetectTimer = millis();
+*/
+  
   GD.get_inputs();
-  //Serial.println(GD.inputs.tag);
+  Serial.println(GD.inputs.x);
+    Serial.println(GD.inputs.y);
+
   int touchX = GD.inputs.x;
   int touchY = GD.inputs.y;
+
   int gestDistanceX = touchX - gestOldX;
   int gestDistanceY = touchY - gestOldY;
 
-  if (touchX == -32768 && touchX == -32768) { // TODO: Why negative values when no touch ? Use unsigned ?
-    gestDurationX = 0;
-    gestDurationY = 0;
+  if (touchX == -32768 && touchX == -32768) {
+        Serial.println("NO TOUCH");
+gestDurationX = 0;
+gestDurationY = 0;
     gestDistanceX = 0;
     gestDistanceY = 0;
     gestOldX = 0;
     gestOldY = 0;
   }
 
- // if ((GD.inputs.tag == GESTURE_AREA_LOW || GD.inputs.tag == GESTURE_AREA_HIGH) && gestureDetected ==EST_NONE) {
-  if (gestureDetected == GEST_NONE) {
+  Serial.print("gestDistanceX:");
+  Serial.print(gestDistanceX);
+   Serial.print("gestDistanceY:");
+  Serial.println(gestDistanceY);
+  /*
+  if (touchX == 0 or touchY==0) {
+    gestDurationX = 0;
+    gestDurationY = 0;
+  }*/
+
+
+// if ((GD.inputs.tag == GESTURE_AREA_LOW || GD.inputs.tag == GESTURE_AREA_HIGH) && gestureDetected == GEST_NONE) {
+  if ( gestureDetected == GEST_NONE) {
     if (touchX > 0 && touchY > LOWER_WIDGET_Y_POS && gestDistanceX < -20 && scrollDir == 0) {
       if (++gestDurationX >= 3) {
         Serial.println("gesture = move left");
@@ -1789,76 +1797,42 @@ digitizeCounter = 0;
 
 
 
-int prevTag = 0;
-int prevTag2 = 0;
-int tagTimer = millis();
 
-
-bool buttonPressed=false;
-int buttonPressedPeriod = 0;
-int prevButton = 0;
-int x[10];
-int y[10];
-int nrOfChecks = 3;
-int checkButtons() {
-
-   int tag;
-
-    tag = GD.inputs.tag;
-
-    if (tag>0 && tagTimer + 20 > millis()) {
-       return 0;
-    } 
-        tagTimer = millis();
-
-    if (tag>0) {
-      int touchX = GD.inputs.x;
-      int touchY = GD.inputs.y;
-      buttonPressed = true;
-      if (prevButton == buttonPressed) {
-        x[buttonPressedPeriod] = touchX;
-        y[buttonPressedPeriod] = touchY;
-        buttonPressedPeriod ++;
-
-        Serial.print("Button pressed:");
-        Serial.println(buttonPressedPeriod);
-      }
-      prevButton = buttonPressed;
-    } else {
-      prevButton = 0;
-      buttonPressed = false;
-      buttonPressedPeriod = 0;
-    }
-
-    if (buttonPressedPeriod<nrOfChecks) {
-      return 0;
-    }
-    bool accidental = false;
-    // check that all registred touches was within a certain area. To make sure it's not a gesture accidentally touching a button
-    for (int i = 0; i<nrOfChecks-1;i++) {
-      if (x[i] > x[i+1] + 10 or x[i] < x[i+1] - 10 or  y[i] > y[i+1] + 10 or  y[i] < y[i+1] - 10) {
-        // at least one touch outside acceptable area !
-        accidental = true;
-      }
-    }
-
-    if (accidental) {
-      Serial.println("Gesture accidentally touched a button...");
-      return 0;
-    } else {
-      Serial.println("Button pressed :-)");
-
-    }
-
-
-    
-    buttonPressedPeriod= 0;
-
+void loopMain()
+{
  
-      
-    prevTag == tag;
-    
+  handleAutoNull();
+  operationType = getOperationType();
   
+
+  if (nullCalibrationDone2) {
+   
+    //if (!V_CALIBRATION.autoCalDone) {
+    //  V_CALIBRATION.startAutoCal();
+    //}
+
+    RAM.startLog();
+    
+  }
+
+    GD.__end();
+
+  // Auto range current measurement while sourcing voltage. 
+  // Note that this gives small glitches in voltage.
+  // TODO: Find out how large glitches and if it's a real problem...
+  if (operationType == SOURCE_VOLTAGE) {
+      handleAutoCurrentRange();
+  }
+
+  #ifndef SAMPLING_BY_INTERRUPT 
+    handleSampling(); 
+  #endif
+  disable_ADC_DAC_SPI_units();
+  GD.resume();
+
+  if (!gestureDetected) {
+    int tag = GD.inputs.tag;
+
     if (tag == BUTTON_SOURCE_SET) {
       Serial.println("open dial to set source, start with value ");
       Serial.println(SMU[0].getSetValuemV());
@@ -1948,7 +1922,7 @@ int checkButtons() {
       }
 
     } 
-   // #ifndef USE_SIMULATOR // dont want to mess up calibration while in simulation mode...
+    #ifndef USE_SIMULATOR // dont want to mess up calibration while in simulation mode...
     else if (tag == BUTTON_DAC_GAIN_COMP_POS_UP) {
        if (timeSinceLastChange + 200 > millis()){
         return;
@@ -2126,74 +2100,7 @@ int checkButtons() {
        startNullCalibration();
        
     }
-
-    return tag;
-}
-
-
-
-void loopMain()
-{
- 
-  handleAutoNull();
-  operationType = getOperationType();
-  
-
-  if (nullCalibrationDone2) {
-   
-    //if (!V_CALIBRATION.autoCalDone) {
-    //  V_CALIBRATION.startAutoCal();
-    //}
-
-    RAM.startLog();
-    
-  }
-
-    GD.__end();
-
-  // Auto range current measurement while sourcing voltage. 
-  // Note that this gives small glitches in voltage.
-  // TODO: Find out how large glitches and if it's a real problem...
-  if (operationType == SOURCE_VOLTAGE) {
-      handleAutoCurrentRange();
-  }
-
-  #ifndef SAMPLING_BY_INTERRUPT 
-    handleSampling(); 
-  #endif
-  disable_ADC_DAC_SPI_units();
-  GD.resume();
-
-
-   GD.Clear();
-  renderMainHeader();
-  renderUpperDisplay(operationType, functionType);
-
-  // register screen for gestures /*on lower half
-  /*
-  GD.Tag(GESTURE_AREA_LOW);
-  GD.Begin(RECTS);
-  GD.ColorRGB(0x000000);
-  GD.Vertex2ii(0,LOWER_WIDGET_Y_POS);
-  GD.Vertex2ii(800, 480);
-  GD.Tag(0);
-  */
-  
-  detectGestures();
-
-  
-
-  if (!gestureDetected) {
- 
-    
-
-   
-    int tag = checkButtons();
-    
-    
-    
-
-   // #endif // end not using simulator
+    #endif // end not using simulator
     
     // TODO: don't need to check buttons for inactive menus or functions...
     MAINMENU.handleButtonAction(tag);
@@ -2203,23 +2110,22 @@ void loopMain()
     
   }
 
- 
+  GD.Clear();
+  renderMainHeader();
+  renderUpperDisplay(operationType, functionType);
+
+   // register screen for gestures on lower half
+   /*
+  GD.Tag(GESTURE_AREA_LOW);
+  GD.Begin(RECTS);
+  GD.ColorRGB(0x000000);
+  GD.Vertex2ii(0,LOWER_WIDGET_Y_POS);
+  GD.Vertex2ii(800, 480);
+*/
+  detectGestures();
 
   handleWidgetScrollPosition();
   displayWidget();
-
-
-
-
-
-
-
-
-
-
-  
-
-  
   handleMenuScrolldown();
 
   PUSHBUTTONS.handle();
