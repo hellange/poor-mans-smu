@@ -44,7 +44,6 @@ void PushbuttonsClass::handle() {
     }
 
     if (buttonFunction != prevButtonFunction) {
-      prevButtonFunction = buttonFunction;
       if (buttonFunction != 0) {
         //we have detected a button pressed down !
         buttonDetected ++;
@@ -55,17 +54,19 @@ void PushbuttonsClass::handle() {
         buttonDepressed ++;
         keydownTimer = 0;
         if (color == 0xff0000) {
-          callbackFn(buttonFunction, false, false, true);
+          callbackFn(prevButtonFunction, false, false, true);
         } else {
-          callbackFn(buttonFunction,true, false, false);
+          callbackFn(prevButtonFunction,true, false, false);
         }
       }
+      prevButtonFunction = buttonFunction;
+
     }
     if (keydownTimer + holdPeriodms < millis() && buttonFunction != 0){
       color = 0xff0000;
       if (keyHeldLong == false) {
         keyHeldLong = true;
-        callbackFn(99,false, true, false);
+        callbackFn(buttonFunction,false, true, false);
       }
     } else {
       color = 0x00ff00;

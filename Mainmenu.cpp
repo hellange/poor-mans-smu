@@ -27,6 +27,9 @@ void MainMenuClass::close() {
 }
 
 void MainMenuClass::handleButtonAction(int inputTag) {
+    if (scrollMainMenuDir != 0) {
+      return; // dont try to detec keypress while main is animating up or down.
+    }
     if (inputTag == MENU_BUTTON_SOURCE_PULSE) {
       functionType = SOURCE_PULSE;
       close();

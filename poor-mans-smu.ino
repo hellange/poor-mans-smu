@@ -160,9 +160,16 @@ void rotaryChangedFn(float changeVal) {
 
 void pushButtonInterrupt(int key, bool quickPress, bool holdAfterLongPress, bool releaseAfterLongPress) {
   Serial.print("Key pressed:");
+  Serial.print(key);
+  Serial.print(" ");
   Serial.println(quickPress==true?"QUICK" : "");
   Serial.println(holdAfterLongPress==true?"HOLDING" : "");
   Serial.println(releaseAfterLongPress==true?"RELEASED AFTER HOLDING" : "");
+
+  if (quickPress && key ==1 && MAINMENU.active == false) {
+    Serial.println("OPENING MAIN MENU BASED ON KEYPRSS !!!");
+    MAINMENU.open(closeMainMenuCallback);
+  }
 
 }
 void setup()
@@ -1572,6 +1579,7 @@ void loop() {
   
   if (functionType == DIGITIZE) {
     loopDigitize();
+
   } else if (functionType == GRAPH) {
 
 //    if (loopUpdateTimer + 10 > millis() ) {
@@ -1590,6 +1598,7 @@ void loop() {
     int tag = GD.inputs.tag;
     // TODO: don't need to check buttons for inactive menus or functions...
     MAINMENU.handleButtonAction(tag);
+    PUSHBUTTONS.handle();
     GD.swap();
     GD.__end();
     
@@ -1614,7 +1623,7 @@ void loopDigitize() {
   operationType = getOperationType();
   disable_ADC_DAC_SPI_units();
   
-int fullSamplePeriod;
+  int fullSamplePeriod;
    if (digitize == false && !MAINMENU.active /*&&  samplingDelayTimer + 50 < millis()*/){
      
     ramAdrPtr = 0;
@@ -1742,6 +1751,8 @@ digitizeCounter = 0;
   int tag = GD.inputs.tag;
    // TODO: don't need to check buttons for inactive menus or functions...
   MAINMENU.handleButtonAction(tag);
+        PUSHBUTTONS.handle();
+
    GD.swap();
     GD.__end();
   
@@ -2129,6 +2140,18 @@ void closeMainMenuCallback(FUNCTION_TYPE functionType_) {
     FUNCTION_PULSE.close();
   } else if (functionType == SOURCE_SWEEP) {
     FUNCTION_SWEEP.close();
+  } else if (functionType == DIGITIZE) {
+    //TODO: Use method when digitizer is moved out as separate class
+    //      For now, just readjust sampling speed
+    SMU[0].setSamplingRate(20); //TODO: Should get back to same as before, not a default one
+  } else if (functionType == SOURCE_DC_VOLTAGE) {
+    //TODO: Set previous voltage instead a default one !!!!
+     
+      //disable_ADC_DAC_SPI_units();
+    
+    GD.__end();
+    if (SMU[0].fltSetCommitVoltageSource(2345.6, true)) printError(_PRINT_ERROR_VOLTAGE_SOURCE_SETTING);
+    GD.resume();
   }
   /*
   if (functionType == SOURCE_DC_CURRENT) {
@@ -2145,6 +2168,7 @@ void closeMainMenuCallback(FUNCTION_TYPE functionType_) {
   } else if (functionType == SOURCE_SWEEP) {
     FUNCTION_SWEEP.open(operationType, closedSweep);
   }
+  
 }
 
 void fltCommitCurrentSourceAutoRange(float mv, bool autoRange) {
