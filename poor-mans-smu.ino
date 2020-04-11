@@ -167,11 +167,7 @@ void pushButtonInterrupt(int key, bool quickPress, bool holdAfterLongPress, bool
   Serial.println(releaseAfterLongPress==true?"RELEASED AFTER HOLDING" : "");
 
   if (quickPress && key ==1 && MAINMENU.active == false) {
-    if (anyDialogOpen()) {
-      closeAllOpenDialogs();
-    }
-    Serial.println("OPENING MAIN MENU BASED ON KEYPRSS !!!");
-    MAINMENU.open(closeMainMenuCallback);
+    openMainMenu();
   }
 
 }
@@ -1048,10 +1044,17 @@ void bluredBackground() {
     GD.Vertex2ii(800, 480);
 }
 
+void openMainMenu() {
+   if (anyDialogOpen()) {
+      closeAllOpenDialogs();
+    }
+    MAINMENU.open(closeMainMenuCallback);
+}
+
 void handleMenuScrolldown(){
 
   if (gestureDetected == GEST_MOVE_DOWN && MAINMENU.active == false) {
-    MAINMENU.open(closeMainMenuCallback);
+    openMainMenu();
     return; // start the animation etc. next time, so UI that needs to reduce details have time to reach.
   }  
   
