@@ -79,6 +79,11 @@ static st_reg init_state[] =
 
 bool full_board = true; // set to true to account for shunt and gain/offsets other places that dac/adc
 
+void ADCClass::disable_ADC_DAC_SPI_units(){
+   pinMode(7,OUTPUT); // mux master chip select
+   digitalWrite(7, HIGH);
+}
+
 void ADCClass::setSamplingRate(int value) {
   samplingRate = value;
   // Make sure the value is wrote into the DAC register. For example when reading current or voltage measurement.

@@ -172,6 +172,11 @@ void pushButtonInterrupt(int key, bool quickPress, bool holdAfterLongPress, bool
   }
 
 }
+
+void  disable_ADC_DAC_SPI_units() {
+  SMU[0].disable_ADC_DAC_SPI_units();
+}
+
 void setup()
 {
 
@@ -314,10 +319,7 @@ void setup()
     
 } 
 
-void disable_ADC_DAC_SPI_units(){
-   pinMode(7,OUTPUT); // mux master chip select
-   digitalWrite(7, HIGH);
-}
+
 
 
 void showStatusIndicator(int x,int y,const char* text, bool enable, bool warn) {

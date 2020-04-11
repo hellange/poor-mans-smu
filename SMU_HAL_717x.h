@@ -37,7 +37,7 @@ float DAC_RANGE_LOW;
     int init();
     int initADC();
     int initDAC();
- 
+    void disable_ADC_DAC_SPI_units();
     int8_t fltSetCommitVoltageSource(float fVoltage, bool dynamicRange);
     int8_t fltSetCommitCurrentSource(float fVoltage);
     int8_t fltSetCommitCurrentLimit(float fCurrent, int8_t up_down_both);

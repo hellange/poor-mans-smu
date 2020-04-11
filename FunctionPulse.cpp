@@ -36,8 +36,17 @@ void FunctionPulseClass::init(/*ADCClass& smu_*/) {
 }
 void FunctionPulseClass::open(OPERATION_TYPE operationType_, void (*closedFn_)(OPERATION_TYPE type)) {
   closedFn = closedFn_;
+  
   operationType = operationType_;
+
+  GD.__end();
+ 
   SMU[0].setCurrentRange(AMP1);
+     
+    SMU[0].disable_ADC_DAC_SPI_units();
+    GD.resume();
+
+    
   if (operationType == SOURCE_CURRENT) {
     max = 20.0;
     min = -20.0;
@@ -141,6 +150,7 @@ void FunctionPulseClass::render(int x, int y) {
   GD.Tag(PULSE_BUTTON_DEC);
   GD.cmd_button(x+20,y+50,80,40,28,0,"Dec");
   GD.Tag(0);
+
   
   GD.Tag(PULSE_BUTTON_INC);
   GD.cmd_button(x+130,y+50,80,40,28,0,"Inc");
