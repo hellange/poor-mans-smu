@@ -1,3 +1,5 @@
+#ifndef DIGITUTILS_H
+#define DIGITUTILS_H
 
 
 
@@ -16,3 +18,5 @@ public:
 
 };
 extern DigitUtilClass DIGIT_UTIL;
+
+#endif

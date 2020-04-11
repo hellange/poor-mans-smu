@@ -1,3 +1,7 @@
+#ifndef RAMCLASS_H
+#define RAMCLASS_H
+
+
 #include "Arduino.h"
 #include <SPI.h>
 #include "SerialRAM.h"
@@ -48,3 +52,5 @@ public:
 };
 
 extern RamClass RAM;
+
+#endif

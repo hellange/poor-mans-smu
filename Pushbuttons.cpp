@@ -5,13 +5,16 @@
 
 PushbuttonsClass PUSHBUTTONS;
 
-void PushbuttonsClass::init(int analogPin_) {
+void PushbuttonsClass::init(int analogPin_, int holdPeriodms_) {
   analogPin = analogPin_;
+  holdPeriodms = holdPeriodms_;
   Serial.print("Init Pushbuttons using analog pin ");
   Serial.println(analogPin);
 }
 
-
+void PushbuttonsClass::setCallback(void (*callback)(int button, bool quickPress, bool holdAfterLongPress, bool releaseAfterLongPress)) {
+  callbackFn = callback;
+}
 
 void PushbuttonsClass::handle() {
   
@@ -25,6 +28,7 @@ void PushbuttonsClass::handle() {
     buttonDetectedTimer = millis();
     if (buttonValue >95 && buttonValue <105) {
       buttonFunction = 0;
+      keyHeldLong= false;
     }
     else if (buttonValue >82 && buttonValue <94) {
       buttonFunction = 1;
@@ -50,13 +54,24 @@ void PushbuttonsClass::handle() {
         //we have detected button released !
         buttonDepressed ++;
         keydownTimer = 0;
+        if (color == 0xff0000) {
+          callbackFn(buttonFunction, false, false, true);
+        } else {
+          callbackFn(buttonFunction,true, false, false);
+        }
       }
     }
-    if (keydownTimer + 1000 < millis() && buttonFunction != 0){
+    if (keydownTimer + holdPeriodms < millis() && buttonFunction != 0){
       color = 0xff0000;
+      if (keyHeldLong == false) {
+        keyHeldLong = true;
+        callbackFn(99,false, true, false);
+      }
     } else {
       color = 0x00ff00;
     }
+
+   
   }
 
   if (buttonFunction != 0) {

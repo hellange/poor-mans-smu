@@ -224,11 +224,18 @@ void ADCClass::setCurrentRange(CURRENT_RANGE range) {
 
     digitalWrite(4, HIGH); 
     Serial.println("WARNING !!!!!!!!!!!!!!!!  Had to add delay here to avoid voltage drop when changing from 10mA to 1A");
-    delay(5); // WARNING !!!! Had to add delay here to avoid voltage drop when changing from 10mA to 1A.
+    delay(1); // WARNING !!!! Had to add delay here to avoid voltage drop when changing from 10mA to 1A.
                //              Why?
                //              TODO: Find out why setting the current limit right after switch causes spike !!!!
                //              With the 10ms delay, there is 10ms where the current limit is too high (as set for the 10mA range!)
+
+               // Test this by setting for example 1 volt. Then switch between ranges and verify that the output voltage 
+               // does not change significantly. I tested with DMM6500 21000 readings pr sek. You can try an oscilloscope.
+               //
+               // I have verified that its the current limit that kicks in briefly. How to fix ?
+               
     fltSetCommitCurrentLimit(setValueI/*LIMIT_DIAL.getMv()/1000.0*/, _SOURCE_AND_SINK);//printError(_PRINT_ERROR_VOLTAGE_SOURCE_SETTING);
+
 
 
   } else if (range == MILLIAMP10) {
@@ -663,6 +670,8 @@ int8_t ADCClass::fltSetCommitVoltageSource(float milliVolt, bool dynamicRange) {
   float DAC_RANGE_LOW = 0.0;
   float DAC_RANGE_HIGH = 10.0;
    uint32_t choice = 1;
+  // float DAC_RANGE_HIGH = 5.0;
+  //  uint32_t choice = 0;
    uint32_t span = (uint32_t)(choice << 2);
    
   bool serialOut = false;
@@ -672,17 +681,22 @@ int8_t ADCClass::fltSetCommitVoltageSource(float milliVolt, bool dynamicRange) {
     dac_voltage = fCurrent * 1000.0;
     Serial.print("Asking for 10mA range current limit ");
     Serial.print(fCurrent);
-    Serial.print(" mA, converting to ");
+    Serial.print(" A, converting to ");
     Serial.print(dac_voltage);
-    Serial.println(" mV out from DAC (10mA range)");
+    Serial.println(" V out from DAC (10mA range)");
+    if (dac_voltage > 10.0) {
+      dac_voltage = 10.0;
+      Serial.println("Thats too high. Set to max (10V)");
+
+    }
   } else {
     
     dac_voltage = 10.0* fCurrent * (R_shunt_1A + R_mosfetSwitch);
     Serial.print("Asking for 1A range current limit ");
     Serial.print(fCurrent);
-    Serial.print(" mA, converting to ");
+    Serial.print(" A, converting to ");
     Serial.print(dac_voltage);
-    Serial.println(" mV out from DAC (1A range)");
+    Serial.println(" V out from DAC (1A range)");
   }
 
   //dac_voltage = dac_voltage - 0.753; 

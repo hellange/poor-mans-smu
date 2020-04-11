@@ -34,6 +34,7 @@
 #include "RamClass.h"
 #include "RotaryEncoder.h"
 #include "PushButtons.h"
+#include "TrendGraph.h"
 
 
 //#define _SOURCE_AND_SINK 111
@@ -157,6 +158,13 @@ void rotaryChangedFn(float changeVal) {
       
 }
 
+void pushButtonInterrupt(int key, bool quickPress, bool holdAfterLongPress, bool releaseAfterLongPress) {
+  Serial.print("Key pressed:");
+  Serial.println(quickPress==true?"QUICK" : "");
+  Serial.println(holdAfterLongPress==true?"HOLDING" : "");
+  Serial.println(releaseAfterLongPress==true?"RELEASED AFTER HOLDING" : "");
+
+}
 void setup()
 {
 
@@ -184,7 +192,8 @@ void setup()
     pinMode(2,INPUT); // (NO!) Fan speed feedback
 
 
-    PUSHBUTTONS.init(3); // bushbuttons based on analog pin 3
+    PUSHBUTTONS.init(3, 1000); // bushbuttons based on analog pin 3, and holding 1000ms
+    PUSHBUTTONS.setCallback(pushButtonInterrupt);
     
     
     FAN.init();
@@ -278,7 +287,7 @@ void setup()
   // attachInterrupt(2, handleSampling, CHANGE);
 
 #ifdef SAMPLING_BY_INTERRUPT
-  myTimer.begin(handleSampling, 20); // in microseconds
+  myTimer.begin(handleSampling, 20); // in microseconds.Lower that 20 hangs the display... why ?
   SPI.usingInterrupt(myTimer);
 #endif
 
@@ -1189,7 +1198,7 @@ void startNullCalibration() {
 
 }
 
-void handleAutoNullAtStartup() {
+void handleAutoNull() {
 
 //   Serial.print("x ");
 //   Serial.print(nullCalibrationDone0);
@@ -1530,11 +1539,17 @@ int LM60_getTemperature() {
 }
 */
 
-
+int loopUpdateTimer = millis();
 void loop() {
 
-  V_CALIBRATION.autoCalADCfromDAC();
-  C_CALIBRATION.autoCalADCfromDAC();
+  if (V_CALIBRATION.autoCalInProgress) {
+    V_CALIBRATION.autoCalADCfromDAC();
+  } 
+  if (C_CALIBRATION.autoCalInProgress) {
+    C_CALIBRATION.autoCalADCfromDAC();
+  } 
+  
+
   // No need to update display more often that the eye can detect.
   // Too often will cause jitter in the sampling because display and DAC/ADC share same SPI port.
   // Will that be improved by Teensy 4 where there are more that one SPI port ?
@@ -1542,7 +1557,8 @@ void loop() {
   // Note that the scrolling speed and gesture detection speed will be affected.
   // 
   ROTARY_ENCODER.handle(SMU[0].use100uVSetResolution());
-  
+
+  //TODO: Not sure if this should be here.... this is more that "display time"... it also handles sampling of not driven by timer interrupt...
   if (displayUpdateTimer + 20 > millis()) {
     return; 
   }
@@ -1551,180 +1567,40 @@ void loop() {
 
   //Serial.print("Temperature:");
   //Serial.println(LM60_getTemperature());
- 
    
   displayUpdateTimer = millis();
   
   if (functionType == DIGITIZE) {
     loopDigitize();
   } else if (functionType == GRAPH) {
-   loopGraph();
+
+//    if (loopUpdateTimer + 10 > millis() ) {
+//      return;
+//    }
+//    loopUpdateTimer = millis();
+
+    OPERATION_TYPE ot = getOperationType();
+    disable_ADC_DAC_SPI_units();
+    GD.resume();
+    GD.Clear();
+    detectGestures();
+    renderMainHeader();
+    TRENDGRAPH.loop(ot);
+    handleMenuScrolldown();
+    int tag = GD.inputs.tag;
+    // TODO: don't need to check buttons for inactive menus or functions...
+    MAINMENU.handleButtonAction(tag);
+    GD.swap();
+    GD.__end();
+    
   }
-    else {
+  else {
     loopMain();
   }
 }
 
-int loopUpdateTimer = millis();
 
 
-void loopGraph() {
-  if (loopUpdateTimer + 10 > millis() ) {
-    return;
-  }
-  loopUpdateTimer = millis();
-  operationType = getOperationType();
-    disable_ADC_DAC_SPI_units();
-
- GD.resume();
-      GD.Clear();
-detectGestures();
-    renderMainHeader();
-
- int logAddress = RAM.getCurrentLogAddress();
- int pixels = 400;
- int max = RAM.getMaxLogAddress();
-
- GD.LineWidth(20);
-  GD.Begin(LINE_STRIP);
-  GD.ColorA(255);
-  GD.ColorRGB(0xff0000);
-  uint16_t logAdr = logAddress;
- float maxV = -1000000.0;
- float minV = 1000000.0;
- int x = 0;
- float span;
-
-
- int adr = RAM.getCurrentLogAddress();
- //for (int adr = logAddress<200 ? 0: logAddress - 200; adr<logAddress; adr++) {
- for (int i = 0; i< 200; i++) {
-
- timedLog logData;
-   GD.__end();
-
-   logData = RAM.readLogData(adr);
-   GD.resume();
-   
-   float v = logData.value.val;
-   if (v>maxV) {
-    maxV = v;
-   } else if (v<minV) {
-    minV = v;
-   }
-    adr = RAM.nextAdr(adr);
-    if (adr == -1) {
-    //  break;
-    }
-
- }
-
-  GD.ColorRGB(0xffffff);
-
- float mid;
- adr = RAM.getCurrentLogAddress();
-
- //for (int adr = logAddress<200 ? 0: logAddress - 200; adr<logAddress; adr++) {
- for (int i = 0; i< 200; i++) {
-
-    adr = RAM.nextAdr(adr);
-    if (adr == -1) {
-      continue;
-    }
-
-    
-   timedLog logData;
-   GD.__end();
-
-   logData = RAM.readLogData(adr);
-   GD.resume();
-   
-   float v = logData.value.val;
-
-   span = maxV - minV;
-  
-   mid = maxV - (span/2.0);
-
-   float y =  (mid - v) *300.0 / span;
-   
-
-
-   
-   GD.Vertex2ii(150 + 600-x, 240 + (int)y);
-   x=x+3;
-
-
- }
- //VOLT_DISPLAY.renderMeasured(100,200, span);
-
-
-DIGIT_UTIL.renderValue(10,  80 ,maxV, 1, 1); 
-DIGIT_UTIL.renderValue(10,  80+150 ,mid, 1, 1); 
-DIGIT_UTIL.renderValue(10,  80+150+30 ,span, 1, 1); 
-DIGIT_UTIL.renderValue(10,  80+300 ,minV, 1, 1); 
-
- //VOLT_DISPLAY.renderMeasured(100,10, maxV);
- //VOLT_DISPLAY.renderMeasured(100,400, minV);
-
- 
- x = 0;
-  adr = RAM.getCurrentLogAddress();
-
- //for (int adr = logAddress<200 ? 0: logAddress - 200; adr<logAddress; adr=adr+40) {   
-for (int i = 0; i< 200; i++) {
-
-    adr = RAM.nextAdr(adr);
-    if (adr == -1) {
-      continue;
-    }
-    if (adr%40 == 0) {
-    
- timedLog logData;
-   GD.__end();
-
-   logData = RAM.readLogData(adr);
-   GD.resume();
-   float volt = logData.value.val;
-   uint32_t t = logData.time.val;
-
-
-
-
-unsigned long allSeconds=t/1000;
-int runHours= allSeconds/3600;
-int secsRemaining=allSeconds%3600;
-int runMinutes=secsRemaining/60;
-int runSeconds=secsRemaining%60;
-
-char buf[21];
-sprintf(buf,"Runtime%02d:%02d:%02d",runHours,runMinutes,runSeconds);
-Serial.println(buf);
-
-
-  GD.cmd_number(150+600-x-30,400, 27, 2, runHours);
-     GD.cmd_text(150+600-x+20-30, 400 ,   27, 0, ":");
-
-  GD.cmd_number(150+600-x+ 25-30,400, 27, 2, runMinutes);
-       GD.cmd_text(150+600-x+45-30, 400 ,   27, 0, ":");
-
-  GD.cmd_number(150+600-x+ 50-30 ,400, 27, 2, runSeconds);
-
-  //GD.cmd_number(150+600-x,400, 27, 0, t/1000);
-   x=x+3*40;
-    }
-  
- }
-
-
-      handleMenuScrolldown();
-
- int tag = GD.inputs.tag;
-  // // TODO: don't need to check buttons for inactive menus or functions...
-  MAINMENU.handleButtonAction(tag);
- 
-      GD.swap();
-      GD.__end();
-}
 
 
 int samplingDelayTimer = millis();
@@ -1735,7 +1611,6 @@ void loopDigitize() {
   }
   
   loopUpdateTimer = millis();
-  //handleAutoNullAtStartup();
   operationType = getOperationType();
   disable_ADC_DAC_SPI_units();
   
@@ -1882,7 +1757,7 @@ digitizeCounter = 0;
 void loopMain()
 {
  
-  handleAutoNullAtStartup();
+  handleAutoNull();
   operationType = getOperationType();
   
 
@@ -2209,6 +2084,7 @@ void loopMain()
   handleMenuScrolldown();
 
   PUSHBUTTONS.handle();
+  
 
   if (V_CALIBRATION.autoCalInProgress or C_CALIBRATION.autoCalInProgress) {
     notification("Auto calibration in progress...");
