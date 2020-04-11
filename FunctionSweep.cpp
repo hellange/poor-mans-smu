@@ -89,7 +89,7 @@ if (operationType == SOURCE_VOLTAGE) {
 }
  
   GD.ColorA(255);
-  y=y+30;
+  y=y+40;
 
   if (high < 0) {
     GD.cmd_text(x+220, y ,  31, high, "-");
