@@ -2163,17 +2163,15 @@ void loopMain()
    
     int tag = checkButtons();
     
-    
-    
-
    // #endif // end not using simulator
     
     // TODO: don't need to check buttons for inactive menus or functions...
     MAINMENU.handleButtonAction(tag);
     FUNCTION_PULSE.handleButtonAction(tag);
-    FUNCTION_SWEEP.handleButtonAction(tag);
 
-    
+    // Use raw tags for sweep function. TODO: update checkBUttons to handle holding etc.
+    FUNCTION_SWEEP.handleButtonAction(GD.inputs.tag); 
+
   }
 
  

@@ -7,6 +7,7 @@ class FunctionSweepClass {
   
   private:
     //ADCClass smu;
+    float previousSweepValue = 0.0;
     float currentSweepValue = 0.0;
     int currentSweepDir = 1;
     OPERATION_TYPE operationType;

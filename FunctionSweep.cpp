@@ -4,6 +4,8 @@
 #include "GD2.h"
 #include "tags.h"
 #include "colors.h"
+#include "digit_util.h"
+
 
 FunctionSweepClass FUNCTION_SWEEP;
 
@@ -33,13 +35,40 @@ void FunctionSweepClass::close() {
 
 
 int sinceLastPress2 = millis();
+int cnt = 0;
+int lastButtonTag;
+int pressDuration = 0;
+int pauseBetweenChanges = 500;
 void FunctionSweepClass::handleButtonAction(int inputTag) {
 
   float buttonStep;
 
+ 
   buttonStep = operationType == SOURCE_CURRENT ? 1.0 : 100.0;
 
-  if (sinceLastPress2 + 100 < millis()) {
+
+  if (inputTag == 0) {
+    pressDuration = 0;
+  }
+  
+  if (lastButtonTag == inputTag) {
+    if (sinceLastPress2 + pauseBetweenChanges > millis()) {
+      return;
+    }
+  }
+
+  pressDuration++;
+  if (pressDuration >= 15) {
+    pauseBetweenChanges = 50;
+  }  else if (pressDuration >= 5) {
+    pauseBetweenChanges = 125;
+  } else {
+    pauseBetweenChanges = 250;
+  }
+  
+  sinceLastPress2 =millis();
+  lastButtonTag = inputTag;
+
     if (inputTag == SWEEP_BUTTON_INC) {
        duration = duration +100;
     } else if (inputTag == SWEEP_BUTTON_DEC) {
@@ -58,36 +87,17 @@ void FunctionSweepClass::handleButtonAction(int inputTag) {
      currentSweepValue = 0.0;
      currentSweepDir = 1; 
     }
-
     
-    sinceLastPress2 =millis();
-  }
 }
 void FunctionSweepClass::render(int x, int y) {
 
 
   // heading
-  if (operationType == SOURCE_VOLTAGE) {
-    GD.ColorRGB(COLOR_VOLT);
-  } else {
-    GD.ColorRGB(COLOR_CURRENT);
-  }
-
+  GD.ColorRGB(operationType == SOURCE_VOLTAGE?COLOR_VOLT:COLOR_CURRENT);
   GD.ColorA(120);
   GD.cmd_text(x+20, y + 2 ,   29, 0, "SOURCE SWEEP");
   GD.cmd_text(x+20 + 1, y + 2 + 1 ,   29, 0, "SOURCE SWEEP");
 
- 
-  
-  
-if (operationType == SOURCE_VOLTAGE) {
-  //high = 1000.0;
-  //low = -1000.0;
-  //step = 100.0;
-} else {
-  
-}
- 
   GD.ColorA(255);
   y=y+40;
 
@@ -99,14 +109,18 @@ if (operationType == SOURCE_VOLTAGE) {
   
   GD.cmd_text(x+345, y ,  31, 0, "to");
    if (low < 0) { 
-    GD.cmd_text(x+385, y ,  31, 0, "-");
+    GD.cmd_text(x+390, y ,  31, 0, "-");
     x=x+20;
   }
+
+  GD.ColorRGB(operationType == SOURCE_VOLTAGE?COLOR_VOLT:COLOR_CURRENT);
+
   GD.cmd_number(x+385, y, 31, 4, abs(low));
   GD.cmd_text(x+490, y ,  31, 0, operationType == SOURCE_VOLTAGE ? "mV": "mA");
 
 
-   GD.Tag(SWEEP_BUTTON_VOLT_DEC);
+  GD.ColorRGB(0x000000);
+  GD.Tag(SWEEP_BUTTON_VOLT_DEC);
   GD.cmd_button(x+20,y,80,40,28,0,"Dec");
   GD.Tag(0);
   
@@ -117,8 +131,12 @@ if (operationType == SOURCE_VOLTAGE) {
   
   y=y+50;
 
+  GD.ColorRGB(operationType == SOURCE_VOLTAGE?COLOR_VOLT:COLOR_CURRENT);
+
   GD.cmd_number(x+242, y, 31, 4, abs(step));
   GD.cmd_text(x+345, y ,  31, 0, "step");
+
+  GD.ColorRGB(0x000000);
 
   GD.Tag(SWEEP_BUTTON_STEP_DEC);
   GD.cmd_button(x+20,y,80,40,28,0,"Dec");
@@ -130,6 +148,8 @@ if (operationType == SOURCE_VOLTAGE) {
   
   
   y=y+50;
+  GD.ColorRGB(operationType == SOURCE_VOLTAGE?COLOR_VOLT:COLOR_CURRENT);
+
   GD.cmd_number(x+242, y, 31, 4, abs(duration));
   GD.cmd_text(x+345, y ,  31, 0, "duration");
 
@@ -148,6 +168,11 @@ if (operationType == SOURCE_VOLTAGE) {
   GD.Tag(SWEEP_BUTTON_CLEAR);
   GD.cmd_button(x+600,y,80,40,28,0,"Clear");
   GD.Tag(0);
+
+  GD.ColorRGB(COLOR_VOLT);
+  DIGIT_UTIL.renderValue(x + 560,  y-50 , currentSweepValue, 3, -1); 
+  GD.ColorRGB(0x444444);
+  DIGIT_UTIL.renderValue(x + 560,  y-80 , previousSweepValue, 3, -1); 
 
 
   GD.__end();
@@ -170,6 +195,8 @@ void FunctionSweepClass::operateSmuVoltage(float high, float low, float step, in
      } else if (currentSweepDir == -1 && currentSweepValue <= low) {
       currentSweepDir = +1;
      }
+     
+     previousSweepValue = currentSweepValue;
      currentSweepValue += step*currentSweepDir;
      // Note that DAC is calibrated based on dynamic range. If all swipe values
      // are within a DAC softspan range, you can set this to dynamic to get better accuracy (last argument true instead of false)
