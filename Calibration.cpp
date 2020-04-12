@@ -696,8 +696,10 @@ void CalibrationClass::renderCal(int x, int y, float valM, float setM, bool cur,
     GD.ColorRGB(0x000000);
 
     GD.Tag(BUTTON_DAC_GAIN_COMP_POS_UP);
+    GD.ColorRGB(DIGIT_UTIL.indicateColor(0x000000, 0x00ff00, 50, BUTTON_DAC_GAIN_COMP_POS_UP));
     GD.cmd_button(x+10,y+90,100,50,29,0,"UP");
     GD.Tag(BUTTON_DAC_GAIN_COMP_POS_DOWN);
+    GD.ColorRGB(DIGIT_UTIL.indicateColor(0x000000, 0x00ff00, 50,BUTTON_DAC_GAIN_COMP_POS_DOWN));
     GD.cmd_button(x+10,y+150,100,50,29,0,"DOWN");
   GD.Tag(0);
     x=x+10;
@@ -715,31 +717,33 @@ void CalibrationClass::renderCal(int x, int y, float valM, float setM, bool cur,
     GD.ColorRGB(0x000000);
   
     GD.Tag(BUTTON_ADC_GAIN_COMP_POS_UP);
+    GD.ColorRGB(DIGIT_UTIL.indicateColor(0x000000, 0x00ff00, 50, BUTTON_ADC_GAIN_COMP_POS_UP));
     GD.cmd_button(x+120,y+90,100,50,29,0,"UP");
     GD.Tag(BUTTON_ADC_GAIN_COMP_POS_DOWN);
+    GD.ColorRGB(DIGIT_UTIL.indicateColor(0x000000, 0x00ff00, 50, BUTTON_ADC_GAIN_COMP_POS_DOWN ));
     GD.cmd_button(x+120,y+150,100,50,29,0,"DOWN");
-GD.Tag(0);
+    GD.Tag(0);
 
- x=x+120;
+    x=x+120;
     GD.ColorRGB(0xaaaaaa);
     
-      GD.cmd_text(x+120, y + 45, 27, 0, "DAC zero");
-      DIGIT_UTIL.renderValue(x + 110,  y+65 ,getDacZeroComp(), 1, -1); 
-      GD.cmd_text(x+203, y + 68, 27, 0, "");
+    GD.cmd_text(x+120, y + 45, 27, 0, "DAC zero");
+    DIGIT_UTIL.renderValue(x + 110,  y+65 ,getDacZeroComp(), 1, -1); 
+    GD.cmd_text(x+203, y + 68, 27, 0, "");
    
     GD.ColorRGB(0x000000);
   
     GD.Tag(BUTTON_DAC_ZERO_COMP_UP);
+    GD.ColorRGB(DIGIT_UTIL.indicateColor(0x000000, 0x00ff00, 50, BUTTON_DAC_ZERO_COMP_UP));
     GD.cmd_button(x+120,y+90,100,50,29,0,"UP");
     GD.Tag(BUTTON_DAC_ZERO_COMP_DOWN);
+    GD.ColorRGB(DIGIT_UTIL.indicateColor(0x000000, 0x00ff00, 50, BUTTON_DAC_ZERO_COMP_DOWN));
     GD.cmd_button(x+120,y+150,100,50,29,0,"DOWN");
     
     GD.Tag(0); // Seems to fix problem with function calles when touching a special place on the screen... why ????
 
-
-x=x-70;
+    x=x-70;
     
-
     GD.ColorRGB(0xaaaaaa);
 
     GD.cmd_text(x+300,y+45,27,0,"ADC NullV(1A)");
@@ -756,9 +760,11 @@ x=x-70;
     GD.ColorRGB(0x000000);
 
     GD.Tag(BUTTON_DAC_NONLINEAR_CALIBRATE);
+    GD.ColorRGB(DIGIT_UTIL.indicateColor(0x000000, 0x00ff00, 50, BUTTON_DAC_NONLINEAR_CALIBRATE));
     GD.cmd_button(x+620,y+45,120,50,29,0,"AUTOCAL");
 
     GD.Tag(BUTTON_DAC_ZERO_CALIBRATE);
+    GD.ColorRGB(DIGIT_UTIL.indicateColor(0x000000, 0x00ff00, 50, BUTTON_DAC_ZERO_CALIBRATE));
     GD.cmd_button(x+620,y+100,120,50,29,0,"ZEROCAL");
     
     GD.Tag(0);

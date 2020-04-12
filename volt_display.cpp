@@ -36,10 +36,12 @@ void VoltDisplayClass::renderMeasured(int x, int y, float rawMv, bool compliance
     //GD.cmd_number(x+307, y+2, 1, 3, uv);
     GD.ColorA(255);
     GD.cmd_number(x+307, y+2, 1, 2, uv/10.0);
-  //GD.ColorA(100);
-   // GD.cmd_number(x+307+110, y+2+48, 31, 1, (uv/10.0 - ((int)(uv/10.0)))*10.0);
 
-        GD.ColorA(255);
+    // show last digit in uV. Note that the HW is NOT designed with that precision !!!!
+    //GD.ColorA(100);
+    //GD.cmd_number(x+307+110, y+2+48, 31, 1, (uv/10.0 - ((int)(uv/10.0)))*10.0);
+
+    GD.ColorA(255);
 
     GD.cmd_text(x+470, y+2,  1, 0, "V"); 
   } else {

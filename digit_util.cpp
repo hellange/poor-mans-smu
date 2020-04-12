@@ -132,6 +132,21 @@ int DigitUtilClass::blinkColor(int colorHigh, int colorLow, int period) {
   return color;
 }
 
+int DigitUtilClass::indicateColor(int normalColor, int indicatorColor,int period, int tag) {
+  if  (tag != currentTag) {
+    return normalColor;
+  }
+  if (timeSinceIndicated + 100 > millis()) {
+    return indicatorColor;
+  } else {
+    return normalColor;
+  }
+}
+void DigitUtilClass::startIndicator(int tag) {
+  currentTag = tag;
+  timeSinceIndicated= millis();
+}
+
 
 
 DigitUtilClass DIGIT_UTIL;

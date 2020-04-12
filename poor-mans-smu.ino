@@ -500,18 +500,6 @@ bool closeAllOpenDialogs() {
   }
 }
 
-// TODO: Move to separate util class ?
-int timeSinceIndicated = millis() + 1000;
-int indicateColor(int normalColor, int indicatorColor,int period) {
-   if (timeSinceIndicated + 100 > millis()) {
-     return indicatorColor;
-   } else {
-     return normalColor;
-   }
-}
-void startIndicator() {
-  timeSinceIndicated= millis();
-}
 
 void handleSliders(int x, int y) { 
   
@@ -531,15 +519,8 @@ void handleSliders(int x, int y) {
   GD.cmd_number(605+x,y+60, 27, 0, V_STATS.getNrOfSamplesBeforeStore());
 
   if (!anyDialogOpen()) {
-   GD.Tag(BUTTON_CLEAR_BUFFER);
-//   GD.ColorRGB(0x000000);
-//   // just make sure that the button is lit a short period to indicate that you have pusked it...
-//   if (timeSinceButtonPushed + 100 > millis()) {
-//     GD.ColorRGB(0x00ff00);
-//   } else {
-//     GD.ColorRGB(0x000000);
-//   }
-    GD.ColorRGB(indicateColor(0x000000, 0x00ff00, 50));
+    GD.Tag(BUTTON_CLEAR_BUFFER);
+    GD.ColorRGB(DIGIT_UTIL.indicateColor(0x000000, 0x00ff00, 50, BUTTON_CLEAR_BUFFER));
     GD.cmd_button(x+500,y+130,95,50,29,0,"CLEAR");
   }
   
@@ -630,39 +611,29 @@ void renderExperimental(int x, int y, float valM, float setM, bool cur, bool les
 
   int sr = SMU[0].getSamplingRate();
 
-
-
-
   GD.ColorRGB(sr==5?0x00ff00:0x0000);
   GD.Tag(BUTTON_SAMPLE_RATE_5);
   GD.cmd_button(x-50,y-20,95,40,29,0,"2.5Hz");
-
-
-
-    GD.ColorRGB(sr==20?0x00ff00:0x0000);
-
+  GD.Tag(0);
+  
+  GD.ColorRGB(sr==20?0x00ff00:0x0000);
   GD.Tag(BUTTON_SAMPLE_RATE_20);
   GD.cmd_button(x-50,y+40-15,95,40,29,0,"10Hz");
-
+  GD.Tag(0);
+  
   GD.ColorRGB(sr==50?0x00ff00:0x0000);
-
   GD.Tag(BUTTON_SAMPLE_RATE_50);
   GD.cmd_button(x-50,y+80-15+5,95,40,29,0,"25Hz");
+  GD.Tag(0);
 
+  // Adding another button gives problems when the main menu scrolls down... 
+     if (lessDetails) {
+    return; 
+  }
 
-// Adding another button gives problems when the main menu scrolls down... 
-   if (lessDetails) {
-  return; 
-}
-
-    GD.ColorRGB(sr==100?0x00ff00:0x0000);
-
+  GD.ColorRGB(sr==100?0x00ff00:0x0000);
   GD.Tag(BUTTON_SAMPLE_RATE_100);
   GD.cmd_button(x-50,y+120-15+10,95,40,29,0,"50Hz");
-
-
-
-  
   GD.Tag(0);
   
 }
@@ -1864,7 +1835,6 @@ int checkButtons() {
       return 0;
     } else {
       Serial.println("Button pressed :-)");
-
     }
 
 
@@ -1896,7 +1866,7 @@ int checkButtons() {
       Serial.println("clearbuffer set");
       V_STATS.clearBuffer();
       C_STATS.clearBuffer();
-      startIndicator(); 
+      DIGIT_UTIL.startIndicator(tag); 
     } else if (tag == BUTTON_CUR_AUTO) { //TODO: Change name
       if (timeSinceLastChange + 500 < millis()){
         Serial.println("current range set");
@@ -1971,6 +1941,7 @@ int checkButtons() {
         return;
       } 
        timeSinceLastChange = millis();
+       DIGIT_UTIL.startIndicator(tag);
        float mv = SOURCE_DIAL.getMv();
        if (operationType == SOURCE_VOLTAGE) {
          if (mv < 0) {
@@ -1997,6 +1968,7 @@ int checkButtons() {
         return;
       } 
        timeSinceLastChange = millis();
+       DIGIT_UTIL.startIndicator(tag);
 
        float mv = SOURCE_DIAL.getMv();
        if (operationType == SOURCE_VOLTAGE) {
@@ -2024,8 +1996,9 @@ int checkButtons() {
        if (timeSinceLastChange + 200 > millis()){
         return;
         
-      } 
-              timeSinceLastChange = millis();
+       } 
+       timeSinceLastChange = millis();
+       DIGIT_UTIL.startIndicator(tag);
 
        float mv = SOURCE_DIAL.getMv();
        if (operationType == SOURCE_VOLTAGE) {
@@ -2046,8 +2019,9 @@ int checkButtons() {
     } else if (tag == BUTTON_ADC_GAIN_COMP_POS_DOWN) {
        if (timeSinceLastChange + 200 > millis()){
         return;
-      } 
-              timeSinceLastChange = millis();
+       } 
+       timeSinceLastChange = millis();
+       DIGIT_UTIL.startIndicator(tag);
 
        float mv = SOURCE_DIAL.getMv();
        if (operationType == SOURCE_VOLTAGE) {
@@ -2064,12 +2038,12 @@ int checkButtons() {
          }
        }
       
-       
     } else if (tag == BUTTON_DAC_ZERO_COMP_UP) {
-       if (timeSinceLastChange + 200 > millis()){
+      if (timeSinceLastChange + 200 > millis()){
         return;
       } 
-       timeSinceLastChange = millis();
+      timeSinceLastChange = millis();
+       DIGIT_UTIL.startIndicator(tag);
 
        float mv = SOURCE_DIAL.getMv();
        if (operationType == SOURCE_VOLTAGE) {
@@ -2083,67 +2057,54 @@ int checkButtons() {
           C_CALIBRATION.adjDacZeroComp(+0.000002);
           GD.__end();
          if (SMU[0].fltSetCommitCurrentSource(mv)) printError(_PRINT_ERROR_VOLTAGE_SOURCE_SETTING);
-         GD.resume();
-
-          
+         GD.resume();    
        }
-
-       
-       
     }
     else if (tag == BUTTON_DAC_ZERO_COMP_DOWN) {
        if (timeSinceLastChange + 200 > millis()){
-        return;
-      } 
+         return;
+       } 
        timeSinceLastChange = millis();
+       DIGIT_UTIL.startIndicator(tag);
 
        float mv = SOURCE_DIAL.getMv();
        if (operationType == SOURCE_VOLTAGE) {
-          V_CALIBRATION.adjDacZeroComp(-0.000002);
-
-          GD.__end();
+         V_CALIBRATION.adjDacZeroComp(-0.000002);
+         GD.__end();
          if (SMU[0].fltSetCommitVoltageSource(mv, true)) printError(_PRINT_ERROR_VOLTAGE_SOURCE_SETTING);
          GD.resume();
-         
        } else {
-          C_CALIBRATION.adjDacZeroComp(-0.000002);
-          GD.__end();
+         C_CALIBRATION.adjDacZeroComp(-0.000002);
+         GD.__end();
          if (SMU[0].fltSetCommitCurrentSource(mv)) printError(_PRINT_ERROR_VOLTAGE_SOURCE_SETTING);
-         GD.resume();
-
-          
+         GD.resume(); 
        }
-
-       
-       
     }
-    
     else if (tag == BUTTON_DAC_NONLINEAR_CALIBRATE) {
        if (timeSinceLastChange + 1000 > millis()){
         return;
        } 
        timeSinceLastChange = millis();
-       if (operationType == SOURCE_VOLTAGE) {
-               Serial.println("Start auto calibration of dac non linearity in voltage source mode");
+       DIGIT_UTIL.startIndicator(tag);
 
+       if (operationType == SOURCE_VOLTAGE) {
+         Serial.println("Start auto calibration of dac non linearity in voltage source mode");
          V_CALIBRATION.startAutoCal();
        } else {
-                       Serial.println("Start auto calibration of dac non linearity in current source mode");
-
+         Serial.println("Start auto calibration of dac non linearity in current source mode");
          C_CALIBRATION.startAutoCal();
        }
-       
-    
+      
     } else if (tag == BUTTON_DAC_ZERO_CALIBRATE) {
-      if (timeSinceLastChange + 1000 > millis()){
+       if (timeSinceLastChange + 1000 > millis()){
         return;
        } 
        Serial.println("Start zero calibration of dac....");
+       DIGIT_UTIL.startIndicator(tag);
+
        timeSinceLastChange = millis();
        startNullCalibration();
-       
     }
-
     return tag;
 }
 
