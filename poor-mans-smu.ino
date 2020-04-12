@@ -1027,6 +1027,7 @@ void bluredBackground() {
 }
 
 void openMainMenu() {
+
    if (anyDialogOpen()) {
       closeAllOpenDialogs();
     }
@@ -1816,6 +1817,10 @@ int y[10];
 int nrOfChecks = 3;
 int checkButtons() {
 
+    if (MAINMENU.active == true) {
+      return 0;
+    }
+    
    int trackTag = GD.inputs.track_tag & 0xff;
    if (trackTag != 0 && trackingOngoing) {
      return 0;
@@ -1824,6 +1829,8 @@ int checkButtons() {
    int tag;
 
     tag = GD.inputs.tag;
+
+
 
     if (tag>0 && tagTimer + 20 > millis()) {
        return 0;
@@ -2193,11 +2200,12 @@ void loopMain()
 
    
     int tag = checkButtons();
+
     
    // #endif // end not using simulator
     
     // TODO: don't need to check buttons for inactive menus or functions...
-    MAINMENU.handleButtonAction(tag);
+    MAINMENU.handleButtonAction(GD.inputs.tag);
     FUNCTION_PULSE.handleButtonAction(tag);
 
     // Use raw tags for sweep function. TODO: update checkBUttons to handle holding etc.

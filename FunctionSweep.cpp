@@ -25,6 +25,9 @@ void FunctionSweepClass::open(OPERATION_TYPE operationType_, void (*closedFn_)(O
   closedFn = closedFn_;
   pulseTimer = millis();
   operationType = operationType_;
+
+  previousSweepValues[0]=0;
+  previousSweepValues[1]=0;
 }
 
 void FunctionSweepClass::close() {
@@ -89,6 +92,7 @@ void FunctionSweepClass::handleButtonAction(int inputTag) {
     }
     
 }
+
 void FunctionSweepClass::render(int x, int y) {
 
 
@@ -102,20 +106,20 @@ void FunctionSweepClass::render(int x, int y) {
   y=y+40;
 
   if (high < 0) {
-    GD.cmd_text(x+220, y ,  31, high, "-");
+    GD.cmd_text(x+220, y ,  31, 0/*high*/, "-");
     x=x+20;
   }
-  GD.cmd_number(x+242, y, 31, 4, abs(high));
+  GD.cmd_number(x+242, y+10, 30, 5, abs(high));
   
   GD.cmd_text(x+345, y ,  31, 0, "to");
    if (low < 0) { 
-    GD.cmd_text(x+390, y ,  31, 0, "-");
+    GD.cmd_text(x+390, y+10 ,  30, 0, "-");
     x=x+20;
   }
 
   GD.ColorRGB(operationType == SOURCE_VOLTAGE?COLOR_VOLT:COLOR_CURRENT);
 
-  GD.cmd_number(x+385, y, 31, 4, abs(low));
+  GD.cmd_number(x+385, y+10, 30, 5, abs(low));
   GD.cmd_text(x+490, y ,  31, 0, operationType == SOURCE_VOLTAGE ? "mV": "mA");
 
 
@@ -169,11 +173,37 @@ void FunctionSweepClass::render(int x, int y) {
   GD.cmd_button(x+600,y,80,40,28,0,"Clear");
   GD.Tag(0);
 
-  GD.ColorRGB(COLOR_VOLT);
-  DIGIT_UTIL.renderValue(x + 560,  y-50 , currentSweepValue, 3, -1); 
-  GD.ColorRGB(0x444444);
-  DIGIT_UTIL.renderValue(x + 560,  y-80 , previousSweepValue, 3, -1); 
+    GD.ColorRGB(COLOR_VOLT);
 
+ 
+ 
+
+  float t = millis() - pulseTimer;
+  t=t/(duration/2.0);  
+
+  GD.ScissorXY(560,y-50-30-30);
+  GD.ScissorSize(300,130);
+  GD.Begin(RECTS);  
+
+  /*
+  GD.ColorRGB(COLOR_VOLT);
+  GD.LineWidth(10);
+  GD.Vertex2ii(x+560, y-50-30);
+  GD.Vertex2ii(x+560+200 ,y-20);
+  */
+ 
+  GD.ColorRGB(COLOR_VOLT);
+  DIGIT_UTIL.renderValue(x + 560,  y-50-t*30 , currentSweepValue, 3, -1); 
+  GD.ColorRGB(0x666666);
+  DIGIT_UTIL.renderValue(x + 560,  y-80-t*30 , previousSweepValues[0], 3, -1); 
+  GD.ColorRGB(0x333333);
+  DIGIT_UTIL.renderValue(x + 560,  y-110-t*30 , previousSweepValues[1], 3, -1); 
+
+  
+  GD.ScissorXY(0,0);
+  GD.ScissorSize(800-1,480-1);
+
+  
 
   GD.__end();
 
@@ -195,8 +225,9 @@ void FunctionSweepClass::operateSmuVoltage(float high, float low, float step, in
      } else if (currentSweepDir == -1 && currentSweepValue <= low) {
       currentSweepDir = +1;
      }
-     
-     previousSweepValue = currentSweepValue;
+
+     previousSweepValues[1] = previousSweepValues[0];
+     previousSweepValues[0] = currentSweepValue;
      currentSweepValue += step*currentSweepDir;
      // Note that DAC is calibrated based on dynamic range. If all swipe values
      // are within a DAC softspan range, you can set this to dynamic to get better accuracy (last argument true instead of false)
