@@ -1942,7 +1942,7 @@ int checkButtons() {
       } 
        timeSinceLastChange = millis();
        DIGIT_UTIL.startIndicator(tag);
-       float mv = SOURCE_DIAL.getMv();
+       float mv = SMU[0].getSetValuemV();
        if (operationType == SOURCE_VOLTAGE) {
          if (mv < 0) {
             V_CALIBRATION.adjDacGainCompNeg(0.000005);
@@ -1969,8 +1969,7 @@ int checkButtons() {
       } 
        timeSinceLastChange = millis();
        DIGIT_UTIL.startIndicator(tag);
-
-       float mv = SOURCE_DIAL.getMv();
+       float mv = SMU[0].getSetValuemV();
        if (operationType == SOURCE_VOLTAGE) {
          if (mv < 0) {
             V_CALIBRATION.adjDacGainCompNeg(-0.000001);
@@ -1999,8 +1998,7 @@ int checkButtons() {
        } 
        timeSinceLastChange = millis();
        DIGIT_UTIL.startIndicator(tag);
-
-       float mv = SOURCE_DIAL.getMv();
+       float mv = SMU[0].getSetValuemV();
        if (operationType == SOURCE_VOLTAGE) {
   
          if (mv < 0) {
@@ -2022,8 +2020,7 @@ int checkButtons() {
        } 
        timeSinceLastChange = millis();
        DIGIT_UTIL.startIndicator(tag);
-
-       float mv = SOURCE_DIAL.getMv();
+       float mv = SMU[0].getSetValuemV();
        if (operationType == SOURCE_VOLTAGE) {
          if (mv < 0) {
             V_CALIBRATION.adjAdcGainCompNeg(-0.000001);
@@ -2044,8 +2041,7 @@ int checkButtons() {
       } 
       timeSinceLastChange = millis();
        DIGIT_UTIL.startIndicator(tag);
-
-       float mv = SOURCE_DIAL.getMv();
+       float mv = SMU[0].getSetValuemV();
        if (operationType == SOURCE_VOLTAGE) {
           V_CALIBRATION.adjDacZeroComp(+0.000002);
 
@@ -2066,8 +2062,7 @@ int checkButtons() {
        } 
        timeSinceLastChange = millis();
        DIGIT_UTIL.startIndicator(tag);
-
-       float mv = SOURCE_DIAL.getMv();
+       float mv = SMU[0].getSetValuemV();
        if (operationType == SOURCE_VOLTAGE) {
          V_CALIBRATION.adjDacZeroComp(-0.000002);
          GD.__end();
