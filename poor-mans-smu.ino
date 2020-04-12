@@ -1972,9 +1972,9 @@ int checkButtons() {
        float mv = SMU[0].getSetValuemV();
        if (operationType == SOURCE_VOLTAGE) {
          if (mv < 0) {
-            V_CALIBRATION.adjDacGainCompNeg(-0.000001);
+            V_CALIBRATION.adjDacGainCompNeg(-0.000005);
          } else {
-            V_CALIBRATION.adjDacGainCompPos(-0.000001);
+            V_CALIBRATION.adjDacGainCompPos(-0.000005);
          }
          //if (operationType == SOURCE_VOLTAGE) {
          GD.__end();
