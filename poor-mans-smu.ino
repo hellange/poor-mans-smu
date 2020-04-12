@@ -500,21 +500,32 @@ bool closeAllOpenDialogs() {
   }
 }
 
+int maxFilterSliderValue = 50;
+int maxSamplesSliderValue = 100;
+int sliderTags[2] = {TAG_FILTER_SLIDER, TAG_FILTER_SLIDER_B};
+int trackingOngoing = 0;
 
 void handleSliders(int x, int y) { 
   
   y=y+40;
 
+  GD.ColorRGB(trackingOngoing==TAG_FILTER_SLIDER?0x00ff00:0xaaaaaa);
   GD.Tag(TAG_FILTER_SLIDER);
-  GD.cmd_slider(500+x, y+30, 280,15, OPT_FLAT, V_FILTERS.filterSize * (65535/100), 65535);
+  GD.cmd_slider(500+x, y+30, 280,15, OPT_FLAT, V_FILTERS.filterSize * (65535/maxFilterSliderValue), 65535);
   GD.cmd_track(500+x, y+30, 280, 20, TAG_FILTER_SLIDER);
+  GD.Tag(0);
   
   GD.Tag(TAG_FILTER_SLIDER_B);
-  GD.cmd_slider(500+x, y+90, 280,15, OPT_FLAT, V_STATS.getNrOfSamplesBeforeStore()* (65535/100), 65535);
+  GD.ColorRGB(trackingOngoing==TAG_FILTER_SLIDER_B?0x00ff00:0xaaaaaa);
+  GD.cmd_slider(500+x, y+90, 280,15, OPT_FLAT, V_STATS.getNrOfSamplesBeforeStore()* (65535/maxSamplesSliderValue), 65535);
   GD.cmd_track(500+x, y+90, 280, 20, TAG_FILTER_SLIDER_B);
-  
+  GD.Tag(0);  
+
+  GD.ColorRGB(trackingOngoing==TAG_FILTER_SLIDER?0x00ff00:0xaaaaaa);
   GD.cmd_text(500+x,y, 27, 0, "Filter size:");
   GD.cmd_number(580+x,y, 27, 0, V_FILTERS.filterSize);
+
+  GD.ColorRGB(trackingOngoing==TAG_FILTER_SLIDER_B?0x00ff00:0xaaaaaa);
   GD.cmd_text(500+x,y+60, 27, 0, "Samples size:");
   GD.cmd_number(605+x,y+60, 27, 0, V_STATS.getNrOfSamplesBeforeStore());
 
@@ -555,7 +566,7 @@ void handleSliders(int x, int y) {
   switch (GD.inputs.track_tag & 0xff) {
     case TAG_FILTER_SLIDER: {
       Serial.print("Set filter value:");
-      int slider_val = 100.0 * GD.inputs.track_val / 65535.0;
+      int slider_val = maxFilterSliderValue * GD.inputs.track_val / 65535.0;
       Serial.println(slider_val);
       V_FILTERS.setFilterSize(int(slider_val));
       // currently set same as for voltage
@@ -565,7 +576,7 @@ void handleSliders(int x, int y) {
     }
     case TAG_FILTER_SLIDER_B:{
       Serial.print("Set samples value:");
-      int slider_val = 100.0 * GD.inputs.track_val / 65535.0;
+      int slider_val = maxSamplesSliderValue * GD.inputs.track_val / 65535.0;
       Serial.println(slider_val);
       V_STATS.setNrOfSamplesBeforeStore(int(slider_val));
       // for now, just use same is current as for voltage
@@ -1142,9 +1153,32 @@ int gestOldX = 0;
 int gestOldY = 0;
 int gestDurationX = 0;
 int gestDurationY = 0;
+int trackingDetectedTimer = millis();
+bool ignoreGesture(int t){
+  if (trackingDetectedTimer + 50 > millis()) {
+    return true;
+  }
+  t = t & 0xff;
+  // TODO: Make more generic.
+  //       The idea is to ignore swipe especially when controlling sliders !
+  for (int i=0;i<2;i++) {
+    if (t == sliderTags[i]) {
+      trackingDetectedTimer = millis();
+      trackingOngoing = t;
+
+      return true;
+    }
+  }
+  trackingOngoing = 0;
+  return false;
+}
 
 int detectGestures() {
   GD.get_inputs();
+  if (ignoreGesture(GD.inputs.track_tag)){  
+    return GEST_NONE;
+  }
+  
   //Serial.println(GD.inputs.tag);
   int touchX = GD.inputs.x;
   int touchY = GD.inputs.y;
@@ -1789,6 +1823,11 @@ int x[10];
 int y[10];
 int nrOfChecks = 3;
 int checkButtons() {
+
+   int trackTag = GD.inputs.track_tag & 0xff;
+   if (trackTag != 0) {
+     return 0;
+   }
 
    int tag;
 
