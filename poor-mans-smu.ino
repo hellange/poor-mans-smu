@@ -1825,7 +1825,7 @@ int nrOfChecks = 3;
 int checkButtons() {
 
    int trackTag = GD.inputs.track_tag & 0xff;
-   if (trackTag != 0) {
+   if (trackTag != 0 && trackingOngoing) {
      return 0;
    }
 
