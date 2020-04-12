@@ -306,6 +306,9 @@ float ADCClass::measureMilliVoltage() {
   //Serial.println(v); 
 
   writeSamplingRate();  // update sampling rate here seems to work. Doing randomly other places often fails.... for some reason...
+
+  v=v - V_CALIBRATION.nullValueVol[current_range];
+
   return v;
 }
 

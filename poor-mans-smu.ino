@@ -1491,7 +1491,7 @@ static void handleSampling() {
 //  Serial.flush();
 
     // TODO: Differ between constant current and constant voltage nulling
-    Vout = Vout - V_CALIBRATION.nullValueVol[current_range];
+    //Vout = Vout - V_CALIBRATION.nullValueVol[current_range];
 
     
     Vout = Vout - V_CALIBRATION.relativeValue[current_range];
