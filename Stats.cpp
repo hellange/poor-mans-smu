@@ -100,8 +100,7 @@ void StatsClass::setNrOfSamplesBeforeStore(int s) {
 
 
 void StatsClass::renderHistogram(int x, int y, bool limitDetails) { 
-    Serial.println("Render histogram!"); 
-    Serial.flush(); 
+
     uispan = visibleMax - visibleMin;
 
     int noOfbins = noOfBins;

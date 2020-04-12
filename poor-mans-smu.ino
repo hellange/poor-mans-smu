@@ -1490,17 +1490,9 @@ static void handleSampling() {
 //  Serial.println(" mV");  
 //  Serial.flush();
 
-    // TODO: Differ between constant current and constant voltage nulling
-    //Vout = Vout - V_CALIBRATION.nullValueVol[current_range];
-
-    
     Vout = Vout - V_CALIBRATION.relativeValue[current_range];
 
-    V_STATS.addSample(Vout);
-
-
-
-    
+    V_STATS.addSample(Vout);    
     V_FILTERS.updateMean(Vout, true);
 
     // store now and then
