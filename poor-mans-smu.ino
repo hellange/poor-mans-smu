@@ -35,7 +35,7 @@
 #include "RotaryEncoder.h"
 #include "PushButtons.h"
 #include "TrendGraph.h"
-
+#include "Settings.h"
 
 //#define _SOURCE_AND_SINK 111
 
@@ -80,8 +80,6 @@ int activeWidget = 0;
 CURRENT_RANGE current_range = AMP1; // TODO: get rid of global
 int timeSinceLastChange = 0;  // TODO: get rid of global
 
-float MAX_CURRENT_10mA_RANGE = 5.0; // current values set because the ADC limit is 6 volt now...
-float MAX_CURRENT_1A_RANGE = 1100.0;
 
 
 OPERATION_TYPE operationType = SOURCE_VOLTAGE;
@@ -782,13 +780,22 @@ void measureCurrentPanel(int x, int y, boolean compliance, bool showBar) {
   }
   
   y=y+28;
-  if ( (current_range == MILLIAMP10 && abs(C_STATS.rawValue) > MAX_CURRENT_10mA_RANGE) or (current_range == AMP1 && abs(C_STATS.rawValue) > MAX_CURRENT_1A_RANGE)) {
+  if (current_range == AMP1 && abs(C_STATS.rawValue) > SETTINGS.MAX_CURRENT_1A_RANGE) {
     if (showBar) {
       y=y+12; // dont show bar when overflow... just add extra space so the panel gets same size as without overflow...
     }
     GD.ColorA(255);
-    CURRENT_DISPLAY.renderOverflow(x + 17, y);
-  } else {
+    CURRENT_DISPLAY.renderOverflowSW(x + 17, y);
+  } else 
+   if ( (current_range == MILLIAMP10 && abs(C_STATS.rawValue) > SETTINGS.MAX_CURRENT_10mA_RANGE)) {
+    if (showBar) {
+      y=y+12; // dont show bar when overflow... just add extra space so the panel gets same size as without overflow...
+    }
+    GD.ColorA(255);
+    CURRENT_DISPLAY.renderOverflowSW(x + 17, y);
+  }
+  
+  else {
     if (showBar) {
       renderBar(x,y, C_STATS.rawValue, SMU[0].getLimitValue());
       y=y+12;
@@ -1523,7 +1530,7 @@ void handleAutoCurrentRange() {
 
       // auto current range switch. TODO: Move to hardware ? Note that range switch also requires change in limit
       float hysteresis = 0.5;
-      float switchAt = MAX_CURRENT_10mA_RANGE;
+      float switchAt = SETTINGS.MAX_CURRENT_10mA_RANGE;
       
         if (current_range == AMP1 && abs(milliAmpere) < switchAt - hysteresis) {
           current_range = MILLIAMP10;

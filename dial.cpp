@@ -3,6 +3,8 @@
 #include "colors.h"
 #include <SPI.h>
 #include "GD2.h"
+#include "Settings.h"
+
 
 DialClass SOURCE_DIAL;
 DialClass LIMIT_DIAL;
@@ -668,8 +670,8 @@ void DialClass::validateCurrent(double mv, int numberValue, int decimalValue, in
   // on which voltDecade is being show in the dislay
   
   if (strncmp(voltDecade,"V",1) == 0) {
-    if (abs(mv) > 1100) {
-      showError("Max current is 1.1A");
+    if (abs(mv) > SETTINGS.MAX_CURRENT_1A_RANGE) {
+      showError("Max current is 1.3A");
       return;
     }
     else if (decimalsAfterComma > 4) {
@@ -679,8 +681,8 @@ void DialClass::validateCurrent(double mv, int numberValue, int decimalValue, in
   }
 
   else if (strncmp(voltDecade,"mV",2) == 0) {
-    if (abs(mv) > 1100) {
-      showError("Max current is 1100mA");
+    if (abs(mv) > SETTINGS.MAX_CURRENT_1A_RANGE) {
+      showError("Max current is 1300mA");
       return;
     }
     else if (decimalsAfterComma > 4 && mv < 10) {
@@ -723,8 +725,8 @@ void DialClass::validateCurrentLimit(double mv, int numberValue, int decimalValu
   // on which voltDecade is being show in the dislay
   
   if (strncmp(voltDecade,"V",1) == 0) {
-    if (abs(mv) > 1100) {
-      showError("Max current is 1.1A");
+    if (abs(mv) > SETTINGS.MAX_CURRENT_1A_RANGE) {
+      showError("Max current is 1.3A");
       return;
     }
     else if (decimalsAfterComma > 4) {
@@ -734,8 +736,8 @@ void DialClass::validateCurrentLimit(double mv, int numberValue, int decimalValu
   }
 
   else if (strncmp(voltDecade,"mV",2) == 0) {
-    if (abs(mv) > 1100) {
-      showError("Max current is 1100mA");
+    if (abs(mv) > SETTINGS.MAX_CURRENT_1A_RANGE) {
+      showError("Max current is 1300mA");
       return;
     }
     else if (decimalsAfterComma > 2) {

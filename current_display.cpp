@@ -20,9 +20,9 @@ int blinkColor(int colorHigh, int colorLow, int period) {
 }
 */
 
-void CurrentDisplayClass::renderOverflow(int x, int y) {
+void CurrentDisplayClass::renderOverflowSW(int x, int y) {
   GD.ColorRGB(COLOR_CURRENT);
-  boldText(x, y, " Overflow A");
+  boldText(x, y, " Overflow A (sw)");
 }
 void CurrentDisplayClass::renderMeasured(int x, int y, float rawMa, boolean compliance, bool show_nA) {
  
