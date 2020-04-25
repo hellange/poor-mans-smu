@@ -219,17 +219,23 @@ void ADCClass::setGPIO(int nr, bool on) {
   AD7176_WriteRegister({0x06, 2, 0, v}); 
   
 }
-void ADCClass::setCurrentRange(CURRENT_RANGE range) {
+void ADCClass::setCurrentRange(CURRENT_RANGE range, OPERATION_TYPE operationType) {
   current_range = range;
-  if (range == AMP1) {
-   // Serial.print("range:");
-   // Serial.println("AMP1");
-   // AD7176_WriteRegister({0x06, 2, 0, 0x080Cl}); // GPIO pin
 
+  // 1) When switching current range while in sourcing voltage mode, the voltage from current measurement circuit will change.
+  // The voltage output from limit controlling DAC must be adjusted accordingly...    
+  // 2) When switching current range while in current source mode, the voltage from source controlling DAC must be changed accordingly.
+  //
+  // This can cause glitches !!!! 
+  // TODO: Needs investigation on how this can be done properly !
 
+  
+
+  if (range == AMP1) {    
     digitalWrite(4, HIGH); 
-    Serial.println("WARNING !!!!!!!!!!!!!!!!  Had to add delay here to avoid voltage drop when changing from 10mA to 1A");
-    delay(1); // WARNING !!!! Had to add delay here to avoid voltage drop when changing from 10mA to 1A.
+    if (operationType == SOURCE_VOLTAGE) {
+      Serial.println("WARNING !!!!!!!!!!!!!!!!  Had to add delay here to avoid voltage drop when changing from 10mA to 1A");
+      delay(1); // WARNING !!!! Had to add delay here to avoid voltage drop when changing from 10mA to 1A.
                //              Why?
                //              TODO: Find out why setting the current limit right after switch causes spike !!!!
                //              With the 10ms delay, there is 10ms where the current limit is too high (as set for the 10mA range!)
@@ -239,20 +245,23 @@ void ADCClass::setCurrentRange(CURRENT_RANGE range) {
                //
                // I have verified that its the current limit that kicks in briefly. How to fix ?
                
-    fltSetCommitCurrentLimit(setValueI/*LIMIT_DIAL.getMv()/1000.0*/, _SOURCE_AND_SINK);//printError(_PRINT_ERROR_VOLTAGE_SOURCE_SETTING);
-
+      fltSetCommitCurrentLimit(setValueI, _SOURCE_AND_SINK);//printError(_PRINT_ERROR_VOLTAGE_SOURCE_SETTING);
+    } else {
+      fltSetCommitCurrentSource(setValueV*1000.0);
+    }
 
 
   } else if (range == MILLIAMP10) {
-   // AD7176_WriteRegister({0x06, 2, 0, 0x080Dl}); // GPIO pin
-   fltSetCommitCurrentLimit(setValueI/*LIMIT_DIAL.getMv()/1000.0*/, _SOURCE_AND_SINK);// printError(_PRINT_ERROR_VOLTAGE_SOURCE_SETTING);
+   if (operationType == SOURCE_VOLTAGE) {
+     fltSetCommitCurrentLimit(setValueI, _SOURCE_AND_SINK);// printError(_PRINT_ERROR_VOLTAGE_SOURCE_SETTING);
+   } else {
+     fltSetCommitCurrentSource(setValueV*1000.0);
+   }
    digitalWrite(4, LOW);
-    //Serial.print("range:");
-    //Serial.println("MILLIAMP10");
+
   } else {
     Serial.println("ERROR: Unknown current range !!!");
-      Serial.flush();
-
+    Serial.flush();
   }
 
 }

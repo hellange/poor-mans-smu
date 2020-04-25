@@ -1271,7 +1271,7 @@ void handleAutoNull() {
     V_CALIBRATION.useCalibratedValues = false;
     current_range = MILLIAMP10;
     //Serial.println("Null calibration initiated...");
-    SMU[0].setCurrentRange(current_range);
+    SMU[0].setCurrentRange(current_range, operationType);
     if (operationType == SOURCE_VOLTAGE) {
       SMU[0].fltSetCommitVoltageSource(0.0, true);
     } else {
@@ -1301,7 +1301,7 @@ void handleAutoNull() {
  
   if (autoNullStarted && !nullCalibrationDone2 && /*timeAtStartup + */timeBeforeAutoNull + msWaitPrCal + 100 < millis()) {
     current_range = AMP1;
-    SMU[0].setCurrentRange(current_range);
+    SMU[0].setCurrentRange(current_range, operationType);
     if (operationType == SOURCE_VOLTAGE) {
       SMU[0].fltSetCommitVoltageSource(0.0, true);
     } else {
@@ -1527,7 +1527,7 @@ void handleAutoCurrentRange() {
       
         if (current_range == AMP1 && abs(milliAmpere) < switchAt - hysteresis) {
           current_range = MILLIAMP10;
-          SMU[0].setCurrentRange(current_range);
+          SMU[0].setCurrentRange(current_range,operationType);
           Serial.println("switching to range 1");
            //TODO: Use getLimitValue from SMU instead of LIMIT_DIAL ?
           if (operationType == SOURCE_VOLTAGE){
@@ -1542,7 +1542,7 @@ void handleAutoCurrentRange() {
 //        Serial.println(switchAt);
         if (current_range == MILLIAMP10 && abs(milliAmpere) > switchAt) {
           current_range = AMP1;
-          SMU[0].setCurrentRange(current_range);
+          SMU[0].setCurrentRange(current_range,operationType);
           Serial.println("switching to range 0");
            //TODO: Use getLimitValue from SMU instead of LIMIT_DIAL ?
           if (operationType == SOURCE_VOLTAGE){
@@ -1935,7 +1935,7 @@ int checkButtons() {
         Serial.println(SMU[0].getLimitValue());
 
         
-        SMU[0].setCurrentRange(current_range);
+        SMU[0].setCurrentRange(current_range,operationType);
 
         // NOTE: The current limit update is now automatically handled by the setCurrentRange function
         /*
@@ -2322,10 +2322,10 @@ void fltCommitCurrentSourceAutoRange(float mv, bool autoRange) {
    if (autoRange) {
       if (abs(mv) < 8.0 ) {  // TODO: should theoretically be 10mA full scale, but there seem to be some limitations... i.e. reference volt a bit less that 5V...
         current_range = MILLIAMP10;
-        SMU[0].setCurrentRange(current_range);
+        SMU[0].setCurrentRange(current_range, operationType);
       } else {
         current_range = AMP1;
-        SMU[0].setCurrentRange(current_range);
+        SMU[0].setCurrentRange(current_range,operationType);
       }
       
 

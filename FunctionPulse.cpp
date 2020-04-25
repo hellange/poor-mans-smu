@@ -41,7 +41,7 @@ void FunctionPulseClass::open(OPERATION_TYPE operationType_, void (*closedFn_)(O
 
   GD.__end();
  
-  SMU[0].setCurrentRange(AMP1);
+  SMU[0].setCurrentRange(AMP1, operationType);
      
     SMU[0].disable_ADC_DAC_SPI_units();
     GD.resume();

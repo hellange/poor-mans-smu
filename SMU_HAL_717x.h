@@ -45,7 +45,7 @@ float DAC_RANGE_LOW;
 
     float measureMilliVoltage();
     float measureMilliVoltageRaw();
-    void setCurrentRange(CURRENT_RANGE range);
+    void setCurrentRange(CURRENT_RANGE range, OPERATION_TYPE operationType);
     void setSamplingRate(int value);
     int getSamplingRate();
     int dataReady();
