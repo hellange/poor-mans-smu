@@ -745,7 +745,7 @@ void CalibrationClass::renderCal(int x, int y, float valM, float setM, bool cur,
     
     GD.Tag(0); // Seems to fix problem with function calles when touching a special place on the screen... why ????
 
-    x=x-70;
+    x=x-65;
     
     GD.ColorRGB(0xaaaaaa);
 
@@ -754,21 +754,21 @@ void CalibrationClass::renderCal(int x, int y, float valM, float setM, bool cur,
     GD.cmd_text(x+450,y+45,27,0,"ADC NullV(10mA)");
     DIGIT_UTIL.renderValue(x + 450,  y+60 ,nullValueVol[1], 1, -1); 
 
-    GD.cmd_text(x+300,y+45+60,27,0,"ADC NullC(1A)");
-    DIGIT_UTIL.renderValue(x + 300,  y+120 ,nullValueCur[0], 1, -1); 
-    GD.cmd_text(x+450,y+45+60,27,0,"ADC NullC(10mA)");
-    DIGIT_UTIL.renderValue(x + 450,  y+120 ,nullValueCur[1], 1, -1); 
+    GD.cmd_text(x+300,y+35+60,27,0,"ADC NullC(1A)");
+    DIGIT_UTIL.renderValue(x + 300,  y+110 ,nullValueCur[0], 1, -1); 
+    GD.cmd_text(x+450,y+35+60,27,0,"ADC NullC(10mA)");
+    DIGIT_UTIL.renderValue(x + 450,  y+110 ,nullValueCur[1], 1, -1); 
 
     
     GD.ColorRGB(0x000000);
 
     GD.Tag(BUTTON_DAC_NONLINEAR_CALIBRATE);
     GD.ColorRGB(DIGIT_UTIL.indicateColor(0x000000, 0x00ff00, 50, BUTTON_DAC_NONLINEAR_CALIBRATE));
-    GD.cmd_button(x+620,y+45,120,50,29,0,"AUTOCAL");
+    GD.cmd_button(x+610,y+45,120,50,29,0,"AUTOCAL");
 
     GD.Tag(BUTTON_DAC_ZERO_CALIBRATE);
     GD.ColorRGB(DIGIT_UTIL.indicateColor(0x000000, 0x00ff00, 50, BUTTON_DAC_ZERO_CALIBRATE));
-    GD.cmd_button(x+620,y+100,120,50,29,0,"ZEROCAL");
+    GD.cmd_button(x+610,y+100,120,50,29,0,"ZEROCAL");
     
     GD.Tag(0);
   }
