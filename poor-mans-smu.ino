@@ -875,6 +875,13 @@ void showWidget(int y, int widgetNo, int scroll) {
        GD.cmd_text(20, yPos, 29, 0, "MEASURE VOLTAGE");
      }
      measureVoltagePanel(scroll, yPos + 20, SMU[0].hasCompliance());
+
+  } else if (widgetNo ==0 && functionType == SOURCE_PULSE) {
+     if (scroll ==0){
+       GD.ColorRGB(COLOR_CURRENT_TEXT);
+       GD.cmd_text(20, yPos, 29, 0, "MEASURE CURRENT");
+     }
+     measureCurrentPanel(scroll, yPos + 20, SMU[0].hasCompliance(), true);
   } else if (widgetNo ==0 && operationType == SOURCE_VOLTAGE) {
      if (scroll ==0){
        GD.ColorRGB(COLOR_CURRENT_TEXT);
@@ -1585,9 +1592,10 @@ int LM60_getTemperature() {
   return (int)temp;
 }
 */
-
 int loopUpdateTimer = millis();
+
 void loop() {
+  
 
   if (V_CALIBRATION.autoCalInProgress) {
     V_CALIBRATION.autoCalADCfromDAC();
@@ -2288,7 +2296,7 @@ void closeMainMenuCallback(FUNCTION_TYPE functionType_) {
       //disable_ADC_DAC_SPI_units();
     
     GD.__end();
-    if (SMU[0].fltSetCommitVoltageSource(2345.6, true)) printError(_PRINT_ERROR_VOLTAGE_SOURCE_SETTING);
+    if (SMU[0].fltSetCommitVoltageSource(SMU[0].getSetValuemV(), true)) printError(_PRINT_ERROR_VOLTAGE_SOURCE_SETTING);
     GD.resume();
   }
   /*

@@ -262,6 +262,8 @@ void FunctionPulseClass::sourcePulse() {
  void FunctionPulseClass::sourceVoltagePulse(float high, float low, int duration) {
    // This is highly inaccurate. Should be implemented with hs timers and interrupts...
    //if (pulseHigh && pulseTimer+duration/2 < millis()) {
+   bool useDynamicRange = (abs(low)<4500 && abs(high)<4500); // if both values are within one softspan DAC range, you can use dynamic
+
    if (pulseHigh) {
      pulseHigh = false;
     // pulseTimer = millis();
@@ -274,7 +276,7 @@ void FunctionPulseClass::sourcePulse() {
   else {
      pulseHigh = true;
      //pulseTimer = millis();
-     SMU[0].fltSetCommitVoltageSource(high, false);
+     SMU[0].fltSetCommitVoltageSource(high, useDynamicRange);
      measuredHigh =  V_STATS.rawValue;
      //Serial.println("Set pulse high");
 

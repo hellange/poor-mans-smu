@@ -41,9 +41,12 @@ float CalibrationClass::nullValueCur[2];
 void CalibrationClass::init(OPERATION_TYPE operationType_) {
   operationType = operationType_;
 
-  ea_dac_zero_comp = EA_DAC_ZERO_COMP_VOL;
+  if (operationType == SOURCE_VOLTAGE) {
+    ea_dac_zero_comp = EA_DAC_ZERO_COMP_VOL;
+  } else { 
+    ea_dac_zero_comp = EA_DAC_ZERO_COMP_CUR;
+  }
 
-  // TODO: Differ between constant current and constant voltage nulling
   ea_adc_zero_comp_vol = EA_ADC_ZERO_COMP_VOL;
   ea_adc_zero_comp_cur = EA_ADC_ZERO_COMP_CUR;
   ea_adc_zero_comp_cur2 = EA_ADC_ZERO_COMP_CUR2;

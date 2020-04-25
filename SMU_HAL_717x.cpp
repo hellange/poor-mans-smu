@@ -516,7 +516,7 @@ int8_t ADCClass::fltSetCommitVoltageSource(float milliVolt, bool dynamicRange) {
       dac_voltage = dac_voltage / 2.0; // if using 0.5ohm shunt instead of 1ohm shunt
 
       
-      dac_voltage = dac_voltage - 0.0029; // offset
+      dac_voltage = dac_voltage - 0.00; // offset
       dac_voltage = dac_voltage + C_CALIBRATION.getDacZeroComp();
 
       dac_voltage = dac_voltage * 0.9; // TODO: DO above calculations with the mosfet resistance in account...
@@ -529,8 +529,7 @@ int8_t ADCClass::fltSetCommitVoltageSource(float milliVolt, bool dynamicRange) {
 
       //dac_voltage = dac_voltage * 3.125; // after using 3 opamp diff amplifier before 1997-3.... hmm...
 
- dac_voltage = dac_voltage *1.15;
- dac_voltage = dac_voltage *1.023;
+ dac_voltage = dac_voltage *1.24;
       //Serial.println("Calculating current to set for 1A range");
       //Serial.flush();
 
@@ -754,6 +753,7 @@ int8_t ADCClass::fltSetCommitVoltageSource(float milliVolt, bool dynamicRange) {
           i = i * C_CALIBRATION.getAdcGainCompPos();
         } else {
           i = i * C_CALIBRATION.getAdcGainCompNeg();
+          i = i *0.98;
         }
 
               //i=i/3.125; // After using two opamps in fromt of 1997-3....   Why did that give 3.125 gain ????

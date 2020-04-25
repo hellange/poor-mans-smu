@@ -19,7 +19,8 @@ void DialClass::open(int type, int set_or_limit_, void (*callbackFn)(int set_or_
   //Serial.println(cbuf);
   //Serial.flush();
 
- 
+   Serial.println("Open dial. OperationType=");
+   Serial.println(type == SOURCE_VOLTAGE ? "SOURCE VOLTAGE" : "SOURCE CURRENT");
   
   
   closedFn = callbackFn;
