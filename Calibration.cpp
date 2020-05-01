@@ -700,10 +700,10 @@ void CalibrationClass::renderCal(int x, int y, float valM, float setM, bool cur,
 
     GD.Tag(BUTTON_DAC_GAIN_COMP_POS_UP);
     GD.ColorRGB(DIGIT_UTIL.indicateColor(0x000000, 0x00ff00, 50, BUTTON_DAC_GAIN_COMP_POS_UP));
-    GD.cmd_button(x+10,y+90,100,50,29,0,"UP");
+    GD.cmd_button(x+10,y+95,100,50,29,0,"UP");
     GD.Tag(BUTTON_DAC_GAIN_COMP_POS_DOWN);
     GD.ColorRGB(DIGIT_UTIL.indicateColor(0x000000, 0x00ff00, 50,BUTTON_DAC_GAIN_COMP_POS_DOWN));
-    GD.cmd_button(x+10,y+150,100,50,29,0,"DOWN");
+    GD.cmd_button(x+10,y+155,100,50,29,0,"DOWN");
   GD.Tag(0);
     x=x+10;
     GD.ColorRGB(0xaaaaaa);
@@ -721,10 +721,10 @@ void CalibrationClass::renderCal(int x, int y, float valM, float setM, bool cur,
   
     GD.Tag(BUTTON_ADC_GAIN_COMP_POS_UP);
     GD.ColorRGB(DIGIT_UTIL.indicateColor(0x000000, 0x00ff00, 50, BUTTON_ADC_GAIN_COMP_POS_UP));
-    GD.cmd_button(x+120,y+90,100,50,29,0,"UP");
+    GD.cmd_button(x+120,y+95,100,50,29,0,"UP");
     GD.Tag(BUTTON_ADC_GAIN_COMP_POS_DOWN);
     GD.ColorRGB(DIGIT_UTIL.indicateColor(0x000000, 0x00ff00, 50, BUTTON_ADC_GAIN_COMP_POS_DOWN ));
-    GD.cmd_button(x+120,y+150,100,50,29,0,"DOWN");
+    GD.cmd_button(x+120,y+155,100,50,29,0,"DOWN");
     GD.Tag(0);
 
     x=x+120;
@@ -738,10 +738,10 @@ void CalibrationClass::renderCal(int x, int y, float valM, float setM, bool cur,
   
     GD.Tag(BUTTON_DAC_ZERO_COMP_UP);
     GD.ColorRGB(DIGIT_UTIL.indicateColor(0x000000, 0x00ff00, 50, BUTTON_DAC_ZERO_COMP_UP));
-    GD.cmd_button(x+120,y+90,100,50,29,0,"UP");
+    GD.cmd_button(x+120,y+95,100,50,29,0,"UP");
     GD.Tag(BUTTON_DAC_ZERO_COMP_DOWN);
     GD.ColorRGB(DIGIT_UTIL.indicateColor(0x000000, 0x00ff00, 50, BUTTON_DAC_ZERO_COMP_DOWN));
-    GD.cmd_button(x+120,y+150,100,50,29,0,"DOWN");
+    GD.cmd_button(x+120,y+155,100,50,29,0,"DOWN");
     
     GD.Tag(0); // Seems to fix problem with function calles when touching a special place on the screen... why ????
 

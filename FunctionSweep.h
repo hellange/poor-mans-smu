@@ -21,6 +21,7 @@ class FunctionSweepClass {
     void close();
     void handleButtonAction(int inputTag);
     void render(int x, int y);
+    void handle();
     float duration = 5000;
   float step = 100.0;
   float high = 1000.0;

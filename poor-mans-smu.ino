@@ -7,7 +7,8 @@
  * 
  *****************************************************************/
 
-//uncomment the line below if you want to use real AD/DA 
+//Uncomment the line below if you don't have the analog hardware, only processor and screen...
+//The analog circuitry will then be simulated
 //#define USE_SIMULATOR
 
 
@@ -156,6 +157,8 @@ void rotaryChangedFn(float changeVal) {
       
 }
 
+bool showSettings = false;
+
 void pushButtonInterrupt(int key, bool quickPress, bool holdAfterLongPress, bool releaseAfterLongPress) {
   Serial.print("Key pressed:");
   Serial.print(key);
@@ -166,6 +169,12 @@ void pushButtonInterrupt(int key, bool quickPress, bool holdAfterLongPress, bool
 
   if (quickPress && key ==1 && MAINMENU.active == false) {
     openMainMenu();
+  }
+
+  else if (quickPress && key ==4 && showSettings == false) {
+    showSettings = true;
+  } else if (quickPress && key ==4 && showSettings == true) {
+    showSettings = false;
   }
 
 }
@@ -251,8 +260,7 @@ void setup()
    Serial.println("Start measuring...");
    SMU[0].init();
 
-  SMU[0].setGPIO(1,true); // gpio1:  true = low bandwidth
-  //SMU[0].setGPIO(0,true);
+   SETTINGS.init();
 
    SMU[0].setSamplingRate(20);
    operationType = getOperationType();
@@ -304,14 +312,6 @@ void setup()
  
   //TC74 
   Wire.begin();
-
-
-
-
-  
-
-
-
 
     
 } 
@@ -881,7 +881,7 @@ void showWidget(int y, int widgetNo, int scroll) {
        GD.ColorRGB(COLOR_VOLT);
        GD.cmd_text(20, yPos, 29, 0, "MEASURE VOLTAGE");
      }
-     measureVoltagePanel(scroll, yPos + 20, SMU[0].hasCompliance());
+     measureCurrentPanel(scroll, yPos + 20, SMU[0].hasCompliance(), true);
 
   } else if (widgetNo ==0 && functionType == SOURCE_PULSE) {
      if (scroll ==0){
@@ -1631,8 +1631,8 @@ void loop() {
   //Serial.println(LM60_getTemperature());
    
   displayUpdateTimer = millis();
-  
-  if (functionType == DIGITIZE) {
+ 
+ if (functionType == DIGITIZE) {
     loopDigitize();
 
   } else if (functionType == GRAPH) {
@@ -1988,11 +1988,11 @@ int checkButtons() {
       }
 
     } 
-   // #ifndef USE_SIMULATOR // dont want to mess up calibration while in simulation mode...
+    #ifndef USE_SIMULATOR // dont want to mess up calibration while in simulation mode...
     else if (tag == BUTTON_DAC_GAIN_COMP_POS_UP) {
        if (timeSinceLastChange + 200 > millis()){
         return;
-      } 
+       } 
        timeSinceLastChange = millis();
        DIGIT_UTIL.startIndicator(tag);
        float mv = SMU[0].getSetValuemV();
@@ -2153,6 +2153,8 @@ int checkButtons() {
        timeSinceLastChange = millis();
        startNullCalibration();
     }
+    #endif  // USE_SIMULATOR
+    
     return tag;
 }
 
@@ -2164,18 +2166,14 @@ void loopMain()
   handleAutoNull();
   operationType = getOperationType();
   
-
-  if (nullCalibrationDone2) {
-   
+  if (nullCalibrationDone2) { 
     //if (!V_CALIBRATION.autoCalDone) {
     //  V_CALIBRATION.startAutoCal();
     //}
-
     RAM.startLog();
-    
   }
 
-    GD.__end();
+  GD.__end();
 
   // Auto range current measurement while sourcing voltage. 
   // Note that this gives small glitches in voltage.
@@ -2187,69 +2185,40 @@ void loopMain()
   #ifndef SAMPLING_BY_INTERRUPT 
     handleSampling(); 
   #endif
+
+
+  if (functionType == SOURCE_SWEEP) {
+    FUNCTION_SWEEP.handle();
+  }
+  
   disable_ADC_DAC_SPI_units();
   GD.resume();
-
-
-   GD.Clear();
+  GD.Clear();
   renderMainHeader();
-  renderUpperDisplay(operationType, functionType);
 
-  // register screen for gestures /*on lower half
-  /*
-  GD.Tag(GESTURE_AREA_LOW);
-  GD.Begin(RECTS);
-  GD.ColorRGB(0x000000);
-  GD.Vertex2ii(0,LOWER_WIDGET_Y_POS);
-  GD.Vertex2ii(800, 480);
-  GD.Tag(0);
-  */
-  
-  detectGestures();
+  if (showSettings == false) {
+    renderUpperDisplay(operationType, functionType);  
+    detectGestures();
+    if (!gestureDetected) {
+      int tag = checkButtons();
+      
+      // TODO: don't need to check buttons for inactive menus or functions...
+      MAINMENU.handleButtonAction(GD.inputs.tag);
+      FUNCTION_PULSE.handleButtonAction(tag);
 
-  
+      // Use raw tags for sweep function. TODO: update checkBUttons to handle holding etc.
+      FUNCTION_SWEEP.handleButtonAction(GD.inputs.tag); 
+    }
 
-  if (!gestureDetected) {
- 
-    
-
-   
-    int tag = checkButtons();
-
-    
-   // #endif // end not using simulator
-    
-    // TODO: don't need to check buttons for inactive menus or functions...
-    MAINMENU.handleButtonAction(GD.inputs.tag);
-    FUNCTION_PULSE.handleButtonAction(tag);
-
-    // Use raw tags for sweep function. TODO: update checkBUttons to handle holding etc.
-    FUNCTION_SWEEP.handleButtonAction(GD.inputs.tag); 
-
+    handleWidgetScrollPosition();
+    displayWidget();  
+    handleMenuScrolldown();
   }
 
- 
-
-  handleWidgetScrollPosition();
-  displayWidget();
-
-
-
-
-
-
-
-
-
-
   
-
   
-  handleMenuScrolldown();
-
   PUSHBUTTONS.handle();
   
-
   if (V_CALIBRATION.autoCalInProgress or C_CALIBRATION.autoCalInProgress) {
     notification("Auto calibration in progress...");
   }

@@ -170,6 +170,8 @@ void ADCClass::writeSamplingRate() {
 }
 
 
+
+//TODO: GPIO is the how the io is implemented. Rename to what the function does
 bool gpio0 = false;
 bool gpio1 = false;
 void ADCClass::setGPIO(int nr, bool on) {
@@ -708,6 +710,9 @@ int8_t ADCClass::fltSetCommitVoltageSource(float milliVolt, bool dynamicRange) {
   } else {
     
     dac_voltage = 10.0* fCurrent * (R_shunt_1A + R_mosfetSwitch);
+    
+    dac_voltage = dac_voltage * 1.0685;
+    
     Serial.print("Asking for 1A range current limit ");
     Serial.print(fCurrent);
     Serial.print(" A, converting to ");

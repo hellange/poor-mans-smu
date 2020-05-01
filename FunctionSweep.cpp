@@ -204,7 +204,7 @@ void FunctionSweepClass::render(int x, int y) {
   GD.ScissorSize(800-1,480-1);
 
   
-
+/*
   GD.__end();
 
   if (operationType == SOURCE_VOLTAGE) {
@@ -213,8 +213,16 @@ void FunctionSweepClass::render(int x, int y) {
     operateSmuCurrent(high, low, step, duration);
   }
   GD.resume();
+  */
 }
 
+void FunctionSweepClass::handle() {
+   if (operationType == SOURCE_VOLTAGE) {
+    operateSmuVoltage(high, low, step, duration);
+  } else {
+    operateSmuCurrent(high, low, step, duration);
+  }
+}
 
 void FunctionSweepClass::operateSmuVoltage(float high, float low, float step, int duration)  {
      

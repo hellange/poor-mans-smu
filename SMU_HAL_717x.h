@@ -31,9 +31,15 @@ class ADCClass {
     int oldSamplingRate = 5;
     void writeSamplingRate();
 
+
+  
   public:
-float DAC_RANGE_LOW;
-  float DAC_RANGE_HIGH;
+
+    // TODO: Why public ? Indicates poor architecture
+    float DAC_RANGE_LOW;
+    float DAC_RANGE_HIGH;
+
+
     int init();
     int initADC();
     int initDAC();
@@ -41,7 +47,7 @@ float DAC_RANGE_LOW;
     int8_t fltSetCommitVoltageSource(float fVoltage, bool dynamicRange);
     int8_t fltSetCommitCurrentSource(float fVoltage);
     int8_t fltSetCommitCurrentLimit(float fCurrent, int8_t up_down_both);
-        int8_t fltSetCommitVoltageLimit(float fCurrent, int8_t up_down_both);
+    int8_t fltSetCommitVoltageLimit(float fCurrent, int8_t up_down_both);
 
     float measureMilliVoltage();
     float measureMilliVoltageRaw();

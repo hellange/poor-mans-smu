@@ -18,21 +18,36 @@
    return nowValuemV;
  }
 
- void SMU_HAL_dummy::setCurrentRange(CURRENT_RANGE range) {
+ void SMU_HAL_dummy::setCurrentRange(CURRENT_RANGE range, OPERATION_TYPE operationType) {
    Serial.println("WARNING: NOT IMPLEMENTED CURRENT RANGE IN SIMULATOR !");
  }
- 
+
  void SMU_HAL_dummy::setSamplingRate(int value) {
    samplingDur = 1000/value;      
+ }
+
+  
+ int SMU_HAL_dummy::getSamplingRate() {
+  //TODO: Fix this
+  Serial.println("ERROR: getSampling rate has not been implemented correctly !!!!");
+  return 999;    
  }
   
  int8_t SMU_HAL_dummy::fltSetCommitCurrentSource(float fVoltage) {
    Serial.println("WARNING: NOT IMPLEMENTED CURRENT SOURCE IN SIMULATOR !");
    return 0;
  }
+
+ bool SMU_HAL_dummy::use100uVSetResolution() {
+   Serial.println("NOTE: NOT IMPLEMENTED use100uVSetResolution IN SIMULATOR !");
+ } 
  
- 
- int8_t SMU_HAL_dummy::fltSetCommitLimit(float fCurrent, int8_t up_down_both) {
+ int8_t SMU_HAL_dummy::fltSetCommitCurrentLimit(float fCurrent, int8_t up_down_both) {
+  return setValueI = fCurrent;                         
+ }
+
+ int8_t SMU_HAL_dummy::fltSetCommitVoltageLimit(float fCurrent, int8_t up_down_both) {
+  //TODO: Not handling current here ?
   return setValueI = fCurrent;                         
  }
 
@@ -81,6 +96,21 @@
   
  
   return nowValuemV+ offset + noise + drift;  // return millivolt
+ }
+
+ void SMU_HAL_dummy::setGPIO(int nr, bool on) {
+   Serial.println("ERROR: Not implemented setGPIO !!!!");
+ }
+
+ void SMU_HAL_dummy::disable_ADC_DAC_SPI_units(){
+     Serial.println("NOTE: Not implemented disable_ADC_DAC_SPI_units. Not relevant for simulator");
+
+ }
+
+
+
+ bool SMU_HAL_dummy::hasCompliance() {
+  return compliance;
  }
  
  float SMU_HAL_dummy::measureCurrent(int range){

@@ -11,7 +11,7 @@ enum FUNCTION_TYPE {
   SOURCE_PULSE,
   SOURCE_SWEEP,
   DIGITIZE,
-  GRAPH
+  GRAPH,
 };
 
 #define SET  200

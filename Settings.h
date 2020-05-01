@@ -1,5 +1,8 @@
-#ifndef _Settings_h
-#define _Settings_h
+#ifndef Settings_h
+#define Settings_h
+
+#include "SMU_HAL_717x.h"
+
 
 class SettingsClass {
 
@@ -11,9 +14,14 @@ public:
   float MAX_CURRENT_10mA_RANGE = 8.0; // current values set because the ADC limit is 6 volt now...
   float MAX_CURRENT_1A_RANGE = 1300.0;
   void init();
+  bool lowBandWidth = false;
+  void setLowBandWidth(bool t);
+  void render();
+  
+
  
 };
 
 extern SettingsClass SETTINGS;
 
-#endif _Settings_h
+#endif Settings_h
