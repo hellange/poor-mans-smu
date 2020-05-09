@@ -301,14 +301,19 @@ float ADCClass::measureMilliVoltage() {
   
   // DONT INCLUDE THESE ADJUSTMENTS WHEN TESTING ONLY DAC/ADC BOARD !!!!
   if (full_board == true) {
-    v = v*2.0; // divide by 2 in measurement circuit
+    
+    //v = v*2.0; // divide by 2 in measurement circuit
+    
     if (v>0) {
       v = v * V_CALIBRATION.getAdcGainCompPos();
     } else {
       v = v * V_CALIBRATION.getAdcGainCompNeg();
     }
+
+    // crude adjustment, will differ between hardware
     v=v * 0.9970;
     v=v * 1.0255;
+    v =v* 0.991;
   }
   //Serial.print("Voltage nonlinear comp ");
   //Serial.print(v);
@@ -420,36 +425,23 @@ int8_t ADCClass::fltSetCommitVoltageSource(float milliVolt, bool dynamicRange) {
  
   dac_voltage = dac_voltage + V_CALIBRATION.getDacZeroComp();
 
-
-  if (dac_voltage > 0) {
-    // positive
-    //dac_voltage = dac_voltage * 1.00103; // gain
-  } else  {
-    // negative
-    //dac_voltage = dac_voltage * 0.998750; // gain
-  }
-  
-  //Serial.print("voltage:");
-  //Serial.print(dac_voltage);
-  //Serial.println(" volt");
-
   // DONT INCLUDE THESE ADJUSTMENTS WHEN TESTING ONLY DAC/ADC BOARD !!!!
   if (full_board) {
-    
-    dac_voltage = dac_voltage * 1.01;
-    dac_voltage = dac_voltage * 0.975;
 
+    // There is a apprx. /2 on the sense input. This means that the voltage from DAC must be half of the expected output
+    float voltageInputDividerCompensation = 0.5; 
+    
+    dac_voltage = dac_voltage * 0.994; // crude adjustment that will differ between hardware
 
     if (dac_voltage>0) {
-      // positive
-      dac_voltage = dac_voltage / 2.00; // There is a apprx. /2 on the sense input in addition to gain
       dac_voltage = dac_voltage * V_CALIBRATION.getDacGainCompPos();
     } else {
-      // negative
-      dac_voltage = dac_voltage / 2.00; // There is a apprx. /2 on the sense input in addition to gain 
       dac_voltage = dac_voltage * V_CALIBRATION.getDacGainCompNeg();
-
     }
+    
+    //dac_voltage = dac_voltage * voltageInputDividerCompensation;
+
+    
 
     //SPAN 0 = 0 to +5V
     //     1 = 0 to +10V
@@ -718,7 +710,11 @@ int8_t ADCClass::fltSetCommitVoltageSource(float milliVolt, bool dynamicRange) {
     Serial.print(" A, converting to ");
     Serial.print(dac_voltage);
     Serial.println(" V out from DAC (1A range)");
+
+      dac_voltage = dac_voltage *  V_CALIBRATION.getDacGainCompLim();
+
   }
+
 
   //dac_voltage = dac_voltage - 0.753; 
   //TODO: Account for more amplification in current after adding two opamps in front of 1997-3 .....  hmmmm  

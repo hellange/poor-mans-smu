@@ -27,6 +27,8 @@ class CalibrationClass {
   
   float dacGainCompPos;
   float dacGainCompNeg;
+  float dacGainCompLim;
+
   float adcGainCompPos;
   float adcGainCompNeg;
 
@@ -34,6 +36,8 @@ class CalibrationClass {
 
   int ea_dac_gain_comp_pos;
   int ea_dac_gain_comp_neg;
+  int ea_dac_gain_comp_lim;
+  
   int ea_adc_gain_comp_pos;
   int ea_adc_gain_comp_neg;
   int ea_adc_nonlinear_comp_nr;
@@ -60,7 +64,9 @@ public:
   void adjDacGainCompPos(float val);
   float getDacGainCompNeg();
   void adjDacGainCompNeg(float val);
-
+  float getDacGainCompLim();
+  void adjDacGainCompLim(float val);
+  
   float getAdcGainCompPos();
   void adjAdcGainCompPos(float val);
   float getAdcGainCompNeg();
@@ -93,6 +99,8 @@ public:
   bool relativeValueIsSet(CURRENT_RANGE current_range);
 
   void renderCal(int x, int y, float valM, float setM, bool cur, bool reduceDetails);
+    void renderCal2(int x, int y, float valM, float setM, bool cur, bool reduceDetails);
+
   void init(OPERATION_TYPE operation_type);
 
   void autoCalADCfromDAC();

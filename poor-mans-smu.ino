@@ -75,7 +75,7 @@ bool nullCalibrationDone0 = false;
 bool nullCalibrationDone1 = false;
 bool nullCalibrationDone2 = false;
 
-int noOfWidgets = 6;
+int noOfWidgets = 7;
 int activeWidget = 0;
 
 CURRENT_RANGE current_range = AMP1; // TODO: get rid of global
@@ -269,14 +269,21 @@ void setup()
    C_CALIBRATION.init(SOURCE_CURRENT);
    
    if (operationType == SOURCE_VOLTAGE) {
-     SMU[0].fltSetCommitVoltageSource(1234.5, true);
+     SMU[0].fltSetCommitVoltageSource(SETTINGS.setMilliVoltage, true);
      Serial.println("Source voltage");
-     SMU[0].fltSetCommitCurrentLimit(100/1000.0, _SOURCE_AND_SINK); 
-   } else {
-     SMU[0].fltSetCommitCurrentSource(0.0);
+     SMU[0].fltSetCommitCurrentLimit(SETTINGS.setCurrentLimit/1000.0, _SOURCE_AND_SINK); 
+   } 
+   
+   
+   /*
+   else {
+     SMU[0].fltSetCommitCurrentSource(SETTINGS.setMilliAmpere);
      Serial.println("Source current");
      SMU[0].fltSetCommitCurrentLimit(10.0, _SOURCE_AND_SINK); 
    }
+   */
+
+   
    Serial.println("Done!");
    Serial.flush();
 
@@ -938,7 +945,8 @@ void showWidget(int y, int widgetNo, int scroll) {
         float setM = SMU[0].getSetValuemV();
         renderExperimental(scroll,yPos, rawM, setM, false, reduceDetails());
       }
-  } else if (widgetNo == 5) {
+  } 
+  else if (widgetNo == 5) {
       if (scroll ==0){
         GD.ColorRGB(COLOR_VOLT);
         GD.cmd_text(20, yPos, 29, 0, "CAL");
@@ -955,6 +963,25 @@ void showWidget(int y, int widgetNo, int scroll) {
       }
       
   }
+  else if (widgetNo == 6) {
+      if (scroll ==0){
+        GD.ColorRGB(COLOR_VOLT);
+        GD.cmd_text(20, yPos, 29, 0, "CAL 2");
+
+        if (operationType == SOURCE_VOLTAGE) {
+          float rawM = V_FILTERS.mean;
+          float setM = SMU[0].getSetValuemV();
+          V_CALIBRATION.renderCal2(scroll,yPos, rawM, setM, false, reduceDetails());
+        } else {
+          float rawM = C_FILTERS.mean;
+          float setM = SMU[0].getSetValuemV();
+          C_CALIBRATION.renderCal2(scroll,yPos, rawM, setM, false, reduceDetails());
+        }
+      }
+      
+      
+  }
+  
 
 }
 
@@ -1090,9 +1117,27 @@ void renderMainHeader() {
   showLoadResistance(590,0);
   showFanSpeed(220,0);
   //GD.cmd_number(470,0,27,3,LM60_getTemperature());
-  GD.cmd_number(470,0,27,3,TC74_getTemperature());
+  int temp = TC74_getTemperature();
+  if (temp > SETTINGS.getMaxTempAllowed()) {
+    
+    GD.ColorRGB(0xff0000);
 
-  GD.cmd_text(500,0,27,0,"C");
+    GD.Begin(RECTS);
+    GD.Vertex2ii(465, 0);
+    GD.Vertex2ii(520, 20);
+        GD.ColorRGB(0xffffff);
+
+    GD.cmd_number(470,0,27,3,TC74_getTemperature());
+    GD.cmd_text(505,0,27,0,"C");
+  } else {
+    GD.ColorRGB(0x00ff00);
+    GD.cmd_number(470,0,27,3,TC74_getTemperature());
+    GD.cmd_text(500,0,27,0,"C");
+  }
+
+
+  GD.ColorRGB(0xdddddd);
+
 
   GD.cmd_number(370,0,27,0,RAM.getCurrentLogAddress());
 
@@ -2007,16 +2052,19 @@ int checkButtons() {
          GD.resume();
        } else {
           if (mv < 0) {
-            C_CALIBRATION.adjDacGainCompNeg(0.00005);
+            C_CALIBRATION.adjDacGainCompNeg(0.00001);
          } else {
-            C_CALIBRATION.adjDacGainCompPos(0.00005);
+            C_CALIBRATION.adjDacGainCompPos(0.00001);
          }
          GD.__end();
          if (SMU[0].fltSetCommitCurrentSource(mv)) printError(_PRINT_ERROR_VOLTAGE_SOURCE_SETTING);
          GD.resume();
        }
       
-    } else if (tag == BUTTON_DAC_GAIN_COMP_POS_DOWN) {
+    } 
+    
+    
+    else if (tag == BUTTON_DAC_GAIN_COMP_POS_DOWN) {
        if (timeSinceLastChange + 200 > millis()){
         return;
       } 
@@ -2035,16 +2083,64 @@ int checkButtons() {
          GD.resume();
        } else {
           if (mv < 0) {
-            C_CALIBRATION.adjDacGainCompNeg(-0.00005);
+            C_CALIBRATION.adjDacGainCompNeg(-0.00001);
          } else {
-            C_CALIBRATION.adjDacGainCompPos(-0.00005);
+            C_CALIBRATION.adjDacGainCompPos(-0.00001);
          }
          GD.__end();
          if (SMU[0].fltSetCommitCurrentSource(mv)) printError(_PRINT_ERROR_VOLTAGE_SOURCE_SETTING);
          GD.resume();
        }
+      
        
-    } else if (tag == BUTTON_ADC_GAIN_COMP_POS_UP) {
+    } 
+    
+    
+
+
+      else if (tag == BUTTON_DAC_GAIN_COMP_LIM_UP) {
+       if (timeSinceLastChange + 200 > millis()){
+        return;
+      } 
+       timeSinceLastChange = millis();
+       DIGIT_UTIL.startIndicator(tag);
+       float mv = SMU[0].getLimitValue();
+       if (operationType == SOURCE_VOLTAGE) {
+         V_CALIBRATION.adjDacGainCompLim(+0.000005*10.0);
+         
+         //if (operationType == SOURCE_VOLTAGE) {
+         GD.__end();
+         if (SMU[0].fltSetCommitCurrentLimit(mv/1000.0, true)) printError(_PRINT_ERROR_VOLTAGE_SOURCE_SETTING);
+         GD.resume();
+       }
+      
+       
+    } 
+    
+    
+       else if (tag == BUTTON_DAC_GAIN_COMP_LIM_DOWN) {
+       if (timeSinceLastChange + 200 > millis()){
+        return;
+      } 
+       timeSinceLastChange = millis();
+       DIGIT_UTIL.startIndicator(tag);
+       float mv = SMU[0].getLimitValue();
+       if (operationType == SOURCE_VOLTAGE) {
+         V_CALIBRATION.adjDacGainCompLim(-0.000005*10.0);
+         
+         //if (operationType == SOURCE_VOLTAGE) {
+         GD.__end();
+         if (SMU[0].fltSetCommitCurrentLimit(mv/1000.0, true)) printError(_PRINT_ERROR_VOLTAGE_SOURCE_SETTING);
+         GD.resume();
+       }
+      
+       
+    } 
+    
+    
+    
+    
+    else if (tag == BUTTON_ADC_GAIN_COMP_POS_UP) {
        if (timeSinceLastChange + 200 > millis()){
         return;
         
@@ -2061,9 +2157,9 @@ int checkButtons() {
          }
        } else {
          if (mv < 0) {
-            C_CALIBRATION.adjAdcGainCompNeg(0.0001);
+            C_CALIBRATION.adjAdcGainCompNeg(0.000005);
          } else {
-            C_CALIBRATION.adjAdcGainCompPos(0.0001);
+            C_CALIBRATION.adjAdcGainCompPos(0.000005);
          }
        }
       
@@ -2082,9 +2178,9 @@ int checkButtons() {
          }
        } else {
         if (mv < 0) {
-            C_CALIBRATION.adjAdcGainCompNeg(-0.0001);
+            C_CALIBRATION.adjAdcGainCompNeg(-0.000005);
          } else {
-            C_CALIBRATION.adjAdcGainCompPos(-0.0001);
+            C_CALIBRATION.adjAdcGainCompPos(-0.000005);
          }
        }
       
@@ -2103,7 +2199,7 @@ int checkButtons() {
          GD.resume();
          
        } else {
-          C_CALIBRATION.adjDacZeroComp(+0.000002);
+          C_CALIBRATION.adjDacZeroComp(+0.000002*10.0);
           GD.__end();
          if (SMU[0].fltSetCommitCurrentSource(mv)) printError(_PRINT_ERROR_VOLTAGE_SOURCE_SETTING);
          GD.resume();    
@@ -2122,7 +2218,7 @@ int checkButtons() {
          if (SMU[0].fltSetCommitVoltageSource(mv, true)) printError(_PRINT_ERROR_VOLTAGE_SOURCE_SETTING);
          GD.resume();
        } else {
-         C_CALIBRATION.adjDacZeroComp(-0.000002);
+         C_CALIBRATION.adjDacZeroComp(-0.000002*10.0);
          GD.__end();
          if (SMU[0].fltSetCommitCurrentSource(mv)) printError(_PRINT_ERROR_VOLTAGE_SOURCE_SETTING);
          GD.resume(); 
@@ -2253,11 +2349,16 @@ void closedSweep(OPERATION_TYPE t) {
 
 void closeMainMenuCallback(FUNCTION_TYPE functionType_) {
   
-  Serial.print("Closed main menu callback. Selected function:");
+  Serial.println("Closed main menu callback");
+  Serial.println("New Selected function:");
   Serial.println(functionType_);
+  Serial.println("Old function:");
+  Serial.println(functionType);
+
+  
   Serial.flush();
 
-  // do a close on the existing function
+  // do a close on the existing function. It should do neccessary cleanup
   if (functionType == SOURCE_PULSE) {
     FUNCTION_PULSE.close();
   } else if (functionType == SOURCE_SWEEP) {
@@ -2266,29 +2367,30 @@ void closeMainMenuCallback(FUNCTION_TYPE functionType_) {
     //TODO: Use method when digitizer is moved out as separate class
     //      For now, just readjust sampling speed
     SMU[0].setSamplingRate(20); //TODO: Should get back to same as before, not a default one
-  } else if (functionType == SOURCE_DC_VOLTAGE) {
-    //TODO: Set previous voltage instead a default one !!!!
-     
-      //disable_ADC_DAC_SPI_units();
-    
-    GD.__end();
-    if (SMU[0].fltSetCommitVoltageSource(SMU[0].getSetValuemV(), true)) printError(_PRINT_ERROR_VOLTAGE_SOURCE_SETTING);
-    GD.resume();
-  }
-  /*
-  if (functionType == SOURCE_DC_CURRENT) {
-    SMU[0].setGPIO(0, true);
-  } else {
-    SMU[0].setGPIO(0, false);
-  }
-  */
-   
-  // TODO: Add cleanup from previous function before starting new...
+  } 
+ 
+
+  // The newly selected function...
   functionType = functionType_;
   if (functionType == SOURCE_PULSE) {
     FUNCTION_PULSE.open(operationType, closedPulse);
   } else if (functionType == SOURCE_SWEEP) {
     FUNCTION_SWEEP.open(operationType, closedSweep);
+  }
+  else if (functionType == SOURCE_DC_VOLTAGE) {   
+    //disable_ADC_DAC_SPI_units();
+    GD.__end();
+    if (SMU[0].fltSetCommitVoltageSource(SETTINGS.setMilliVoltage, true)) printError(_PRINT_ERROR_VOLTAGE_SOURCE_SETTING);
+    if (SMU[0].fltSetCommitCurrentLimit(SETTINGS.setCurrentLimit/1000.0, true)) printError(_PRINT_ERROR_VOLTAGE_SOURCE_SETTING);
+    GD.resume();
+  }
+  else if (functionType == SOURCE_DC_CURRENT) {
+    //disable_ADC_DAC_SPI_units();
+    GD.__end();
+    //if (SMU[0].fltSetCommitVoltageSource(SMU[0].getSetValuemV(), true)) printError(_PRINT_ERROR_VOLTAGE_SOURCE_SETTING);
+    if (SMU[0].fltSetCommitCurrentSource(SETTINGS.setMilliAmpere/*SETTINGS.setMilliAmpere*/)) printError(_PRINT_ERROR_VOLTAGE_SOURCE_SETTING);
+    if (SMU[0].fltSetCommitVoltageLimit(SETTINGS.setVoltageLimit / 1000.0, true)) printError(_PRINT_ERROR_VOLTAGE_SOURCE_SETTING);
+    GD.resume();
   }
   
 }

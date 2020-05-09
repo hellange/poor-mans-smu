@@ -4,12 +4,18 @@ extern ADCClass SMU[];
 
 void SettingsClass::init() {
  lowBandWidth = true;
- SMU[0].setGPIO(1,true);
+ setLowBandWidth(lowBandWidth);
 }
 
 void SettingsClass::setLowBandWidth(bool t) {
   lowBandWidth = t;
+  Serial.print("Set GPIP 1 ");
+  Serial.println(t);
   SMU[0].setGPIO(1,t); // gpio1:  true = low bandwidth
+}
+
+int SettingsClass::getMaxTempAllowed() {
+  return maxTempAllowed;
 }
 
 void SettingsClass::render() {
