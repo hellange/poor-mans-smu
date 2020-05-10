@@ -54,6 +54,20 @@
 
 
 
+bool anyDialogOpen();
+void openMainMenu();
+void renderAnalogGauge(int x, int y, int size, float degrees, float value, char* title);
+void showLoadResistance(int x, int y);
+void loopMain();
+void loopDigitize();
+void handleSampling();
+void closeMainMenuCallback(FUNCTION_TYPE functionType_);
+void showFanSpeed(int x, int y);
+int TC74_getTemperature();
+void fltCommitCurrentSourceAutoRange(float mv, bool autoRange);
+void closeSourceDCCallback(int set_or_limit, bool cancel);
+
+
 #ifndef USE_SIMULATOR
 ADCClass SMU[1] = {
   ADCClass()
@@ -90,6 +104,13 @@ FUNCTION_TYPE functionType = SOURCE_DC_VOLTAGE;
 
 
 FUNCTION_TYPE prevFuncType = SOURCE_DC_VOLTAGE;
+
+void printError(int16_t  errorNum)
+{
+  Serial.print(F("Error("));
+  Serial.print(errorNum);
+  Serial.println(")");
+}
 
 OPERATION_TYPE getOperationType() {
   OPERATION_TYPE ot;
@@ -179,6 +200,10 @@ void pushButtonInterrupt(int key, bool quickPress, bool holdAfterLongPress, bool
 
 }
 
+bool reduceDetails() {
+  return scrollDir != 0 || MAINMENU.active == true or anyDialogOpen();
+}
+
 void  disable_ADC_DAC_SPI_units() {
   SMU[0].disable_ADC_DAC_SPI_units();
 }
@@ -247,6 +272,7 @@ void setup()
    GD.cmd_text(250, 200 ,   31, 0, "Poor man's SMU");
    GD.ColorRGB(0xaaaaaa);
    GD.cmd_text(250, 240 ,   28, 0, "Designed    by    Helge Langehaug");
+   GD.cmd_text(250, 270 ,   28, 1, "V0.12");
 
    GD.swap();
    delay(500);
@@ -985,9 +1011,7 @@ void showWidget(int y, int widgetNo, int scroll) {
 
 }
 
-bool reduceDetails() {
-  return scrollDir != 0 || MAINMENU.active == true or anyDialogOpen();
-}
+
 
 
 int gestureDetected = GEST_NONE;
@@ -1115,7 +1139,7 @@ void renderMainHeader() {
   GD.ColorRGB(0xdddddd);
   GD.cmd_text(20, 0, 27, 0, "Input 25.4V / - 25.3V"); // NOTE: Currently only dummy info
   showLoadResistance(590,0);
-  showFanSpeed(220,0);
+  showFanSpeed(220, 0);
   //GD.cmd_number(470,0,27,3,LM60_getTemperature());
   int temp = TC74_getTemperature();
   if (temp > SETTINGS.getMaxTempAllowed()) {
@@ -2451,9 +2475,4 @@ void closeSourceDCCallback(int set_or_limit, bool cancel) {
   GD.resume();
 }
 
-void printError(int16_t  errorNum)
-{
-  Serial.print(F("Error("));
-  Serial.print(errorNum);
-  Serial.println(")");
-}
+

@@ -38,7 +38,7 @@ void RotaryEncoderClass::handle(bool use100uVSetResolution)
 
    
    
-    float feely = 0.6;  // how fast will value change when you turn the knob.  High value changes faster than low value
+    float feely = 0.4;  // how fast will value change when you turn the knob.  High value changes faster than low value
    
     if (stepless_dynamic) {
       speed = millis() - millisSinceLastStep;
@@ -49,18 +49,14 @@ void RotaryEncoderClass::handle(bool use100uVSetResolution)
        
     } else {
 
-      if (millisSinceLastStep + 10 * feely > millis()) {
-        speed = 10000;
-      } else
-      if (millisSinceLastStep + 50 * feely > millis()) {
+      
+      if (millisSinceLastStep + 30 * feely > millis()) {
         speed = 1000;
       } else
       if (millisSinceLastStep + 100 * feely > millis()) {
-        speed = 500;
-      } 
-      else if (millisSinceLastStep + 150 * feely > millis()) {
         speed = 100;
       } 
+   
       else if (millisSinceLastStep + 200 * feely > millis()) {
         speed = 10;
       } else {
