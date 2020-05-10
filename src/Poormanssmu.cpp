@@ -275,7 +275,7 @@ void setup()
    GD.cmd_text(250, 270 ,   28, 1, "V0.12");
 
    GD.swap();
-   delay(500);
+   delay(501);
 
    GD.__end();
    Serial.println("...Done");
