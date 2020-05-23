@@ -29,6 +29,9 @@ class CalibrationClass {
   float dacGainCompNeg;
   float dacGainCompLim;
 
+  float dacGainCompPos2;
+  float dacGainCompNeg2;
+
   float adcGainCompPos;
   float adcGainCompNeg;
 
@@ -36,6 +39,8 @@ class CalibrationClass {
 
   int ea_dac_gain_comp_pos;
   int ea_dac_gain_comp_neg;
+    int ea_dac_gain_comp_pos2;
+  int ea_dac_gain_comp_neg2;
   int ea_dac_gain_comp_lim;
   
   int ea_adc_gain_comp_pos;
@@ -66,6 +71,10 @@ public:
   void adjDacGainCompNeg(float val);
   float getDacGainCompLim();
   void adjDacGainCompLim(float val);
+  float getDacGainCompPos2();
+  void adjDacGainCompPos2(float val);
+  float getDacGainCompNeg2();
+  void adjDacGainCompNeg2(float val);
   
   float getAdcGainCompPos();
   void adjAdcGainCompPos(float val);
@@ -98,8 +107,9 @@ public:
   bool nullValueIsSet(CURRENT_RANGE current_range);
   bool relativeValueIsSet(CURRENT_RANGE current_range);
 
-  void renderCal(int x, int y, float valM, float setM, bool cur, bool reduceDetails);
-    void renderCal2(int x, int y, float valM, float setM, bool cur, bool reduceDetails);
+  void renderCal(int x, int y, float valM, float setM, CURRENT_RANGE current_range, bool reduceDetails);
+
+    void renderCal2(int x, int y, float valM, float setM, CURRENT_RANGE current_range, bool reduceDetails);
 
   void init(OPERATION_TYPE operation_type);
 

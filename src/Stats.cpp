@@ -117,7 +117,7 @@ void StatsClass::renderHistogram(int x, int y, bool limitDetails) {
 
     for (int pos=0; pos<nrOfTrendPoints;pos++) { 
       if (value[pos] == undefinedValue) {
-        break;
+        continue;
       }
       for(int i=0;i<noOfbins;i++){
         if (value[pos] >= binLimits[i] && value[pos] < binLimits[i+1]){
@@ -141,13 +141,20 @@ void StatsClass::renderHistogram(int x, int y, bool limitDetails) {
       GD.Begin(RECTS);
       GD.ColorRGB(type==DigitUtilClass::typeVoltage?COLOR_VOLT:COLOR_CURRENT);
       GD.LineWidth(40);
-      float top = (bins[i]/binMax)*100;      
-      GD.Vertex2ii(xpos + 4, y); 
-      GD.Vertex2ii(xpos+barWidth - 4, y - top); 
-
-      GD.ColorRGB(0xffffff);
-      if (!limitDetails) {
-        GD.cmd_number(xpos-2+barWidth/2, y-top-25, 26, 0, bins[i]);
+      if (binMax > 0) {
+        float top = (bins[i]/binMax)*100;      
+        GD.Vertex2ii(xpos + 4, y); 
+        GD.Vertex2ii(xpos+barWidth - 4, y - top); 
+      
+        GD.ColorRGB(0xffffff);
+        if (!limitDetails) {
+          GD.cmd_number(xpos-2+barWidth/2, y-top-25, 26, 0, bins[i]);
+        }
+      } else {
+        // Just show low gray bars. We dont have any data to show yet...
+        GD.ColorRGB(0xaaaaaa);
+        GD.Vertex2ii(xpos + 4, y); 
+        GD.Vertex2ii(xpos+barWidth - 4, y); 
       }
 
       if (i==0 || i==((noOfbins-1)/2) || i==noOfbins-1){
@@ -159,8 +166,8 @@ void StatsClass::renderHistogram(int x, int y, bool limitDetails) {
 
       }
 
-    }
 
+    }
 }
 
 

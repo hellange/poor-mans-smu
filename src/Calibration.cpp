@@ -67,6 +67,10 @@ void CalibrationClass::init(OPERATION_TYPE operationType_) {
     ea_dac_gain_comp_pos = EA_DAC_GAIN_COMP_POS_VOL;
     ea_dac_gain_comp_neg = EA_DAC_GAIN_COMP_NEG_VOL;
 
+    ea_dac_gain_comp_pos2 = EA_DAC_GAIN_COMP_POS_VOL2;
+    ea_dac_gain_comp_neg2 = EA_DAC_GAIN_COMP_NEG_VOL2;
+
+
     ea_dac_gain_comp_lim = EA_DAC_GAIN_COMP_POS_LIM;
 
     
@@ -98,6 +102,9 @@ void CalibrationClass::init(OPERATION_TYPE operationType_) {
 
     ea_dac_gain_comp_pos = EA_DAC_GAIN_COMP_POS_CUR;
     ea_dac_gain_comp_neg = EA_DAC_GAIN_COMP_NEG_CUR;
+
+    ea_dac_gain_comp_pos2 = EA_DAC_GAIN_COMP_POS_CUR2;
+    ea_dac_gain_comp_neg2 = EA_DAC_GAIN_COMP_NEG_CUR2;
     
     ea_adc_gain_comp_pos = EA_ADC_GAIN_COMP_POS_CUR;
     ea_adc_gain_comp_neg = EA_ADC_GAIN_COMP_NEG_CUR;
@@ -129,6 +136,18 @@ void CalibrationClass::init(OPERATION_TYPE operationType_) {
     floatToEeprom(ea_dac_gain_comp_pos,dacGainCompPos); // write initial default
   }
   Serial.println(dacGainCompPos,7);
+
+ dacGainCompPos2 = floatFromEeprom(ea_dac_gain_comp_pos2);
+ Serial.print("Read dacGainCompPos2 from eeprom address ");
+  Serial.print(ea_dac_gain_comp_pos2,HEX);
+  Serial.print(":");
+  if (isnan(dacGainCompPos2)) {
+    Serial.print("Not defined. Write default value:");
+    dacGainCompPos2 = 1.0;
+    floatToEeprom(ea_dac_gain_comp_pos2,dacGainCompPos2); // write initial default
+  }
+  Serial.println(dacGainCompPos2,7);
+
  
   dacGainCompNeg = floatFromEeprom(ea_dac_gain_comp_neg);
   Serial.print("Read dacGainCompNeg from eeprom address ");
@@ -140,6 +159,17 @@ void CalibrationClass::init(OPERATION_TYPE operationType_) {
     floatToEeprom(ea_dac_gain_comp_neg,dacGainCompNeg); // write initial default
   }
   Serial.println(dacGainCompNeg,7);
+
+ dacGainCompNeg2 = floatFromEeprom(ea_dac_gain_comp_neg2);
+  Serial.print("Read dacGainCompNeg2 from eeprom address ");
+  Serial.print(ea_dac_gain_comp_neg2,HEX);
+  Serial.print(":");
+  if (isnan(dacGainCompNeg2)) {
+    Serial.print("Not defined. Write default value:");
+    dacGainCompNeg2 = 1.0;
+    floatToEeprom(ea_dac_gain_comp_neg2,dacGainCompNeg2); // write initial default
+  }
+  Serial.println(dacGainCompNeg2,7);
 
 
  dacGainCompLim = floatFromEeprom(ea_dac_gain_comp_lim);
@@ -630,8 +660,24 @@ void CalibrationClass::adjDacGainCompPos(float val) {
   Serial.flush();
 }
 
+void CalibrationClass::adjDacGainCompPos2(float val) {
+  dacGainCompPos2 += val;
+  floatToEeprom(ea_dac_gain_comp_pos2, dacGainCompPos2);
+  Serial.println(operationType == SOURCE_CURRENT ? "Source current" : "Source voltage");
+  Serial.print("Dac gain pos comp 2 at address ");
+  Serial.print(ea_dac_gain_comp_pos2,HEX);
+  Serial.print(" adjusted to:");
+  Serial.println(dacGainCompPos2,6);
+  Serial.flush();
+}
+
+
 float CalibrationClass::getDacGainCompPos() {
   return dacGainCompPos;
+}
+
+float CalibrationClass::getDacGainCompPos2() {
+  return dacGainCompPos2;
 }
 
 void CalibrationClass::adjDacGainCompNeg(float val) {
@@ -645,8 +691,23 @@ void CalibrationClass::adjDacGainCompNeg(float val) {
   Serial.flush();
 }
 
+void CalibrationClass::adjDacGainCompNeg2(float val) {
+  dacGainCompNeg2 += val;
+  floatToEeprom(ea_dac_gain_comp_neg2, dacGainCompNeg2);
+  Serial.println(operationType == SOURCE_CURRENT ? "Source current" : "Source voltage");
+   Serial.print("Dac gain neg 2 comp at address ");
+  Serial.print(ea_dac_gain_comp_neg2,HEX);
+  Serial.print(" adjusted to:");
+  Serial.println(dacGainCompNeg2,6);
+  Serial.flush();
+}
+
 float CalibrationClass::getDacGainCompNeg() {
   return dacGainCompNeg;
+}
+
+float CalibrationClass::getDacGainCompNeg2() {
+  return dacGainCompNeg2;
 }
 
 void CalibrationClass::adjDacGainCompLim(float val) {
@@ -715,7 +776,7 @@ float CalibrationClass::getDacZeroComp() {
   return dacZeroComp;
 }
 
-void CalibrationClass::renderCal2(int x, int y, float valM, float setM, bool cur, bool reduceDetails) {
+void CalibrationClass::renderCal2(int x, int y, float valM, float setM, CURRENT_RANGE current_range, bool reduceDetails) {
 
 
 
@@ -731,12 +792,6 @@ void CalibrationClass::renderCal2(int x, int y, float valM, float setM, bool cur
     GD.cmd_text(x+150,y+35+60,27,0,"ADC NullC(10mA)");
     DIGIT_UTIL.renderValue(x + 150,  y+110 ,nullValueCur[1], 1, -1); 
     GD.Tag(0);
-
-    
-  
-
-
-
 
 
      GD.LineWidth(20);
@@ -843,7 +898,40 @@ void CalibrationClass::renderCal2(int x, int y, float valM, float setM, bool cur
 }
 
 
-void CalibrationClass::renderCal(int x, int y, float valM, float setM, bool cur, bool reduceDetails) {
+
+void CalibrationClass::renderCal(int x, int y, float valM, float setM, CURRENT_RANGE current_range, bool reduceDetails) {
+ 
+ // dac vol2cur2
+if (current_range == MILLIAMP10 && operationType == SOURCE_CURRENT){
+ if (!reduceDetails) {
+    GD.ColorRGB(0xaaaaaa);
+    if (FILTERS->mean < 0) {
+      GD.cmd_text(x+10, y + 45, 27, 0, "DAC G10mA -");
+      DIGIT_UTIL.renderValue(x + 0,  y+65 ,getDacGainCompNeg2()*100.0, 1, -1); 
+      GD.cmd_text(x+93, y + 68, 27, 0, "%");
+    } else {
+      GD.cmd_text(x+10, y + 45, 27, 0, "DAC G10mA +");
+      DIGIT_UTIL.renderValue(x + 0,  y+65 ,getDacGainCompPos2()*100.0, 1, -1);
+      GD.cmd_text(x+93, y + 68, 27, 0, "%"); 
+    }
+  }
+    GD.ColorRGB(0x000000);
+
+    GD.Tag(BUTTON_DAC_GAIN_COMP_UP2);
+    GD.ColorRGB(DIGIT_UTIL.indicateColor(0x000000, 0x00ff00, 50, BUTTON_DAC_GAIN_COMP_UP2));
+    GD.cmd_button(x+10,y+95,100,50,29,0,"UP2");
+    GD.Tag(BUTTON_DAC_GAIN_COMP_DOWN2);
+    GD.ColorRGB(DIGIT_UTIL.indicateColor(0x000000, 0x00ff00, 50,BUTTON_DAC_GAIN_COMP_DOWN2));
+    GD.cmd_button(x+10,y+155,100,50,29,0,"DOWN2");
+  GD.Tag(0);
+}
+ 
+ else {
+ 
+ 
+ 
+ 
+ 
   if (!reduceDetails) {
     GD.ColorRGB(0xaaaaaa);
     if (FILTERS->mean < 0) {
@@ -855,28 +943,35 @@ void CalibrationClass::renderCal(int x, int y, float valM, float setM, bool cur,
       DIGIT_UTIL.renderValue(x + 0,  y+65 ,getDacGainCompPos()*100.0, 1, -1);
       GD.cmd_text(x+93, y + 68, 27, 0, "%"); 
     }
-
-
-
-
-
-    
-
-
-
-
-    
-  
+  }
     GD.ColorRGB(0x000000);
 
-    GD.Tag(BUTTON_DAC_GAIN_COMP_POS_UP);
-    GD.ColorRGB(DIGIT_UTIL.indicateColor(0x000000, 0x00ff00, 50, BUTTON_DAC_GAIN_COMP_POS_UP));
+    GD.Tag(BUTTON_DAC_GAIN_COMP_UP);
+    GD.ColorRGB(DIGIT_UTIL.indicateColor(0x000000, 0x00ff00, 50, BUTTON_DAC_GAIN_COMP_UP));
     GD.cmd_button(x+10,y+95,100,50,29,0,"UP");
-    GD.Tag(BUTTON_DAC_GAIN_COMP_POS_DOWN);
-    GD.ColorRGB(DIGIT_UTIL.indicateColor(0x000000, 0x00ff00, 50,BUTTON_DAC_GAIN_COMP_POS_DOWN));
+    GD.Tag(BUTTON_DAC_GAIN_COMP_DOWN);
+    GD.ColorRGB(DIGIT_UTIL.indicateColor(0x000000, 0x00ff00, 50,BUTTON_DAC_GAIN_COMP_DOWN));
     GD.cmd_button(x+10,y+155,100,50,29,0,"DOWN");
   GD.Tag(0);
+
+
+ }
+
+
+
+
+
+
+
+
+
+
+
+
+
     x=x+10;
+      if (!reduceDetails) {
+
     GD.ColorRGB(0xaaaaaa);
     if (FILTERS->mean < 0) {
       GD.cmd_text(x+120, y + 45, 27, 0, "ADC GAIN -");
@@ -887,7 +982,7 @@ void CalibrationClass::renderCal(int x, int y, float valM, float setM, bool cur,
       DIGIT_UTIL.renderValue(x + 110,  y+65 ,getAdcGainCompPos() * 100.0, 1, -1); 
       GD.cmd_text(x+203, y + 68, 27, 0, "%");
     }
-  
+      }
     GD.ColorRGB(0x000000);
   
     GD.Tag(BUTTON_ADC_GAIN_COMP_POS_UP);
@@ -899,12 +994,14 @@ void CalibrationClass::renderCal(int x, int y, float valM, float setM, bool cur,
     GD.Tag(0);
 
     x=x+120;
+      if (!reduceDetails) {
+
     GD.ColorRGB(0xaaaaaa);
     
     GD.cmd_text(x+120, y + 45, 27, 0, "DAC zero");
     DIGIT_UTIL.renderValue(x + 110,  y+65 ,getDacZeroComp(), 1, -1); 
     GD.cmd_text(x+203, y + 68, 27, 0, "");
-   
+      }   
     GD.ColorRGB(0x000000);
   
     GD.Tag(BUTTON_DAC_ZERO_COMP_UP);
@@ -916,43 +1013,17 @@ void CalibrationClass::renderCal(int x, int y, float valM, float setM, bool cur,
     
     GD.Tag(0); // Seems to fix problem with function calles when touching a special place on the screen... why ????
 
-//    x=x-65;
 
-    /*
-    GD.ColorRGB(0xaaaaaa);
 
-    GD.cmd_text(x+300,y+45,27,0,"ADC NullV(1A)");
-    DIGIT_UTIL.renderValue(x + 300,  y+60 ,nullValueVol[0], 1, -1); 
-    GD.cmd_text(x+450,y+45,27,0,"ADC NullV(10mA)");
-    DIGIT_UTIL.renderValue(x + 450,  y+60 ,nullValueVol[1], 1, -1); 
-
-    GD.cmd_text(x+300,y+35+60,27,0,"ADC NullC(1A)");
-    DIGIT_UTIL.renderValue(x + 300,  y+110 ,nullValueCur[0], 1, -1); 
-    GD.cmd_text(x+450,y+35+60,27,0,"ADC NullC(10mA)");
-    DIGIT_UTIL.renderValue(x + 450,  y+110 ,nullValueCur[1], 1, -1); 
-
-    
-    GD.ColorRGB(0x000000);
-
-    GD.Tag(BUTTON_DAC_NONLINEAR_CALIBRATE);
-    GD.ColorRGB(DIGIT_UTIL.indicateColor(0x000000, 0x00ff00, 50, BUTTON_DAC_NONLINEAR_CALIBRATE));
-    GD.cmd_button(x+610,y+45,120,50,29,0,"AUTOCAL");
-
-    GD.Tag(BUTTON_DAC_ZERO_CALIBRATE);
-    GD.ColorRGB(DIGIT_UTIL.indicateColor(0x000000, 0x00ff00, 50, BUTTON_DAC_ZERO_CALIBRATE));
-    GD.cmd_button(x+610,y+100,120,50,29,0,"ZEROCAL");
-    
-    GD.Tag(0);
-    */
-
-x=x+230;
+  x=x+230;
+  if (!reduceDetails) {
 
       GD.ColorRGB(0xaaaaaa);
       GD.cmd_text(x+10, y + 45, 27, 0, "LIM GAIN");
       DIGIT_UTIL.renderValue(x + 0,  y+65 ,getDacGainCompLim()*100.0, 1, -1); 
       GD.cmd_text(x+93, y + 68, 27, 0, "%");
      GD.ColorRGB(0x000000);
-
+  }
     GD.Tag(BUTTON_DAC_GAIN_COMP_LIM_UP);
     GD.ColorRGB(DIGIT_UTIL.indicateColor(0x000000, 0x00ff00, 50, BUTTON_DAC_GAIN_COMP_LIM_UP));
     GD.cmd_button(x+10,y+95,100,50,29,0,"UP");
@@ -961,7 +1032,7 @@ x=x+230;
     GD.cmd_button(x+10,y+155,100,50,29,0,"DOWN");
 
     
-  }
+  
  
   
  

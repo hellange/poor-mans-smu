@@ -161,7 +161,7 @@ void rotaryChangedFn(float changeVal) {
       mv = SMU[0].getSetValuemV();
     }
      if (current_range == MILLIAMP10) {
-       changeVal = changeVal / 10.0;
+       changeVal = changeVal / 100.0;
      }
      
      float newVoltage = mv + changeVal/10.0;
@@ -976,16 +976,16 @@ void showWidget(int y, int widgetNo, int scroll) {
       if (scroll ==0){
         GD.ColorRGB(COLOR_VOLT);
         GD.cmd_text(20, yPos, 29, 0, "CAL");
+      }
 
-        if (operationType == SOURCE_VOLTAGE) {
-          float rawM = V_FILTERS.mean;
-          float setM = SMU[0].getSetValuemV();
-          V_CALIBRATION.renderCal(scroll,yPos, rawM, setM, false, reduceDetails());
-        } else {
-          float rawM = C_FILTERS.mean;
-          float setM = SMU[0].getSetValuemV();
-          C_CALIBRATION.renderCal(scroll,yPos, rawM, setM, false, reduceDetails());
-        }
+      if (operationType == SOURCE_VOLTAGE) {
+         float rawM = V_FILTERS.mean;
+         float setM = SMU[0].getSetValuemV();
+         V_CALIBRATION.renderCal(scroll,yPos, rawM, setM, current_range, reduceDetails());
+       } else {
+         float rawM = C_FILTERS.mean;
+        float setM = SMU[0].getSetValuemV();
+        C_CALIBRATION.renderCal(scroll,yPos, rawM, setM, current_range,  reduceDetails());
       }
       
   }
@@ -993,19 +993,17 @@ void showWidget(int y, int widgetNo, int scroll) {
       if (scroll ==0){
         GD.ColorRGB(COLOR_VOLT);
         GD.cmd_text(20, yPos, 29, 0, "CAL 2");
-
-        if (operationType == SOURCE_VOLTAGE) {
-          float rawM = V_FILTERS.mean;
-          float setM = SMU[0].getSetValuemV();
-          V_CALIBRATION.renderCal2(scroll,yPos, rawM, setM, false, reduceDetails());
-        } else {
-          float rawM = C_FILTERS.mean;
-          float setM = SMU[0].getSetValuemV();
-          C_CALIBRATION.renderCal2(scroll,yPos, rawM, setM, false, reduceDetails());
-        }
       }
-      
-      
+
+      if (operationType == SOURCE_VOLTAGE) {
+         float rawM = V_FILTERS.mean;
+         float setM = SMU[0].getSetValuemV();
+         V_CALIBRATION.renderCal2(scroll,yPos, rawM, setM, current_range, reduceDetails());
+       } else {
+         float rawM = C_FILTERS.mean;
+         float setM = SMU[0].getSetValuemV();
+         C_CALIBRATION.renderCal2(scroll,yPos, rawM, setM, current_range, reduceDetails());
+      }   
   }
   
 
@@ -1015,7 +1013,7 @@ void showWidget(int y, int widgetNo, int scroll) {
 
 
 int gestureDetected = GEST_NONE;
-int scrollSpeed = 100;
+int scrollSpeed = 70;
 void handleWidgetScrollPosition() {
   if (gestureDetected == GEST_MOVE_LEFT) {
 //    if (activeWidget == noOfWidgets -1) {
@@ -2058,7 +2056,7 @@ int checkButtons() {
 
     } 
     #ifndef USE_SIMULATOR // dont want to mess up calibration while in simulation mode...
-    else if (tag == BUTTON_DAC_GAIN_COMP_POS_UP) {
+    else if (tag == BUTTON_DAC_GAIN_COMP_UP) {
        if (timeSinceLastChange + 200 > millis()){
         return;
        } 
@@ -2076,9 +2074,9 @@ int checkButtons() {
          GD.resume();
        } else {
           if (mv < 0) {
-            C_CALIBRATION.adjDacGainCompNeg(0.00001);
+            C_CALIBRATION.adjDacGainCompNeg(0.00001*10.0);
          } else {
-            C_CALIBRATION.adjDacGainCompPos(0.00001);
+            C_CALIBRATION.adjDacGainCompPos(0.00001*10.0);
          }
          GD.__end();
          if (SMU[0].fltSetCommitCurrentSource(mv)) printError(_PRINT_ERROR_VOLTAGE_SOURCE_SETTING);
@@ -2087,8 +2085,36 @@ int checkButtons() {
       
     } 
     
-    
-    else if (tag == BUTTON_DAC_GAIN_COMP_POS_DOWN) {
+    else if (tag == BUTTON_DAC_GAIN_COMP_UP2) {
+       if (timeSinceLastChange + 200 > millis()){
+        return;
+       } 
+       timeSinceLastChange = millis();
+       DIGIT_UTIL.startIndicator(tag);
+       float mv = SMU[0].getSetValuemV();
+       if (operationType == SOURCE_VOLTAGE) {
+         if (mv < 0) {
+            V_CALIBRATION.adjDacGainCompNeg2(0.000005);
+         } else {
+            V_CALIBRATION.adjDacGainCompPos2(0.000005);
+         }
+         GD.__end();
+         if (SMU[0].fltSetCommitVoltageSource(mv, true)) printError(_PRINT_ERROR_VOLTAGE_SOURCE_SETTING);
+         GD.resume();
+       } else {
+          if (mv < 0) {
+            C_CALIBRATION.adjDacGainCompNeg2(0.00001);
+         } else {
+            C_CALIBRATION.adjDacGainCompPos2(0.00001);
+         }
+         GD.__end();
+         if (SMU[0].fltSetCommitCurrentSource(mv)) printError(_PRINT_ERROR_VOLTAGE_SOURCE_SETTING);
+         GD.resume();
+       }
+      
+    } 
+
+    else if (tag == BUTTON_DAC_GAIN_COMP_DOWN) {
        if (timeSinceLastChange + 200 > millis()){
         return;
       } 
@@ -2107,19 +2133,47 @@ int checkButtons() {
          GD.resume();
        } else {
           if (mv < 0) {
-            C_CALIBRATION.adjDacGainCompNeg(-0.00001);
+            C_CALIBRATION.adjDacGainCompNeg(-0.00001 *10.0);
          } else {
-            C_CALIBRATION.adjDacGainCompPos(-0.00001);
+            C_CALIBRATION.adjDacGainCompPos(-0.00001 * 10.0);
          }
          GD.__end();
          if (SMU[0].fltSetCommitCurrentSource(mv)) printError(_PRINT_ERROR_VOLTAGE_SOURCE_SETTING);
          GD.resume();
-       }
-      
-       
+       }   
+    } 
+    
+       else if (tag == BUTTON_DAC_GAIN_COMP_DOWN2) {
+       if (timeSinceLastChange + 200 > millis()){
+        return;
+      } 
+       timeSinceLastChange = millis();
+       DIGIT_UTIL.startIndicator(tag);
+       float mv = SMU[0].getSetValuemV();
+       if (operationType == SOURCE_VOLTAGE) {
+         if (mv < 0) {
+            V_CALIBRATION.adjDacGainCompNeg2(-0.000005);
+         } else {
+            V_CALIBRATION.adjDacGainCompPos2(-0.000005);
+         }
+         //if (operationType == SOURCE_VOLTAGE) {
+         GD.__end();
+         if (SMU[0].fltSetCommitVoltageSource(mv, true)) printError(_PRINT_ERROR_VOLTAGE_SOURCE_SETTING);
+         GD.resume();
+       } else {
+          if (mv < 0) {
+            C_CALIBRATION.adjDacGainCompNeg2(-0.00001);
+         } else {
+            C_CALIBRATION.adjDacGainCompPos2(-0.00001);
+         }
+         GD.__end();
+         if (SMU[0].fltSetCommitCurrentSource(mv)) printError(_PRINT_ERROR_VOLTAGE_SOURCE_SETTING);
+         GD.resume();
+       }   
     } 
     
     
+
 
 
       else if (tag == BUTTON_DAC_GAIN_COMP_LIM_UP) {
@@ -2181,9 +2235,9 @@ int checkButtons() {
          }
        } else {
          if (mv < 0) {
-            C_CALIBRATION.adjAdcGainCompNeg(0.000005);
+            C_CALIBRATION.adjAdcGainCompNeg(0.000005 *10.0);
          } else {
-            C_CALIBRATION.adjAdcGainCompPos(0.000005);
+            C_CALIBRATION.adjAdcGainCompPos(0.000005 *10.0);
          }
        }
       
@@ -2202,9 +2256,9 @@ int checkButtons() {
          }
        } else {
         if (mv < 0) {
-            C_CALIBRATION.adjAdcGainCompNeg(-0.000005);
+            C_CALIBRATION.adjAdcGainCompNeg(-0.000005 *10.0);
          } else {
-            C_CALIBRATION.adjAdcGainCompPos(-0.000005);
+            C_CALIBRATION.adjAdcGainCompPos(-0.000005 *10.0);
          }
        }
       

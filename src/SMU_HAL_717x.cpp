@@ -545,15 +545,15 @@ int8_t ADCClass::fltSetCommitVoltageSource(float milliVolt, bool dynamicRange) {
       Serial.print(dac_voltage);
       Serial.println("mV in DAC for 10mA range....");
 
-      dac_voltage = dac_voltage * 0.970;
+      dac_voltage = dac_voltage * 0.960;
 
       //dac_voltage = dac_voltage * 3.125; // after using 3 opamp diff amplifier before 1997-3.... hmm...
- dac_voltage = dac_voltage /1.015;
+ //dac_voltage = dac_voltage /1.015;
 
       if (dac_voltage < 0) {
-        //dac_voltage = dac_voltage * C_CALIBRATION.getDacGainCompNeg(); //TODO: Should differ between ranges !
+       dac_voltage = dac_voltage * C_CALIBRATION.getDacGainCompNeg2(); 
       } else {
-        //dac_voltage = dac_voltage * C_CALIBRATION.getDacGainCompPos(); //TODO: Should differ between ranges !
+        dac_voltage = dac_voltage * C_CALIBRATION.getDacGainCompPos2();
       }
 
       //dac_voltage = dac_voltage + C_CALIBRATION.getDacZeroComp() * 5000.0; //TODO: Should differ between ranges !
@@ -588,11 +588,15 @@ int8_t ADCClass::fltSetCommitVoltageSource(float milliVolt, bool dynamicRange) {
   float DAC_RANGE_LOW = -10.0;
   float DAC_RANGE_HIGH = 10.0;
   
-//  if (abs(v) <2.2) {   // can move to 2.5 if reference voltage is 5v
-//    choice = 4;
-//    DAC_RANGE_LOW = -2.5;
-//    DAC_RANGE_HIGH = 2.5;
-//  }
+  // TODO: Find out what that means in steps for individual current ranges...
+  // TODO: Add "auto" mode and "manual" mode ?
+  /*
+  if (abs(v) <2.2) {   // can move to 2.5 if reference voltage is 5v
+    choice = 4;
+    DAC_RANGE_LOW = -2.5;
+    DAC_RANGE_HIGH = 2.5;
+  }
+  */
   
   uint32_t span = (uint32_t)(choice << 2);
 

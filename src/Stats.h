@@ -2,7 +2,7 @@
 class StatsClass {
 
 #define MAX_FULL_SAMPLES 75
-#define MAX_PRELIMBUFFER_SIZE 1000
+#define MAX_PRELIMBUFFER_SIZE 1000 
 private:
 
   float prelimBuffer[MAX_PRELIMBUFFER_SIZE];
