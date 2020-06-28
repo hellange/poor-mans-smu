@@ -93,6 +93,10 @@ int noOfWidgets = 7;
 int activeWidget = 0;
 
 CURRENT_RANGE current_range = AMP1; // TODO: get rid of global
+
+bool voltage_range = true;
+
+
 int timeSinceLastChange = 0;  // TODO: get rid of global
 
 
@@ -272,7 +276,7 @@ void setup()
    GD.cmd_text(250, 200 ,   31, 0, "Poor man's SMU");
    GD.ColorRGB(0xaaaaaa);
    GD.cmd_text(250, 240 ,   28, 0, "Designed    by    Helge Langehaug");
-   GD.cmd_text(250, 270 ,   28, 1, "V0.12");
+   GD.cmd_text(250, 270 ,   28, 1, "V0.14");
 
    GD.swap();
    delay(501);
@@ -996,7 +1000,13 @@ void showWidget(int y, int widgetNo, int scroll) {
       if (operationType == SOURCE_VOLTAGE) {
          float rawM = V_FILTERS.mean;
          float setM = SMU[0].getSetValuemV();
-         V_CALIBRATION.renderCal(scroll,yPos, rawM, setM, current_range, reduceDetails());
+         if (abs(setM) > 2300) {   // TODO: Hack, using MILLIAMP10 to indicate high volt range (10V). Stupid. Fix !!!!
+            V_CALIBRATION.renderCal(scroll,yPos, rawM, setM, MILLIAMP10, reduceDetails());
+         } else {
+           // TODO: Hack, using MILLIAMP10 to indicate high volt range (10V). Stupid. Fix !!!!
+            V_CALIBRATION.renderCal(scroll,yPos, rawM, setM, AMP1, reduceDetails());
+
+         }
        } else {
          float rawM = C_FILTERS.mean;
         float setM = SMU[0].getSetValuemV();

@@ -111,6 +111,8 @@ public:
 
     void renderCal2(int x, int y, float valM, float setM, CURRENT_RANGE current_range, bool reduceDetails);
 
+
+
   void init(OPERATION_TYPE operation_type);
 
   void autoCalADCfromDAC();

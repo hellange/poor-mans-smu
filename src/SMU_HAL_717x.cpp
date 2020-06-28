@@ -433,10 +433,19 @@ int8_t ADCClass::fltSetCommitVoltageSource(float milliVolt, bool dynamicRange) {
     
     dac_voltage = dac_voltage * 0.994; // crude adjustment that will differ between hardware
 
+  
     if (dac_voltage>0) {
-      dac_voltage = dac_voltage * V_CALIBRATION.getDacGainCompPos();
+      if (dac_voltage > 2.3) {
+        dac_voltage = dac_voltage * V_CALIBRATION.getDacGainCompPos2();
+      } else {
+        dac_voltage = dac_voltage * V_CALIBRATION.getDacGainCompPos();
+      }
     } else {
-      dac_voltage = dac_voltage * V_CALIBRATION.getDacGainCompNeg();
+      if (dac_voltage < 2.3) {
+        dac_voltage = dac_voltage * V_CALIBRATION.getDacGainCompNeg2();
+      } else {
+        dac_voltage = dac_voltage * V_CALIBRATION.getDacGainCompNeg();
+      }
     }
     
     //dac_voltage = dac_voltage * voltageInputDividerCompensation;

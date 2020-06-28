@@ -121,9 +121,9 @@ void DigitUtilClass::renderValue(int x,int y,float val, int size = 0, int type =
 unsigned long compliance_blink_timer = millis();
 unsigned long old_compliance_blink_timer = compliance_blink_timer ;
 
-int DigitUtilClass::blinkColor(int colorHigh, int colorLow, int period) {
-  int compliance_blink_timer = millis();
-  int color = colorHigh;
+int DigitUtilClass::blinkColor(int colorHigh, int colorLow, unsigned int period) {
+  unsigned int compliance_blink_timer = millis();
+  unsigned int color = colorHigh;
   if (compliance_blink_timer - old_compliance_blink_timer > period) {
     old_compliance_blink_timer = compliance_blink_timer;
   } else if (compliance_blink_timer - old_compliance_blink_timer > period/2) {

@@ -899,6 +899,7 @@ void CalibrationClass::renderCal2(int x, int y, float valM, float setM, CURRENT_
 
 
 
+
 void CalibrationClass::renderCal(int x, int y, float valM, float setM, CURRENT_RANGE current_range, bool reduceDetails) {
  
  // dac vol2cur2
@@ -925,12 +926,34 @@ if (current_range == MILLIAMP10 && operationType == SOURCE_CURRENT){
     GD.cmd_button(x+10,y+155,100,50,29,0,"DOWN2");
   GD.Tag(0);
 }
+
+
+ // TODO: HACK!  Using MILLIAMP10 to indicate high voltage range !!!!  Stupid !   Should be fixed...
+ else if (current_range == MILLIAMP10 && operationType == SOURCE_VOLTAGE){
+ if (!reduceDetails) {
+    GD.ColorRGB(0xaaaaaa);
+    if (FILTERS->mean < 0) {
+      GD.cmd_text(x+10, y + 45, 27, 0, "DAC 10V -");
+      DIGIT_UTIL.renderValue(x + 0,  y+65 ,getDacGainCompNeg2()*100.0, 1, -1); 
+      GD.cmd_text(x+93, y + 68, 27, 0, "%");
+    } else {
+      GD.cmd_text(x+10, y + 45, 27, 0, "DAC 10V +");
+      DIGIT_UTIL.renderValue(x + 0,  y+65 ,getDacGainCompPos2()*100.0, 1, -1);
+      GD.cmd_text(x+93, y + 68, 27, 0, "%"); 
+    }
+  }
+    GD.ColorRGB(0x000000);
+
+    GD.Tag(BUTTON_DAC_GAIN_COMP_UP2);
+    GD.ColorRGB(DIGIT_UTIL.indicateColor(0x000000, 0x00ff00, 50, BUTTON_DAC_GAIN_COMP_UP2));
+    GD.cmd_button(x+10,y+95,100,50,29,0,"UP2");
+    GD.Tag(BUTTON_DAC_GAIN_COMP_DOWN2);
+    GD.ColorRGB(DIGIT_UTIL.indicateColor(0x000000, 0x00ff00, 50,BUTTON_DAC_GAIN_COMP_DOWN2));
+    GD.cmd_button(x+10,y+155,100,50,29,0,"DOWN2");
+  GD.Tag(0);
+}
  
  else {
- 
- 
- 
- 
  
   if (!reduceDetails) {
     GD.ColorRGB(0xaaaaaa);
