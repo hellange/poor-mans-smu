@@ -359,7 +359,7 @@ void showStatusIndicator(int x,int y,const char* text, bool enable, bool warn) {
   
   GD.LineWidth(150);
   GD.Vertex2ii(x, 15 + y);
-  GD.Vertex2ii(x + 60, y + 24);
+  GD.Vertex2ii(x + 55, y + 24);
   GD.ColorRGB(0xffffff);
   GD.ColorA(enable ? 200 : 25);
   GD.cmd_text(x+ 2, y + 10, 27, 0, text);
@@ -384,7 +384,8 @@ void sourceCurrentPanel(int x, int y) {
   
   // primary
   bool shownA = current_range == MILLIAMP10;
-  CURRENT_DISPLAY.renderMeasured(x + 17,y + 26, C_FILTERS.mean, false, shownA);
+  shownA = false; // Override. Dont show nA
+  CURRENT_DISPLAY.renderMeasured(x /*+ 17*/,y + 26, C_FILTERS.mean, false, shownA, current_range);
 
   // secondary
   GD.ColorRGB(COLOR_CURRENT);
@@ -419,7 +420,7 @@ void sourceVoltagePanel(int x, int y) {
   GD.cmd_text(x+20 + 1, y + 2 + 1 ,   29, 0, "SOURCE VOLTAGE");
   
   // primary
-  VOLT_DISPLAY.renderMeasured(x + 17,y + 26, V_FILTERS.mean, false);
+  VOLT_DISPLAY.renderMeasured(x /*+ 17*/,y + 26, V_FILTERS.mean, false);
 
   // secondary
   GD.ColorRGB(COLOR_VOLT);
@@ -428,6 +429,8 @@ void sourceVoltagePanel(int x, int y) {
 
   GD.ColorA(255);
   VOLT_DISPLAY.renderSet(x + 120, y + 131, SMU[0].getSetValuemV());
+
+//5.89mV gir feil avrunding....
 
   float uVstep = 1000000.0/ powf(2.0,18.0); // for 1V 18bit DAC
 
@@ -458,31 +461,42 @@ void sourceVoltagePanel(int x, int y) {
   GD.cmd_fgcolor(0xaaaa90);  
 
   
-
-  
+/*
+  GD.ColorRGB(COLOR_VOLT);
+  GD.cmd_text(x+0,y+132+10+5, 28, 0, "SOURCE");
+  GD.ColorRGB(0);
   GD.Tag(BUTTON_SOURCE_SET);
+  GD.cmd_button(x + 20+100-30-5,y + 132,95+100,50,29,OPT_NOTEAR,""); // SET
+    //VOLT_DISPLAY.renderSet(x + 120-100, y + 131, SMU[0].getSetValuemV());
+  DIGIT_UTIL.renderValue(x + 120-50+5,  y+131+10-5+3 , SMU[0].getSetValuemV(), 3, DigitUtilClass::typeVoltage); 
+  //GD.cmd_text(x+ + 120-50+100+50+30+5,  y+131+10-5+3, 30, 0, "V");
+*/
+
+ GD.Tag(BUTTON_SOURCE_SET);
   GD.cmd_button(x + 20,y + 132,95,50,29,OPT_NOTEAR,"SET");
+
   GD.Tag(BUTTON_VOLT_AUTO);
-  GD.cmd_button(x + 350+20,y + 132 ,95,50,29,0,"AUTO");
+  GD.cmd_button(x + 350+20,y + 132 ,95+0,50,29,0,"AUTO");
 }
 
 void renderStatusIndicators(int x, int y) {
+  x=x+10;
   showStatusIndicator(x+630, y+5, "FILTER", V_FILTERS.filterSize>1, false);
   if (operationType == SOURCE_VOLTAGE) {
-    showStatusIndicator(x+720, y+5, "NULL_V", V_CALIBRATION.nullValueIsSet(current_range), false);
-    showStatusIndicator(x+720, y+45, "REL_V", V_CALIBRATION.relativeValueIsSet(current_range), false);
+    showStatusIndicator(x+710, y+5, "NULLv", V_CALIBRATION.nullValueIsSet(current_range), false);
+    showStatusIndicator(x+710, y+45, "RELv", V_CALIBRATION.relativeValueIsSet(current_range), false);
 
   } else {
-    showStatusIndicator(x+720, y+5, "NULL_C", C_CALIBRATION.nullValueIsSet(current_range), false);
-    showStatusIndicator(x+720, y+45, "REL_C", C_CALIBRATION.relativeValueIsSet(current_range), false);
+    showStatusIndicator(x+710, y+5, "NULLc", C_CALIBRATION.nullValueIsSet(current_range), false);
+    showStatusIndicator(x+710, y+45, "RELc", C_CALIBRATION.relativeValueIsSet(current_range), false);
 
   }
   showStatusIndicator(x+630, y+45, "50Hz", false, false);
   showStatusIndicator(x+630, y+85, "COMP", SMU[0].hasCompliance(), true);
     if (operationType == SOURCE_VOLTAGE) {
-      showStatusIndicator(x+720, y+85, "UNCAL_V", !V_CALIBRATION.useCalibratedValues, true);
+      showStatusIndicator(x+710, y+85, "UNCAL", !V_CALIBRATION.useCalibratedValues, true);
     } else {
-      showStatusIndicator(x+720, y+85, "UNCAL_C", !C_CALIBRATION.useCalibratedValues, true);
+      showStatusIndicator(x+710, y+85, "UNCALc", !C_CALIBRATION.useCalibratedValues, true);
     }
 }
 
@@ -794,7 +808,7 @@ void measureVoltagePanel(int x, int y, boolean compliance) {
   }
   y=y+28;
 
-  VOLT_DISPLAY.renderMeasured(x + 17, y, V_FILTERS.mean, compliance);
+  VOLT_DISPLAY.renderMeasured(x /*+ 17*/, y, V_FILTERS.mean, compliance);
   VOLT_DISPLAY.renderSet(x+120, y+105, SMU[0].getLimitValue());
 
   y=y+105;
@@ -835,7 +849,8 @@ void measureCurrentPanel(int x, int y, boolean compliance, bool showBar) {
     }
     GD.ColorA(255);
     bool shownA = current_range == MILLIAMP10;
-    CURRENT_DISPLAY.renderMeasured(x + 17, y, C_FILTERS.mean, compliance, shownA); 
+    shownA = false; // Override. Dont show nA
+    CURRENT_DISPLAY.renderMeasured(x /*+ 17*/, y, C_FILTERS.mean, compliance, shownA, current_range); 
   }
   CURRENT_DISPLAY.renderSet(x+120, y+105, SMU[0].getLimitValue());
 
@@ -1800,8 +1815,8 @@ void loopDigitize() {
     renderMainHeader();
     VOLT_DISPLAY.renderMeasured(10,50, minDigV, false);
     VOLT_DISPLAY.renderMeasured(10,150, maxDigV, false);
-    CURRENT_DISPLAY.renderMeasured(10,250, minDigI, false, false);
-    CURRENT_DISPLAY.renderMeasured(10,350, maxDigI, false, false);
+    CURRENT_DISPLAY.renderMeasured(10,250, minDigI, false, false,current_range);
+    CURRENT_DISPLAY.renderMeasured(10,350, maxDigI, false, false, current_range);
 
    // VOLT_DISPLAY.renderMeasured(10,50, digitizeCounter, false);
     //    VOLT_DISPLAY.renderMeasured(10,200, fullSamplePeriod, false);
@@ -2074,9 +2089,9 @@ int checkButtons() {
          GD.resume();
        } else {
           if (mv < 0) {
-            C_CALIBRATION.adjDacGainCompNeg(0.00001*10.0);
+            C_CALIBRATION.adjDacGainCompNeg(0.00001);
          } else {
-            C_CALIBRATION.adjDacGainCompPos(0.00001*10.0);
+            C_CALIBRATION.adjDacGainCompPos(0.00001);
          }
          GD.__end();
          if (SMU[0].fltSetCommitCurrentSource(mv)) printError(_PRINT_ERROR_VOLTAGE_SOURCE_SETTING);
@@ -2103,9 +2118,9 @@ int checkButtons() {
          GD.resume();
        } else {
           if (mv < 0) {
-            C_CALIBRATION.adjDacGainCompNeg2(0.00001);
+            C_CALIBRATION.adjDacGainCompNeg2(0.000005);
          } else {
-            C_CALIBRATION.adjDacGainCompPos2(0.00001);
+            C_CALIBRATION.adjDacGainCompPos2(0.000005);
          }
          GD.__end();
          if (SMU[0].fltSetCommitCurrentSource(mv)) printError(_PRINT_ERROR_VOLTAGE_SOURCE_SETTING);
@@ -2133,9 +2148,9 @@ int checkButtons() {
          GD.resume();
        } else {
           if (mv < 0) {
-            C_CALIBRATION.adjDacGainCompNeg(-0.00001 *10.0);
+            C_CALIBRATION.adjDacGainCompNeg(-0.00001 );
          } else {
-            C_CALIBRATION.adjDacGainCompPos(-0.00001 * 10.0);
+            C_CALIBRATION.adjDacGainCompPos(-0.00001 );
          }
          GD.__end();
          if (SMU[0].fltSetCommitCurrentSource(mv)) printError(_PRINT_ERROR_VOLTAGE_SOURCE_SETTING);
@@ -2162,9 +2177,9 @@ int checkButtons() {
          GD.resume();
        } else {
           if (mv < 0) {
-            C_CALIBRATION.adjDacGainCompNeg2(-0.00001);
+            C_CALIBRATION.adjDacGainCompNeg2(-0.000005);
          } else {
-            C_CALIBRATION.adjDacGainCompPos2(-0.00001);
+            C_CALIBRATION.adjDacGainCompPos2(-0.000005);
          }
          GD.__end();
          if (SMU[0].fltSetCommitCurrentSource(mv)) printError(_PRINT_ERROR_VOLTAGE_SOURCE_SETTING);
@@ -2227,13 +2242,14 @@ int checkButtons() {
        DIGIT_UTIL.startIndicator(tag);
        float mv = SMU[0].getSetValuemV();
        if (operationType == SOURCE_VOLTAGE) {
-  
+         mv = V_STATS.rawValue;
          if (mv < 0) {
-            V_CALIBRATION.adjAdcGainCompNeg(0.000001);
+            V_CALIBRATION.adjAdcGainCompNeg(0.000001 * 10.0);
          } else {
-            V_CALIBRATION.adjAdcGainCompPos(0.000001);
+            V_CALIBRATION.adjAdcGainCompPos(0.000001 * 10.0);
          }
        } else {
+         mv = C_STATS.rawValue;
          if (mv < 0) {
             C_CALIBRATION.adjAdcGainCompNeg(0.000005 *10.0);
          } else {
@@ -2249,12 +2265,14 @@ int checkButtons() {
        DIGIT_UTIL.startIndicator(tag);
        float mv = SMU[0].getSetValuemV();
        if (operationType == SOURCE_VOLTAGE) {
+         mv = V_STATS.rawValue;
          if (mv < 0) {
-            V_CALIBRATION.adjAdcGainCompNeg(-0.000001);
+            V_CALIBRATION.adjAdcGainCompNeg(-0.000001 * 10.0);
          } else {
-            V_CALIBRATION.adjAdcGainCompPos(-0.000001);
+            V_CALIBRATION.adjAdcGainCompPos(-0.000001 * 10.0);
          }
        } else {
+        mv = C_STATS.rawValue;
         if (mv < 0) {
             C_CALIBRATION.adjAdcGainCompNeg(-0.000005 *10.0);
          } else {

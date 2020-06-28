@@ -24,7 +24,7 @@ void CurrentDisplayClass::renderOverflowSW(int x, int y) {
   GD.ColorRGB(COLOR_CURRENT);
   boldText(x, y, " Overflow A (sw)");
 }
-void CurrentDisplayClass::renderMeasured(int x, int y, float rawMa, boolean compliance, bool show_nA) {
+void CurrentDisplayClass::renderMeasured(int x, int y, float rawMa, boolean compliance, bool show_nA, CURRENT_RANGE current_range) {
  
   int complianceColor = DIGIT_UTIL.blinkColor(0xff4522, 0x991002, 1000);
 
@@ -40,7 +40,9 @@ void CurrentDisplayClass::renderMeasured(int x, int y, float rawMa, boolean comp
     GD.ColorRGB(COLOR_CURRENT);
   }
 
+
   GD.cmd_text(x, y,  1, 0, neg ? "-":"+");
+
   x=x+55;
   
   if (a>0) {
@@ -50,12 +52,28 @@ void CurrentDisplayClass::renderMeasured(int x, int y, float rawMa, boolean comp
     GD.cmd_number(x+242, y+2, 1, 3, ua);
     GD.cmd_text(x+410, y+2 ,  1, 0, "A");
   } else if (ma > 0 or (ma==0 &&  ua>100 && show_nA==false) or show_nA == false){
+
+  if (current_range == MILLIAMP10) {
+    
+        boldNumber(x, y, 2, ma); // dont show most significant digit because ma<100
+        x=x-50; // can the move rest od the displayed text to the left
+  } else {
     boldNumber(x, y, 3, ma);
+
+  }
+
     boldText(x+162, y+30-30, ".");
     GD.cmd_number(x+192, y+2, 1, 3, ua);
-
+  
+if (current_range == MILLIAMP10) {
+    GD.cmd_number(x+370, y+2, 1, 2, (int)(na/10.0)); // use only two digit for nano amps !
+    GD.cmd_text(x+470-40+50, y+2 ,  1, 0, "mA");
+} else {
     GD.cmd_number(x+370, y+2, 1, 1, (int)(na/100.0)); // use only one digit for nano amps !
-    GD.cmd_text(x+470, y+2 ,  1, 0, "mA");
+    GD.cmd_text(x+470-40, y+2 ,  1, 0, "mA");
+}
+    //GD.cmd_number(x+370, y+2, 1, 1, (int)(na/100.0)); // use only one digit for nano amps !
+    //GD.cmd_text(x+470-40, y+2 ,  1, 0, "mA");
     } 
     else if (show_nA) {
     // Show uA with nA decimals...

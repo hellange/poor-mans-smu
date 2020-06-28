@@ -1,6 +1,8 @@
+#include "operations.h"
+
 class CurrentDisplayClass {
 public:
-  void renderMeasured(int x, int y, float rawMa, bool compliance, bool show_nA);
+  void renderMeasured(int x, int y, float rawMa, bool compliance, bool show_nA, CURRENT_RANGE current_range);
   void renderOverflowSW(int x, int y);
   void renderSet(int x, int y, float rawMa);
   void boldText(int x, int y, const char *text);

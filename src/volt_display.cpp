@@ -43,7 +43,7 @@ void VoltDisplayClass::renderMeasured(int x, int y, float rawMv, bool compliance
 
     GD.ColorA(255);
 
-    GD.cmd_text(x+470, y+2,  1, 0, "V"); 
+    GD.cmd_text(x+470 -40, y+2,  1, 0, "V"); 
   } else {
     //boldNumber(x,y+42-42, 2, v);
     boldNumber(x+104-100,y, 3, mv);

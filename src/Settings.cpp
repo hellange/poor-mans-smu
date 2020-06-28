@@ -3,7 +3,7 @@
 extern ADCClass SMU[];
 
 void SettingsClass::init() {
- lowBandWidth = true;
+ lowBandWidth = false;
  setLowBandWidth(lowBandWidth);
 }
 
