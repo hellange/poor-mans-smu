@@ -87,8 +87,14 @@ void RotaryEncoderClass::handle(bool use100uVSetResolution)
     positionLeft = newLeft;
 
 
-    changedFn(speed*dir / 100.0); // minimum step is 10uV
+    // TODO: Make the minimum step adjustable by pressing knob
+
+    //changedFn(speed*dir / 100.0); // minimum step is 10uV
+    
     //changedFn(speed*dir / 10.0); // minimum step is 100uV
+    changedFn(speed*dir / 1.0); // minimum step is 1mV
+    //changedFn(speed*dir * 10); // minimum step is 10mV
+
 /*
     float mv = SMU[0].getSetValuemV();
 

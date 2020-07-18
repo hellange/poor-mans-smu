@@ -19,13 +19,13 @@ class ADCClass {
   long int FSR = (((long int)1<<23)-1);
   unsigned long lastSampleMilli;
 
-  float setValueI = 0.0;
-  float setValueV = 0.0;
+  double setValueI = 0.0;
+  double setValueV = 0.0;
 
   
   private:
-    float VREF = 4.96625;            
-    float VFSR = VREF; 
+    double VREF = 4.96625;            
+    double VFSR = VREF; 
     CURRENT_RANGE current_range = AMP1;
     int samplingRate = 5;
     int oldSamplingRate = 5;
@@ -49,17 +49,17 @@ class ADCClass {
     int8_t fltSetCommitCurrentLimit(float fCurrent, int8_t up_down_both);
     int8_t fltSetCommitVoltageLimit(float fCurrent, int8_t up_down_both);
 
-    float measureMilliVoltage();
-    float measureMilliVoltageRaw();
+    double measureMilliVoltage();
+    double measureMilliVoltageRaw();
     void setCurrentRange(CURRENT_RANGE range, OPERATION_TYPE operationType);
     void setSamplingRate(int value);
     int getSamplingRate();
     int dataReady();
-    float measureCurrent(CURRENT_RANGE range);
+    double measureCurrent(CURRENT_RANGE range);
 
     bool hasCompliance();
-    float getSetValuemV();
-    float getLimitValue();
+    double getSetValuemV();
+    double getLimitValue();
 
     void setGPIO(int nr, bool on);
 

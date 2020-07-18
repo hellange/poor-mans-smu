@@ -32,6 +32,10 @@ class CalibrationClass {
   float dacGainCompPos2;
   float dacGainCompNeg2;
 
+
+  float adcGainCompPos2;
+  float adcGainCompNeg2;
+
   float adcGainCompPos;
   float adcGainCompNeg;
 
@@ -45,6 +49,8 @@ class CalibrationClass {
   
   int ea_adc_gain_comp_pos;
   int ea_adc_gain_comp_neg;
+    int ea_adc_gain_comp_pos2;
+    int ea_adc_gain_comp_neg2;
   int ea_adc_nonlinear_comp_nr;
   int ea_adc_nonlinear_comp_start;
 
@@ -71,10 +77,17 @@ public:
   void adjDacGainCompNeg(float val);
   float getDacGainCompLim();
   void adjDacGainCompLim(float val);
+
   float getDacGainCompPos2();
   void adjDacGainCompPos2(float val);
   float getDacGainCompNeg2();
   void adjDacGainCompNeg2(float val);
+
+    float getAdcGainCompPos2();
+  void adjAdcGainCompPos2(float val);
+  float getAdcGainCompNeg2();
+  void adjAdcGainCompNeg2(float val);
+
   
   float getAdcGainCompPos();
   void adjAdcGainCompPos(float val);

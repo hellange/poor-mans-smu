@@ -5,7 +5,7 @@
 // TODO: A possible error in this function.
 //       I often see the uV area jump from low (0-100) to high (900-999) without
 //       the mv changing... What's the precision in arduino calculations ?
-void DigitUtilClass::separate(int *v, int *mv, int *uv, bool *neg, float rawMv) {
+void DigitUtilClass::separate(int *v, int *mv, int *uv, bool *neg, double rawMv) {
   *neg=false;
   if (rawMv < 0.0f) {
     rawMv = 0.0f - rawMv;
@@ -16,7 +16,7 @@ void DigitUtilClass::separate(int *v, int *mv, int *uv, bool *neg, float rawMv) 
   *uv = (rawMv - (int)rawMv) * 1000.0f;
 }
 
-void DigitUtilClass::separate2(int *v, int *mv, int *uv, int *nv, bool *neg, float rawMv) {
+void DigitUtilClass::separate2(int *v, int *mv, int *uv, int *nv, bool *neg, double rawMv) {
   float uv_f;
   *neg=false;
   if (rawMv < 0.0f) {

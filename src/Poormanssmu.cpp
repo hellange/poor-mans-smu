@@ -8,7 +8,8 @@
  *****************************************************************/
 
 //Uncomment the line below if you don't have the analog hardware, only processor and screen...
-//The analog circuitry will then be simulated
+//The analog circuitry will then be simulated.
+//Don't exect everything to work... It's not tested very often...
 //#define USE_SIMULATOR
 
 
@@ -37,6 +38,7 @@
 #include "PushButtons.h"
 #include "TrendGraph.h"
 #include "Settings.h"
+#include "SimpleStats.h"
 
 //#define _SOURCE_AND_SINK 111
 
@@ -52,6 +54,7 @@
 #define GEST_MOVE_DOWN 3
 #define LOWER_WIDGET_Y_POS 250
 
+SimpleStatsClass SIMPLE_STATS;
 
 
 bool anyDialogOpen();
@@ -212,16 +215,21 @@ void  disable_ADC_DAC_SPI_units() {
   SMU[0].disable_ADC_DAC_SPI_units();
 }
 
+
+
+
+
+
 void setup()
 {
 
-  
+  SIMPLE_STATS.init();
   
    disable_ADC_DAC_SPI_units();
    delay(50);
    //TODO: Organise pin numbers into definitions ?
    pinMode(6,OUTPUT); // LCD powerdown pin?
-   digitalWrite(6, LOW);
+   //digitalWrite(6, LOW);
    pinMode(5,OUTPUT); // RAM
 
     pinMode(7,OUTPUT);
@@ -265,7 +273,7 @@ void setup()
 
 
    GD.begin(0);
-   delay(50);
+   delay(500);
 
    Serial.println("...begin...");
    Serial.flush();
@@ -276,7 +284,7 @@ void setup()
    GD.cmd_text(250, 200 ,   31, 0, "Poor man's SMU");
    GD.ColorRGB(0xaaaaaa);
    GD.cmd_text(250, 240 ,   28, 0, "Designed    by    Helge Langehaug");
-   GD.cmd_text(250, 270 ,   28, 1, "V0.14");
+   GD.cmd_text(250, 270 ,   28, 1, "V0.141");
 
    GD.swap();
    delay(501);
@@ -434,7 +442,6 @@ void sourceVoltagePanel(int x, int y) {
   GD.ColorA(255);
   VOLT_DISPLAY.renderSet(x + 120, y + 131, SMU[0].getSetValuemV());
 
-//5.89mV gir feil avrunding....
 
   float uVstep = 1000000.0/ powf(2.0,18.0); // for 1V 18bit DAC
 
@@ -481,6 +488,27 @@ void sourceVoltagePanel(int x, int y) {
 
   GD.Tag(BUTTON_VOLT_AUTO);
   GD.cmd_button(x + 350+20,y + 132 ,95+0,50,29,0,"AUTO");
+
+
+  GD.Tag(0);
+/*  TODO: Fix. Preliminary removed because it causes exception often when clicking buttons...
+  if (!reduceDetails()) {
+    // Add some minor statistics on screen. Nice while looking at long time stability...
+    GD.ColorRGB(0xaaaaaa);
+
+    x=x+ 115;
+    y=y-5;
+    GD.cmd_text(x + 350+20+150,y + 132+2, 27, 0, "Min");
+    DIGIT_UTIL.renderValue(x + 350+20+170,y + 132, SIMPLE_STATS.minimum, 1, DigitUtilClass::typeVoltage); 
+
+    GD.cmd_text(x + 350+20+150,y + 132+ 20+2, 27, 0, "Max");
+    DIGIT_UTIL.renderValue(x + 350+20+170,y + 132+ 20, SIMPLE_STATS.maximum, 1, DigitUtilClass::typeVoltage); 
+
+    GD.cmd_text(x + 350+20+150,y + 132+ 40+2, 27, 0, "Samples");
+    //DIGIT_UTIL.renderValue(x + 350+40+170+20,y + 132+ 40, SIMPLE_STATS.samples / 1000.0, 1, -1); 
+    GD.cmd_number(x + 350+40+170+35,y + 132+ 40, 28, 6, SIMPLE_STATS.samples);
+  }
+*/
 }
 
 void renderStatusIndicators(int x, int y) {
@@ -1601,6 +1629,7 @@ static void handleSampling() {
 
     V_STATS.addSample(Vout);    
     V_FILTERS.updateMean(Vout, true);
+    SIMPLE_STATS.registerValue(V_FILTERS.mean);
 
     // store now and then
     if (logTimer + 30000 < millis()) {
@@ -2009,6 +2038,8 @@ int checkButtons() {
       C_CALIBRATION.toggleCalibratedValues();
     } else if (tag == BUTTON_CLEAR_BUFFER) {
       Serial.println("clearbuffer set");
+
+      SIMPLE_STATS.clear(); // TODO: Separate clearing for this ?
       V_STATS.clearBuffer();
       C_STATS.clearBuffer();
       DIGIT_UTIL.startIndicator(tag); 
@@ -2243,7 +2274,7 @@ int checkButtons() {
     
     
     
-    else if (tag == BUTTON_ADC_GAIN_COMP_POS_UP) {
+    else if (tag == BUTTON_ADC_GAIN_COMP_UP) {
        if (timeSinceLastChange + 200 > millis()){
         return;
         
@@ -2267,7 +2298,8 @@ int checkButtons() {
          }
        }
       
-    } else if (tag == BUTTON_ADC_GAIN_COMP_POS_DOWN) {
+    } 
+    else if (tag == BUTTON_ADC_GAIN_COMP_DOWN) {
        if (timeSinceLastChange + 200 > millis()){
         return;
        } 
@@ -2290,7 +2322,64 @@ int checkButtons() {
          }
        }
       
-    } else if (tag == BUTTON_DAC_ZERO_COMP_UP) {
+    } 
+
+
+
+
+     else if (tag == BUTTON_ADC_GAIN_COMP_UP2) {
+       if (timeSinceLastChange + 200 > millis()){
+        return;
+        
+       } 
+       timeSinceLastChange = millis();
+       DIGIT_UTIL.startIndicator(tag);
+       float mv = SMU[0].getSetValuemV();
+       if (operationType == SOURCE_VOLTAGE) {
+         mv = V_STATS.rawValue;
+         if (mv < 0) {
+            V_CALIBRATION.adjAdcGainCompNeg2(0.000001);
+         } else {
+            V_CALIBRATION.adjAdcGainCompPos2(0.000001);
+         }
+       } else {
+         mv = C_STATS.rawValue;
+         if (mv < 0) {
+            C_CALIBRATION.adjAdcGainCompNeg2(0.000001);
+         } else {
+            C_CALIBRATION.adjAdcGainCompPos2(0.000001);
+         }
+       }
+      
+    } 
+    else if (tag == BUTTON_ADC_GAIN_COMP_DOWN2) {
+       if (timeSinceLastChange + 200 > millis()){
+        return;
+       } 
+       timeSinceLastChange = millis();
+       DIGIT_UTIL.startIndicator(tag);
+       float mv = SMU[0].getSetValuemV();
+       if (operationType == SOURCE_VOLTAGE) {
+         mv = V_STATS.rawValue;
+         if (mv < 0) {
+            V_CALIBRATION.adjAdcGainCompNeg2(-0.000001);
+         } else {
+            V_CALIBRATION.adjAdcGainCompPos2(-0.000001);
+         }
+       } else {
+        mv = C_STATS.rawValue;
+        if (mv < 0) {
+            C_CALIBRATION.adjAdcGainCompNeg2(-0.000001);
+         } else {
+            C_CALIBRATION.adjAdcGainCompPos2(-0.000001);
+         }
+       }
+      
+    } 
+    
+    
+    
+    else if (tag == BUTTON_DAC_ZERO_COMP_UP) {
       if (timeSinceLastChange + 200 > millis()){
         return;
       } 
@@ -2365,6 +2454,7 @@ int checkButtons() {
 void loopMain()
 {
  
+  
   handleAutoNull();
   operationType = getOperationType();
   

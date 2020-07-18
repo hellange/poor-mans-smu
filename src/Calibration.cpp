@@ -77,7 +77,9 @@ void CalibrationClass::init(OPERATION_TYPE operationType_) {
     ea_adc_gain_comp_pos = EA_ADC_GAIN_COMP_POS_VOL;
     ea_adc_gain_comp_neg = EA_ADC_GAIN_COMP_NEG_VOL;
 
-  
+    ea_adc_gain_comp_pos2 = EA_ADC_GAIN_COMP_POS_VOL2;
+    ea_adc_gain_comp_neg2 = EA_ADC_GAIN_COMP_NEG_VOL2;
+
 
     ea_adc_nonlinear_comp_nr = EA_ADC_NONLINEAR_COMP_NR_VOL;
     ea_adc_nonlinear_comp_start = EA_ADC_NONLINEAR_COMP_START_VOL;
@@ -105,7 +107,10 @@ void CalibrationClass::init(OPERATION_TYPE operationType_) {
 
     ea_dac_gain_comp_pos2 = EA_DAC_GAIN_COMP_POS_CUR2;
     ea_dac_gain_comp_neg2 = EA_DAC_GAIN_COMP_NEG_CUR2;
-    
+
+    ea_adc_gain_comp_pos2 = EA_ADC_GAIN_COMP_POS_CUR2;
+    ea_adc_gain_comp_neg2 = EA_ADC_GAIN_COMP_NEG_CUR2;
+
     ea_adc_gain_comp_pos = EA_ADC_GAIN_COMP_POS_CUR;
     ea_adc_gain_comp_neg = EA_ADC_GAIN_COMP_NEG_CUR;
 
@@ -127,7 +132,7 @@ void CalibrationClass::init(OPERATION_TYPE operationType_) {
   timeSinceLastChange = millis();
   
   dacGainCompPos = floatFromEeprom(ea_dac_gain_comp_pos);
- Serial.print("Read dacGainCompPos from eeprom address ");
+  Serial.print("Read dacGainCompPos from eeprom address ");
   Serial.print(ea_dac_gain_comp_pos,HEX);
   Serial.print(":");
   if (isnan(dacGainCompPos)) {
@@ -137,8 +142,8 @@ void CalibrationClass::init(OPERATION_TYPE operationType_) {
   }
   Serial.println(dacGainCompPos,7);
 
- dacGainCompPos2 = floatFromEeprom(ea_dac_gain_comp_pos2);
- Serial.print("Read dacGainCompPos2 from eeprom address ");
+  dacGainCompPos2 = floatFromEeprom(ea_dac_gain_comp_pos2);
+  Serial.print("Read dacGainCompPos2 from eeprom address ");
   Serial.print(ea_dac_gain_comp_pos2,HEX);
   Serial.print(":");
   if (isnan(dacGainCompPos2)) {
@@ -170,6 +175,29 @@ void CalibrationClass::init(OPERATION_TYPE operationType_) {
     floatToEeprom(ea_dac_gain_comp_neg2,dacGainCompNeg2); // write initial default
   }
   Serial.println(dacGainCompNeg2,7);
+
+  adcGainCompPos2 = floatFromEeprom(ea_adc_gain_comp_pos2);
+      Serial.print("Read adcGainCompPos2 from eeprom address ");
+      Serial.print(ea_adc_gain_comp_pos2,HEX);
+      Serial.print(":");
+      if (isnan(adcGainCompPos2)) {
+        Serial.print("Not defined. Write default value:");
+        adcGainCompPos2 = 1.0;
+        floatToEeprom(ea_adc_gain_comp_pos2,adcGainCompPos2); // write initial default
+      }
+      Serial.println(adcGainCompPos2,7);
+
+   adcGainCompNeg2 = floatFromEeprom(ea_adc_gain_comp_neg2);
+    Serial.print("Read adcGainCompNeg2 from eeprom address ");
+    Serial.print(ea_adc_gain_comp_neg2,HEX);
+    Serial.print(":");
+    if (isnan(adcGainCompNeg2)) {
+      Serial.print("Not defined. Write default value:");
+      adcGainCompNeg2 = 1.0;
+      floatToEeprom(ea_adc_gain_comp_neg2,adcGainCompNeg2); // write initial default
+    }
+    Serial.println(adcGainCompNeg2,7);
+
 
 
  dacGainCompLim = floatFromEeprom(ea_dac_gain_comp_lim);
@@ -467,7 +495,6 @@ void CalibrationClass::autoCalADCfromDAC() {
       Serial.print("DONE nonlinear calibration of ");
       Serial.print(adc_cal_points);
       Serial.println(" points");
-      //writeAdcCalToEeprom(33); // TODO: autoCalArrayPointer ?
       writeAdcCalToEeprom(adc_cal_points);
     } else {
       autoCalDacTimer = millis();
@@ -702,6 +729,16 @@ void CalibrationClass::adjDacGainCompNeg2(float val) {
   Serial.flush();
 }
 
+
+
+
+
+
+
+
+
+
+
 float CalibrationClass::getDacGainCompNeg() {
   return dacGainCompNeg;
 }
@@ -758,6 +795,43 @@ void CalibrationClass::adjAdcGainCompNeg(float val) {
 float CalibrationClass::getAdcGainCompNeg() {
   return adcGainCompNeg;
 }
+
+
+
+
+void CalibrationClass::adjAdcGainCompPos2(float val) {
+  adcGainCompPos2 += val;
+  floatToEeprom(ea_adc_gain_comp_pos2, adcGainCompPos2);
+  Serial.print("Operation type = ");
+  Serial.println(operationType == SOURCE_CURRENT ? "Source current" : "Source voltage");
+  Serial.print("Adc gain pos comp at address ");
+  Serial.print(ea_adc_gain_comp_pos2,HEX);
+  Serial.print(" adjusted to:");
+  Serial.println(adcGainCompPos2,6);
+  Serial.flush();
+}
+
+float CalibrationClass::getAdcGainCompPos2() {
+  return adcGainCompPos2;
+}
+
+void CalibrationClass::adjAdcGainCompNeg2(float val) {
+  adcGainCompNeg2 += val;
+  floatToEeprom(ea_adc_gain_comp_neg2, adcGainCompNeg2);
+  Serial.print("Operation type = ");
+  Serial.println(operationType == SOURCE_CURRENT ? "Source current" : "Source voltage");
+  Serial.print("Adc gain neg comp at address ");
+  Serial.print(ea_adc_gain_comp_neg2,HEX);
+  Serial.print(" adjusted to:");
+  Serial.println(adcGainCompNeg2,6);
+  Serial.flush();
+}
+
+float CalibrationClass::getAdcGainCompNeg2() {
+  return adcGainCompNeg2;
+}
+
+
 
 void CalibrationClass::adjDacZeroComp(float val) {
   dacZeroComp += val;
@@ -984,18 +1058,44 @@ if (current_range == MILLIAMP10 && operationType == SOURCE_CURRENT){
 
 
 
-
-
-
-
-
-
-
-
     x=x+10;
+
+
+
+    if (current_range == MILLIAMP10 && operationType == SOURCE_CURRENT){
+
+            if (!reduceDetails) {
+
+      GD.ColorRGB(0xaaaaaa);
+
+      if (FILTERS->mean < 0) {
+        GD.cmd_text(x+120, y + 45, 27, 0, "ADC G10M -");
+        DIGIT_UTIL.renderValue(x + 110,  y+65 ,getAdcGainCompNeg2() * 5.0, 1, -1); 
+        GD.cmd_text(x+203, y + 68, 27, 0, "%");
+    }   else {
+        GD.cmd_text(x+120, y + 45, 27, 0, "ADC G10M +");
+        DIGIT_UTIL.renderValue(x + 110,  y+65 ,getAdcGainCompPos2() * 5.0, 1, -1); 
+        GD.cmd_text(x+203, y + 68, 27, 0, "%");
+      }
+        }
+      GD.ColorRGB(0x000000);
+  
+      GD.Tag(BUTTON_ADC_GAIN_COMP_UP2);
+      GD.ColorRGB(DIGIT_UTIL.indicateColor(0x000000, 0x00ff00, 50, BUTTON_ADC_GAIN_COMP_UP2));
+      GD.cmd_button(x+120,y+95,100,50,29,0,"UP");
+      GD.Tag(BUTTON_ADC_GAIN_COMP_DOWN2);
+      GD.ColorRGB(DIGIT_UTIL.indicateColor(0x000000, 0x00ff00, 50, BUTTON_ADC_GAIN_COMP_DOWN2 ));
+      GD.cmd_button(x+120,y+155,100,50,29,0,"DOWN");
+      GD.Tag(0);
+
+    } 
+
+
+    else {
       if (!reduceDetails) {
 
     GD.ColorRGB(0xaaaaaa);
+
     if (FILTERS->mean < 0) {
       GD.cmd_text(x+120, y + 45, 27, 0, "ADC GAIN -");
       DIGIT_UTIL.renderValue(x + 110,  y+65 ,getAdcGainCompNeg() * 100.0, 1, -1); 
@@ -1008,13 +1108,17 @@ if (current_range == MILLIAMP10 && operationType == SOURCE_CURRENT){
       }
     GD.ColorRGB(0x000000);
   
-    GD.Tag(BUTTON_ADC_GAIN_COMP_POS_UP);
-    GD.ColorRGB(DIGIT_UTIL.indicateColor(0x000000, 0x00ff00, 50, BUTTON_ADC_GAIN_COMP_POS_UP));
+    GD.Tag(BUTTON_ADC_GAIN_COMP_UP);
+    GD.ColorRGB(DIGIT_UTIL.indicateColor(0x000000, 0x00ff00, 50, BUTTON_ADC_GAIN_COMP_UP));
     GD.cmd_button(x+120,y+95,100,50,29,0,"UP");
-    GD.Tag(BUTTON_ADC_GAIN_COMP_POS_DOWN);
-    GD.ColorRGB(DIGIT_UTIL.indicateColor(0x000000, 0x00ff00, 50, BUTTON_ADC_GAIN_COMP_POS_DOWN ));
+    GD.Tag(BUTTON_ADC_GAIN_COMP_DOWN);
+    GD.ColorRGB(DIGIT_UTIL.indicateColor(0x000000, 0x00ff00, 50, BUTTON_ADC_GAIN_COMP_DOWN ));
     GD.cmd_button(x+120,y+155,100,50,29,0,"DOWN");
     GD.Tag(0);
+    }
+
+
+
 
     x=x+120;
       if (!reduceDetails) {

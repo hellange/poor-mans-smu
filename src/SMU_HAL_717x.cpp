@@ -269,7 +269,7 @@ void ADCClass::setCurrentRange(CURRENT_RANGE range, OPERATION_TYPE operationType
 }
 
 
-float ADCClass::measureMilliVoltageRaw() {
+double ADCClass::measureMilliVoltageRaw() {
 
 
   
@@ -288,7 +288,7 @@ bool ADCClass::hasCompliance() {
   return (digitalRead(2) == LOW or digitalRead(3) == LOW);
 }
 
-float ADCClass::measureMilliVoltage() {
+double ADCClass::measureMilliVoltage() {
 
 
   AD7176_ReadRegister(&AD7176_regs[4]);
@@ -441,7 +441,7 @@ int8_t ADCClass::fltSetCommitVoltageSource(float milliVolt, bool dynamicRange) {
         dac_voltage = dac_voltage * V_CALIBRATION.getDacGainCompPos();
       }
     } else {
-      if (dac_voltage < 2.3) {
+      if (dac_voltage < -2.3) {
         dac_voltage = dac_voltage * V_CALIBRATION.getDacGainCompNeg2();
       } else {
         dac_voltage = dac_voltage * V_CALIBRATION.getDacGainCompNeg();
@@ -743,12 +743,12 @@ int8_t ADCClass::fltSetCommitVoltageSource(float milliVolt, bool dynamicRange) {
  }
 
  
- float ADCClass::measureCurrent(CURRENT_RANGE range){
+ double ADCClass::measureCurrent(CURRENT_RANGE range){
 
 
 
     AD7176_ReadRegister(&AD7176_regs[4]);
-    float v = (float) ((AD7176_regs[4].value*VFSR*1000.0)/FSR); 
+    double v = (float) ((AD7176_regs[4].value*VFSR*1000.0)/FSR); 
     v=v-VREF*1000.0;
 
     //v = v / 0.8;  // funnel amplifier x0.8
@@ -762,7 +762,15 @@ int8_t ADCClass::fltSetCommitVoltageSource(float milliVolt, bool dynamicRange) {
         //i=i*0.79;// apprx.... why? 
         //i=i/3.125; // After using two opamps in fromt of 1997-3....   Why did that give 3.125 gain ????
 
-        i=i*1.05;
+
+        if (i>0) {
+          i = i * C_CALIBRATION.getAdcGainCompPos2();
+          i=i*1.012;
+
+        } else {
+          i = i * C_CALIBRATION.getAdcGainCompNeg2();
+          i = i *1.01;
+        }
 
       } else {
         //i=i/1.04600; // 1ohm shunt + resistance in range switch mosfet
@@ -806,11 +814,11 @@ int8_t ADCClass::fltSetCommitVoltageSource(float milliVolt, bool dynamicRange) {
     return i;
  }
 
- float ADCClass::getSetValuemV(){
+ double ADCClass::getSetValuemV(){
   return setValueV * 1000.0;
  }
 
- float ADCClass::getLimitValue(){
+ double ADCClass::getLimitValue(){
   return setValueI * 1000.0;
  }
 
