@@ -40,6 +40,7 @@ class CalibrationClass {
   float adcGainCompNeg;
 
   float dacZeroComp;
+  float dacZeroComp2;
 
   int ea_dac_gain_comp_pos;
   int ea_dac_gain_comp_neg;
@@ -55,6 +56,7 @@ class CalibrationClass {
   int ea_adc_nonlinear_comp_start;
 
   int ea_dac_zero_comp;
+  int ea_dac_zero_comp2;
 
   
   int ea_adc_zero_comp_vol;
@@ -96,6 +98,9 @@ public:
 
   float getDacZeroComp();
   void adjDacZeroComp(float val);
+
+  float getDacZeroComp2();
+  void adjDacZeroComp2(float val);
 
   // using static to share among instances. TODO: Fix this mess
   static float nullValueVol[2]; 

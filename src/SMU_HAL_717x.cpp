@@ -559,6 +559,8 @@ int8_t ADCClass::fltSetCommitVoltageSource(float milliVolt, bool dynamicRange) {
       //dac_voltage = dac_voltage * 3.125; // after using 3 opamp diff amplifier before 1997-3.... hmm...
  //dac_voltage = dac_voltage /1.015;
 
+      dac_voltage = dac_voltage + C_CALIBRATION.getDacZeroComp2();
+
       if (dac_voltage < 0) {
        dac_voltage = dac_voltage * C_CALIBRATION.getDacGainCompNeg2(); 
       } else {

@@ -43,8 +43,12 @@ void CalibrationClass::init(OPERATION_TYPE operationType_) {
 
   if (operationType == SOURCE_VOLTAGE) {
     ea_dac_zero_comp = EA_DAC_ZERO_COMP_VOL;
+        ea_dac_zero_comp2 = EA_DAC_ZERO_COMP_VOL2;
+
   } else { 
     ea_dac_zero_comp = EA_DAC_ZERO_COMP_CUR;
+        ea_dac_zero_comp2 = EA_DAC_ZERO_COMP_CUR2;
+
   }
 
   ea_adc_zero_comp_vol = EA_ADC_ZERO_COMP_VOL;
@@ -252,6 +256,26 @@ void CalibrationClass::init(OPERATION_TYPE operationType_) {
     
   }
   Serial.println(dacZeroComp,7);
+
+
+  dacZeroComp2 = floatFromEeprom(ea_dac_zero_comp2);
+ Serial.print("Read dacZeroComp2 from eeprom address ");
+  Serial.print(ea_dac_zero_comp2,HEX);
+  Serial.print(":");
+  if (isnan(dacZeroComp2)) {
+    Serial.print("Not defined. Write default value:");
+    dacZeroComp2 = 0.0; // use millivolt
+    floatToEeprom(ea_dac_zero_comp2,dacZeroComp2); // write initial default
+  } else if (abs(dacZeroComp2) < -10000.0 or abs(dacZeroComp2) > 10000.0) {
+    Serial.print("WARNING: Suspect dac zero value:");
+    Serial.println(dacZeroComp2);
+    dacZeroComp2 = 0.0;
+    Serial.print("Setting dac zero to:");
+    Serial.println(dacZeroComp2);
+    
+  }
+  Serial.println(dacZeroComp2,7);
+
 
 
 
@@ -850,6 +874,27 @@ float CalibrationClass::getDacZeroComp() {
   return dacZeroComp;
 }
 
+
+void CalibrationClass::adjDacZeroComp2(float val) {
+  dacZeroComp2 += val;
+  floatToEeprom(ea_dac_zero_comp2, dacZeroComp2);
+  Serial.print("Operation type = ");
+  Serial.println(operationType == SOURCE_CURRENT ? "Source current" : "Source voltage");
+  Serial.print("Dac zero comp2 at address ");
+  Serial.print(ea_dac_zero_comp2,HEX);
+  Serial.print(" adjusted to:");  
+  Serial.println(dacZeroComp2,6);
+
+  Serial.flush();
+}
+
+float CalibrationClass::getDacZeroComp2() {
+  return dacZeroComp2;
+}
+
+
+
+
 void CalibrationClass::renderCal2(int x, int y, float valM, float setM, CURRENT_RANGE current_range, bool reduceDetails) {
 
 
@@ -1121,22 +1166,41 @@ if (current_range == MILLIAMP10 && operationType == SOURCE_CURRENT){
 
 
     x=x+120;
-      if (!reduceDetails) {
+    if (!reduceDetails) {
 
-    GD.ColorRGB(0xaaaaaa);
+      GD.ColorRGB(0xaaaaaa);
     
-    GD.cmd_text(x+120, y + 45, 27, 0, "DAC zero");
-    DIGIT_UTIL.renderValue(x + 110,  y+65 ,getDacZeroComp(), 1, -1); 
-    GD.cmd_text(x+203, y + 68, 27, 0, "");
-      }   
+
+      if (current_range == MILLIAMP10 && operationType == SOURCE_CURRENT) {
+        GD.cmd_text(x+120, y + 45, 27, 0, "DAC z10m");
+        DIGIT_UTIL.renderValue(x + 110,  y+65 ,getDacZeroComp2(), 1, -1); 
+        GD.cmd_text(x+203, y + 68, 27, 0, "");
+      } else {
+        GD.cmd_text(x+120, y + 45, 27, 0, "DAC zero");
+        DIGIT_UTIL.renderValue(x + 110,  y+65 ,getDacZeroComp(), 1, -1); 
+        GD.cmd_text(x+203, y + 68, 27, 0, "");
+      }
+
+
+    }   
     GD.ColorRGB(0x000000);
   
-    GD.Tag(BUTTON_DAC_ZERO_COMP_UP);
+    if (current_range == MILLIAMP10 && operationType == SOURCE_CURRENT) {
+
+    GD.Tag(BUTTON_DAC_ZERO_COMP_UP2);
+    GD.ColorRGB(DIGIT_UTIL.indicateColor(0x000000, 0x00ff00, 50, BUTTON_DAC_ZERO_COMP_UP2));
+    GD.cmd_button(x+120,y+95,100,50,29,0,"UP2");
+    GD.Tag(BUTTON_DAC_ZERO_COMP_DOWN2);
+    GD.ColorRGB(DIGIT_UTIL.indicateColor(0x000000, 0x00ff00, 50, BUTTON_DAC_ZERO_COMP_DOWN2));
+    GD.cmd_button(x+120,y+155,100,50,29,0,"DOWN2");
+    } else {
+      GD.Tag(BUTTON_DAC_ZERO_COMP_UP);
     GD.ColorRGB(DIGIT_UTIL.indicateColor(0x000000, 0x00ff00, 50, BUTTON_DAC_ZERO_COMP_UP));
     GD.cmd_button(x+120,y+95,100,50,29,0,"UP");
     GD.Tag(BUTTON_DAC_ZERO_COMP_DOWN);
     GD.ColorRGB(DIGIT_UTIL.indicateColor(0x000000, 0x00ff00, 50, BUTTON_DAC_ZERO_COMP_DOWN));
     GD.cmd_button(x+120,y+155,100,50,29,0,"DOWN");
+    }
     
     GD.Tag(0); // Seems to fix problem with function calles when touching a special place on the screen... why ????
 

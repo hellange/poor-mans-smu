@@ -2379,7 +2379,7 @@ int checkButtons() {
     
     
     
-    else if (tag == BUTTON_DAC_ZERO_COMP_UP) {
+    else if (tag == BUTTON_DAC_ZERO_COMP_UP or tag == BUTTON_DAC_ZERO_COMP_UP2 ) {
       if (timeSinceLastChange + 200 > millis()){
         return;
       } 
@@ -2388,19 +2388,22 @@ int checkButtons() {
        float mv = SMU[0].getSetValuemV();
        if (operationType == SOURCE_VOLTAGE) {
           V_CALIBRATION.adjDacZeroComp(+0.000002);
-
           GD.__end();
          if (SMU[0].fltSetCommitVoltageSource(mv, true)) printError(_PRINT_ERROR_VOLTAGE_SOURCE_SETTING);
          GD.resume();
          
        } else {
-          C_CALIBRATION.adjDacZeroComp(+0.000002*10.0);
+          if (tag == BUTTON_DAC_ZERO_COMP_UP) {
+            C_CALIBRATION.adjDacZeroComp(+0.000001);
+          } else {
+            C_CALIBRATION.adjDacZeroComp2(+0.000002);
+          }
           GD.__end();
          if (SMU[0].fltSetCommitCurrentSource(mv)) printError(_PRINT_ERROR_VOLTAGE_SOURCE_SETTING);
          GD.resume();    
        }
     }
-    else if (tag == BUTTON_DAC_ZERO_COMP_DOWN) {
+    else if (tag == BUTTON_DAC_ZERO_COMP_DOWN or tag == BUTTON_DAC_ZERO_COMP_DOWN2) {
        if (timeSinceLastChange + 200 > millis()){
          return;
        } 
@@ -2413,7 +2416,11 @@ int checkButtons() {
          if (SMU[0].fltSetCommitVoltageSource(mv, true)) printError(_PRINT_ERROR_VOLTAGE_SOURCE_SETTING);
          GD.resume();
        } else {
-         C_CALIBRATION.adjDacZeroComp(-0.000002*10.0);
+         if (tag == BUTTON_DAC_ZERO_COMP_DOWN) {
+           C_CALIBRATION.adjDacZeroComp(-0.000001);
+         } else {
+           C_CALIBRATION.adjDacZeroComp2(-0.000002);
+         }
          GD.__end();
          if (SMU[0].fltSetCommitCurrentSource(mv)) printError(_PRINT_ERROR_VOLTAGE_SOURCE_SETTING);
          GD.resume(); 

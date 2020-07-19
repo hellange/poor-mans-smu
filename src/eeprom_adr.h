@@ -35,6 +35,11 @@
 #define EA_ADC_GAIN_COMP_POS_CUR2 0x084
 #define EA_ADC_GAIN_COMP_NEG_CUR2 0x088
 
+#define EA_DAC_ZERO_COMP_VOL2 0x092
+#define EA_DAC_ZERO_COMP_CUR2 0x096
+
+// WARNING:  No more addresses between. Must change some if we new addresses. Will mean incompatibilities...
+//           Suggest moving nonlinearities to 0x200 and then recalibrate...
 
 
 #define EA_ADC_NONLINEAR_COMP_NR_VOL 0x100
