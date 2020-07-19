@@ -483,12 +483,11 @@ void sourceVoltagePanel(int x, int y) {
   //GD.cmd_text(x+ + 120-50+100+50+30+5,  y+131+10-5+3, 30, 0, "V");
 */
 
- GD.Tag(BUTTON_SOURCE_SET);
-  GD.cmd_button(x + 20,y + 132,95,50,29,OPT_NOTEAR,"SET");
+  GD.Tag(BUTTON_SOURCE_SET);
+  GD.cmd_button(x + 20, y + 132, 95, 50, 29, OPT_NOTEAR, "SET");
 
   GD.Tag(BUTTON_VOLT_AUTO);
-  GD.cmd_button(x + 350+20,y + 132 ,95+0,50,29,0,"AUTO");
-
+  GD.cmd_button(x + 350 + 20, y + 132, 95 + 0, 50, 29, 0, "AUTO");
 
   GD.Tag(0);
 /*  TODO: Fix. Preliminary removed because it causes exception often when clicking buttons...
