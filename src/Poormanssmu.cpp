@@ -497,13 +497,13 @@ void sourceVoltagePanel(int x, int y) {
 
     x=x+ 115;
     y=y-5;
-    GD.cmd_text(x + 350+20+150,y + 132+2, 27, 0, "Min");
+    GD.cmd_text(x + 350+20+150-10,y + 132+2, 27, 0, "Min");
     DIGIT_UTIL.renderValue(x + 350+20+170,y + 132, SIMPLE_STATS.minimum, 1, DigitUtilClass::typeVoltage); 
 
-    GD.cmd_text(x + 350+20+150,y + 132+ 20+2, 27, 0, "Max");
+    GD.cmd_text(x + 350+20+150-10,y + 132+ 20+2, 27, 0, "Max");
     DIGIT_UTIL.renderValue(x + 350+20+170,y + 132+ 20, SIMPLE_STATS.maximum, 1, DigitUtilClass::typeVoltage); 
 
-    GD.cmd_text(x + 350+20+150,y + 132+ 40+2, 27, 0, "Samples");
+    GD.cmd_text(x + 350+20+150-10,y + 132+ 40+2, 27, 0, "Samples");
     //DIGIT_UTIL.renderValue(x + 350+40+170+20,y + 132+ 40, SIMPLE_STATS.samples / 1000.0, 1, -1); 
     GD.cmd_number(x + 350+40+170+35,y + 132+ 40, 28, 6, SIMPLE_STATS.samples);
   }
