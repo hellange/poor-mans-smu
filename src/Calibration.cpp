@@ -1016,216 +1016,256 @@ void CalibrationClass::renderCal2(int x, int y, float valM, float setM, CURRENT_
 
 }
 
+void CalibrationClass::renderCal(int x, int y, float valM, float setM, CURRENT_RANGE current_range, bool reduceDetails)
+{
 
-
-
-void CalibrationClass::renderCal(int x, int y, float valM, float setM, CURRENT_RANGE current_range, bool reduceDetails) {
- 
- // dac vol2cur2
-if (current_range == MILLIAMP10 && operationType == SOURCE_CURRENT){
- if (!reduceDetails) {
-    GD.ColorRGB(0xaaaaaa);
-    if (FILTERS->mean < 0) {
-      GD.cmd_text(x+10, y + 45, 27, 0, "DAC G10mA -");
-      DIGIT_UTIL.renderValue(x + 0,  y+65 ,getDacGainCompNeg2()*100.0, 1, -1); 
-      GD.cmd_text(x+93, y + 68, 27, 0, "%");
-    } else {
-      GD.cmd_text(x+10, y + 45, 27, 0, "DAC G10mA +");
-      DIGIT_UTIL.renderValue(x + 0,  y+65 ,getDacGainCompPos2()*100.0, 1, -1);
-      GD.cmd_text(x+93, y + 68, 27, 0, "%"); 
+  // dac vol2cur2
+  if (current_range == MILLIAMP10 && operationType == SOURCE_CURRENT)
+  {
+    if (!reduceDetails)
+    {
+      GD.ColorRGB(0xaaaaaa);
+      if (FILTERS->mean < 0)
+      {
+        GD.cmd_text(x + 10, y + 45, 27, 0, "DAC G10mA -");
+        DIGIT_UTIL.renderValue(x + 0, y + 65, getDacGainCompNeg2() * 100.0, 1, -1);
+        GD.cmd_text(x + 93, y + 68, 27, 0, "%");
+      }
+      else
+      {
+        GD.cmd_text(x + 10, y + 45, 27, 0, "DAC G10mA +");
+        DIGIT_UTIL.renderValue(x + 0, y + 65, getDacGainCompPos2() * 100.0, 1, -1);
+        GD.cmd_text(x + 93, y + 68, 27, 0, "%");
+      }
     }
-  }
     GD.ColorRGB(0x000000);
 
     GD.Tag(BUTTON_DAC_GAIN_COMP_UP2);
     GD.ColorRGB(DIGIT_UTIL.indicateColor(0x000000, 0x00ff00, 50, BUTTON_DAC_GAIN_COMP_UP2));
-    GD.cmd_button(x+10,y+95,100,50,29,0,"UP2");
+    GD.cmd_button(x + 10, y + 95, 100, 50, 29, 0, "UP2");
     GD.Tag(BUTTON_DAC_GAIN_COMP_DOWN2);
-    GD.ColorRGB(DIGIT_UTIL.indicateColor(0x000000, 0x00ff00, 50,BUTTON_DAC_GAIN_COMP_DOWN2));
-    GD.cmd_button(x+10,y+155,100,50,29,0,"DOWN2");
-  GD.Tag(0);
-}
-
-
- // TODO: HACK!  Using MILLIAMP10 to indicate high voltage range !!!!  Stupid !   Should be fixed...
- else if (current_range == MILLIAMP10 && operationType == SOURCE_VOLTAGE){
- if (!reduceDetails) {
-    GD.ColorRGB(0xaaaaaa);
-    if (FILTERS->mean < 0) {
-      GD.cmd_text(x+10, y + 45, 27, 0, "DAC 10V -");
-      DIGIT_UTIL.renderValue(x + 0,  y+65 ,getDacGainCompNeg2()*100.0, 1, -1); 
-      GD.cmd_text(x+93, y + 68, 27, 0, "%");
-    } else {
-      GD.cmd_text(x+10, y + 45, 27, 0, "DAC 10V +");
-      DIGIT_UTIL.renderValue(x + 0,  y+65 ,getDacGainCompPos2()*100.0, 1, -1);
-      GD.cmd_text(x+93, y + 68, 27, 0, "%"); 
-    }
+    GD.ColorRGB(DIGIT_UTIL.indicateColor(0x000000, 0x00ff00, 50, BUTTON_DAC_GAIN_COMP_DOWN2));
+    GD.cmd_button(x + 10, y + 155, 100, 50, 29, 0, "DOWN2");
+    GD.Tag(0);
   }
+
+  // TODO: HACK!  Using MILLIAMP10 to indicate high voltage range !!!!  Stupid !   Should be fixed...
+  else if (current_range == MILLIAMP10 && operationType == SOURCE_VOLTAGE)
+  {
+    if (!reduceDetails)
+    {
+      GD.ColorRGB(0xaaaaaa);
+      if (FILTERS->mean < 0)
+      {
+        GD.cmd_text(x + 10, y + 45, 27, 0, "DAC 10V -");
+        DIGIT_UTIL.renderValue(x + 0, y + 65, getDacGainCompNeg2() * 100.0, 1, -1);
+        GD.cmd_text(x + 93, y + 68, 27, 0, "%");
+      }
+      else
+      {
+        GD.cmd_text(x + 10, y + 45, 27, 0, "DAC 10V +");
+        DIGIT_UTIL.renderValue(x + 0, y + 65, getDacGainCompPos2() * 100.0, 1, -1);
+        GD.cmd_text(x + 93, y + 68, 27, 0, "%");
+      }
+    }
     GD.ColorRGB(0x000000);
 
     GD.Tag(BUTTON_DAC_GAIN_COMP_UP2);
     GD.ColorRGB(DIGIT_UTIL.indicateColor(0x000000, 0x00ff00, 50, BUTTON_DAC_GAIN_COMP_UP2));
-    GD.cmd_button(x+10,y+95,100,50,29,0,"UP2");
+    GD.cmd_button(x + 10, y + 95, 100, 50, 29, 0, "UP2");
     GD.Tag(BUTTON_DAC_GAIN_COMP_DOWN2);
-    GD.ColorRGB(DIGIT_UTIL.indicateColor(0x000000, 0x00ff00, 50,BUTTON_DAC_GAIN_COMP_DOWN2));
-    GD.cmd_button(x+10,y+155,100,50,29,0,"DOWN2");
-  GD.Tag(0);
-}
- 
- else {
- 
-  if (!reduceDetails) {
-    GD.ColorRGB(0xaaaaaa);
-    if (FILTERS->mean < 0) {
-      GD.cmd_text(x+10, y + 45, 27, 0, "DAC GAIN -");
-      DIGIT_UTIL.renderValue(x + 0,  y+65 ,getDacGainCompNeg()*100.0, 1, -1); 
-      GD.cmd_text(x+93, y + 68, 27, 0, "%");
-    } else {
-      GD.cmd_text(x+10, y + 45, 27, 0, "DAC GAIN +");
-      DIGIT_UTIL.renderValue(x + 0,  y+65 ,getDacGainCompPos()*100.0, 1, -1);
-      GD.cmd_text(x+93, y + 68, 27, 0, "%"); 
-    }
+    GD.ColorRGB(DIGIT_UTIL.indicateColor(0x000000, 0x00ff00, 50, BUTTON_DAC_GAIN_COMP_DOWN2));
+    GD.cmd_button(x + 10, y + 155, 100, 50, 29, 0, "DOWN2");
+    GD.Tag(0);
   }
+
+  else
+  {
+
+    if (!reduceDetails)
+    {
+      GD.ColorRGB(0xaaaaaa);
+      if (FILTERS->mean < 0)
+      {
+        GD.cmd_text(x + 10, y + 45, 27, 0, "DAC GAIN -");
+        DIGIT_UTIL.renderValue(x + 0, y + 65, getDacGainCompNeg() * 100.0, 1, -1);
+        GD.cmd_text(x + 93, y + 68, 27, 0, "%");
+      }
+      else
+      {
+        GD.cmd_text(x + 10, y + 45, 27, 0, "DAC GAIN +");
+        DIGIT_UTIL.renderValue(x + 0, y + 65, getDacGainCompPos() * 100.0, 1, -1);
+        GD.cmd_text(x + 93, y + 68, 27, 0, "%");
+      }
+    }
     GD.ColorRGB(0x000000);
 
     GD.Tag(BUTTON_DAC_GAIN_COMP_UP);
     GD.ColorRGB(DIGIT_UTIL.indicateColor(0x000000, 0x00ff00, 50, BUTTON_DAC_GAIN_COMP_UP));
-    GD.cmd_button(x+10,y+95,100,50,29,0,"UP");
+    GD.cmd_button(x + 10, y + 95, 100, 50, 29, 0, "UP");
     GD.Tag(BUTTON_DAC_GAIN_COMP_DOWN);
-    GD.ColorRGB(DIGIT_UTIL.indicateColor(0x000000, 0x00ff00, 50,BUTTON_DAC_GAIN_COMP_DOWN));
-    GD.cmd_button(x+10,y+155,100,50,29,0,"DOWN");
-  GD.Tag(0);
+    GD.ColorRGB(DIGIT_UTIL.indicateColor(0x000000, 0x00ff00, 50, BUTTON_DAC_GAIN_COMP_DOWN));
+    GD.cmd_button(x + 10, y + 155, 100, 50, 29, 0, "DOWN");
+    GD.Tag(0);
+  }
 
+  x = x + 10;
 
- }
+  if (current_range == MILLIAMP10 && operationType == SOURCE_CURRENT)
+  {
 
-
-
-
-
-    x=x+10;
-
-
-
-    if (current_range == MILLIAMP10 && operationType == SOURCE_CURRENT){
-
-            if (!reduceDetails) {
+    if (!reduceDetails)
+    {
 
       GD.ColorRGB(0xaaaaaa);
 
-      if (FILTERS->mean < 0) {
-        GD.cmd_text(x+120, y + 45, 27, 0, "ADC G10M -");
-        DIGIT_UTIL.renderValue(x + 110,  y+65 ,getAdcGainCompNeg2() * 5.0, 1, -1); 
-        GD.cmd_text(x+203, y + 68, 27, 0, "%");
-    }   else {
-        GD.cmd_text(x+120, y + 45, 27, 0, "ADC G10M +");
-        DIGIT_UTIL.renderValue(x + 110,  y+65 ,getAdcGainCompPos2() * 5.0, 1, -1); 
-        GD.cmd_text(x+203, y + 68, 27, 0, "%");
+      if (FILTERS->mean < 0)
+      {
+        GD.cmd_text(x + 120, y + 45, 27, 0, "ADC G10M -");
+        DIGIT_UTIL.renderValue(x + 110, y + 65, getAdcGainCompNeg2() * 5.0, 1, -1);
+        GD.cmd_text(x + 203, y + 68, 27, 0, "%");
       }
-        }
-      GD.ColorRGB(0x000000);
-  
-      GD.Tag(BUTTON_ADC_GAIN_COMP_UP2);
-      GD.ColorRGB(DIGIT_UTIL.indicateColor(0x000000, 0x00ff00, 50, BUTTON_ADC_GAIN_COMP_UP2));
-      GD.cmd_button(x+120,y+95,100,50,29,0,"UP");
-      GD.Tag(BUTTON_ADC_GAIN_COMP_DOWN2);
-      GD.ColorRGB(DIGIT_UTIL.indicateColor(0x000000, 0x00ff00, 50, BUTTON_ADC_GAIN_COMP_DOWN2 ));
-      GD.cmd_button(x+120,y+155,100,50,29,0,"DOWN");
-      GD.Tag(0);
+      else
+      {
+        GD.cmd_text(x + 120, y + 45, 27, 0, "ADC G10M +");
+        DIGIT_UTIL.renderValue(x + 110, y + 65, getAdcGainCompPos2() * 5.0, 1, -1);
+        GD.cmd_text(x + 203, y + 68, 27, 0, "%");
+      }
+    }
+    GD.ColorRGB(0x000000);
 
-    } 
+    GD.Tag(BUTTON_ADC_GAIN_COMP_UP2);
+    GD.ColorRGB(DIGIT_UTIL.indicateColor(0x000000, 0x00ff00, 50, BUTTON_ADC_GAIN_COMP_UP2));
+    GD.cmd_button(x + 120, y + 95, 100, 50, 29, 0, "UP");
+    GD.Tag(BUTTON_ADC_GAIN_COMP_DOWN2);
+    GD.ColorRGB(DIGIT_UTIL.indicateColor(0x000000, 0x00ff00, 50, BUTTON_ADC_GAIN_COMP_DOWN2));
+    GD.cmd_button(x + 120, y + 155, 100, 50, 29, 0, "DOWN");
+    GD.Tag(0);
+  }
 
+  // TODO: HACK!  Using MILLIAMP10 to indicate high voltage range !!!!  Stupid !   Should be fixed...
+  // WARNING: Not relevant because we dont use multiple measurement ranges.
+  //          However, it can be used as a poor mans nonlinear gain
+  //          compensation over and above a certain value....
+  // TODO: Remove this special handling ?
+  else if (current_range == MILLIAMP10 && operationType == SOURCE_VOLTAGE)
+  {
+    if (!reduceDetails)
+    {
 
-    else {
-      if (!reduceDetails) {
+      GD.ColorRGB(0xaaaaaa);
+
+      if (FILTERS->mean < 0)
+      {
+        GD.cmd_text(x + 120, y + 45, 27, 0, "ADC GAIN2 -");
+        DIGIT_UTIL.renderValue(x + 110, y + 65, getAdcGainCompNeg2() * 100.0, 1, -1);
+        GD.cmd_text(x + 203, y + 68, 27, 0, "%");
+      }
+      else
+      {
+        GD.cmd_text(x + 120, y + 45, 27, 0, "ADC GAIN2 +");
+        DIGIT_UTIL.renderValue(x + 110, y + 65, getAdcGainCompPos2() * 100.0, 1, -1);
+        GD.cmd_text(x + 203, y + 68, 27, 0, "%");
+      }
+    }
+    GD.ColorRGB(0x000000);
+
+    GD.Tag(BUTTON_ADC_GAIN_COMP_UP2);
+    GD.ColorRGB(DIGIT_UTIL.indicateColor(0x000000, 0x00ff00, 50, BUTTON_ADC_GAIN_COMP_UP2));
+    GD.cmd_button(x + 120, y + 95, 100, 50, 29, 0, "UPv2");
+    GD.Tag(BUTTON_ADC_GAIN_COMP_DOWN2);
+    GD.ColorRGB(DIGIT_UTIL.indicateColor(0x000000, 0x00ff00, 50, BUTTON_ADC_GAIN_COMP_DOWN2));
+    GD.cmd_button(x + 120, y + 155, 100, 50, 29, 0, "DOWNv2");
+    GD.Tag(0);
+  }
+  else 
+  {
+    if (!reduceDetails)
+    {
+
+      GD.ColorRGB(0xaaaaaa);
+
+      if (FILTERS->mean < 0)
+      {
+        GD.cmd_text(x + 120, y + 45, 27, 0, "ADC GAIN -");
+        DIGIT_UTIL.renderValue(x + 110, y + 65, getAdcGainCompNeg() * 100.0, 1, -1);
+        GD.cmd_text(x + 203, y + 68, 27, 0, "%");
+      }
+      else
+      {
+        GD.cmd_text(x + 120, y + 45, 27, 0, "ADC GAIN +");
+        DIGIT_UTIL.renderValue(x + 110, y + 65, getAdcGainCompPos() * 100.0, 1, -1);
+        GD.cmd_text(x + 203, y + 68, 27, 0, "%");
+      }
+    }
+    GD.ColorRGB(0x000000);
+
+    GD.Tag(BUTTON_ADC_GAIN_COMP_UP);
+    GD.ColorRGB(DIGIT_UTIL.indicateColor(0x000000, 0x00ff00, 50, BUTTON_ADC_GAIN_COMP_UP));
+    GD.cmd_button(x + 120, y + 95, 100, 50, 29, 0, "UP");
+    GD.Tag(BUTTON_ADC_GAIN_COMP_DOWN);
+    GD.ColorRGB(DIGIT_UTIL.indicateColor(0x000000, 0x00ff00, 50, BUTTON_ADC_GAIN_COMP_DOWN));
+    GD.cmd_button(x + 120, y + 155, 100, 50, 29, 0, "DOWN");
+    GD.Tag(0);
+  }
+
+  x = x + 120;
+  if (!reduceDetails)
+  {
 
     GD.ColorRGB(0xaaaaaa);
 
-    if (FILTERS->mean < 0) {
-      GD.cmd_text(x+120, y + 45, 27, 0, "ADC GAIN -");
-      DIGIT_UTIL.renderValue(x + 110,  y+65 ,getAdcGainCompNeg() * 100.0, 1, -1); 
-      GD.cmd_text(x+203, y + 68, 27, 0, "%");
-    } else {
-      GD.cmd_text(x+120, y + 45, 27, 0, "ADC GAIN +");
-      DIGIT_UTIL.renderValue(x + 110,  y+65 ,getAdcGainCompPos() * 100.0, 1, -1); 
-      GD.cmd_text(x+203, y + 68, 27, 0, "%");
+    if (current_range == MILLIAMP10 && operationType == SOURCE_CURRENT)
+    {
+      GD.cmd_text(x + 120, y + 45, 27, 0, "DAC z10m");
+      DIGIT_UTIL.renderValue(x + 110, y + 65, getDacZeroComp2(), 1, -1);
+      GD.cmd_text(x + 203, y + 68, 27, 0, "");
     }
-      }
-    GD.ColorRGB(0x000000);
-  
-    GD.Tag(BUTTON_ADC_GAIN_COMP_UP);
-    GD.ColorRGB(DIGIT_UTIL.indicateColor(0x000000, 0x00ff00, 50, BUTTON_ADC_GAIN_COMP_UP));
-    GD.cmd_button(x+120,y+95,100,50,29,0,"UP");
-    GD.Tag(BUTTON_ADC_GAIN_COMP_DOWN);
-    GD.ColorRGB(DIGIT_UTIL.indicateColor(0x000000, 0x00ff00, 50, BUTTON_ADC_GAIN_COMP_DOWN ));
-    GD.cmd_button(x+120,y+155,100,50,29,0,"DOWN");
-    GD.Tag(0);
+    else
+    {
+      GD.cmd_text(x + 120, y + 45, 27, 0, "DAC zero");
+      DIGIT_UTIL.renderValue(x + 110, y + 65, getDacZeroComp(), 1, -1);
+      GD.cmd_text(x + 203, y + 68, 27, 0, "");
     }
+  }
+  GD.ColorRGB(0x000000);
 
-
-
-
-    x=x+120;
-    if (!reduceDetails) {
-
-      GD.ColorRGB(0xaaaaaa);
-    
-
-      if (current_range == MILLIAMP10 && operationType == SOURCE_CURRENT) {
-        GD.cmd_text(x+120, y + 45, 27, 0, "DAC z10m");
-        DIGIT_UTIL.renderValue(x + 110,  y+65 ,getDacZeroComp2(), 1, -1); 
-        GD.cmd_text(x+203, y + 68, 27, 0, "");
-      } else {
-        GD.cmd_text(x+120, y + 45, 27, 0, "DAC zero");
-        DIGIT_UTIL.renderValue(x + 110,  y+65 ,getDacZeroComp(), 1, -1); 
-        GD.cmd_text(x+203, y + 68, 27, 0, "");
-      }
-
-
-    }   
-    GD.ColorRGB(0x000000);
-  
-    if (current_range == MILLIAMP10 && operationType == SOURCE_CURRENT) {
+  if (current_range == MILLIAMP10 && operationType == SOURCE_CURRENT)
+  {
 
     GD.Tag(BUTTON_DAC_ZERO_COMP_UP2);
     GD.ColorRGB(DIGIT_UTIL.indicateColor(0x000000, 0x00ff00, 50, BUTTON_DAC_ZERO_COMP_UP2));
-    GD.cmd_button(x+120,y+95,100,50,29,0,"UP2");
+    GD.cmd_button(x + 120, y + 95, 100, 50, 29, 0, "UP2");
     GD.Tag(BUTTON_DAC_ZERO_COMP_DOWN2);
     GD.ColorRGB(DIGIT_UTIL.indicateColor(0x000000, 0x00ff00, 50, BUTTON_DAC_ZERO_COMP_DOWN2));
-    GD.cmd_button(x+120,y+155,100,50,29,0,"DOWN2");
-    } else {
-      GD.Tag(BUTTON_DAC_ZERO_COMP_UP);
+    GD.cmd_button(x + 120, y + 155, 100, 50, 29, 0, "DOWN2");
+  }
+  else
+  {
+    GD.Tag(BUTTON_DAC_ZERO_COMP_UP);
     GD.ColorRGB(DIGIT_UTIL.indicateColor(0x000000, 0x00ff00, 50, BUTTON_DAC_ZERO_COMP_UP));
-    GD.cmd_button(x+120,y+95,100,50,29,0,"UP");
+    GD.cmd_button(x + 120, y + 95, 100, 50, 29, 0, "UP");
     GD.Tag(BUTTON_DAC_ZERO_COMP_DOWN);
     GD.ColorRGB(DIGIT_UTIL.indicateColor(0x000000, 0x00ff00, 50, BUTTON_DAC_ZERO_COMP_DOWN));
-    GD.cmd_button(x+120,y+155,100,50,29,0,"DOWN");
-    }
-    
-    GD.Tag(0); // Seems to fix problem with function calles when touching a special place on the screen... why ????
-
-
-
-  x=x+230;
-  if (!reduceDetails) {
-
-      GD.ColorRGB(0xaaaaaa);
-      GD.cmd_text(x+10, y + 45, 27, 0, "LIM GAIN");
-      DIGIT_UTIL.renderValue(x + 0,  y+65 ,getDacGainCompLim()*100.0, 1, -1); 
-      GD.cmd_text(x+93, y + 68, 27, 0, "%");
-     GD.ColorRGB(0x000000);
+    GD.cmd_button(x + 120, y + 155, 100, 50, 29, 0, "DOWN");
   }
-    GD.Tag(BUTTON_DAC_GAIN_COMP_LIM_UP);
-    GD.ColorRGB(DIGIT_UTIL.indicateColor(0x000000, 0x00ff00, 50, BUTTON_DAC_GAIN_COMP_LIM_UP));
-    GD.cmd_button(x+10,y+95,100,50,29,0,"UP");
-    GD.Tag(BUTTON_DAC_GAIN_COMP_LIM_DOWN);
-    GD.ColorRGB(DIGIT_UTIL.indicateColor(0x000000, 0x00ff00, 50,BUTTON_DAC_GAIN_COMP_LIM_DOWN));
-    GD.cmd_button(x+10,y+155,100,50,29,0,"DOWN");
 
-    
-  
- 
-  
- 
-  
+  GD.Tag(0); // Seems to fix problem with function calles when touching a special place on the screen... why ????
+
+  x = x + 230;
+  if (!reduceDetails)
+  {
+
+    GD.ColorRGB(0xaaaaaa);
+    GD.cmd_text(x + 10, y + 45, 27, 0, "LIM GAIN");
+    DIGIT_UTIL.renderValue(x + 0, y + 65, getDacGainCompLim() * 100.0, 1, -1);
+    GD.cmd_text(x + 93, y + 68, 27, 0, "%");
+    GD.ColorRGB(0x000000);
+  }
+  GD.Tag(BUTTON_DAC_GAIN_COMP_LIM_UP);
+  GD.ColorRGB(DIGIT_UTIL.indicateColor(0x000000, 0x00ff00, 50, BUTTON_DAC_GAIN_COMP_LIM_UP));
+  GD.cmd_button(x + 10, y + 95, 100, 50, 29, 0, "UP");
+  GD.Tag(BUTTON_DAC_GAIN_COMP_LIM_DOWN);
+  GD.ColorRGB(DIGIT_UTIL.indicateColor(0x000000, 0x00ff00, 50, BUTTON_DAC_GAIN_COMP_LIM_DOWN));
+  GD.cmd_button(x + 10, y + 155, 100, 50, 29, 0, "DOWN");
 }

@@ -284,7 +284,7 @@ void setup()
    GD.cmd_text(250, 200 ,   31, 0, "Poor man's SMU");
    GD.ColorRGB(0xaaaaaa);
    GD.cmd_text(250, 240 ,   28, 0, "Designed    by    Helge Langehaug");
-   GD.cmd_text(250, 270 ,   28, 1, "V0.141");
+   GD.cmd_text(250, 270 ,   28, 1, "V0.142");
 
    GD.swap();
    delay(501);
@@ -297,7 +297,6 @@ void setup()
    delay(100);
    Serial.println("Start measuring...");
    SMU[0].init();
-
    SETTINGS.init();
 
    SMU[0].setSamplingRate(20);
@@ -1376,10 +1375,13 @@ void startNullCalibration() {
   autoNullStarted = true;
 
   // set null to 0
-  V_CALIBRATION.setNullValueVol(0.0, MILLIAMP10);
-  V_CALIBRATION.setNullValueVol(0.0, AMP1);
-  V_CALIBRATION.setNullValueCur(0.0, MILLIAMP10);
-  V_CALIBRATION.setNullValueCur(0.0, AMP1);
+  if (operationType == SOURCE_VOLTAGE) {
+    V_CALIBRATION.setNullValueVol(0.0, MILLIAMP10);
+    V_CALIBRATION.setNullValueVol(0.0, AMP1);
+  } else {
+    V_CALIBRATION.setNullValueCur(0.0, MILLIAMP10);
+    V_CALIBRATION.setNullValueCur(0.0, AMP1);
+  }
   //TODO: Do the same when calibration on constant current mode as well !
   
 
@@ -1394,6 +1396,7 @@ void handleAutoNull() {
 //   Serial.println(timeBeforeAutoNull < millis());
   if (autoNullStarted && !nullCalibrationDone0 && timeBeforeAutoNull < millis()) {
     Serial.println("Performing auto null...");
+    C_CALIBRATION.useCalibratedValues = false;
     V_CALIBRATION.useCalibratedValues = false;
     current_range = MILLIAMP10;
     //Serial.println("Null calibration initiated...");
@@ -1405,6 +1408,8 @@ void handleAutoNull() {
     }
     //V_FILTERS.init();
     V_FILTERS.setFilterSize(10);
+    C_FILTERS.setFilterSize(10);
+
     SMU[0].setSamplingRate(20);
     nullCalibrationDone0 = true;
    
@@ -1412,21 +1417,24 @@ void handleAutoNull() {
   int msWaitPrCal = 5000;
   if (autoNullStarted && !nullCalibrationDone1 && /*timeAtStartup + */timeBeforeAutoNull + msWaitPrCal < millis()) {
     //float v = V_STATS.rawValue; 
-    float v = V_FILTERS.mean;   
-    V_CALIBRATION.setNullValueVol(v, current_range);
-    Serial.print("Removed voltage offset from 10mA range:");  
-    Serial.println(v,3);  
-    //v = C_STATS.rawValue;
-    
-    v = C_FILTERS.mean;   
-    V_CALIBRATION.setNullValueCur(v , current_range);
-    Serial.print("Removed current offset from 10mA range:");  
-    Serial.println(v,3);
+    if (operationType == SOURCE_VOLTAGE) {
+      float v = V_FILTERS.mean;   
+      V_CALIBRATION.setNullValueVol(v, current_range);
+      Serial.print("Removed voltage offset from 10mA range:");  
+      Serial.println(v,3);  
+    } else {
+      float v = C_FILTERS.mean;   
+      V_CALIBRATION.setNullValueCur(v, current_range);
+      Serial.print("Removed current offset from 10mA range:");  
+      Serial.println(v,3);  
+    }
+
     nullCalibrationDone1 = true;
   } 
  
   if (autoNullStarted && !nullCalibrationDone2 && /*timeAtStartup + */timeBeforeAutoNull + msWaitPrCal + 100 < millis()) {
     current_range = AMP1;
+    //Serial.println("Null calibration initiated...");
     SMU[0].setCurrentRange(current_range, operationType);
     if (operationType == SOURCE_VOLTAGE) {
       SMU[0].fltSetCommitVoltageSource(0.0, true);
@@ -1435,22 +1443,27 @@ void handleAutoNull() {
     }
   }
   if (autoNullStarted && !nullCalibrationDone2 && /*timeAtStartup +*/ timeBeforeAutoNull + msWaitPrCal*2 < millis()) {
-    //float v = V_STATS.rawValue;
-    float v = V_FILTERS.mean;
-    V_CALIBRATION.setNullValueVol(v, current_range);
-    Serial.print("Removed voltage offset from 1A range:");  
-    Serial.println(v,3);  
-    //v = C_STATS.rawValue;
-    v = C_FILTERS.mean;
-    V_CALIBRATION.setNullValueCur(v,current_range);
-    Serial.print("Removed current offset from 1A current range:");  
-    Serial.println(v,3);  
+   if (operationType == SOURCE_VOLTAGE) {
+      float v = V_FILTERS.mean;   
+      V_CALIBRATION.setNullValueVol(v, current_range);
+      Serial.print("Removed voltage offset from 10mA range:");  
+      Serial.println(v,3);  
+    } else {
+      float v = C_FILTERS.mean;   
+      V_CALIBRATION.setNullValueCur(v, current_range);
+      Serial.print("Removed current offset from 10mA range:");  
+      Serial.println(v,3);  
+    }
+    
+    
     nullCalibrationDone2 = true;
     //V_FILTERS.init(1234);
     V_FILTERS.setFilterSize(5);
     //C_FILTERS.init(2345);
     C_FILTERS.setFilterSize(5);
     V_CALIBRATION.useCalibratedValues = true;
+        C_CALIBRATION.useCalibratedValues = true;
+
     autoNullStarted = false;
 
   } 
@@ -2315,9 +2328,9 @@ int checkButtons() {
        } else {
         mv = C_STATS.rawValue;
         if (mv < 0) {
-            C_CALIBRATION.adjAdcGainCompNeg(-0.000005 *10.0);
+            C_CALIBRATION.adjAdcGainCompNeg(-0.000005 *2.0);
          } else {
-            C_CALIBRATION.adjAdcGainCompPos(-0.000005 *10.0);
+            C_CALIBRATION.adjAdcGainCompPos(-0.000005 *2.0);
          }
        }
       

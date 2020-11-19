@@ -24,7 +24,7 @@ class ADCClass {
 
   
   private:
-    double VREF = 4.96625;            
+    double VREF = 4.96625;  //5.01156          
     double VFSR = VREF; 
     CURRENT_RANGE current_range = AMP1;
     int samplingRate = 5;

@@ -81,7 +81,7 @@ bool full_board = true; // set to true to account for shunt and gain/offsets oth
 
 void ADCClass::disable_ADC_DAC_SPI_units(){
    pinMode(7,OUTPUT); // mux master chip select
-   digitalWrite(7, HIGH);
+   digitalWrite(7, HIGH); // comment out if running display on spi1
 }
 
 void ADCClass::setSamplingRate(int value) {
@@ -303,11 +303,25 @@ double ADCClass::measureMilliVoltage() {
   if (full_board == true) {
     
     //v = v*2.0; // divide by 2 in measurement circuit
-    
-    if (v>0) {
-      v = v * V_CALIBRATION.getAdcGainCompPos();
+        
+    // TODO: Dont hardcode the voltage value used for 
+    //       differentiating voltage ranges !
+    // WARNING: Not relevant because we dont use multiple measurement ranges.
+  //          However, it can be used as a poor mans nonlinear gain
+  //          compensation over and above a certain value....
+  // TODO: Remove this special handling ?
+    if (abs(v) > 2300) {
+      if (v>0) {
+        v = v * V_CALIBRATION.getAdcGainCompPos2();
+      } else {
+        v = v * V_CALIBRATION.getAdcGainCompNeg2();
+      }
     } else {
-      v = v * V_CALIBRATION.getAdcGainCompNeg();
+      if (v>0) {
+        v = v * V_CALIBRATION.getAdcGainCompPos();
+      } else {
+        v = v * V_CALIBRATION.getAdcGainCompNeg();
+      }
     }
 
     // crude adjustment, will differ between hardware
