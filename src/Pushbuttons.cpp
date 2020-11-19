@@ -75,25 +75,20 @@ void PushbuttonsClass::handle() {
    
   }
 
+/* INDICATE BUTTONS pushed. Can be used for debugging...
   if (buttonFunction != 0) {
     GD.Begin(RECTS);
-  GD.ColorA(255);
-  GD.ColorRGB(color);
-  int y=(buttonFunction-1)*110;
-  GD.Vertex2ii(0,50+y);
-  GD.Vertex2ii(70,120+y, 22);
+    GD.ColorA(255);
+    GD.ColorRGB(color);
+    int y=(buttonFunction-1)*110;
+    GD.Vertex2ii(0,50+y);
+    GD.Vertex2ii(70,120+y, 22);
   }
-
-
-
-
-  
-  
   
   GD.cmd_number(730,0,27,0,buttonFunction);
   GD.cmd_number(750,0,27,0,buttonDetected);
   GD.cmd_number(780,0,27,0,buttonDepressed);
-
+*/
 
 
 }

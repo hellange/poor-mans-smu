@@ -284,7 +284,7 @@ void setup()
    GD.cmd_text(250, 200 ,   31, 0, "Poor man's SMU");
    GD.ColorRGB(0xaaaaaa);
    GD.cmd_text(250, 240 ,   28, 0, "Designed    by    Helge Langehaug");
-   GD.cmd_text(250, 270 ,   28, 1, "V0.142");
+   GD.cmd_text(250, 270 ,   28, 1, "V0.145");
 
    GD.swap();
    delay(501);
@@ -490,6 +490,7 @@ void sourceVoltagePanel(int x, int y) {
 
   GD.Tag(0);
 /*  TODO: Fix. Preliminary removed because it causes exception often when clicking buttons...
+*/
   if (!reduceDetails()) {
     // Add some minor statistics on screen. Nice while looking at long time stability...
     GD.ColorRGB(0xaaaaaa);
@@ -506,7 +507,9 @@ void sourceVoltagePanel(int x, int y) {
     //DIGIT_UTIL.renderValue(x + 350+40+170+20,y + 132+ 40, SIMPLE_STATS.samples / 1000.0, 1, -1); 
     GD.cmd_number(x + 350+40+170+35,y + 132+ 40, 28, 6, SIMPLE_STATS.samples);
   }
-*/
+
+
+
 }
 
 void renderStatusIndicators(int x, int y) {
@@ -1186,9 +1189,9 @@ void renderMainHeader() {
   
   GD.ColorA(255);
   GD.ColorRGB(0xdddddd);
-  GD.cmd_text(20, 0, 27, 0, "Input 25.4V / - 25.3V"); // NOTE: Currently only dummy info
+  //GD.cmd_text(20, 0, 27, 0, "Input 25.4V / - 25.3V"); // NOTE: Currently only dummy info
   showLoadResistance(590,0);
-  showFanSpeed(220, 0);
+  //showFanSpeed(220, 0);
   //GD.cmd_number(470,0,27,3,LM60_getTemperature());
   int temp = TC74_getTemperature();
   if (temp > SETTINGS.getMaxTempAllowed()) {
@@ -1198,7 +1201,7 @@ void renderMainHeader() {
     GD.Begin(RECTS);
     GD.Vertex2ii(465, 0);
     GD.Vertex2ii(520, 20);
-        GD.ColorRGB(0xffffff);
+    GD.ColorRGB(0xffffff);
 
     GD.cmd_number(470,0,27,3,TC74_getTemperature());
     GD.cmd_text(505,0,27,0,"C");
@@ -1228,9 +1231,9 @@ void renderMainHeader() {
 }
 
 void showFanSpeed(int x, int y) {
-   GD.cmd_text(x,y,27,0, "Fan:");
-  GD.cmd_number(x+30,y,27,5, FAN.getRPMValueFiltered());
-  GD.cmd_text(x+80,y,27,0, "RPM");
+//   GD.cmd_text(x,y,27,0, "Fan:");
+//  GD.cmd_number(x+30,y,27,5, FAN.getRPMValueFiltered());
+//  GD.cmd_text(x+80,y,27,0, "RPM");
 //  Serial.print(FAN.getPWMFanRPM());
 //  Serial.print("(");
 //  Serial.print(FAN.getFanWidth());
