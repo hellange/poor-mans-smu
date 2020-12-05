@@ -1185,7 +1185,7 @@ void handleMenuScrolldown(){
 
 
 void renderMainHeader() {
-  
+ 
   // register screen for gestures on top half, required for pulling menu from top
   /*
   GD.Tag(GESTURE_AREA_HIGH);
@@ -1201,6 +1201,10 @@ void renderMainHeader() {
   GD.ColorRGB(0x181818);
   GD.Vertex2ii(0,0);
   GD.Vertex2ii(800, 22);
+  
+  if (MAINMENU.active == true or anyDialogOpen()) {
+    return;
+  }
   
   GD.ColorA(255);
   GD.ColorRGB(0xdddddd);
@@ -1239,11 +1243,9 @@ void renderMainHeader() {
   GD.Vertex2ii(799, y);
   GD.ColorA(255);
 
-
   // uptime
   DIGIT_UTIL.displayTime(millis(), 120, 0);
-
-
+  
 }
 
 void showFanSpeed(int x, int y) {
