@@ -13,7 +13,7 @@ void DialClass::close() {
     dialog = false;
 }
 
-void DialClass::open(int type, int set_or_limit_, void (*callbackFn)(int set_or_limit, bool cancel), float value) {
+void DialClass::open(int type, int set_or_limit_, void (*callbackFn)(int set_or_limit, bool cancel), int64_t micro) {
   //TODO: Convert value to visible digits. Right now it uses values/digits stored in the DialClass itself !
   //char cbuf[20];
   //sprintf(cbuf, "%10.5f", value); 
@@ -21,16 +21,20 @@ void DialClass::open(int type, int set_or_limit_, void (*callbackFn)(int set_or_
   //Serial.println(cbuf);
   //Serial.flush();
 
+
+
    Serial.println("Open dial. OperationType=");
    Serial.println(type == SOURCE_VOLTAGE ? "SOURCE VOLTAGE" : "SOURCE CURRENT");
-  
-  
+   Serial.print("Input value:");
+   Serial.print(micro/1000.0,3);
+   Serial.println("milli");
+
   closedFn = callbackFn;
   vol_cur_type = type;
   set_or_limit = set_or_limit_;
   dialog=true;  
 
-  setMv(value);
+  setMv(micro/1000.0);
   /*
   // if not set, use some defaults...
   if (digits == 0){
@@ -68,6 +72,8 @@ void DialClass::init() {
 }
 
 void DialClass::setMv(float mv) {
+  Serial.print("SetmV:");
+  Serial.println(mv,3 );
   if (mv < 0.0) {
     negative = true;
   } else {

@@ -19,8 +19,8 @@ class ADCClass {
   long int FSR = (((long int)1<<23)-1);
   unsigned long lastSampleMilli;
 
-  double setValueI = 0.0;
-  double setValueV = 0.0;
+  int64_t setLimit_micro = 0;
+  int64_t setValue_micro = 0;
 
   
   private:
@@ -44,10 +44,11 @@ class ADCClass {
     int initADC();
     int initDAC();
     void disable_ADC_DAC_SPI_units();
-    int8_t fltSetCommitVoltageSource(float fVoltage, bool dynamicRange);
-    int8_t fltSetCommitCurrentSource(float fVoltage);
-    int8_t fltSetCommitCurrentLimit(float fCurrent, int8_t up_down_both);
-    int8_t fltSetCommitVoltageLimit(float fCurrent, int8_t up_down_both);
+    int64_t fltSetCommitVoltageSource(int64_t voltage_uV, bool dynamicRange);
+    int64_t fltSetCommitCurrentSource(int64_t current_uA);
+
+    int64_t fltSetCommitCurrentLimit(int64_t setValue_uA, int8_t up_down_both);
+    int64_t fltSetCommitVoltageLimit(int64_t voltage_uV, int8_t up_down_both);
 
     double measureMilliVoltage();
     double measureMilliVoltageRaw();
@@ -58,8 +59,8 @@ class ADCClass {
     double measureCurrent(CURRENT_RANGE range);
 
     bool hasCompliance();
-    double getSetValuemV();
-    double getLimitValue();
+    int64_t getSetValue_micro();
+    int64_t getLimitValue_micro();
 
     void setGPIO(int nr, bool on);
 

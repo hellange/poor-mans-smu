@@ -145,41 +145,84 @@ IntervalTimer myTimer;
 #define SAMPLING_BY_INTERRUPT
 
 
+void print_uint64_t(uint64_t num) {
+
+  char rev[128]; 
+  char *p = rev+1;
+
+  while (num > 0) {
+    *p++ = '0' + ( num % 10);
+    num/= 10;
+  }
+  p--;
+  /*Print the number which is now in reverse*/
+  while (p > rev) {
+    Serial.print(*p--);
+  }
+}
+
 void rotaryChangedFn(float changeVal) {
 
    if (operationType == SOURCE_VOLTAGE) {
-    
+           Serial.print("rotary changeval:");
+       Serial.println(changeVal);
      if(SOURCE_DIAL.isDialogOpen()) {
        float mv = SOURCE_DIAL.getMv();
-       float newVoltage = mv + changeVal;
-       SOURCE_DIAL.setMv(newVoltage);
+       int64_t change_uV =  changeVal*1000;
+       int64_t new_uV = mv*1000 + change_uV;
+       SOURCE_DIAL.setMv(new_uV /1000.0);
      } else {
-       float mv = SMU[0].getSetValuemV();
-       float newVoltage = mv + changeVal;
-       if (SMU[0].fltSetCommitVoltageSource(newVoltage, true)) printError(_PRINT_ERROR_VOLTAGE_SOURCE_SETTING);
+              Serial.print("from smu setvalue mv=");
+       print_uint64_t(SMU[0].getSetValue_micro());
+       Serial.println();
+
+       int64_t change_uV =  changeVal*1000;
+        Serial.print("change value in uV=");
+        print_uint64_t(change_uV);
+        Serial.println();
+
+       int64_t new_uV = SMU[0].getSetValue_micro() + change_uV;
+       Serial.print("new uV=");
+       print_uint64_t(new_uV);
+       Serial.println();
+
+/*
+       float newVoltage_mV = new_uV / 1000.0;
+       Serial.print("new mv=");
+       Serial.println(newVoltage_mV,5);
+*/
+       if (SMU[0].fltSetCommitVoltageSource(new_uV, true)) printError(_PRINT_ERROR_VOLTAGE_SOURCE_SETTING);
      }
 
    } else {
 
-    float mv;
-    if(SOURCE_DIAL.isDialogOpen()) {
-      mv = SOURCE_DIAL.getMv();
-    } else {
-      mv = SMU[0].getSetValuemV();
-    }
      if (current_range == MILLIAMP10) {
        changeVal = changeVal / 100.0;
      }
-     
-     float newVoltage = mv + changeVal/10.0;
 
-     if(SOURCE_DIAL.isDialogOpen()) {
-       SOURCE_DIAL.setMv(newVoltage);
+ if(SOURCE_DIAL.isDialogOpen()) {
+       float mv = SOURCE_DIAL.getMv();
+       int64_t change_uV =  changeVal*1000;
+       int64_t new_uV = mv*1000 + change_uV;
+       SOURCE_DIAL.setMv(new_uV /1000.0);
      } else {
-       fltCommitCurrentSourceAutoRange(newVoltage, false);
-     }
+              Serial.print("from smu setvalue mv=");
+       print_uint64_t(SMU[0].getSetValue_micro());
+       Serial.println();
 
-     //if (SMU[0].fltSetCommitCurrentSource(newVoltage)) printError(_PRINT_ERROR_VOLTAGE_SOURCE_SETTING);
+       int64_t change_uV =  changeVal*1000;
+        Serial.print("change value in uV=");
+        print_uint64_t(change_uV);
+        Serial.println();
+
+       int64_t new_uV = SMU[0].getSetValue_micro() + change_uV;
+       Serial.print("new uV=");
+       print_uint64_t(new_uV);
+       Serial.println();
+
+
+       fltCommitCurrentSourceAutoRange(new_uV, false);
+     }
    }
 
       
@@ -284,7 +327,7 @@ void setup()
    GD.cmd_text(250, 200 ,   31, 0, "Poor man's SMU");
    GD.ColorRGB(0xaaaaaa);
    GD.cmd_text(250, 240 ,   28, 0, "Designed    by    Helge Langehaug");
-   GD.cmd_text(250, 270 ,   28, 1, "V0.147");
+   GD.cmd_text(250, 270 ,   28, 1, "V0.148");
 
    GD.swap();
    delay(501);
@@ -306,9 +349,9 @@ void setup()
    C_CALIBRATION.init(SOURCE_CURRENT);
    
    if (operationType == SOURCE_VOLTAGE) {
-     SMU[0].fltSetCommitVoltageSource(SETTINGS.setMilliVoltage, true);
+     SMU[0].fltSetCommitVoltageSource(SETTINGS.setMilliVoltage*1000, true);
      Serial.println("Source voltage");
-     SMU[0].fltSetCommitCurrentLimit(SETTINGS.setCurrentLimit/1000.0, _SOURCE_AND_SINK); 
+     SMU[0].fltSetCommitCurrentLimit(SETTINGS.setCurrentLimit*1000, _SOURCE_AND_SINK); 
    } 
    
    
@@ -404,7 +447,7 @@ void sourceCurrentPanel(int x, int y) {
   DIGIT_UTIL.renderValue(x + 290,  y-4 , C_STATS.rawValue, 4, DigitUtilClass::typeCurrent); 
 
   GD.ColorA(255);
-  CURRENT_DISPLAY.renderSet(x + 120, y + 131, SMU[0].getSetValuemV());
+  CURRENT_DISPLAY.renderSet(x + 120, y + 131, SMU[0].getSetValue_micro());
 
   GD.ColorRGB(0,0,0);
   GD.cmd_fgcolor(0xaaaa90);  
@@ -439,7 +482,7 @@ void sourceVoltagePanel(int x, int y) {
   DIGIT_UTIL.renderValue(x + 300,  y-4 , V_STATS.rawValue, 4, DigitUtilClass::typeVoltage); 
 
   GD.ColorA(255);
-  VOLT_DISPLAY.renderSet(x + 120, y + 131, SMU[0].getSetValuemV());
+  VOLT_DISPLAY.renderSet(x + 120, y + 131, SMU[0].getSetValue_micro());
 
 
   float uVstep = 1000000.0/ powf(2.0,18.0); // for 1V 18bit DAC
@@ -805,7 +848,8 @@ void renderHistogram(int x,int y, bool scrolling) {
   V_STATS.renderHistogram(x,y,scrolling);
 }
 
-void renderBar(int x, int y, float rawValue, float setValue) {
+void renderBar(int x, int y, float rawValue, uint64_t setValue_u) {
+  float setValue = setValue_u/1000.0; // logic below based on milli
   if (reduceDetails()) {
     return;
   }
@@ -842,7 +886,7 @@ void measureVoltagePanel(int x, int y, boolean compliance) {
   y=y+28;
 
   VOLT_DISPLAY.renderMeasured(x /*+ 17*/, y, V_FILTERS.mean, compliance);
-  VOLT_DISPLAY.renderSet(x+120, y+105, SMU[0].getLimitValue());
+  VOLT_DISPLAY.renderSet(x+120, y+105, SMU[0].getLimitValue_micro());
 
   y=y+105;
   
@@ -877,7 +921,7 @@ void measureCurrentPanel(int x, int y, boolean compliance, bool showBar) {
   
   else {
     if (showBar) {
-      renderBar(x,y, C_STATS.rawValue, SMU[0].getLimitValue());
+      renderBar(x,y, C_STATS.rawValue, SMU[0].getLimitValue_micro());
       y=y+12;
     }
     GD.ColorA(255);
@@ -885,7 +929,7 @@ void measureCurrentPanel(int x, int y, boolean compliance, bool showBar) {
     shownA = false; // Override. Dont show nA
     CURRENT_DISPLAY.renderMeasured(x /*+ 17*/, y, C_FILTERS.mean, compliance, shownA, current_range); 
   }
-  CURRENT_DISPLAY.renderSet(x+120, y+105, SMU[0].getLimitValue());
+  CURRENT_DISPLAY.renderSet(x+120, y+105, SMU[0].getLimitValue_micro());
 
   y=y+105;
   
@@ -1012,11 +1056,11 @@ void showWidget(int y, int widgetNo, int scroll) {
 
       if (operationType == SOURCE_VOLTAGE) {
         float rawM = V_FILTERS.mean;
-        float setM = SMU[0].getSetValuemV();
+        float setM = SMU[0].getSetValue_micro()/1000.0;
         renderExperimental(scroll,yPos, rawM, setM, false, reduceDetails());
       } else {
         float rawM = C_FILTERS.mean;
-        float setM = SMU[0].getSetValuemV();
+        float setM = SMU[0].getSetValue_micro()/1000.0;
         renderExperimental(scroll,yPos, rawM, setM, false, reduceDetails());
       }
   } 
@@ -1028,7 +1072,7 @@ void showWidget(int y, int widgetNo, int scroll) {
 
       if (operationType == SOURCE_VOLTAGE) {
          float rawM = V_FILTERS.mean;
-         float setM = SMU[0].getSetValuemV();
+         float setM = SMU[0].getSetValue_micro()/1000.0;
          if (abs(setM) > 2300) {   // TODO: Hack, using MILLIAMP10 to indicate high volt range (10V). Stupid. Fix !!!!
             V_CALIBRATION.renderCal(scroll,yPos, rawM, setM, MILLIAMP10, reduceDetails());
          } else {
@@ -1038,7 +1082,7 @@ void showWidget(int y, int widgetNo, int scroll) {
          }
        } else {
          float rawM = C_FILTERS.mean;
-        float setM = SMU[0].getSetValuemV();
+        float setM = SMU[0].getSetValue_micro()*1000.0;
         C_CALIBRATION.renderCal(scroll,yPos, rawM, setM, current_range,  reduceDetails());
       }
       
@@ -1051,11 +1095,11 @@ void showWidget(int y, int widgetNo, int scroll) {
 
       if (operationType == SOURCE_VOLTAGE) {
          float rawM = V_FILTERS.mean;
-         float setM = SMU[0].getSetValuemV();
+         float setM = SMU[0].getSetValue_micro()/1000.0;
          V_CALIBRATION.renderCal2(scroll,yPos, rawM, setM, current_range, reduceDetails());
        } else {
          float rawM = C_FILTERS.mean;
-         float setM = SMU[0].getSetValuemV();
+         float setM = SMU[0].getSetValue_micro()/1000.0;
          C_CALIBRATION.renderCal2(scroll,yPos, rawM, setM, current_range, reduceDetails());
       }   
   }
@@ -1405,9 +1449,9 @@ void handleAutoNull() {
     //Serial.println("Null calibration initiated...");
     SMU[0].setCurrentRange(current_range, operationType);
     if (operationType == SOURCE_VOLTAGE) {
-      SMU[0].fltSetCommitVoltageSource(0.0, true);
+      SMU[0].fltSetCommitVoltageSource(0, true);
     } else {
-      SMU[0].fltSetCommitCurrentSource(0.0);
+      SMU[0].fltSetCommitCurrentSource(0);
     }
     //V_FILTERS.init();
     V_FILTERS.setFilterSize(10);
@@ -1440,9 +1484,9 @@ void handleAutoNull() {
     //Serial.println("Null calibration initiated...");
     SMU[0].setCurrentRange(current_range, operationType);
     if (operationType == SOURCE_VOLTAGE) {
-      SMU[0].fltSetCommitVoltageSource(0.0, true);
+      SMU[0].fltSetCommitVoltageSource(0, true);
     } else {
-      SMU[0].fltSetCommitCurrentSource(0.0);
+      SMU[0].fltSetCommitCurrentSource(0);
     }
   }
   if (autoNullStarted && !nullCalibrationDone2 && /*timeAtStartup +*/ timeBeforeAutoNull + msWaitPrCal*2 < millis()) {
@@ -1674,7 +1718,7 @@ void handleAutoCurrentRange() {
           Serial.println("switching to range 1");
            //TODO: Use getLimitValue from SMU instead of LIMIT_DIAL ?
           if (operationType == SOURCE_VOLTAGE){
-            if (SMU[0].fltSetCommitCurrentLimit(SMU[0].getLimitValue()/1000.0/*LIMIT_DIAL.getMv()*/, _SOURCE_AND_SINK)) printError(_PRINT_ERROR_VOLTAGE_SOURCE_SETTING);
+            if (SMU[0].fltSetCommitCurrentLimit(SMU[0].getLimitValue_micro()*1000/*LIMIT_DIAL.getMv()*/, _SOURCE_AND_SINK)) printError(_PRINT_ERROR_VOLTAGE_SOURCE_SETTING);
           } 
 
         }
@@ -1689,7 +1733,7 @@ void handleAutoCurrentRange() {
           Serial.println("switching to range 0");
            //TODO: Use getLimitValue from SMU instead of LIMIT_DIAL ?
           if (operationType == SOURCE_VOLTAGE){
-            if (SMU[0].fltSetCommitCurrentLimit(SMU[0].getLimitValue()/1000.0/*LIMIT_DIAL.getMv()/1000.0*/, _SOURCE_AND_SINK)) printError(_PRINT_ERROR_VOLTAGE_SOURCE_SETTING);
+            if (SMU[0].fltSetCommitCurrentLimit(SMU[0].getLimitValue_micro()*1000/*LIMIT_DIAL.getMv()/1000.0*/, _SOURCE_AND_SINK)) printError(_PRINT_ERROR_VOLTAGE_SOURCE_SETTING);
           } 
 
           
@@ -1997,8 +2041,8 @@ int checkButtons() {
         y[buttonPressedPeriod] = touchY;
         buttonPressedPeriod ++;
 
-        Serial.print("Button pressed:");
-        Serial.println(buttonPressedPeriod);
+        //Serial.print("Button pressed:");
+        //Serial.println(buttonPressedPeriod);
       }
       prevButton = buttonPressed;
     } else {
@@ -2023,7 +2067,7 @@ int checkButtons() {
       Serial.println("Gesture accidentally touched a button...");
       return 0;
     } else {
-      Serial.println("Button pressed :-)");
+      //Serial.println("Button pressed :-)");
     }
 
 
@@ -2037,12 +2081,12 @@ int checkButtons() {
   
     if (tag == BUTTON_SOURCE_SET) {
       Serial.println("open dial to set source, start with value ");
-      Serial.println(SMU[0].getSetValuemV());
-      SOURCE_DIAL.open(operationType, SET,  closeSourceDCCallback, SMU[0].getSetValuemV());
+      Serial.println((float)SMU[0].getSetValue_micro()/1000.0);
+      SOURCE_DIAL.open(operationType, SET,  closeSourceDCCallback, SMU[0].getSetValue_micro());
     } else if (tag == BUTTON_LIM_SET) {
       Serial.println("open dial to set limit, start with value ");
-      Serial.println(SMU[0].getLimitValue());
-      LIMIT_DIAL.open(operationType, LIMIT, closeSourceDCCallback, SMU[0].getLimitValue());
+      print_uint64_t(SMU[0].getLimitValue_micro());
+      LIMIT_DIAL.open(operationType, LIMIT, closeSourceDCCallback, SMU[0].getLimitValue_micro());
     } else if (tag == BUTTON_REL) {
       Serial.println("Set relative");
       V_CALIBRATION.toggleRelativeValue(V_STATS.rawValue, current_range);
@@ -2076,8 +2120,7 @@ int checkButtons() {
         //      Move all operations to change DAC/ADC stuff to a common place when it needs to change? And only have that parth within the SPI settings ?
         GD.__end();
         disable_ADC_DAC_SPI_units(); 
-        Serial.print("When switching current range, limit value use is:");
-        Serial.println(SMU[0].getLimitValue());
+
 
         
         SMU[0].setCurrentRange(current_range,operationType);
@@ -2133,7 +2176,7 @@ int checkButtons() {
        } 
        timeSinceLastChange = millis();
        DIGIT_UTIL.startIndicator(tag);
-       float mv = SMU[0].getSetValuemV();
+       float mv = SMU[0].getSetValue_micro()/1000.0;
        if (operationType == SOURCE_VOLTAGE) {
          if (mv < 0) {
             V_CALIBRATION.adjDacGainCompNeg(0.000005);
@@ -2141,7 +2184,7 @@ int checkButtons() {
             V_CALIBRATION.adjDacGainCompPos(0.000005);
          }
          GD.__end();
-         if (SMU[0].fltSetCommitVoltageSource(mv, true)) printError(_PRINT_ERROR_VOLTAGE_SOURCE_SETTING);
+         if (SMU[0].fltSetCommitVoltageSource(mv*1000, true)) printError(_PRINT_ERROR_VOLTAGE_SOURCE_SETTING);
          GD.resume();
        } else {
           if (mv < 0) {
@@ -2150,7 +2193,7 @@ int checkButtons() {
             C_CALIBRATION.adjDacGainCompPos(0.00001);
          }
          GD.__end();
-         if (SMU[0].fltSetCommitCurrentSource(mv)) printError(_PRINT_ERROR_VOLTAGE_SOURCE_SETTING);
+         if (SMU[0].fltSetCommitCurrentSource(mv*1000)) printError(_PRINT_ERROR_VOLTAGE_SOURCE_SETTING);
          GD.resume();
        }
       
@@ -2162,7 +2205,7 @@ int checkButtons() {
        } 
        timeSinceLastChange = millis();
        DIGIT_UTIL.startIndicator(tag);
-       float mv = SMU[0].getSetValuemV();
+       float mv = SMU[0].getSetValue_micro()/1000.0;
        if (operationType == SOURCE_VOLTAGE) {
          if (mv < 0) {
             V_CALIBRATION.adjDacGainCompNeg2(0.000005);
@@ -2170,7 +2213,7 @@ int checkButtons() {
             V_CALIBRATION.adjDacGainCompPos2(0.000005);
          }
          GD.__end();
-         if (SMU[0].fltSetCommitVoltageSource(mv, true)) printError(_PRINT_ERROR_VOLTAGE_SOURCE_SETTING);
+         if (SMU[0].fltSetCommitVoltageSource(mv*1000, true)) printError(_PRINT_ERROR_VOLTAGE_SOURCE_SETTING);
          GD.resume();
        } else {
           if (mv < 0) {
@@ -2179,7 +2222,7 @@ int checkButtons() {
             C_CALIBRATION.adjDacGainCompPos2(0.000005);
          }
          GD.__end();
-         if (SMU[0].fltSetCommitCurrentSource(mv)) printError(_PRINT_ERROR_VOLTAGE_SOURCE_SETTING);
+         if (SMU[0].fltSetCommitCurrentSource(mv*1000)) printError(_PRINT_ERROR_VOLTAGE_SOURCE_SETTING);
          GD.resume();
        }
       
@@ -2191,7 +2234,7 @@ int checkButtons() {
       } 
        timeSinceLastChange = millis();
        DIGIT_UTIL.startIndicator(tag);
-       float mv = SMU[0].getSetValuemV();
+       float mv = SMU[0].getSetValue_micro()/1000;
        if (operationType == SOURCE_VOLTAGE) {
          if (mv < 0) {
             V_CALIBRATION.adjDacGainCompNeg(-0.000005);
@@ -2200,7 +2243,7 @@ int checkButtons() {
          }
          //if (operationType == SOURCE_VOLTAGE) {
          GD.__end();
-         if (SMU[0].fltSetCommitVoltageSource(mv, true)) printError(_PRINT_ERROR_VOLTAGE_SOURCE_SETTING);
+         if (SMU[0].fltSetCommitVoltageSource(mv*1000, true)) printError(_PRINT_ERROR_VOLTAGE_SOURCE_SETTING);
          GD.resume();
        } else {
           if (mv < 0) {
@@ -2209,7 +2252,7 @@ int checkButtons() {
             C_CALIBRATION.adjDacGainCompPos(-0.00001 );
          }
          GD.__end();
-         if (SMU[0].fltSetCommitCurrentSource(mv)) printError(_PRINT_ERROR_VOLTAGE_SOURCE_SETTING);
+         if (SMU[0].fltSetCommitCurrentSource(mv*1000)) printError(_PRINT_ERROR_VOLTAGE_SOURCE_SETTING);
          GD.resume();
        }   
     } 
@@ -2220,7 +2263,7 @@ int checkButtons() {
       } 
        timeSinceLastChange = millis();
        DIGIT_UTIL.startIndicator(tag);
-       float mv = SMU[0].getSetValuemV();
+       float mv = SMU[0].getSetValue_micro()/1000.0;
        if (operationType == SOURCE_VOLTAGE) {
          if (mv < 0) {
             V_CALIBRATION.adjDacGainCompNeg2(-0.000005);
@@ -2229,7 +2272,7 @@ int checkButtons() {
          }
          //if (operationType == SOURCE_VOLTAGE) {
          GD.__end();
-         if (SMU[0].fltSetCommitVoltageSource(mv, true)) printError(_PRINT_ERROR_VOLTAGE_SOURCE_SETTING);
+         if (SMU[0].fltSetCommitVoltageSource(mv*1000, true)) printError(_PRINT_ERROR_VOLTAGE_SOURCE_SETTING);
          GD.resume();
        } else {
           if (mv < 0) {
@@ -2238,7 +2281,7 @@ int checkButtons() {
             C_CALIBRATION.adjDacGainCompPos2(-0.000005);
          }
          GD.__end();
-         if (SMU[0].fltSetCommitCurrentSource(mv)) printError(_PRINT_ERROR_VOLTAGE_SOURCE_SETTING);
+         if (SMU[0].fltSetCommitCurrentSource(mv*1000)) printError(_PRINT_ERROR_VOLTAGE_SOURCE_SETTING);
          GD.resume();
        }   
     } 
@@ -2253,13 +2296,13 @@ int checkButtons() {
       } 
        timeSinceLastChange = millis();
        DIGIT_UTIL.startIndicator(tag);
-       float mv = SMU[0].getLimitValue();
+       float mv = SMU[0].getLimitValue_micro();
        if (operationType == SOURCE_VOLTAGE) {
          V_CALIBRATION.adjDacGainCompLim(+0.000005*10.0);
          
          //if (operationType == SOURCE_VOLTAGE) {
          GD.__end();
-         if (SMU[0].fltSetCommitCurrentLimit(mv/1000.0, true)) printError(_PRINT_ERROR_VOLTAGE_SOURCE_SETTING);
+         if (SMU[0].fltSetCommitCurrentLimit(mv*1000, true)) printError(_PRINT_ERROR_VOLTAGE_SOURCE_SETTING);
          GD.resume();
        }
       
@@ -2273,13 +2316,13 @@ int checkButtons() {
       } 
        timeSinceLastChange = millis();
        DIGIT_UTIL.startIndicator(tag);
-       float mv = SMU[0].getLimitValue();
+       float mv = SMU[0].getLimitValue_micro();
        if (operationType == SOURCE_VOLTAGE) {
          V_CALIBRATION.adjDacGainCompLim(-0.000005*10.0);
          
          //if (operationType == SOURCE_VOLTAGE) {
          GD.__end();
-         if (SMU[0].fltSetCommitCurrentLimit(mv/1000.0, true)) printError(_PRINT_ERROR_VOLTAGE_SOURCE_SETTING);
+         if (SMU[0].fltSetCommitCurrentLimit(mv*1000, true)) printError(_PRINT_ERROR_VOLTAGE_SOURCE_SETTING);
          GD.resume();
        }
       
@@ -2296,7 +2339,7 @@ int checkButtons() {
        } 
        timeSinceLastChange = millis();
        DIGIT_UTIL.startIndicator(tag);
-       float mv = SMU[0].getSetValuemV();
+       float mv = SMU[0].getSetValue_micro()/1000.0;
        if (operationType == SOURCE_VOLTAGE) {
          mv = V_STATS.rawValue;
          if (mv < 0) {
@@ -2320,7 +2363,7 @@ int checkButtons() {
        } 
        timeSinceLastChange = millis();
        DIGIT_UTIL.startIndicator(tag);
-       float mv = SMU[0].getSetValuemV();
+       float mv = SMU[0].getSetValue_micro()/1000.0;
        if (operationType == SOURCE_VOLTAGE) {
          mv = V_STATS.rawValue;
          if (mv < 0) {
@@ -2349,7 +2392,7 @@ int checkButtons() {
        } 
        timeSinceLastChange = millis();
        DIGIT_UTIL.startIndicator(tag);
-       float mv = SMU[0].getSetValuemV();
+       float mv = SMU[0].getSetValue_micro()/1000.0;
        if (operationType == SOURCE_VOLTAGE) {
          mv = V_STATS.rawValue;
          if (mv < 0) {
@@ -2373,7 +2416,7 @@ int checkButtons() {
        } 
        timeSinceLastChange = millis();
        DIGIT_UTIL.startIndicator(tag);
-       float mv = SMU[0].getSetValuemV();
+       float mv = SMU[0].getSetValue_micro()/1000.0;
        if (operationType == SOURCE_VOLTAGE) {
          mv = V_STATS.rawValue;
          if (mv < 0) {
@@ -2400,11 +2443,11 @@ int checkButtons() {
       } 
       timeSinceLastChange = millis();
        DIGIT_UTIL.startIndicator(tag);
-       float mv = SMU[0].getSetValuemV();
+       float mv = SMU[0].getSetValue_micro()/1000.0;
        if (operationType == SOURCE_VOLTAGE) {
           V_CALIBRATION.adjDacZeroComp(+0.000002);
           GD.__end();
-         if (SMU[0].fltSetCommitVoltageSource(mv, true)) printError(_PRINT_ERROR_VOLTAGE_SOURCE_SETTING);
+         if (SMU[0].fltSetCommitVoltageSource(mv*1000, true)) printError(_PRINT_ERROR_VOLTAGE_SOURCE_SETTING);
          GD.resume();
          
        } else {
@@ -2414,7 +2457,7 @@ int checkButtons() {
             C_CALIBRATION.adjDacZeroComp2(+0.000002);
           }
           GD.__end();
-         if (SMU[0].fltSetCommitCurrentSource(mv)) printError(_PRINT_ERROR_VOLTAGE_SOURCE_SETTING);
+         if (SMU[0].fltSetCommitCurrentSource(mv*1000)) printError(_PRINT_ERROR_VOLTAGE_SOURCE_SETTING);
          GD.resume();    
        }
     }
@@ -2424,11 +2467,11 @@ int checkButtons() {
        } 
        timeSinceLastChange = millis();
        DIGIT_UTIL.startIndicator(tag);
-       float mv = SMU[0].getSetValuemV();
+       float mv = SMU[0].getSetValue_micro()/1000.0;
        if (operationType == SOURCE_VOLTAGE) {
          V_CALIBRATION.adjDacZeroComp(-0.000002);
          GD.__end();
-         if (SMU[0].fltSetCommitVoltageSource(mv, true)) printError(_PRINT_ERROR_VOLTAGE_SOURCE_SETTING);
+         if (SMU[0].fltSetCommitVoltageSource(mv*1000, true)) printError(_PRINT_ERROR_VOLTAGE_SOURCE_SETTING);
          GD.resume();
        } else {
          if (tag == BUTTON_DAC_ZERO_COMP_DOWN) {
@@ -2437,7 +2480,7 @@ int checkButtons() {
            C_CALIBRATION.adjDacZeroComp2(-0.000002);
          }
          GD.__end();
-         if (SMU[0].fltSetCommitCurrentSource(mv)) printError(_PRINT_ERROR_VOLTAGE_SOURCE_SETTING);
+         if (SMU[0].fltSetCommitCurrentSource(mv*1000)) printError(_PRINT_ERROR_VOLTAGE_SOURCE_SETTING);
          GD.resume(); 
        }
     }
@@ -2598,25 +2641,25 @@ void closeMainMenuCallback(FUNCTION_TYPE functionType_) {
   else if (functionType == SOURCE_DC_VOLTAGE) {   
     //disable_ADC_DAC_SPI_units();
     GD.__end();
-    if (SMU[0].fltSetCommitVoltageSource(SETTINGS.setMilliVoltage, true)) printError(_PRINT_ERROR_VOLTAGE_SOURCE_SETTING);
-    if (SMU[0].fltSetCommitCurrentLimit(SETTINGS.setCurrentLimit/1000.0, true)) printError(_PRINT_ERROR_VOLTAGE_SOURCE_SETTING);
+    if (SMU[0].fltSetCommitVoltageSource(SETTINGS.setMilliVoltage*1000, true)) printError(_PRINT_ERROR_VOLTAGE_SOURCE_SETTING);
+    if (SMU[0].fltSetCommitCurrentLimit(SETTINGS.setCurrentLimit*1000, true)) printError(_PRINT_ERROR_VOLTAGE_SOURCE_SETTING);
     GD.resume();
   }
   else if (functionType == SOURCE_DC_CURRENT) {
     //disable_ADC_DAC_SPI_units();
     GD.__end();
     //if (SMU[0].fltSetCommitVoltageSource(SMU[0].getSetValuemV(), true)) printError(_PRINT_ERROR_VOLTAGE_SOURCE_SETTING);
-    if (SMU[0].fltSetCommitCurrentSource(SETTINGS.setMilliAmpere/*SETTINGS.setMilliAmpere*/)) printError(_PRINT_ERROR_VOLTAGE_SOURCE_SETTING);
-    if (SMU[0].fltSetCommitVoltageLimit(SETTINGS.setVoltageLimit / 1000.0, true)) printError(_PRINT_ERROR_VOLTAGE_SOURCE_SETTING);
+    if (SMU[0].fltSetCommitCurrentSource(SETTINGS.setMilliAmpere*1000/*SETTINGS.setMilliAmpere*/)) printError(_PRINT_ERROR_VOLTAGE_SOURCE_SETTING);
+    if (SMU[0].fltSetCommitVoltageLimit(SETTINGS.setVoltageLimit*1000, true)) printError(_PRINT_ERROR_VOLTAGE_SOURCE_SETTING);
     GD.resume();
   }
   
 }
 
-void fltCommitCurrentSourceAutoRange(float mv, bool autoRange) {
+void fltCommitCurrentSourceAutoRange(float uV, bool autoRange) {
    // auto current range when sourcing current
    if (autoRange) {
-      if (abs(mv) < 8.0 ) {  // TODO: should theoretically be 10mA full scale, but there seem to be some limitations... i.e. reference volt a bit less that 5V...
+      if (abs(uV) < 8000 ) {  // TODO: should theoretically be 10mA full scale, but there seem to be some limitations... i.e. reference volt a bit less that 5V...
         current_range = MILLIAMP10;
         SMU[0].setCurrentRange(current_range, operationType);
       } else {
@@ -2625,10 +2668,10 @@ void fltCommitCurrentSourceAutoRange(float mv, bool autoRange) {
       }
       
 
-      if (SMU[0].fltSetCommitCurrentSource(mv)) printError(_PRINT_ERROR_VOLTAGE_SOURCE_SETTING);
+      if (SMU[0].fltSetCommitCurrentSource(uV)) printError(_PRINT_ERROR_VOLTAGE_SOURCE_SETTING);
    }
    else {
-          if (SMU[0].fltSetCommitCurrentSource(mv)) printError(_PRINT_ERROR_VOLTAGE_SOURCE_SETTING);
+          if (SMU[0].fltSetCommitCurrentSource(uV)) printError(_PRINT_ERROR_VOLTAGE_SOURCE_SETTING);
 
    }
 
@@ -2638,32 +2681,31 @@ void fltCommitCurrentSourceAutoRange(float mv, bool autoRange) {
 }
 
 void closeSourceDCCallback(int set_or_limit, bool cancel) {
-  Serial.print("set or limit:");
-  Serial.println(set_or_limit);
-  Serial.flush();
+
   if (cancel) {
+      Serial.println("Closed SET/LIMIT dialog by cancel");
     return;
   }
   GD.__end();
   disable_ADC_DAC_SPI_units();
   if (set_or_limit == SET) {
     float mv = SOURCE_DIAL.getMv(); // TODO: get current value from another place ?
+    Serial.print("Closed SET dialog, value=");
+    Serial.println(mv);
     if (operationType == SOURCE_VOLTAGE) {
-       if (SMU[0].fltSetCommitVoltageSource(mv, true)) printError(_PRINT_ERROR_VOLTAGE_SOURCE_SETTING);
+       if (SMU[0].fltSetCommitVoltageSource(mv * 1000, true)) printError(_PRINT_ERROR_VOLTAGE_SOURCE_SETTING);
     } else {
-
-      fltCommitCurrentSourceAutoRange(mv, false);
-      
+      fltCommitCurrentSourceAutoRange(mv * 1000, false);
     }
   }
   if (set_or_limit == LIMIT) {
-    Serial.println(LIMIT_DIAL.getMv());
-    Serial.flush();
+    float mv = LIMIT_DIAL.getMv(); // TODO: get current value from another place ?
+    Serial.print("Closed LIMIT dialog, value=");
+    Serial.println(mv);
     if (operationType == SOURCE_VOLTAGE) {
-     if (SMU[0].fltSetCommitCurrentLimit(LIMIT_DIAL.getMv() / 1000.0, _SOURCE_AND_SINK)) printError(_PRINT_ERROR_CURRENT_SOURCE_SETTING);
+     if (SMU[0].fltSetCommitCurrentLimit(mv * 1000, _SOURCE_AND_SINK)) printError(_PRINT_ERROR_CURRENT_SOURCE_SETTING);
     } else {
-           if (SMU[0].fltSetCommitVoltageLimit(LIMIT_DIAL.getMv() / 1000.0, _SOURCE_AND_SINK)) printError(_PRINT_ERROR_CURRENT_SOURCE_SETTING);
-
+     if (SMU[0].fltSetCommitVoltageLimit(mv * 1000, _SOURCE_AND_SINK)) printError(_PRINT_ERROR_CURRENT_SOURCE_SETTING);
     }
   }
   GD.resume();

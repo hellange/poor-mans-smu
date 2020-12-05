@@ -57,12 +57,34 @@ void VoltDisplayClass::renderMeasured(int x, int y, float rawMv, bool compliance
  GD.ColorRGB(COLOR_VOLT);
 }
 
-void VoltDisplayClass::renderSet(int x, int y, float rawMv) {
-  
-  int v, mv, uv;
+void VoltDisplayClass::renderSet(int x, int y, int64_t raw_uV) {
+
+  float rawMv = raw_uV/1000.0;
+  int v, mv, uv, nV;
   bool neg;
 
-  DIGIT_UTIL.separate(&v, &mv, &uv, &neg, rawMv);
+  DIGIT_UTIL.separate2(&v, &mv, &uv, &nV, &neg, rawMv);
+ 
+
+  v = abs(raw_uV) / 1000 / 1000;
+
+  float rest_uV = abs(raw_uV) - v * 1000 * 1000;
+
+  mv = rest_uV / 1000;
+
+  rest_uV = abs(raw_uV) - mv * 1000;
+
+  uv = rest_uV;
+/*
+Serial.print("renderSet ramMv=");
+  Serial.print("v=");
+    Serial.print(v);
+        Serial.print(", mV=");
+Serial.print(mv);
+        Serial.print(", uV=");
+        Serial.println(uv);
+*/
+
 
   if (neg) {
       GD.cmd_text(x, y, 31, 3, "-");

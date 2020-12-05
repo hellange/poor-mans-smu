@@ -231,12 +231,11 @@ void ADCClass::setCurrentRange(CURRENT_RANGE range, OPERATION_TYPE operationType
   // This can cause glitches !!!! 
   // TODO: Needs investigation on how this can be done properly !
 
-  
 
   if (range == AMP1) {    
     digitalWrite(4, HIGH); 
     if (operationType == SOURCE_VOLTAGE) {
-      Serial.println("WARNING !!!!!!!!!!!!!!!!  Had to add delay here to avoid voltage drop when changing from 10mA to 1A");
+      Serial.println("Switching current range (to A) while in voltage source must also update DAC output for limiting circuit.");
       delay(1); // WARNING !!!! Had to add delay here to avoid voltage drop when changing from 10mA to 1A.
                //              Why?
                //              TODO: Find out why setting the current limit right after switch causes spike !!!!
@@ -247,17 +246,22 @@ void ADCClass::setCurrentRange(CURRENT_RANGE range, OPERATION_TYPE operationType
                //
                // I have verified that its the current limit that kicks in briefly. How to fix ?
                
-      fltSetCommitCurrentLimit(setValueI, _SOURCE_AND_SINK);//printError(_PRINT_ERROR_VOLTAGE_SOURCE_SETTING);
-    } else {
-      fltSetCommitCurrentSource(setValueV*1000.0);
+      fltSetCommitCurrentLimit(setLimit_micro, _SOURCE_AND_SINK);//printError(_PRINT_ERROR_VOLTAGE_SOURCE_SETTING);
+    } 
+    else {
+      Serial.println("Switching current range (to A) while in current source must also update DAC output");
+      fltSetCommitCurrentSource(setValue_micro);
     }
 
 
   } else if (range == MILLIAMP10) {
    if (operationType == SOURCE_VOLTAGE) {
-     fltSetCommitCurrentLimit(setValueI, _SOURCE_AND_SINK);// printError(_PRINT_ERROR_VOLTAGE_SOURCE_SETTING);
-   } else {
-     fltSetCommitCurrentSource(setValueV*1000.0);
+     Serial.println("Switching current range (to 10mA) while in voltage source must also update DAC output for limiting circuit.");
+     fltSetCommitCurrentLimit(setLimit_micro, _SOURCE_AND_SINK);// printError(_PRINT_ERROR_VOLTAGE_SOURCE_SETTING);
+   } 
+   else {
+     Serial.println("Switching current range (to 10mA) while in current source must also update DAC output");
+     fltSetCommitCurrentSource(setValue_micro);
    }
    digitalWrite(4, LOW);
 
@@ -395,26 +399,9 @@ int ADCClass::initDAC(){
   LTC2758_write(0, LTC2758_CS, LTC2758_WRITE_SPAN_DAC, ADDRESS_DAC_ALL, 3);  // initialising all channels to -10V - 10V range
   LTC2758_write(0, LTC2758_CS, LTC2758_WRITE_CODE_UPDATE_DAC, 0, 0x0); // init to 0;
 
-    LTC2758_write(1, LTC2758_CS, LTC2758_WRITE_SPAN_DAC, ADDRESS_DAC_ALL, 3);  // initialising all channels to -10V - 10V range
+  LTC2758_write(1, LTC2758_CS, LTC2758_WRITE_SPAN_DAC, ADDRESS_DAC_ALL, 3);  // initialising all channels to -10V - 10V range
   LTC2758_write(1, LTC2758_CS, LTC2758_WRITE_CODE_UPDATE_DAC, 0, 0x6666); // init to some value;
 }
-
-
-
-/*
- *   Serial.println("|    0   |    0 - 5 V    |");
-  Serial.println("|    1   |    0 - 10 V    |");
-  Serial.println("|    2   |   -5 - +5 V   |");
-  Serial.println("|    3   |  -10 - +10 V  |");
-  Serial.println("|    4   | -2.5 - +2.5 V |");
-  Serial.println("|    5   | -2.5 - +7.5 V |");
-
-  Serial.print("\nEnter your choice: ");
-  choice = read_int();
-  Serial.println(choice);
-  span = (uint32_t)(choice << 2);
- */
-
 
 bool ADCClass::use100uVSetResolution() {
   if (DAC_RANGE_LOW == -10.0) {
@@ -424,13 +411,11 @@ bool ADCClass::use100uVSetResolution() {
   }
 }
 
+int64_t ADCClass::fltSetCommitVoltageSource(int64_t voltage_uV, bool dynamicRange) {
+  float v = voltage_uV / 1000.0 / 1000.0;
+  setValue_micro = voltage_uV;
 
-
-int8_t ADCClass::fltSetCommitVoltageSource(float milliVolt, bool dynamicRange) {
-  float v = milliVolt / 1000.0;
-  setValueV = v; // use volt. TODO: change to millivolt ?
-
-  float mv = milliVolt;
+  float mv = voltage_uV / 1000.0;
   if (V_CALIBRATION.useDacCalibratedValues == true) {
     mv = V_CALIBRATION.dac_nonlinear_compensation(mv);
   }
@@ -503,18 +488,16 @@ int8_t ADCClass::fltSetCommitVoltageSource(float milliVolt, bool dynamicRange) {
     
     LTC2758_write(0, LTC2758_CS, LTC2758_WRITE_CODE_UPDATE_DAC, 0, v_adj); 
 
-    return setValueV;
+    return setValue_micro;
   }
 }
 
  
- 
- int8_t ADCClass::fltSetCommitCurrentSource(float milliVolt) {
-  float v = milliVolt / 1000.0;
-  setValueV = v; // use volt. TODO: change to millivolt ?
+ int64_t ADCClass::fltSetCommitCurrentSource(int64_t current_uA) {
+  setValue_micro = current_uA;
 
-  float mv = milliVolt;
-  
+  float mv = current_uA / 1000.0;
+
   if (C_CALIBRATION.useDacCalibratedValues == true) {
     //Serial.println("USE CALIBRATED VALUES FOR CURRENT");
     //Serial.print(mv,6);
@@ -524,17 +507,6 @@ int8_t ADCClass::fltSetCommitVoltageSource(float milliVolt, bool dynamicRange) {
 
   }
   float dac_voltage = mv / 1000.0;  // DAC code operates with V instead of mV    
-
-//  dac_voltage = dac_voltage * 5.0/4.096; // using 4.096 ref instead of 5.0
-
-//  if (dac_voltage > 0) {
-//    // positive
-//    dac_voltage = dac_voltage * 0.999785; // gain
-//  } else  {
-//    // negative
-//    dac_voltage = dac_voltage * 0.998750; // gain
-//  }
- 
 
   if (full_board) {
     if (current_range == AMP1) {
@@ -632,130 +604,95 @@ int8_t ADCClass::fltSetCommitVoltageSource(float milliVolt, bool dynamicRange) {
 
   LTC2758_write(0, LTC2758_CS, LTC2758_WRITE_CODE_UPDATE_DAC, 0, v_adj); 
 
-  return setValueV;
+  return setValue_micro;
  }
  
 
 
   
- int8_t ADCClass::fltSetCommitVoltageLimit(float fCurrent, int8_t up_down_both) {
+int64_t ADCClass::fltSetCommitVoltageLimit(int64_t voltage_uV, int8_t up_down_both) {
 
-//  float DAC_RANGE_LOW = 0.0;
-//  float DAC_RANGE_HIGH = 10.0;
-//  uint32_t choice = 1;
-//  uint32_t span = (uint32_t)(choice << 2);
-   
-  bool serialOut = false;
+  setLimit_micro = voltage_uV;
+
+  bool infoSerialOut = true;
   
-  float dac_voltage;
+  float mV = voltage_uV / 1000.0;
   
-  dac_voltage = fCurrent;
-  dac_voltage = dac_voltage * 1000.0; // converted to mV
-  Serial.print("Asking for voltage limit ");
-  Serial.print(fCurrent);
-  Serial.print(" mV, converting to ");
-  Serial.print(dac_voltage);
-  Serial.println(" mV out from DAC");
+  if (infoSerialOut) {
+    Serial.print("Set voltage limit to ");
+    Serial.print(mV);
+    Serial.println(" mV out from DAC");
+  }
 
   // TODO: Use more adjustments for inaccuracies ? Can we share the ones that are used in souring voltage ?
-  dac_voltage = dac_voltage / 2.0; // divide by two in voltage measurement circuit
-  dac_voltage = dac_voltage * 1.0025;
-  dac_voltage = dac_voltage * 1.016;
-  dac_voltage = dac_voltage * 1.00025;
-  dac_voltage = dac_voltage * 1.0005;
+  mV = mV / 2.0; // divide by two in voltage measurement circuit
+  
+  mV = mV * 1.02; // TODO: Should be part of initial crude calibration 
+  mV = mV -0.78 / 2.0; // TODO: Add limit offset to calibration store
 
+  //SPAN 0 = 0 to +5V
+  //     1 = 0 to +10V
+  //     2 = -5 to +5 V
+  //     3 = -10 to +10V
+  //     4 = -2.5 to +2.5V
+  //     5 = -2.5 to + 7.5V
+  uint32_t choice = 1;
+  float DAC_RANGE_LOW = 0.0;
+  float DAC_RANGE_HIGH = 10.0;
+  uint32_t span = (uint32_t)(choice << 2);
 
-  dac_voltage = dac_voltage -0.78 / 2.0; // TODO: Remove hardcoded offset for limit !  Add to calibration store as other comp values
-
-  dac_voltage = dac_voltage / 1000.0;
-
-
- //SPAN 0 = 0 to +5V
-    //     1 = 0 to +10V
-    //     2 = -5 to +5 V
-    //     3 = -10 to +10V
-    //     4 = -2.5 to +2.5V
-    //     5 = -2.5 to + 7.5V
-    uint32_t choice = 1;
-    float DAC_RANGE_LOW = 0.0;
-    float DAC_RANGE_HIGH = 10.0;
-    
-   
-    // NOTE2: Changing range might require calibration for each range... How many of the available ranges should I use ?
-    bool dynamicRange = true;
-    if (dynamicRange) {
-      if (abs(dac_voltage) <=4.0) {   
-        choice = 0;
-        DAC_RANGE_LOW = 0.0;
-        DAC_RANGE_HIGH = 5;
-        Serial.println("USING LIMIT WITH DAC VOLTAGE BETWEEN 0 and 5");
-      } 
-     
-    }
-    uint32_t span = (uint32_t)(choice << 2);
-
-    
   LTC2758_write(1, LTC2758_CS, LTC2758_WRITE_SPAN_DAC, 0, span);
-  float v_adj = LTC2758_voltage_to_code(dac_voltage, DAC_RANGE_LOW, DAC_RANGE_HIGH, serialOut);
+  float v_adj = LTC2758_voltage_to_code(mV/1000.0, DAC_RANGE_LOW, DAC_RANGE_HIGH, infoSerialOut);
   LTC2758_write(1, LTC2758_CS, LTC2758_WRITE_CODE_UPDATE_DAC, 0, v_adj); 
 
-  Serial.println("SETTING LIMIT");
-  Serial.println(dac_voltage);
-  return setValueI = fCurrent;   // TODO: Change this concept !!!!                       
+  return setLimit_micro;
  }
  
- int8_t ADCClass::fltSetCommitCurrentLimit(float fCurrent, int8_t up_down_both) {
+ int64_t ADCClass::fltSetCommitCurrentLimit(int64_t current_uA , int8_t up_down_both) {
+  setLimit_micro = current_uA;
+
+  bool infoSerialOut = false;
 
   float DAC_RANGE_LOW = 0.0;
   float DAC_RANGE_HIGH = 10.0;
-   uint32_t choice = 1;
-  // float DAC_RANGE_HIGH = 5.0;
-  //  uint32_t choice = 0;
-   uint32_t span = (uint32_t)(choice << 2);
-   
-  bool serialOut = false;
-  
+  uint32_t choice = 1;
+  uint32_t span = (uint32_t)(choice << 2);
+     
   float dac_voltage;
   if (current_range == MILLIAMP10) {
-    dac_voltage = fCurrent * 1000.0;
-    Serial.print("Asking for 10mA range current limit ");
-    Serial.print(fCurrent);
-    Serial.print(" A, converting to ");
-    Serial.print(dac_voltage);
-    Serial.println(" V out from DAC (10mA range)");
+    dac_voltage = current_uA/1000.0;// * 1000.0;
+    if (infoSerialOut) {
+      Serial.print("Set ");
+      Serial.print(current_uA/1000.0, 3);
+      Serial.print("mA current limit for 10mA range. That will set ");
+      Serial.print(dac_voltage,6);
+      Serial.println(" V out from DAC.");
+    }
     if (dac_voltage > 10.0) {
       dac_voltage = 10.0;
-      Serial.println("Thats too high. Set to max (10V)");
-
+      Serial.println("WARNING: To high limit value in 10mA range !");
     }
   } else {
+    dac_voltage = current_uA/1000.0/1000.0;
+    dac_voltage = 10.0* dac_voltage * (R_shunt_1A + R_mosfetSwitch);
     
-    dac_voltage = 10.0* fCurrent * (R_shunt_1A + R_mosfetSwitch);
+    if (infoSerialOut) {
+      Serial.print("Set ");
+      Serial.print(current_uA/1000.0, 3);
+      Serial.print("mA current limit for 1A range. That willl set ");
+      Serial.print(dac_voltage,6);
+      Serial.println(" V out from DAC.");
+    }
     
-    dac_voltage = dac_voltage * 1.0685;
-    
-    Serial.print("Asking for 1A range current limit ");
-    Serial.print(fCurrent);
-    Serial.print(" A, converting to ");
-    Serial.print(dac_voltage);
-    Serial.println(" V out from DAC (1A range)");
-
-      dac_voltage = dac_voltage *  V_CALIBRATION.getDacGainCompLim();
-
+    dac_voltage = dac_voltage * 1.0685; // TODO: Should be part of initial crude calibration
+    dac_voltage = dac_voltage *  V_CALIBRATION.getDacGainCompLim();
   }
 
-
-  //dac_voltage = dac_voltage - 0.753; 
-  //TODO: Account for more amplification in current after adding two opamps in front of 1997-3 .....  hmmmm  
-  //dac_voltage = dac_voltage *3.125;
-
   LTC2758_write(1, LTC2758_CS, LTC2758_WRITE_SPAN_DAC, 0, span);
-  float v_adj = LTC2758_voltage_to_code(dac_voltage, DAC_RANGE_LOW, DAC_RANGE_HIGH, serialOut);
+  float v_adj = LTC2758_voltage_to_code(dac_voltage, DAC_RANGE_LOW, DAC_RANGE_HIGH, infoSerialOut);
   LTC2758_write(1, LTC2758_CS, LTC2758_WRITE_CODE_UPDATE_DAC, 0, v_adj); 
 
-  Serial.println("SETTING LIMIT");
-  Serial.println(dac_voltage);
-  return setValueI = fCurrent;                         
+  return setLimit_micro;
  }
 
  
@@ -830,12 +767,12 @@ int8_t ADCClass::fltSetCommitVoltageSource(float milliVolt, bool dynamicRange) {
     return i;
  }
 
- double ADCClass::getSetValuemV(){
-  return setValueV * 1000.0;
+ int64_t ADCClass::getSetValue_micro(){
+  return setValue_micro;
  }
 
- double ADCClass::getLimitValue(){
-  return setValueI * 1000.0;
+ int64_t ADCClass::getLimitValue_micro(){
+  return setLimit_micro;
  }
 
  

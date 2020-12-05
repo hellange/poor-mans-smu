@@ -1,5 +1,6 @@
 #include "tags.h"
 #include "operations.h"
+#include <stdint.h>
 
 class DialClass {
 
@@ -29,7 +30,7 @@ class DialClass {
 
   
 public:
-  void open(int type, int set_or_limit_, void (*closedFn)(int set_or_limit, bool cancel), float value);
+  void open(int type, int set_or_limit_, void (*closedFn)(int set_or_limit, bool cancel), int64_t micro);
   void close();
   void clear();
   bool isDialogOpen();

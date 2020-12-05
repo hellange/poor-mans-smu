@@ -92,13 +92,39 @@ if (current_range == MILLIAMP10) {
   
 }
 
-void CurrentDisplayClass::renderSet(int x, int y, float rawMa) {
+void CurrentDisplayClass::renderSet(int x, int y, int64_t raw_uA) {
   
+  float rawMa = raw_uA/1000.0;
   int a, ma, ua, na;
   bool neg;
 
   //DIGIT_UTIL.separate(&a, &ma, &ua, &neg, rawMa);
   DIGIT_UTIL.separate2(&a, &ma, &ua, &na, &neg, rawMa);
+  
+
+
+
+  a = abs(raw_uA) / 1000 / 1000;
+
+  float rest_uA = abs(raw_uA) - a * 1000 * 1000;
+
+  ma = rest_uA / 1000;
+
+  rest_uA = abs(raw_uA) - ma * 1000;
+
+  ua = rest_uA;
+
+/*
+ Serial.print("renderSet rawuA=");
+  Serial.print("a=");
+    Serial.print(a);
+        Serial.print(", mA=");
+Serial.print(ma);
+        Serial.print(", uA=");
+        Serial.println(ua);
+*/
+
+
 
   
   GD.ColorRGB(COLOR_CURRENT);
@@ -122,9 +148,11 @@ void CurrentDisplayClass::renderSet(int x, int y, float rawMa) {
     GD.cmd_text(x+50+20-20, y, 31, 0, ".");
     GD.cmd_number(x+60+20-20, y, 31, 3, ua);
     
-        GD.cmd_number(x+136, y, 31, 1, na/100); // need to do it like this to show only first digit in a three digit value
+  //  Don't show nA for now...
+  //      GD.cmd_number(x+136, y, 31, 1, na/100); // need to do it like this to show only first digit in a three digit value
+  //        GD.cmd_text(x+160, y, 31, 0, "mA");
 
-    GD.cmd_text(x+160, y, 31, 0, "mA");
+    GD.cmd_text(x+140, y, 31, 0, "mA");
   }
 }
 

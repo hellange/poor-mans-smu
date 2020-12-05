@@ -91,8 +91,8 @@ void RotaryEncoderClass::handle(bool use100uVSetResolution)
 
     //changedFn(speed*dir / 100.0); // minimum step is 10uV
     
-    //changedFn(speed*dir / 10.0); // minimum step is 100uV
-    changedFn(speed*dir / 1.0); // minimum step is 1mV
+    changedFn(speed*dir / 10.0); // minimum step is 100uV
+    //changedFn(speed*dir / 1.0); // minimum step is 1mV
     //changedFn(speed*dir * 10); // minimum step is 10mV
 
 /*
