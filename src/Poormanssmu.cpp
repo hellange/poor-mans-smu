@@ -59,7 +59,7 @@ SimpleStatsClass SIMPLE_STATS;
 
 bool anyDialogOpen();
 void openMainMenu();
-void renderAnalogGauge(int x, int y, int size, float degrees, float value, char* title);
+void renderAnalogGauge(int x, int y, int size, float degrees, float value, const char *title);
 void showLoadResistance(int x, int y);
 void loopMain();
 void loopDigitize();
@@ -100,7 +100,7 @@ CURRENT_RANGE current_range = AMP1; // TODO: get rid of global
 bool voltage_range = true;
 
 
-int timeSinceLastChange = 0;  // TODO: get rid of global
+uint32_t timeSinceLastChange = 0;  // TODO: get rid of global
 
 
 
@@ -327,7 +327,7 @@ void setup()
    GD.cmd_text(250, 200 ,   31, 0, "Poor man's SMU");
    GD.ColorRGB(0xaaaaaa);
    GD.cmd_text(250, 240 ,   28, 0, "Designed    by    Helge Langehaug");
-   GD.cmd_text(250, 270 ,   28, 1, "V0.148");
+   GD.cmd_text(250, 270 ,   28, 1, "V0.150");
 
    GD.swap();
    delay(501);
@@ -612,7 +612,7 @@ bool anyDialogOpen() {
   return SOURCE_DIAL.isDialogOpen() or LIMIT_DIAL.isDialogOpen();
 }
 
-bool closeAllOpenDialogs() {
+void closeAllOpenDialogs() {
   if ( SOURCE_DIAL.isDialogOpen() ) {
     SOURCE_DIAL.close();
   }
@@ -746,22 +746,14 @@ void renderExperimental(int x, int y, float valM, float setM, bool cur, bool les
   GD.ColorRGB(sr==5?0x00ff00:0x0000);
   GD.Tag(BUTTON_SAMPLE_RATE_5);
   GD.cmd_button(x-50,y-20,95,40,29,0,"2.5Hz");
-  GD.Tag(0);
   
   GD.ColorRGB(sr==20?0x00ff00:0x0000);
   GD.Tag(BUTTON_SAMPLE_RATE_20);
   GD.cmd_button(x-50,y+40-15,95,40,29,0,"10Hz");
-  GD.Tag(0);
   
   GD.ColorRGB(sr==50?0x00ff00:0x0000);
   GD.Tag(BUTTON_SAMPLE_RATE_50);
   GD.cmd_button(x-50,y+80-15+5,95,40,29,0,"25Hz");
-  GD.Tag(0);
-
-  // Adding another button gives problems when the main menu scrolls down... 
-     if (lessDetails) {
-    return; 
-  }
 
   GD.ColorRGB(sr==100?0x00ff00:0x0000);
   GD.Tag(BUTTON_SAMPLE_RATE_100);
@@ -770,7 +762,7 @@ void renderExperimental(int x, int y, float valM, float setM, bool cur, bool les
   
 }
 
-void renderAnalogGauge(int x, int y, int size, float degrees, float value, char* title) {
+void renderAnalogGauge(int x, int y, int size, float degrees, float value, const char *title) {
   //experimental feature showing deviation from set value
   
   int gaugeRadius = size/2;
@@ -1333,7 +1325,7 @@ int gestOldX = 0;
 int gestOldY = 0;
 int gestDurationX = 0;
 int gestDurationY = 0;
-int trackingDetectedTimer = millis();
+uint32_t trackingDetectedTimer = millis();
 bool ignoreGesture(int t){
   if (trackingDetectedTimer + 50 > millis()) {
     return true;
@@ -1441,7 +1433,7 @@ void handleAutoNull() {
 //   Serial.print(nullCalibrationDone0);
 //   Serial.print(" ");
 //   Serial.println(timeBeforeAutoNull < millis());
-  if (autoNullStarted && !nullCalibrationDone0 && timeBeforeAutoNull < millis()) {
+  if (autoNullStarted && !nullCalibrationDone0 && timeBeforeAutoNull < (int)millis()) {
     Serial.println("Performing auto null...");
     C_CALIBRATION.useCalibratedValues = false;
     V_CALIBRATION.useCalibratedValues = false;
@@ -1462,7 +1454,7 @@ void handleAutoNull() {
    
   }
   int msWaitPrCal = 5000;
-  if (autoNullStarted && !nullCalibrationDone1 && /*timeAtStartup + */timeBeforeAutoNull + msWaitPrCal < millis()) {
+  if (autoNullStarted && !nullCalibrationDone1 && timeBeforeAutoNull + msWaitPrCal < (int)millis()) {
     //float v = V_STATS.rawValue; 
     if (operationType == SOURCE_VOLTAGE) {
       float v = V_FILTERS.mean;   
@@ -1479,7 +1471,7 @@ void handleAutoNull() {
     nullCalibrationDone1 = true;
   } 
  
-  if (autoNullStarted && !nullCalibrationDone2 && /*timeAtStartup + */timeBeforeAutoNull + msWaitPrCal + 100 < millis()) {
+  if (autoNullStarted && !nullCalibrationDone2 && /*timeAtStartup + */timeBeforeAutoNull + msWaitPrCal + 100 < (int)millis()) {
     current_range = AMP1;
     //Serial.println("Null calibration initiated...");
     SMU[0].setCurrentRange(current_range, operationType);
@@ -1489,7 +1481,7 @@ void handleAutoNull() {
       SMU[0].fltSetCommitCurrentSource(0);
     }
   }
-  if (autoNullStarted && !nullCalibrationDone2 && /*timeAtStartup +*/ timeBeforeAutoNull + msWaitPrCal*2 < millis()) {
+  if (autoNullStarted && !nullCalibrationDone2 && /*timeAtStartup +*/ timeBeforeAutoNull + msWaitPrCal*2 < (int)millis()) {
    if (operationType == SOURCE_VOLTAGE) {
       float v = V_FILTERS.mean;   
       V_CALIBRATION.setNullValueVol(v, current_range);
@@ -1517,7 +1509,7 @@ void handleAutoNull() {
 
 }
 
-void notification(char *text) {
+void notification(const char *text) {
    GD.Begin(RECTS);
     GD.ColorA(230);  // already opaque, why ?
     GD.ColorRGB(0x222222);
@@ -1691,7 +1683,7 @@ static void handleSampling() {
     SIMPLE_STATS.registerValue(V_FILTERS.mean);
 
     // store now and then
-    if (logTimer + 30000 < millis()) {
+    if (logTimer + 30000 < (int)millis()) {
      logTimer = millis();
      RAM.logData(V_FILTERS.mean);
     }
@@ -1745,7 +1737,7 @@ int displayUpdateTimer = millis();
 
 int TC74_getTemperature() {
   // I2C based
-  int temperature;
+  int temperature = -1;
     Wire.beginTransmission(72);
     //start the transmission
 
@@ -1801,7 +1793,7 @@ void loop() {
   ROTARY_ENCODER.handle(SMU[0].use100uVSetResolution());
 
   //TODO: Not sure if this should be here.... this is more that "display time"... it also handles sampling of not driven by timer interrupt...
-  if (displayUpdateTimer + 20 > millis()) {
+  if (displayUpdateTimer + 20 > (int)millis()) {
     return; 
   }
   
@@ -1850,7 +1842,7 @@ void loop() {
 int samplingDelayTimer = millis();
 
 void loopDigitize() {
-  if (loopUpdateTimer + 10 > millis() ) {
+  if (loopUpdateTimer + 10 > (int)millis() ) {
     return;
   }
   
@@ -1858,7 +1850,7 @@ void loopDigitize() {
   operationType = getOperationType();
   disable_ADC_DAC_SPI_units();
   
-  int fullSamplePeriod;
+  //int fullSamplePeriod;
    if (digitize == false && !MAINMENU.active /*&&  samplingDelayTimer + 50 < millis()*/){
      
     ramAdrPtr = 0;
@@ -1896,7 +1888,7 @@ void loopDigitize() {
 //    GD.swap();
 //    GD.__end();
   } else {
-    fullSamplePeriod = millis()-msDigit;
+    //fullSamplePeriod = millis()-msDigit;
 //         SMU[0].setSamplingRate(10);
 
     //digitize = false; 
@@ -1938,7 +1930,7 @@ digitizeCounter = 0;
   GD.resume();
   
   for (int x = 0; x<nrOfFloats/2; x++) {
-    int adr = x*8;
+    //int adr = x*8;
     //GD.__end();
     //float mv = RAM.readRAMfloat(adr);
     //float i = RAM.readRAMfloat(adr+4);
@@ -1962,7 +1954,7 @@ digitizeCounter = 0;
   GD.ColorRGB(0xff0000);
 
   for (int x = 0; x<nrOfFloats/2; x++) {
-    int adr = x*8;
+    //int adr = x*8;
     //GD.__end();
     //float mv = RAM.readRAMfloat(adr);
     //float i = RAM.readRAMfloat(adr+4);
@@ -1970,7 +1962,7 @@ digitizeCounter = 0;
    // Serial.println(mv,5);
 
     if (minDigI < 100000) {
-      float relative = minDigI - mia[x];
+      //float relative = minDigI - mia[x];
       //float y = relative*50;
       float y = mia[x]/10.0;
       GD.Vertex2ii(x*4, 400 - y);
@@ -2012,6 +2004,8 @@ int y[10];
 int nrOfChecks = 3;
 int checkButtons() {
 
+  int valueToReturnIfTooFast = 0;
+
     if (MAINMENU.active == true) {
       return 0;
     }
@@ -2027,7 +2021,7 @@ int checkButtons() {
 
 
 
-    if (tag>0 && tagTimer + 20 > millis()) {
+    if (tag>0 && tagTimer + 20 > (int)millis()) {
        return 0;
     } 
         tagTimer = millis();
@@ -2076,7 +2070,7 @@ int checkButtons() {
 
  
       
-    prevTag == tag;
+    prevTag = tag;
     
   
     if (tag == BUTTON_SOURCE_SET) {
@@ -2169,10 +2163,14 @@ int checkButtons() {
       }
 
     } 
+
+
+
+
     #ifndef USE_SIMULATOR // dont want to mess up calibration while in simulation mode...
     else if (tag == BUTTON_DAC_GAIN_COMP_UP) {
        if (timeSinceLastChange + 200 > millis()){
-        return;
+        return valueToReturnIfTooFast;
        } 
        timeSinceLastChange = millis();
        DIGIT_UTIL.startIndicator(tag);
@@ -2201,7 +2199,7 @@ int checkButtons() {
     
     else if (tag == BUTTON_DAC_GAIN_COMP_UP2) {
        if (timeSinceLastChange + 200 > millis()){
-        return;
+        return valueToReturnIfTooFast;
        } 
        timeSinceLastChange = millis();
        DIGIT_UTIL.startIndicator(tag);
@@ -2230,7 +2228,7 @@ int checkButtons() {
 
     else if (tag == BUTTON_DAC_GAIN_COMP_DOWN) {
        if (timeSinceLastChange + 200 > millis()){
-        return;
+        return valueToReturnIfTooFast;
       } 
        timeSinceLastChange = millis();
        DIGIT_UTIL.startIndicator(tag);
@@ -2257,9 +2255,9 @@ int checkButtons() {
        }   
     } 
     
-       else if (tag == BUTTON_DAC_GAIN_COMP_DOWN2) {
+    else if (tag == BUTTON_DAC_GAIN_COMP_DOWN2) {
        if (timeSinceLastChange + 200 > millis()){
-        return;
+        return valueToReturnIfTooFast;
       } 
        timeSinceLastChange = millis();
        DIGIT_UTIL.startIndicator(tag);
@@ -2290,9 +2288,9 @@ int checkButtons() {
 
 
 
-      else if (tag == BUTTON_DAC_GAIN_COMP_LIM_UP) {
+    else if (tag == BUTTON_DAC_GAIN_COMP_LIM_UP) {
        if (timeSinceLastChange + 200 > millis()){
-        return;
+        return valueToReturnIfTooFast;
       } 
        timeSinceLastChange = millis();
        DIGIT_UTIL.startIndicator(tag);
@@ -2310,9 +2308,9 @@ int checkButtons() {
     } 
     
     
-       else if (tag == BUTTON_DAC_GAIN_COMP_LIM_DOWN) {
+    else if (tag == BUTTON_DAC_GAIN_COMP_LIM_DOWN) {
        if (timeSinceLastChange + 200 > millis()){
-        return;
+        return valueToReturnIfTooFast;
       } 
        timeSinceLastChange = millis();
        DIGIT_UTIL.startIndicator(tag);
@@ -2334,7 +2332,7 @@ int checkButtons() {
     
     else if (tag == BUTTON_ADC_GAIN_COMP_UP) {
        if (timeSinceLastChange + 200 > millis()){
-        return;
+        return valueToReturnIfTooFast;
         
        } 
        timeSinceLastChange = millis();
@@ -2359,7 +2357,7 @@ int checkButtons() {
     } 
     else if (tag == BUTTON_ADC_GAIN_COMP_DOWN) {
        if (timeSinceLastChange + 200 > millis()){
-        return;
+        return valueToReturnIfTooFast;
        } 
        timeSinceLastChange = millis();
        DIGIT_UTIL.startIndicator(tag);
@@ -2385,9 +2383,9 @@ int checkButtons() {
 
 
 
-     else if (tag == BUTTON_ADC_GAIN_COMP_UP2) {
+    else if (tag == BUTTON_ADC_GAIN_COMP_UP2) {
        if (timeSinceLastChange + 200 > millis()){
-        return;
+        return valueToReturnIfTooFast;
         
        } 
        timeSinceLastChange = millis();
@@ -2412,7 +2410,7 @@ int checkButtons() {
     } 
     else if (tag == BUTTON_ADC_GAIN_COMP_DOWN2) {
        if (timeSinceLastChange + 200 > millis()){
-        return;
+        return valueToReturnIfTooFast;
        } 
        timeSinceLastChange = millis();
        DIGIT_UTIL.startIndicator(tag);
@@ -2439,7 +2437,7 @@ int checkButtons() {
     
     else if (tag == BUTTON_DAC_ZERO_COMP_UP or tag == BUTTON_DAC_ZERO_COMP_UP2 ) {
       if (timeSinceLastChange + 200 > millis()){
-        return;
+        return valueToReturnIfTooFast;
       } 
       timeSinceLastChange = millis();
        DIGIT_UTIL.startIndicator(tag);
@@ -2463,7 +2461,7 @@ int checkButtons() {
     }
     else if (tag == BUTTON_DAC_ZERO_COMP_DOWN or tag == BUTTON_DAC_ZERO_COMP_DOWN2) {
        if (timeSinceLastChange + 200 > millis()){
-         return;
+         return valueToReturnIfTooFast;
        } 
        timeSinceLastChange = millis();
        DIGIT_UTIL.startIndicator(tag);
@@ -2486,7 +2484,7 @@ int checkButtons() {
     }
     else if (tag == BUTTON_DAC_NONLINEAR_CALIBRATE) {
        if (timeSinceLastChange + 1000 > millis()){
-        return;
+        return valueToReturnIfTooFast;
        } 
        timeSinceLastChange = millis();
        DIGIT_UTIL.startIndicator(tag);
@@ -2501,7 +2499,7 @@ int checkButtons() {
       
     } else if (tag == BUTTON_DAC_ZERO_CALIBRATE) {
        if (timeSinceLastChange + 1000 > millis()){
-        return;
+        return valueToReturnIfTooFast;
        } 
        Serial.println("Start zero calibration of dac....");
        DIGIT_UTIL.startIndicator(tag);

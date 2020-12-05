@@ -24,7 +24,7 @@ void PushbuttonsClass::handle() {
   // Measure and adjust...
   // Using 8 bit analog input on Teensy, it should be possible to "detect" many buttons
   // with just an analog input...
-  if (buttonDetectedTimer + 50 < millis()) {
+  if (buttonDetectedTimer + 50 < (int)millis()) {
     buttonDetectedTimer = millis();
     if (buttonValue >95 && buttonValue <105) {
       buttonFunction = 0;
@@ -62,7 +62,7 @@ void PushbuttonsClass::handle() {
       prevButtonFunction = buttonFunction;
 
     }
-    if (keydownTimer + holdPeriodms < millis() && buttonFunction != 0){
+    if (keydownTimer + holdPeriodms < (int)millis() && buttonFunction != 0){
       color = 0xff0000;
       if (keyHeldLong == false) {
         keyHeldLong = true;

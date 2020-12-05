@@ -474,7 +474,7 @@ void CalibrationClass::autoCalADCfromDAC() {
   } 
 
 
-  if (!autoCalDone1 && autoCalDacTimer + 500 < millis()) {
+  if (!autoCalDone1 && autoCalDacTimer + 500 < (int)millis()) {
     Serial.print("Set value to:");
     Serial.println(autoCalV);
     GD.__end();
@@ -490,7 +490,7 @@ void CalibrationClass::autoCalADCfromDAC() {
     Serial.print(autoCalV);
     autoCalDone1 = true;
   }
-  if (autoCalDacTimer + 5000 < millis()) {
+  if (autoCalDacTimer + 5000 < (int)millis()) {
 
     float v = FILTERS->mean;
   
@@ -608,8 +608,8 @@ float CalibrationClass::adc_nonlinear_compensation(float v){
       float adj_factor_diff = adj_factor_high - adj_factor_low;
 
       float range = set_adc[i+1] - set_adc[i];
-      float rangeStart = set_adc[i];
-      float rangeEnd = set_adc[i+1];
+      //float rangeStart = set_adc[i];
+      //float rangeEnd = set_adc[i+1];
       float partWithinRange = ( (v-set_adc[i]) / range); // 0 to 1. Where then 0.5 is in the middle of the range 
       if (partWithinRange < 0.0) {
         Serial.println("ERROR: calibration partWithinRange gave negative value...");

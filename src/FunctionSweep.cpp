@@ -43,11 +43,8 @@ int lastButtonTag;
 int pressDuration = 0;
 int pauseBetweenChanges = 500;
 void FunctionSweepClass::handleButtonAction(int inputTag) {
-
-  float buttonStep;
-
  
-  buttonStep = operationType == SOURCE_CURRENT ? 1.0 : 100.0;
+  //float buttonStep = SOURCE_CURRENT ? 1.0 : 100.0;
 
 
   if (inputTag == 0) {
@@ -55,7 +52,7 @@ void FunctionSweepClass::handleButtonAction(int inputTag) {
   }
   
   if (lastButtonTag == inputTag) {
-    if (sinceLastPress2 + pauseBetweenChanges > millis()) {
+    if (sinceLastPress2 + pauseBetweenChanges > (int)millis()) {
       return;
     }
   }
@@ -226,7 +223,7 @@ void FunctionSweepClass::handle() {
 
 void FunctionSweepClass::operateSmuVoltage(float high, float low, float step, int duration)  {
      
-   if (pulseTimer+duration/2 < millis()) {
+   if (pulseTimer+duration/2 < (int)millis()) {
      pulseTimer = millis();
      if (currentSweepDir == 1 && currentSweepValue >= high) {
       currentSweepDir = -1;
@@ -250,7 +247,7 @@ void FunctionSweepClass::operateSmuVoltage(float high, float low, float step, in
 
 void FunctionSweepClass::operateSmuCurrent(float high, float low, float step, int duration)  {
      
-   if (pulseTimer+duration/2 < millis()) {
+   if (pulseTimer+duration/2 < (int)millis()) {
      pulseTimer = millis();
      if (currentSweepDir == 1 && currentSweepValue >= high) {
       currentSweepDir = -1;

@@ -15,18 +15,18 @@ void TrendGraphClass::init() {
 
 void TrendGraphClass::loop(OPERATION_TYPE operationType) {
 
- int logAddress = RAM.getCurrentLogAddress();
- int pixels = 400;
- int max = RAM.getMaxLogAddress();
+ //int logAddress = RAM.getCurrentLogAddress();
+ //int pixels = 400;
+ //int max = RAM.getMaxLogAddress();
  GD.LineWidth(20);
   GD.Begin(LINE_STRIP);
   GD.ColorA(255);
   GD.ColorRGB(0xff0000);
-  uint16_t logAdr = logAddress;
+  //uint16_t logAdr = logAddress;
  float maxV = -1000000.0;
  float minV = 1000000.0;
  int x = 0;
- float span;
+ float span = 0.0;
 
 
  int adr = RAM.getCurrentLogAddress();
@@ -54,7 +54,7 @@ void TrendGraphClass::loop(OPERATION_TYPE operationType) {
 
   GD.ColorRGB(0xffffff);
 
- float mid;
+ float mid = 0.0;
  adr = RAM.getCurrentLogAddress();
 
  //for (int adr = logAddress<200 ? 0: logAddress - 200; adr<logAddress; adr++) {
@@ -117,7 +117,7 @@ for (int i = 0; i< 200; i++) {
 
    logData = RAM.readLogData(adr);
    GD.resume();
-   float volt = logData.value.val;
+   //float volt = logData.value.val;
    uint32_t t = logData.time.val;
 
 

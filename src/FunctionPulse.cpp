@@ -83,7 +83,7 @@ void FunctionPulseClass::handleButtonAction(int inputTag) {
 
   buttonStep = operationType == SOURCE_CURRENT ? 1.0 : 100.0;
 
-  if (sinceLastPress + 100 < millis()) {
+  if (sinceLastPress + 100 < (int)millis()) {
     if (inputTag == PULSE_BUTTON_INC) {
       hz = hz + (hz<10 ? 1 : 10);
       sinceLastPress = millis();

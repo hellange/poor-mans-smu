@@ -352,14 +352,14 @@ int ADCClass::dataReady() {
   return AD7176_dataReady();
 }
 
-int ADCClass::init() {
+void ADCClass::init() {
   initADC();
   initDAC();
 }
 
-int ADCClass::initADC(){
+void ADCClass::initADC(){
   Serial.print("SETUP: ");
-  AD7176_Reset;
+  AD7176_Reset();
   Serial.println(AD7176_Setup());
   Serial.println("REGS:");
 
@@ -392,10 +392,9 @@ int ADCClass::initADC(){
   }
   AD7176_UpdateSettings();
 
-  return 0;
 }
 
-int ADCClass::initDAC(){
+void ADCClass::initDAC(){
   LTC2758_write(0, LTC2758_CS, LTC2758_WRITE_SPAN_DAC, ADDRESS_DAC_ALL, 3);  // initialising all channels to -10V - 10V range
   LTC2758_write(0, LTC2758_CS, LTC2758_WRITE_CODE_UPDATE_DAC, 0, 0x0); // init to 0;
 
@@ -412,7 +411,6 @@ bool ADCClass::use100uVSetResolution() {
 }
 
 int64_t ADCClass::fltSetCommitVoltageSource(int64_t voltage_uV, bool dynamicRange) {
-  float v = voltage_uV / 1000.0 / 1000.0;
   setValue_micro = voltage_uV;
 
   float mv = voltage_uV / 1000.0;
@@ -428,7 +426,7 @@ int64_t ADCClass::fltSetCommitVoltageSource(int64_t voltage_uV, bool dynamicRang
   if (full_board) {
 
     // There is a apprx. /2 on the sense input. This means that the voltage from DAC must be half of the expected output
-    float voltageInputDividerCompensation = 0.5; 
+    //float voltageInputDividerCompensation = 0.5; 
     
     dac_voltage = dac_voltage * 0.994; // crude adjustment that will differ between hardware
 
@@ -488,8 +486,9 @@ int64_t ADCClass::fltSetCommitVoltageSource(int64_t voltage_uV, bool dynamicRang
     
     LTC2758_write(0, LTC2758_CS, LTC2758_WRITE_CODE_UPDATE_DAC, 0, v_adj); 
 
-    return setValue_micro;
   }
+  return setValue_micro;
+
 }
 
  

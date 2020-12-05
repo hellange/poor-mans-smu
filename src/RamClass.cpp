@@ -116,7 +116,7 @@ void RamClass::writeRAMfloat(uint32_t address, float value) {
 timedLog RamClass::readLogData(uint32_t address) {
   timedLog logData;
   ram_read(&logData.time.b[0], logStartAddress + address * 8, 4);
-  flu floatValue;
+  //flu floatValue;
   logData.value.val = readRAMfloat(logStartAddress + address * 8 + 4);
   return logData;
 }

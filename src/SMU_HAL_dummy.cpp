@@ -6,14 +6,14 @@
 
 #include "SMU_HAL_dummy.h"
 
-
+//TODO: Use int64 instead of float for settings here (same as changed to in main SMU_HAL)
  
  int8_t SMU_HAL_dummy::fltSetCommitVoltageSource(float mv, bool dynamicRange) {
   Serial.println("Set voltage");
 
    setValuemV = mv;
    nowValuemV = mv;
-       Serial.println(nowValuemV, 5);
+   Serial.println(nowValuemV, 5);
 
    return nowValuemV;
  }
@@ -38,7 +38,7 @@
    return 0;
  }
 
- bool SMU_HAL_dummy::use100uVSetResolution() {
+ void SMU_HAL_dummy::use100uVSetResolution() {
    Serial.println("NOTE: NOT IMPLEMENTED use100uVSetResolution IN SIMULATOR !");
  } 
  
@@ -58,7 +58,7 @@
 
  int SMU_HAL_dummy::dataReady() {
   
-  if (lastSampleMilli + (int)samplingDur > millis()){
+  if (lastSampleMilli + (int)samplingDur > (int) millis()){
     return -1;
   }
   lastSampleMilli = millis();
@@ -81,7 +81,7 @@
   // simulate increasing noise for high sampling speeds
   noise = noise * (500.0 / (float)samplingDur);
 
-  if (driftTimer + 10000 > millis()) {
+  if (driftTimer + 10000 > (int)millis()) {
     int r = random(2);
     if (r==0){
       driftDirection = -1;

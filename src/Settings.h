@@ -33,4 +33,4 @@ public:
 
 extern SettingsClass SETTINGS;
 
-#endif Settings_h
+#endif

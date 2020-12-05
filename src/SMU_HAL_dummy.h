@@ -47,7 +47,7 @@ class SMU_HAL_dummy
 
     float getSetValuemV();
     float getLimitValue();
-        bool use100uVSetResolution();
+    void use100uVSetResolution();
 
     void disable_ADC_DAC_SPI_units();
 

@@ -40,9 +40,9 @@ class ADCClass {
     float DAC_RANGE_HIGH;
 
 
-    int init();
-    int initADC();
-    int initDAC();
+    void init();
+    void initADC();
+    void initDAC();
     void disable_ADC_DAC_SPI_units();
     int64_t fltSetCommitVoltageSource(int64_t voltage_uV, bool dynamicRange);
     int64_t fltSetCommitCurrentSource(int64_t current_uA);

@@ -525,7 +525,7 @@ void GDClass::begin(uint8_t options) {
   }
 #endif
 
-  byte external_crystal = 0;
+  //byte external_crystal = 0;
 begin1:
   GDTR.begin1();
 

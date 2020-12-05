@@ -61,7 +61,7 @@ void FanClass::fanSpeedInterruptHandler()
 
 uint16_t FanClass::getRPMValueFiltered()
 {
-  if (timeSinceLastRPMReadout + 1000 < millis())
+  if (timeSinceLastRPMReadout + 1000 < (int)millis())
   {
     storedPWMFanSpeed = getPWMFanRPM();
     timeSinceLastRPMReadout = millis();

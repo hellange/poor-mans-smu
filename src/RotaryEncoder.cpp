@@ -13,7 +13,7 @@ void RotaryEncoderClass::init(void (*changedFn_)(float value)) {
 }
 void RotaryEncoderClass::handle(bool use100uVSetResolution)
 {
- long newLeft, newRight;
+ long newLeft;//, newRight;
  int speed = 0;
  int dir = 0;
 
