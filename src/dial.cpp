@@ -108,12 +108,14 @@ void DialClass::setMv(float mv) {
 //  }
 
   dtostrf(mv,nrOfDigitsBeforeComma + nfOfDigitsAfterComma, 4, outstr);
-  Serial.print("CONVERTED VALUE FROM ");
+  Serial.print("Get individual digit elements to display based on value ");
   Serial.println(mv,5);
   int dialEntriesIndex = 0;
+  Serial.print("Digits: ");
   for (int i=0; i< nrOfDigitsBeforeComma + nfOfDigitsAfterComma + 1 ; i++) {
     if (outstr[i]!=0x20 && outstr[i]!='-') {
-      Serial.println(outstr[i]);
+      Serial.print(outstr[i]);
+      Serial.print(",");
       if (outstr[i] == '.') {
         dialEntries[dialEntriesIndex++] = KEYBOARD_COMMA;
       } else {
@@ -124,7 +126,7 @@ void DialClass::setMv(float mv) {
    
   }
   digits = dialEntriesIndex;
-  Serial.print("Digits:");
+  Serial.print(" # of digit elements:");
   Serial.println(dialEntriesIndex);
   
   strncpy(voltDecade, "mV" ,2);

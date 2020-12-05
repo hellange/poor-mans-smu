@@ -145,26 +145,12 @@ IntervalTimer myTimer;
 #define SAMPLING_BY_INTERRUPT
 
 
-void print_uint64_t(uint64_t num) {
 
-  char rev[128]; 
-  char *p = rev+1;
-
-  while (num > 0) {
-    *p++ = '0' + ( num % 10);
-    num/= 10;
-  }
-  p--;
-  /*Print the number which is now in reverse*/
-  while (p > rev) {
-    Serial.print(*p--);
-  }
-}
 
 void rotaryChangedFn(float changeVal) {
 
    if (operationType == SOURCE_VOLTAGE) {
-           Serial.print("rotary changeval:");
+       Serial.print("rotary changeval:");
        Serial.println(changeVal);
      if(SOURCE_DIAL.isDialogOpen()) {
        float mv = SOURCE_DIAL.getMv();
@@ -172,18 +158,18 @@ void rotaryChangedFn(float changeVal) {
        int64_t new_uV = mv*1000 + change_uV;
        SOURCE_DIAL.setMv(new_uV /1000.0);
      } else {
-              Serial.print("from smu setvalue mv=");
-       print_uint64_t(SMU[0].getSetValue_micro());
+       Serial.print("from smu setvalue mv=");
+       DIGIT_UTIL.print_uint64_t(SMU[0].getSetValue_micro());
        Serial.println();
 
        int64_t change_uV =  changeVal*1000;
-        Serial.print("change value in uV=");
-        print_uint64_t(change_uV);
-        Serial.println();
+       Serial.print("change value in uV=");
+       DIGIT_UTIL.print_uint64_t(change_uV);
+       Serial.println();
 
        int64_t new_uV = SMU[0].getSetValue_micro() + change_uV;
        Serial.print("new uV=");
-       print_uint64_t(new_uV);
+       DIGIT_UTIL.print_uint64_t(new_uV);
        Serial.println();
 
 /*
@@ -207,17 +193,17 @@ void rotaryChangedFn(float changeVal) {
        SOURCE_DIAL.setMv(new_uV /1000.0);
      } else {
               Serial.print("from smu setvalue mv=");
-       print_uint64_t(SMU[0].getSetValue_micro());
+       DIGIT_UTIL.print_uint64_t(SMU[0].getSetValue_micro());
        Serial.println();
 
        int64_t change_uV =  changeVal*1000;
         Serial.print("change value in uV=");
-        print_uint64_t(change_uV);
+        DIGIT_UTIL.print_uint64_t(change_uV);
         Serial.println();
 
        int64_t new_uV = SMU[0].getSetValue_micro() + change_uV;
        Serial.print("new uV=");
-       print_uint64_t(new_uV);
+       DIGIT_UTIL.print_uint64_t(new_uV);
        Serial.println();
 
 
@@ -2067,7 +2053,7 @@ int checkButtons() {
       SOURCE_DIAL.open(operationType, SET,  closeSourceDCCallback, SMU[0].getSetValue_micro());
     } else if (tag == BUTTON_LIM_SET) {
       Serial.println("open dial to set limit, start with value ");
-      print_uint64_t(SMU[0].getLimitValue_micro());
+      DIGIT_UTIL.print_uint64_t(SMU[0].getLimitValue_micro());
       LIMIT_DIAL.open(operationType, LIMIT, closeSourceDCCallback, SMU[0].getLimitValue_micro());
     } else if (tag == BUTTON_REL) {
       Serial.println("Set relative");

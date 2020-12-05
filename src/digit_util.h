@@ -1,6 +1,6 @@
 #ifndef DIGITUTILS_H
 #define DIGITUTILS_H
-
+#include "stdint.h"
 class DigitUtilClass {
 
 private:
@@ -18,6 +18,10 @@ public:
   //TODO: Move to separate class
   int indicateColor(int normalColor, int indicatorColor,int period, int tag) ;
   void startIndicator(int tag);
+
+  //TODO: Candidate for separate class
+  void print_uint64_t(uint64_t num);
+
 };
 extern DigitUtilClass DIGIT_UTIL;
 
