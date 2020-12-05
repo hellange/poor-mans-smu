@@ -1238,6 +1238,12 @@ void renderMainHeader() {
   GD.Vertex2ii(1,y);
   GD.Vertex2ii(799, y);
   GD.ColorA(255);
+
+
+  // uptime
+  DIGIT_UTIL.displayTime(millis(), 120, 0);
+
+
 }
 
 void showFanSpeed(int x, int y) {
@@ -1657,7 +1663,7 @@ static void handleSampling() {
     SIMPLE_STATS.registerValue(V_FILTERS.mean);
 
     // store now and then
-    if (logTimer + 30000 < (int)millis()) {
+    if (logTimer + 10000 < (int)millis()) {
      logTimer = millis();
      RAM.logData(V_FILTERS.mean);
     }

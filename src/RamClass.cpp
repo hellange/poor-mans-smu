@@ -141,8 +141,22 @@ void RamClass::logData(float value) {
   Serial.print(value);
   Serial.print(" at log address ");
   Serial.print(currentLogAddress);
+  //Serial.println(t);
+
+  unsigned long allSeconds=t/1000;
+  int runHours= allSeconds/3600;
+  int secsRemaining=allSeconds%3600;
+  int runMinutes=secsRemaining/60;
+  int runSeconds=secsRemaining%60;
+
   Serial.print(" at time ");
-  Serial.println(t);
+  char buf[21];
+  sprintf(buf,"%02d:%02d:%02d",runHours,runMinutes,runSeconds);
+  Serial.print(buf);
+  Serial.print(" (millis=");
+  Serial.print(t);
+  Serial.println(")");
+
   currentLogAddress ++;
   if (currentLogAddress > maxLogAddress) {
     full = true;

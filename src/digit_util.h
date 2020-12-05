@@ -22,6 +22,8 @@ public:
   //TODO: Candidate for separate class
   void print_uint64_t(uint64_t num);
 
+  void displayTime(int millis, int x, int y);
+
 };
 extern DigitUtilClass DIGIT_UTIL;
 

@@ -162,6 +162,27 @@ void DigitUtilClass::print_uint64_t(uint64_t num) {
   }
 }
 
+void DigitUtilClass::displayTime(int millis, int x, int y) {
+    unsigned long allSeconds=millis/1000;
+int runHours= allSeconds/3600;
+int secsRemaining=allSeconds%3600;
+int runMinutes=secsRemaining/60;
+int runSeconds=secsRemaining%60;
+
+//char buf[21];
+//sprintf(buf,"Runtime%02d:%02d:%02d",runHours,runMinutes,runSeconds);
+//Serial.println(buf);
+
+
+  GD.cmd_number(x,y, 27, 2, runHours);
+     GD.cmd_text(x+20, y ,   27, 0, ":");
+
+  GD.cmd_number(x+25,y, 27, 2, runMinutes);
+       GD.cmd_text(x+45, y ,   27, 0, ":");
+
+  GD.cmd_number(x+50,y, 27, 2, runSeconds);
+}
+
 
 
 DigitUtilClass DIGIT_UTIL;
