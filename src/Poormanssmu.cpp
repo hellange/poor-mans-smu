@@ -313,7 +313,7 @@ void setup()
    GD.cmd_text(250, 200 ,   31, 0, "Poor man's SMU");
    GD.ColorRGB(0xaaaaaa);
    GD.cmd_text(250, 240 ,   28, 0, "Designed    by    Helge Langehaug");
-   GD.cmd_text(250, 270 ,   28, 1, "V0.150");
+   GD.cmd_text(250, 270 ,   28, 1, "V0.151");
 
    GD.swap();
    delay(501);
