@@ -1717,25 +1717,6 @@ void handleAutoCurrentRange() {
 
 int displayUpdateTimer = millis();
 
-
-
-/*
-#define LM60_ANALOG_IN_PIN 1
-int LM60_getTemperature() {
-   analogReadRes(10);
-  float maxNumber = 1023;//4095.0;
-  float refV = 3.3; // LM60 connected to 3.3V
-  float ar = analogRead(LM60_ANALOG_IN_PIN);
-  float voltage = refV*(ar/maxNumber);
-  // DM60 datasheet: Vout = (+6.25mV x t) +424mV 
-  //                 => Vout - 424mV = +6.25mV x t 
-  //                 => t = (Vout-424mV) / 6.25mV
-  int temp = (voltage - 0.424) / 0.00625;
-  //Serial.print(" ");
-  //Serial.println(temp,3);
-  return (int)temp;
-}
-*/
 int loopUpdateTimer = millis();
 
 void loop() {
@@ -1762,10 +1743,8 @@ void loop() {
     return; 
   }
   
-
-
-  //Serial.print("Temperature:");
-  //Serial.println(LM60_getTemperature());
+  //Serial.print("LM60 Temperature:");
+  //Serial.println(UTILS.LM60_getTemperature(1));
    
   displayUpdateTimer = millis();
  

@@ -5,6 +5,7 @@
 class UtilsClass {
 public:
   int TC74_getTemperature();
+  int LM60_getTemperature(int analogPin);
 };
 extern UtilsClass UTILS;
 
