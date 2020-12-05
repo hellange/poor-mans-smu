@@ -318,7 +318,7 @@ void setup()
    GD.begin(0);
    delay(500);
 
-   Serial.println("...begin...");
+   Serial.println("Initializing graphics...");
    Serial.flush();
    GD.cmd_romfont(1, 34); // put FT81x font 34 in slot 1
    GD.Clear();
@@ -333,12 +333,12 @@ void setup()
    delay(501);
 
    GD.__end();
-   Serial.println("...Done");
+   Serial.println("Graphics initialized.");
    Serial.flush();
 
    disable_ADC_DAC_SPI_units();
    delay(100);
-   Serial.println("Start measuring...");
+   Serial.println("Initializing SMU...");
    SMU[0].init();
    SETTINGS.init();
 
@@ -347,24 +347,20 @@ void setup()
 
    V_CALIBRATION.init(SOURCE_VOLTAGE);
    C_CALIBRATION.init(SOURCE_CURRENT);
-   
+   Serial.println("SMU initialized");
+   Serial.flush();
+
    if (operationType == SOURCE_VOLTAGE) {
      SMU[0].fltSetCommitVoltageSource(SETTINGS.setMilliVoltage*1000, true);
      Serial.println("Source voltage");
      SMU[0].fltSetCommitCurrentLimit(SETTINGS.setCurrentLimit*1000, _SOURCE_AND_SINK); 
    } 
-   
-   
-   /*
-   else {
-     SMU[0].fltSetCommitCurrentSource(SETTINGS.setMilliAmpere);
-     Serial.println("Source current");
-     SMU[0].fltSetCommitCurrentLimit(10.0, _SOURCE_AND_SINK); 
-   }
-   */
-
-   
-   Serial.println("Done!");
+   Serial.print("Default source voltage ");
+   Serial.println(SETTINGS.setMilliVoltage);
+   Serial.println(" mV");
+   Serial.print("Default current limit ");
+   Serial.println(SETTINGS.setCurrentLimit);
+   Serial.println(" mA");
    Serial.flush();
 
    V_STATS.init(DigitUtilClass::typeVoltage);
@@ -373,8 +369,6 @@ void setup()
    V_FILTERS.init(1234);
    C_FILTERS.init(5678);
    
-
-
    SOURCE_DIAL.init();
    LIMIT_DIAL.init();
 
@@ -383,7 +377,6 @@ void setup()
 
    RAM.init();
   
-
    timeAtStartup = millis();
 
   // SPI.usingInterrupt(2);
@@ -1230,31 +1223,26 @@ void renderMainHeader() {
   //showFanSpeed(220, 0);
   //GD.cmd_number(470,0,27,3,LM60_getTemperature());
   int temp = TC74_getTemperature();
+  GD.ColorRGB(0xdddddd);
+  GD.cmd_text(410,0,27,0,"Temp:");
   if (temp > SETTINGS.getMaxTempAllowed()) {
-    
     GD.ColorRGB(0xff0000);
-
     GD.Begin(RECTS);
     GD.Vertex2ii(465, 0);
     GD.Vertex2ii(520, 20);
     GD.ColorRGB(0xffffff);
-
-    GD.cmd_number(470,0,27,3,TC74_getTemperature());
-    GD.cmd_text(505,0,27,0,"C");
   } else {
     GD.ColorRGB(0x00ff00);
-    GD.cmd_number(470,0,27,3,TC74_getTemperature());
-    GD.cmd_text(500,0,27,0,"C");
   }
-
+  GD.cmd_number(470,0,27,3,TC74_getTemperature());
+  GD.cmd_text(500,0,27,0,"C");
 
   GD.ColorRGB(0xdddddd);
+  // Show log info
+  int logEntries = RAM.getCurrentLogAddress();
+  GD.cmd_text(300,0,27,0,"Log:");
+  GD.cmd_number(340,0,27,0,logEntries);
 
-
-  GD.cmd_number(370,0,27,0,RAM.getCurrentLogAddress());
-
-  
-  
   // line below top header
   int y = 25;
   GD.Begin(LINE_STRIP);
