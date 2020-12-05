@@ -39,6 +39,7 @@
 #include "TrendGraph.h"
 #include "Settings.h"
 #include "SimpleStats.h"
+#include "Utils.h"
 
 //#define _SOURCE_AND_SINK 111
 
@@ -66,7 +67,6 @@ void loopDigitize();
 void handleSampling();
 void closeMainMenuCallback(FUNCTION_TYPE functionType_);
 void showFanSpeed(int x, int y);
-int TC74_getTemperature();
 void fltCommitCurrentSourceAutoRange(float mv, bool autoRange);
 void closeSourceDCCallback(int set_or_limit, bool cancel);
 
@@ -1212,7 +1212,7 @@ void renderMainHeader() {
   showLoadResistance(590,0);
   //showFanSpeed(220, 0);
   //GD.cmd_number(470,0,27,3,LM60_getTemperature());
-  int temp = TC74_getTemperature();
+  int temp = UTILS.TC74_getTemperature();
   GD.ColorRGB(0xdddddd);
   GD.cmd_text(410,0,27,0,"Temp:");
   if (temp > SETTINGS.getMaxTempAllowed()) {
@@ -1224,7 +1224,7 @@ void renderMainHeader() {
   } else {
     GD.ColorRGB(0x00ff00);
   }
-  GD.cmd_number(470,0,27,3,TC74_getTemperature());
+  GD.cmd_number(470,0,27,3, UTILS.TC74_getTemperature());
   GD.cmd_text(500,0,27,0,"C");
 
   GD.ColorRGB(0xdddddd);
@@ -1717,24 +1717,7 @@ void handleAutoCurrentRange() {
 
 int displayUpdateTimer = millis();
 
-int TC74_getTemperature() {
-  // I2C based
-  int temperature = -1;
-    Wire.beginTransmission(72);
-    //start the transmission
 
-   byte val = 0;
-    Wire.write(val);
-
-    Wire.requestFrom(72, 1);
-    if (Wire.available()) {
-    temperature = Wire.read();
-    //Serial.println(temperature);
-    }
-  Wire.endTransmission();
-  return temperature;
-  
-}
 
 /*
 #define LM60_ANALOG_IN_PIN 1
