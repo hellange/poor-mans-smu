@@ -8,19 +8,21 @@ class SettingsClass {
 
 private:
   int maxTempAllowed = 80;
-
+  float max_current_10ma_range = 10.0;
+  float max_current_1a_range = 1300.0;
  
 public:
-
+ 
   float setMilliVoltage = 1234.5;
   float setCurrentLimit = 33.0;
 
   float setMilliAmpere = 13.0;
   float setVoltageLimit = 5432.1;
 
+  float max_current_1A_range();
+  float max_current_10mA_range();
 
-  float MAX_CURRENT_10mA_RANGE = 10.0; // current values set because the ADC limit is 6 volt now...
-  float MAX_CURRENT_1A_RANGE = 1300.0;
+
   void init();
   bool lowBandWidth = false;
   void setLowBandWidth(bool t);

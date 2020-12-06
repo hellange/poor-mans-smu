@@ -33,6 +33,9 @@ private:
   void testReadWriteLogData();
   
 public:
+
+  boolean initFailure = false;
+  
   boolean full = false;
 
   void init();

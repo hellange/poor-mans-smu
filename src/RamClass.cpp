@@ -24,6 +24,7 @@ void RamClass::init() {
   }
   if (errors > 0) {
     Serial.println("ERROR: Initial RAM test failed !  No ram mounted ?");
+    initFailure=true;
     return;
   } else {
     Serial.println("Ram detected.");
@@ -136,8 +137,8 @@ void RamClass::startLog() {
 int oldestLogAddress;
 void RamClass::logData(float value) {
   uint32_t t = timeElapsed;
-  writeLogData(currentLogAddress, value, t);
-  Serial.println("Logged ");
+
+  Serial.print("Trying to log ");
   Serial.print(value);
   Serial.print(" at log address ");
   Serial.print(currentLogAddress);
@@ -155,7 +156,15 @@ void RamClass::logData(float value) {
   Serial.print(buf);
   Serial.print(" (millis=");
   Serial.print(t);
-  Serial.println(")");
+  Serial.print("). ");
+
+  if (RAM.initFailure) {
+    Serial.println(" Failed because of initial RAM failure");
+  } else {
+    writeLogData(currentLogAddress, value, t);
+    Serial.println(" Done.");
+  }
+
 
   currentLogAddress ++;
   if (currentLogAddress > maxLogAddress) {

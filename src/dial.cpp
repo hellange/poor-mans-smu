@@ -678,7 +678,7 @@ void DialClass::validateCurrent(double mv, int numberValue, int decimalValue, in
   // on which voltDecade is being show in the dislay
   
   if (strncmp(voltDecade,"V",1) == 0) {
-    if (abs(mv) > SETTINGS.MAX_CURRENT_1A_RANGE) {
+    if (abs(mv) > SETTINGS.max_current_1A_range()) {
       showError("Max current is 1.3A");
       return;
     }
@@ -689,7 +689,7 @@ void DialClass::validateCurrent(double mv, int numberValue, int decimalValue, in
   }
 
   else if (strncmp(voltDecade,"mV",2) == 0) {
-    if (abs(mv) > SETTINGS.MAX_CURRENT_1A_RANGE) {
+    if (abs(mv) > SETTINGS.max_current_1A_range()) {
       showError("Max current is 1300mA");
       return;
     }
@@ -733,7 +733,7 @@ void DialClass::validateCurrentLimit(double mv, int numberValue, int decimalValu
   // on which voltDecade is being show in the dislay
   
   if (strncmp(voltDecade,"V",1) == 0) {
-    if (abs(mv) > SETTINGS.MAX_CURRENT_1A_RANGE) {
+    if (abs(mv) > SETTINGS.max_current_1A_range()) {
       showError("Max current is 1.3A");
       return;
     }
@@ -744,7 +744,7 @@ void DialClass::validateCurrentLimit(double mv, int numberValue, int decimalValu
   }
 
   else if (strncmp(voltDecade,"mV",2) == 0) {
-    if (abs(mv) > SETTINGS.MAX_CURRENT_1A_RANGE) {
+    if (abs(mv) > SETTINGS.max_current_1A_range()) {
       showError("Max current is 1300mA");
       return;
     }

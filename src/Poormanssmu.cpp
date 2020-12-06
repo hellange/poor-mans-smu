@@ -40,6 +40,7 @@
 #include "Settings.h"
 #include "SimpleStats.h"
 #include "Utils.h"
+#include "analogGauge.h"
 
 //#define _SOURCE_AND_SINK 111
 
@@ -555,35 +556,6 @@ void renderStatusIndicators(int x, int y) {
     }
 }
 
- void showAnalogPin(int x, int y, int radius, int radiusStart, int degreeRelativeToTop, int needleColor, int lineWidth, boolean needle) {
-  if (reduceDetails()){
-    return;
-  }
-  int maxDegree = 60; 
-  
-  degreeRelativeToTop = degreeRelativeToTop <-maxDegree ? -maxDegree: degreeRelativeToTop;
-  degreeRelativeToTop = degreeRelativeToTop > maxDegree ? maxDegree : degreeRelativeToTop;
-  
-  float oneDegreeRad = 2*3.1415 / 360.0;
-  float rad = (3.1415/2.0) - degreeRelativeToTop * oneDegreeRad;
-  
-  GD.ColorRGB(needleColor);
-  GD.ColorA(255);
-  GD.Begin(LINE_STRIP);
-  GD.LineWidth(lineWidth);
-  GD.Vertex2ii(x+cos(rad)*radius, y-sin(rad)*radius);
-  GD.Vertex2ii(x+cos(rad)*radiusStart, y-sin(rad)*radiusStart);
-
-  if (needle){
-    GD.Vertex2ii(x+cos(rad)*radius, y-sin(rad)*radius);
-    GD.Vertex2ii(x+cos(rad*1.04)*radiusStart, y-sin(rad*1.04)*radiusStart);
-    GD.Vertex2ii(x+cos(rad*0.96)*radiusStart, y-sin(rad*0.96)*radiusStart);
-    GD.Vertex2ii(x+cos(rad)*radius, y-sin(rad)*radius);
-
-  }
-
-}
-
 
 bool anyDialogOpen() {
   // make sure buttons below the dialog do not reach if finger is not removed from screen
@@ -711,7 +683,7 @@ void renderExperimental(int x, int y, float valM, float setM, bool cur, bool les
   }
   float degrees = -deviationInPercent * 700.0;
   if (!lessDetails) {
-    renderAnalogGauge(x+90,y,240, degrees, deviationInPercent, "Deviation from SET");
+    ANALOG_GAUGE.renderAnalogGauge(x+90,y,240, degrees, deviationInPercent, "Deviation from SET");
   }
 
 
@@ -740,73 +712,6 @@ void renderExperimental(int x, int y, float valM, float setM, bool cur, bool les
   GD.Tag(0);
   
 }
-
-void renderAnalogGauge(int x, int y, int size, float degrees, float value, const char *title) {
-  //experimental feature showing deviation from set value
-  
-  int gaugeRadius = size/2;
-
-  for (int i=-50; i<=50; i=i+10) {
-      int needleColor;
-      if (i==30 || i ==-30) {
-        needleColor = COLOR_ORANGE;
-      }
-      else if (i>-40 && i<40) {
-        needleColor = 0xffffff;
-      } else {
-        needleColor = 0xff0000;
-      }
-      showAnalogPin(x+gaugeRadius, y+gaugeRadius+10, gaugeRadius, gaugeRadius - 10, i, needleColor, gaugeRadius/4, false);
-  }
-
- 
-    
-  GD.Begin(LINE_STRIP);
-  GD.ColorRGB(0x888888);
-  GD.ColorA(255);
-  GD.LineWidth(10);
-
-  if (x+gaugeRadius < 800) {
-  GD.Vertex2ii(x, y);
-  GD.Vertex2ii(x, y+gaugeRadius+10);
-  GD.Vertex2ii(x+gaugeRadius*2, y+gaugeRadius+10);
-  GD.Vertex2ii(x+gaugeRadius*2, y);
-  GD.Vertex2ii(x, y);
-    
-  showAnalogPin(x+gaugeRadius, y+gaugeRadius+10, gaugeRadius, 30, degrees, 0xffffff, 20, true);
-
-  GD.Begin(RECTS);
-  GD.ColorRGB(0x223322);
-  GD.ColorA(255);
-  GD.Vertex2ii(x+4, y+gaugeRadius-25 + 2);
-  GD.Vertex2ii(x+gaugeRadius*2-4, y+gaugeRadius+10-4);
-  
-  GD.ColorRGB(0xffffff);
-  GD.cmd_text(x+gaugeRadius/2, y-20, 27, 0, title);
-  
-  GD.ColorRGB(0xdddddd);
-  }
-  
-  y=y+gaugeRadius-22;
-  x=x+gaugeRadius*1.2/2;
-  float deviationInPercent = abs(value);
-
-  int font = 29;
-     if (deviationInPercent < 1.0) {
-      GD.cmd_text(x+8, y, font, 0, "0.");
-      GD.cmd_number(x+30, y, font, 3, deviationInPercent * 1000.0);
-      GD.cmd_text(x+85, y, font, 0, "%");
-    } else if (deviationInPercent > 10.0){
-      GD.ColorRGB(255,0,0); // RED
-      GD.cmd_text(x+25, y, font, 0, ">10%");
-    } else if (deviationInPercent >= 1.0 && deviationInPercent <10.0){
-      int whole = (int)deviationInPercent;
-      GD.cmd_number(x+5, y, font, 1, whole );
-      GD.cmd_text(x+20, y, font, 0, ".");
-      GD.cmd_number(x+30, y, font, 2, (deviationInPercent - (float)whole) * 100.0);
-      GD.cmd_text(x+65, y, font, 0, "%");
-    }
- }
 
 void renderVoltageGraph(int x,int y, bool scrolling) {
   V_STATS.renderTrend(x, y, scrolling);
@@ -875,14 +780,14 @@ void measureCurrentPanel(int x, int y, boolean compliance, bool showBar) {
   }
   
   y=y+28;
-  if (current_range == AMP1 && abs(C_STATS.rawValue) > SETTINGS.MAX_CURRENT_1A_RANGE) {
+  if (current_range == AMP1 && abs(C_STATS.rawValue) > SETTINGS.max_current_1A_range()) {
     if (showBar) {
       y=y+12; // dont show bar when overflow... just add extra space so the panel gets same size as without overflow...
     }
     GD.ColorA(255);
     CURRENT_DISPLAY.renderOverflowSW(x + 17, y);
   } else 
-   if ( (current_range == MILLIAMP10 && abs(C_STATS.rawValue) > SETTINGS.MAX_CURRENT_10mA_RANGE)) {
+   if ( (current_range == MILLIAMP10 && abs(C_STATS.rawValue) > SETTINGS.max_current_10mA_range())) {
     if (showBar) {
       y=y+12; // dont show bar when overflow... just add extra space so the panel gets same size as without overflow...
     }
@@ -1684,7 +1589,7 @@ void handleAutoCurrentRange() {
 
       // auto current range switch. TODO: Move to hardware ? Note that range switch also requires change in limit
       float hysteresis = 0.5;
-      float switchAt = SETTINGS.MAX_CURRENT_10mA_RANGE;
+      float switchAt = SETTINGS.max_current_10mA_range();
       
         if (current_range == AMP1 && abs(milliAmpere) < switchAt - hysteresis) {
           current_range = MILLIAMP10;
@@ -1720,7 +1625,6 @@ int displayUpdateTimer = millis();
 int loopUpdateTimer = millis();
 
 void loop() {
-  
 
   if (V_CALIBRATION.autoCalInProgress) {
     V_CALIBRATION.autoCalADCfromDAC();

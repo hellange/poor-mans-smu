@@ -7,13 +7,18 @@
 TrendGraphClass TRENDGRAPH;
 
 void TrendGraphClass::init() {
-  Serial.print("Init TrendGraph");
+  if (RAM.initFailure) {
+    Serial.print("Init TrendGraph not working because of initial RAM failure!");
+  } else {
+    Serial.print("Init TrendGraph");
+  }
 }
 
 
 
-
 void TrendGraphClass::loop(OPERATION_TYPE operationType) {
+
+
 
  //int logAddress = RAM.getCurrentLogAddress();
  //int pixels = 400;
@@ -98,6 +103,17 @@ DIGIT_UTIL.renderValue(10,  80+300 ,minV, 1, 1);
 
  //VOLT_DISPLAY.renderMeasured(100,10, maxV);
  //VOLT_DISPLAY.renderMeasured(100,400, minV);
+
+
+
+ if (RAM.initFailure) {
+     GD.ColorRGB(0xff0000);
+
+     GD.cmd_text(340,200,28,0,"ERROR: RAM NOT WORKING !");
+
+  }
+
+  GD.ColorRGB(0xffffff);
 
  
  x = 0;

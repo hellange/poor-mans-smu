@@ -1,6 +1,7 @@
 #include "tags.h"
 #include "operations.h"
 #include <stdint.h>
+#include "digit_util.h"
 
 class DialClass {
 
