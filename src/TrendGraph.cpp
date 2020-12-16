@@ -45,11 +45,20 @@ void TrendGraphClass::loop(OPERATION_TYPE operationType) {
    GD.resume();
    
    float v = logData.value.val;
-   if (v>maxV) {
-    maxV = v;
-   } else if (v<minV) {
-    minV = v;
-   }
+//   if (v>maxV) {
+//     Serial.print("Registred max:");
+//     Serial.println(v,3);
+//    maxV = v;
+//   } else if (v<minV) {
+//    minV = v;
+//   }
+  maxV = RAM.max;
+  minV = RAM.min;
+
+  if (maxV - minV <0.16) {
+    maxV = maxV + 0.008;
+    minV = minV - 0.008;
+  }
     adr = RAM.nextAdr(adr);
     if (adr == -1) {
     //  break;
@@ -80,6 +89,7 @@ void TrendGraphClass::loop(OPERATION_TYPE operationType) {
    float v = logData.value.val;
 
    span = maxV - minV;
+    
   
    mid = maxV - (span/2.0);
 
@@ -96,10 +106,21 @@ void TrendGraphClass::loop(OPERATION_TYPE operationType) {
  //VOLT_DISPLAY.renderMeasured(100,200, span);
 
 
-DIGIT_UTIL.renderValue(10,  80 ,maxV, 1, 1); 
-DIGIT_UTIL.renderValue(10,  80+150 ,mid, 1, 1); 
-DIGIT_UTIL.renderValue(10,  80+150+30 ,span, 1, 1); 
-DIGIT_UTIL.renderValue(10,  80+300 ,minV, 1, 1); 
+ GD.LineWidth(5);
+ GD.ColorA(255);
+  GD.ColorRGB(0x00ff00);
+ for (int y=80;y<=80+300;y=y+30) {
+ 
+  GD.Begin(LINE_STRIP);
+  GD.Vertex2ii(160, y);
+  GD.Vertex2ii(750, y);
+ }
+   GD.ColorRGB(0xffffff);
+
+DIGIT_UTIL.renderValue(10,  80-10 ,maxV, 1, 1); 
+DIGIT_UTIL.renderValue(10,  80+150-10,mid, 1, 1); 
+//DIGIT_UTIL.renderValue(15,  80+150+30-10 ,span, 1, 1); 
+DIGIT_UTIL.renderValue(10,  80+300-10 ,minV, 1, 1); 
 
  //VOLT_DISPLAY.renderMeasured(100,10, maxV);
  //VOLT_DISPLAY.renderMeasured(100,400, minV);

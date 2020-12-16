@@ -37,7 +37,7 @@ static st_reg init_state[] =
     {0x13, 2, 0, 0x0000l, "Ch_Map_3 "}, //CH_Map_4
     
     //              c means disable ref? input buffers
-  {0x20, 2, 0, 0x1c00l, "SetupCfg0"}, //Setup_Config_1   //ext ref 
+ {0x20, 2, 0, 0x1c00l, "SetupCfg0"}, //Setup_Config_1   //ext ref 
 //{0x20, 2, 0, 0x1c20l, "SetupCfg0"}, //Setup_Config_1  //int ref, unipolar 
 
     {0x21, 2, 0, 0x1020l, "SetupCfg1"}, //Setup_Config_2
@@ -300,8 +300,8 @@ double ADCClass::measureMilliVoltage() {
   float v = (float) ((AD7176_regs[4].value*VFSR*1000.0)/FSR); 
   v=v-VREF*1000.0;
 
-  //v = v / 0.8;  // funnel amplifiersetNullValue x0.8
-  v = v / 0.4;  // funnel amplifier x0.4
+  v = v / 0.8;  // funnel amplifiersetNullValue x0.8
+  //v = v / 0.4;  // funnel amplifier x0.4
   
   // DONT INCLUDE THESE ADJUSTMENTS WHEN TESTING ONLY DAC/ADC BOARD !!!!
   if (full_board == true) {
@@ -703,8 +703,8 @@ int64_t ADCClass::fltSetCommitVoltageLimit(int64_t voltage_uV, int8_t up_down_bo
     double v = (float) ((AD7176_regs[4].value*VFSR*1000.0)/FSR); 
     v=v-VREF*1000.0;
 
-    //v = v / 0.8;  // funnel amplifier x0.8
-    v = v / 0.4;  // funnel amplifier x0.4
+    v = v / 0.8;  // funnel amplifier x0.8
+    //v = v / 0.4;  // funnel amplifier x0.4
 
     float i = v;
     // DONT INCLUDE THESE ADJUSTMENTS WHEN TESTING ONLY DAC/ADC BOARD !!!!

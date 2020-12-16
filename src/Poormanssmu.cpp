@@ -1116,7 +1116,7 @@ void renderMainHeader() {
   //GD.cmd_text(20, 0, 27, 0, "Input 25.4V / - 25.3V"); // NOTE: Currently only dummy info
   showLoadResistance(590,0);
   //showFanSpeed(220, 0);
-  GD.cmd_number(470,0,27,3,UTILS.LM60_getTemperature(4));
+  GD.cmd_number(520,0,27,2,UTILS.LM60_getTemperature(6));
   int temp = UTILS.TC74_getTemperature();
   GD.ColorRGB(0xdddddd);
   GD.cmd_text(410,0,27,0,"Temp:");
@@ -1570,10 +1570,10 @@ static void handleSampling() {
     SIMPLE_STATS.registerValue(V_FILTERS.mean);
 
     // store now and then
-    if (logTimer + 5000 < (int)millis()) {
+    if (logTimer + 1000 < (int)millis()) {
      logTimer = millis();
      //RAM.logData(V_FILTERS.mean);
-     RAM.logDataCalculateMean(V_FILTERS.mean, 2);
+     RAM.logDataCalculateMean(V_FILTERS.mean, 10);
     }
     
   }
@@ -1647,10 +1647,7 @@ void loop() {
   if (displayUpdateTimer + 20 > (int)millis()) {
     return; 
   }
-  
-  //Serial.print("LM60 Temperature:");
-  //Serial.println(UTILS.LM60_getTemperature(1));
-   
+ 
   displayUpdateTimer = millis();
  
  if (functionType == DIGITIZE) {

@@ -33,7 +33,10 @@ private:
   void testReadWriteLogData();
   
 public:
+uint32_t waitLogStart = 5000;
 
+ float max = -100000.0;
+ float min = +100000.0;
   boolean initFailure = false;
   
   boolean full = false;
