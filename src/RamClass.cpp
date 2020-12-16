@@ -134,6 +134,18 @@ void RamClass::startLog() {
   timeElapsed = 0;
 }
 
+int logTotalSum = 0;
+int nrOfLogEntriesForMean = 0;
+void RamClass::logDataCalculateMean(float value, int nrOfValuesBeforeSave) {
+  logTotalSum = logTotalSum + value;
+  nrOfLogEntriesForMean++;
+  if (nrOfLogEntriesForMean >= nrOfValuesBeforeSave) {
+     logData(logTotalSum/nrOfValuesBeforeSave);
+     nrOfLogEntriesForMean=0;
+     logTotalSum = 0;
+  }
+}
+
 int oldestLogAddress;
 void RamClass::logData(float value) {
   uint32_t t = timeElapsed;

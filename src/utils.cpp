@@ -19,7 +19,7 @@ int UtilsClass::TC74_getTemperature() {
   
 }
 
-int LM60_getTemperature(int analogPin) {
+int UtilsClass::LM60_getTemperature(int analogPin) {
    analogReadRes(10);
   float maxNumber = 1023;//4095.0;
   float refV = 3.3; // LM60 connected to 3.3V

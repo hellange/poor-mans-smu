@@ -39,7 +39,7 @@
 #include "TrendGraph.h"
 #include "Settings.h"
 #include "SimpleStats.h"
-#include "Utils.h"
+#include "utils.h"
 #include "analogGauge.h"
 
 //#define _SOURCE_AND_SINK 111
@@ -1116,7 +1116,7 @@ void renderMainHeader() {
   //GD.cmd_text(20, 0, 27, 0, "Input 25.4V / - 25.3V"); // NOTE: Currently only dummy info
   showLoadResistance(590,0);
   //showFanSpeed(220, 0);
-  //GD.cmd_number(470,0,27,3,LM60_getTemperature());
+  GD.cmd_number(470,0,27,3,UTILS.LM60_getTemperature(4));
   int temp = UTILS.TC74_getTemperature();
   GD.ColorRGB(0xdddddd);
   GD.cmd_text(410,0,27,0,"Temp:");
@@ -1570,9 +1570,10 @@ static void handleSampling() {
     SIMPLE_STATS.registerValue(V_FILTERS.mean);
 
     // store now and then
-    if (logTimer + 10000 < (int)millis()) {
+    if (logTimer + 5000 < (int)millis()) {
      logTimer = millis();
-     RAM.logData(V_FILTERS.mean);
+     //RAM.logData(V_FILTERS.mean);
+     RAM.logDataCalculateMean(V_FILTERS.mean, 2);
     }
     
   }

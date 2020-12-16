@@ -47,6 +47,7 @@ public:
 
   void startLog();
   void logData(float value);
+  void logDataCalculateMean(float value, int nrOfValuesBeforeSave);
 
   int getCurrentLogAddress();
   int getMaxLogAddress();
