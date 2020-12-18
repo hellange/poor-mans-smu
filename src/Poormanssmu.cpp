@@ -148,7 +148,7 @@ IntervalTimer myTimer;
 
 
 
-void rotaryChangedFn(float changeVal) {
+void rotaryChangedVoltCurrentFn(float changeVal) {
 
    if (operationType == SOURCE_VOLTAGE) {
        Serial.print("rotary changeval:");
@@ -375,7 +375,7 @@ void setup()
   SPI.usingInterrupt(myTimer);
 #endif
 
-  ROTARY_ENCODER.init(rotaryChangedFn);
+  ROTARY_ENCODER.init(rotaryChangedVoltCurrentFn);
  
   //TC74 
   Wire.begin();
@@ -1570,10 +1570,10 @@ static void handleSampling() {
     SIMPLE_STATS.registerValue(V_FILTERS.mean);
 
     // store now and then
-    if (logTimer + 3000 < (int)millis()) {
+    if (logTimer + 1000 < (int)millis()) {
      logTimer = millis();
      //RAM.logData(V_FILTERS.mean);
-     RAM.logDataCalculateMean(V_FILTERS.mean, 10);
+     RAM.logDataCalculateMean(V_FILTERS.mean, 2);
     }
     
   }
@@ -2451,6 +2451,10 @@ void closedSweep(OPERATION_TYPE t) {
   
 }
 
+void rotaryChangedDontCareFn(float changeVal) {
+
+}
+
 
 void closeMainMenuCallback(FUNCTION_TYPE functionType_) {
   
@@ -2462,6 +2466,12 @@ void closeMainMenuCallback(FUNCTION_TYPE functionType_) {
 
   
   Serial.flush();
+
+  // "unregister" function to be called when rotaty encoder is detected.
+  // Has to be reinitiated by the function that needs it.
+  // This is to avoid unwanted stuff to happen when rotating the knob in
+  // different function views.
+  ROTARY_ENCODER.init(rotaryChangedDontCareFn); 
 
   // do a close on the existing function. It should do neccessary cleanup
   if (functionType == SOURCE_PULSE) {
@@ -2485,17 +2495,24 @@ void closeMainMenuCallback(FUNCTION_TYPE functionType_) {
   else if (functionType == SOURCE_DC_VOLTAGE) {   
     //disable_ADC_DAC_SPI_units();
     GD.__end();
+      ROTARY_ENCODER.init(rotaryChangedVoltCurrentFn);
+
     if (SMU[0].fltSetCommitVoltageSource(SETTINGS.setMilliVoltage*1000, true)) printError(_PRINT_ERROR_VOLTAGE_SOURCE_SETTING);
     if (SMU[0].fltSetCommitCurrentLimit(SETTINGS.setCurrentLimit*1000, true)) printError(_PRINT_ERROR_VOLTAGE_SOURCE_SETTING);
     GD.resume();
   }
   else if (functionType == SOURCE_DC_CURRENT) {
+      ROTARY_ENCODER.init(rotaryChangedVoltCurrentFn);
+
     //disable_ADC_DAC_SPI_units();
     GD.__end();
     //if (SMU[0].fltSetCommitVoltageSource(SMU[0].getSetValuemV(), true)) printError(_PRINT_ERROR_VOLTAGE_SOURCE_SETTING);
     if (SMU[0].fltSetCommitCurrentSource(SETTINGS.setMilliAmpere*1000/*SETTINGS.setMilliAmpere*/)) printError(_PRINT_ERROR_VOLTAGE_SOURCE_SETTING);
     if (SMU[0].fltSetCommitVoltageLimit(SETTINGS.setVoltageLimit*1000, true)) printError(_PRINT_ERROR_VOLTAGE_SOURCE_SETTING);
     GD.resume();
+  }
+  else if (functionType == GRAPH) {
+     ROTARY_ENCODER.init(TRENDGRAPH.rotaryChangedFn);
   }
   
 }

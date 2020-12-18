@@ -47,8 +47,8 @@ void TrendGraphClass::loop(OPERATION_TYPE operationType) {
    float v = logData.value.val;
    if (v < 50000.0) {
      if (v>maxV) {
-     Serial.print("Registred max:");
-     Serial.println(v,3);
+     //Serial.print("Registred max:");
+     //Serial.println(v,3);
      maxV = v;
 
      }
@@ -203,3 +203,6 @@ int runSeconds=secsRemaining%60;
 
 
 }
+  void TrendGraphClass::rotaryChangedFn(float changeVal) {
+     Serial.println("TRENDGRAPH ENCODED ROTATION DETECTED");
+  }

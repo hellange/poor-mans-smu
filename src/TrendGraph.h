@@ -14,7 +14,8 @@ public:
  
   void init();
   void loop(OPERATION_TYPE operationType);
- 
+  static void rotaryChangedFn(float changeVal);
+
 };
 
 extern TrendGraphClass TRENDGRAPH;
