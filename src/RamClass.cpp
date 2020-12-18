@@ -1,6 +1,10 @@
 #include "RamClass.h"
 #include "Arduino.h"
 
+boolean USE_NORMAL_RAM = true;
+float normalRamUndefinedValue = 999999.0;
+float normalRamValue[1000];
+uint32_t normalRamTime[1000];
 
 
 RamClass RAM;
@@ -8,6 +12,13 @@ elapsedMillis timeElapsed; //declare global if you don't want it reset every tim
 
 void RamClass::init() {
    Serial.println("Initial RAM testing...");
+   if (USE_NORMAL_RAM) {
+     for (int i=0;i<1000;i++) {
+       normalRamValue[i] = 99000.0;//normalRamUndefinedValue;
+     }
+     return;
+   }
+  
    // just some initial read/write to check that device is probably there
    ram_init();
    int errors = 0;
@@ -113,21 +124,37 @@ void RamClass::writeRAMfloat(uint32_t address, float value) {
 }
 
 
+
+
 // log data stored as 8 bytes: <4 byte time><4 byte floatvalue>
 timedLog RamClass::readLogData(uint32_t address) {
   timedLog logData;
-  ram_read(&logData.time.b[0], logStartAddress + address * 8, 4);
-  //flu floatValue;
-  logData.value.val = readRAMfloat(logStartAddress + address * 8 + 4);
-  return logData;
+  if (USE_NORMAL_RAM) {
+    logData.time.val = normalRamTime[address];
+    logData.value.val = normalRamValue[address];
+    return logData;
+  } else {
+    ram_read(&logData.time.b[0], logStartAddress + address * 8, 4);
+    //flu floatValue;
+    logData.value.val = readRAMfloat(logStartAddress + address * 8 + 4);
+    return logData;
+  }
+
+
+  
 }
 
 
 void RamClass::writeLogData(uint32_t address, float value, uint32_t time) {
-  tiu timeToWrite;
-  timeToWrite.val = time;
-  ram_write(&timeToWrite.b[0], address *8, 4);
-  writeRAMfloat(logStartAddress + address * 8 + 4, value);
+  if (USE_NORMAL_RAM) {
+    normalRamValue[address] = value;
+    normalRamTime[address] = time;
+  } else {
+    tiu timeToWrite;
+    timeToWrite.val = time;
+    ram_write(&timeToWrite.b[0], address *8, 4);
+    writeRAMfloat(logStartAddress + address * 8 + 4, value);
+  }
 }
 
 void RamClass::startLog() {
@@ -181,12 +208,12 @@ void RamClass::logData(float value) {
   Serial.print(t);
   Serial.print("). ");
 
-  if (RAM.initFailure) {
-    Serial.println(" Failed because of initial RAM failure");
-  } else {
+  //if (RAM.initFailure) {
+  //  Serial.println(" Failed because of initial RAM failure");
+  //} else {
     writeLogData(currentLogAddress, value, t);
-    Serial.println(" Done.");
-  }
+  //  Serial.println(" Done.");
+  //}
 
 
   currentLogAddress ++;

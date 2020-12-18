@@ -300,8 +300,8 @@ double ADCClass::measureMilliVoltage() {
   float v = (float) ((AD7176_regs[4].value*VFSR*1000.0)/FSR); 
   v=v-VREF*1000.0;
 
-  v = v / 0.8;  // funnel amplifiersetNullValue x0.8
-  //v = v / 0.4;  // funnel amplifier x0.4
+  //v = v / 0.8;  // funnel amplifiersetNullValue x0.8
+  v = v / 0.4;  // funnel amplifier x0.4
   
   // DONT INCLUDE THESE ADJUSTMENTS WHEN TESTING ONLY DAC/ADC BOARD !!!!
   if (full_board == true) {

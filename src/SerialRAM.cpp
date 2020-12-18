@@ -61,8 +61,9 @@ void ram_writeRDMR(uint8_t mode)
   SPI.endTransaction();
 }
 
+byte myRam[10000];
 void ram_read(uint8_t *buf, uint32_t addr, uint32_t len)
-{ //TODO: FIFO
+{ 
   SPI.beginTransaction(SPICONFIG);
   CSASSERT();  
   SPI.transfer(RAM_INSTR_READ);

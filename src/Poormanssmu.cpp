@@ -1570,7 +1570,7 @@ static void handleSampling() {
     SIMPLE_STATS.registerValue(V_FILTERS.mean);
 
     // store now and then
-    if (logTimer + 1000 < (int)millis()) {
+    if (logTimer + 3000 < (int)millis()) {
      logTimer = millis();
      //RAM.logData(V_FILTERS.mean);
      RAM.logDataCalculateMean(V_FILTERS.mean, 10);

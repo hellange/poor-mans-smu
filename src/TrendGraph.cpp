@@ -14,7 +14,7 @@ void TrendGraphClass::init() {
   }
 }
 
-
+int lastAdjust=millis();
 
 void TrendGraphClass::loop(OPERATION_TYPE operationType) {
 
@@ -45,26 +45,41 @@ void TrendGraphClass::loop(OPERATION_TYPE operationType) {
    GD.resume();
    
    float v = logData.value.val;
-//   if (v>maxV) {
-//     Serial.print("Registred max:");
-//     Serial.println(v,3);
-//    maxV = v;
-//   } else if (v<minV) {
-//    minV = v;
-//   }
-  maxV = RAM.max;
-  minV = RAM.min;
+   if (v < 50000.0) {
+     if (v>maxV) {
+     Serial.print("Registred max:");
+     Serial.println(v,3);
+     maxV = v;
 
-  if (maxV - minV <0.16) {
-    maxV = maxV + 0.008;
-    minV = minV - 0.008;
-  }
+     }
+     if (v<minV) {
+       minV = v;
+
+     }
+     //maxV = RAM.max;
+     //minV = RAM.min;
+
+    
+   }
+   
+
     adr = RAM.nextAdr(adr);
     if (adr == -1) {
-    //  break;
+     break;
     }
 
  }
+
+
+    //if (lastAdjust + 5000 > millis()) {
+     if (maxV - minV <0.020) {
+       float valueLeft = 0.020 - (maxV-minV);
+       maxV = maxV + valueLeft/2.0;
+       minV = minV - valueLeft/2.0;
+     }
+     //lastAdjust = millis();
+    //}
+
 
   GD.ColorRGB(0xffffff);
 
