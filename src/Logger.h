@@ -16,6 +16,8 @@ class LogDataWithTimeStamp {
 class LoggerClass {
 
  private:
+
+  bool notAvailable = true;
   uint32_t *memory_begin, *memory_end;
   bool full;
   bool empty;

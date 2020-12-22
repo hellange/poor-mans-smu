@@ -5,6 +5,7 @@ extern "C" uint8_t external_psram_size;
 
 int LoggerClass::rotary = 1;
 
+
 void LoggerClass::init() {
 //	while (!Serial) ; // wait
 
@@ -12,9 +13,11 @@ void LoggerClass::init() {
   uint8_t size = external_psram_size;
 	Serial.printf("EXTMEM Memory: %d Mbyte\n", size);
 	if (size == 0) {
+    notAvailable = true;
     Serial.println("WARNING: No external ram !!!");
     return;
   } 
+  notAvailable = false;
   memory_begin = (uint32_t *)(0x70000000);
 	memory_end = (uint32_t *)(0x70000000 + size * 1048576);
 
@@ -45,6 +48,9 @@ void LoggerClass::clear() {
 
 int oldRot = 0;
 void LoggerClass::registerValue2(float value) {
+  if (notAvailable) {
+    return;
+  }
   if (millis()< waitLogStart) {
     return;
   }
