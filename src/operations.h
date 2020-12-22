@@ -12,6 +12,7 @@ enum FUNCTION_TYPE {
   SOURCE_SWEEP,
   DIGITIZE,
   GRAPH,
+  DATALOGGER
 };
 
 #define SET  200

@@ -1,7 +1,12 @@
 #include "RamClass.h"
 #include "Arduino.h"
 
-boolean USE_NORMAL_RAM = true;
+
+// Set to false if you have external SPI ram mounted on your SMU.
+// Set to true if you want to use smaller internal ram
+boolean USE_NORMAL_RAM = false; 
+
+
 float normalRamUndefinedValue = 999999.0;
 float normalRamValue[1000];
 uint32_t normalRamTime[1000];
@@ -34,11 +39,11 @@ void RamClass::init() {
     }
   }
   if (errors > 0) {
-    Serial.println("ERROR: Initial RAM test failed !  No ram mounted ?");
+    Serial.println("ERROR: Initial external SPI RAM test failed !  No SPI ram mounted ?");
     initFailure=true;
     return;
   } else {
-    Serial.println("Ram detected.");
+    Serial.println("External SPI ram detected.");
   }
 
  // 1Mbit = 1024Mbit = 128Kbytes = 32000 floats...
@@ -189,7 +194,7 @@ void RamClass::logData(float value) {
   uint32_t t = timeElapsed;
 
   Serial.print("Trying to log ");
-  Serial.print(value);
+  Serial.print(value,3);
   Serial.print(" at log address ");
   Serial.print(currentLogAddress);
   //Serial.println(t);
@@ -212,9 +217,9 @@ void RamClass::logData(float value) {
   //  Serial.println(" Failed because of initial RAM failure");
   //} else {
     writeLogData(currentLogAddress, value, t);
-  //  Serial.println(" Done.");
+  //  Serial.print(" Done.");
   //}
-
+  Serial.println("");
 
   currentLogAddress ++;
   if (currentLogAddress > maxLogAddress) {

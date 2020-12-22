@@ -37,8 +37,11 @@
 #include "RotaryEncoder.h"
 #include "PushButtons.h"
 #include "TrendGraph.h"
+#include "Logger.h"
+
 #include "Settings.h"
 #include "SimpleStats.h"
+
 #include "utils.h"
 #include "analogGauge.h"
 
@@ -57,7 +60,7 @@
 #define LOWER_WIDGET_Y_POS 250
 
 SimpleStatsClass SIMPLE_STATS;
-
+LoggerClass LOGGER;
 
 bool anyDialogOpen();
 void openMainMenu();
@@ -252,6 +255,9 @@ void  disable_ADC_DAC_SPI_units() {
 
 void setup()
 {
+//	while (!Serial) ; // wait
+
+  LOGGER.init();
 
   SIMPLE_STATS.init();
   
@@ -314,7 +320,7 @@ void setup()
    GD.cmd_text(250, 200 ,   31, 0, "Poor man's SMU");
    GD.ColorRGB(0xaaaaaa);
    GD.cmd_text(250, 240 ,   28, 0, "Designed    by    Helge Langehaug");
-   GD.cmd_text(250, 270 ,   28, 1, "V0.151");
+   GD.cmd_text(250, 270 ,   28, 1, "V0.160");
 
    GD.swap();
    delay(501);
@@ -1116,6 +1122,7 @@ void renderMainHeader() {
   //GD.cmd_text(20, 0, 27, 0, "Input 25.4V / - 25.3V"); // NOTE: Currently only dummy info
   showLoadResistance(590,0);
   //showFanSpeed(220, 0);
+  //GD.cmd_number(50,0,27,2,LOGGER.percentageFull);
   GD.cmd_number(520,0,27,2,UTILS.LM60_getTemperature(6));
   int temp = UTILS.TC74_getTemperature();
   GD.ColorRGB(0xdddddd);
@@ -1134,9 +1141,18 @@ void renderMainHeader() {
 
   GD.ColorRGB(0xdddddd);
   // Show log info
-  int logEntries = RAM.getCurrentLogAddress();
-  GD.cmd_text(300,0,27,0,"Log:");
-  GD.cmd_number(340,0,27,0,logEntries);
+  //int logEntries = RAM.getCurrentLogAddress();
+  //GD.cmd_text(300,0,27,0,"Log:");
+  //GD.cmd_number(340,0,27,0,logEntries);
+  float percentage = LOGGER.percentageFull;
+  if (percentage>=100.0) {
+    GD.cmd_text(300,0,27,0,"Log:      %");
+  } else if (percentage>=10.0) {
+    GD.cmd_text(300,0,27,0,"Log:     %");
+  } else {
+    GD.cmd_text(300,0,27,0,"Log:    %");
+  }
+  GD.cmd_number(335,1,27,0, LOGGER.percentageFull);
 
   // line below top header
   int y = 25;
@@ -1568,12 +1584,13 @@ static void handleSampling() {
     V_STATS.addSample(Vout);    
     V_FILTERS.updateMean(Vout, true);
     SIMPLE_STATS.registerValue(V_FILTERS.mean);
+    LOGGER.registerValue2(Vout);
 
     // store now and then
     if (logTimer + 1000 < (int)millis()) {
      logTimer = millis();
      //RAM.logData(V_FILTERS.mean);
-     RAM.logDataCalculateMean(V_FILTERS.mean, 2);
+     RAM.logDataCalculateMean(V_FILTERS.mean, 1);
     }
     
   }
@@ -1667,6 +1684,30 @@ void loop() {
     detectGestures();
     renderMainHeader();
     TRENDGRAPH.loop(ot);
+
+    handleMenuScrolldown();
+    int tag = GD.inputs.tag;
+    // TODO: don't need to check buttons for inactive menus or functions...
+    MAINMENU.handleButtonAction(tag);
+    PUSHBUTTONS.handle();
+    GD.swap();
+    GD.__end();
+    
+  } else if (functionType == DATALOGGER) {
+
+//    if (loopUpdateTimer + 10 > millis() ) {
+//      return;
+//    }
+//    loopUpdateTimer = millis();
+
+    OPERATION_TYPE ot = getOperationType();
+    disable_ADC_DAC_SPI_units();
+    GD.resume();
+    GD.Clear();
+    detectGestures();
+    renderMainHeader();
+    LOGGER.loop();
+
     handleMenuScrolldown();
     int tag = GD.inputs.tag;
     // TODO: don't need to check buttons for inactive menus or functions...
@@ -2511,8 +2552,10 @@ void closeMainMenuCallback(FUNCTION_TYPE functionType_) {
     if (SMU[0].fltSetCommitVoltageLimit(SETTINGS.setVoltageLimit*1000, true)) printError(_PRINT_ERROR_VOLTAGE_SOURCE_SETTING);
     GD.resume();
   }
-  else if (functionType == GRAPH) {
-     ROTARY_ENCODER.init(TRENDGRAPH.rotaryChangedFn);
+  else if (functionType == DATALOGGER) {
+     //ROTARY_ENCODER.init(TRENDGRAPH.rotaryChangedFn);
+     ROTARY_ENCODER.init(LOGGER.rotaryChangedFn);
+
   }
   
 }

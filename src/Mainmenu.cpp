@@ -48,6 +48,9 @@ void MainMenuClass::handleButtonAction(int inputTag) {
     } else if (inputTag == MENU_BUTTON_GRAPH) {
       functionType = GRAPH;
       close();
+    } else if (inputTag == MENU_BUTTON_LOGGER) {
+      functionType = DATALOGGER;
+      close();
     }
 }
 
@@ -80,7 +83,7 @@ void MainMenuClass::render() {
     int buttonHeight = 70;
                
     const char * text[3][3] = {
-    {"SOURCE VOLT\0", "SOURCE CURRENT\0", "BATTERY\0"},
+    {"SOURCE VOLT\0", "SOURCE CURRENT\0", "LOGGER\0"},
     {"ELECTRONIC LOAD\0", "VOLTMETER\0", "PULSE GENERATOR\0"},
     {"SWEEP\0", "GRAPH\0", "DIGITIZE\0"}};
     GD.ColorRGB(0x444444);
@@ -93,6 +96,8 @@ void MainMenuClass::render() {
         } 
         else if (y==0 && (x==1)) {
           GD.Tag(MENU_BUTTON_SOURCE_DC_CURRENT);
+        }else if (y==0 && (x==2)) {
+          GD.Tag(MENU_BUTTON_LOGGER);
         }else if (y==2 && x==0) {
           GD.Tag(MENU_BUTTON_SOURCE_SWEEP);
         } else if (y==2 && x==2) {
