@@ -1,5 +1,5 @@
 #include "Logger.h"
-#include "arduino.h"
+#include "Arduino.h"
 
 extern "C" uint8_t external_psram_size;
 
