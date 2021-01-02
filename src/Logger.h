@@ -64,7 +64,11 @@ public:
   uint32_t samples;
   uint32_t address;
 
+  uint32_t scrollAddress;
+  boolean autoScrolling;
+
   static int rotary;
+  static int scrollRotary;
   static void rotaryChangedFn(float changeVal);
 
   

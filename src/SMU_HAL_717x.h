@@ -31,9 +31,9 @@ class ADCClass {
     int oldSamplingRate = 5;
     void writeSamplingRate();
 
-
   
   public:
+    OPERATION_TYPE operationType;
 
     // TODO: Why public ? Indicates poor architecture
     float DAC_RANGE_LOW;

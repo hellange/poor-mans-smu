@@ -56,6 +56,8 @@ uint32_t waitLogStart = 5000;
   int getMaxLogAddress();
 
   int nextAdr(float adr_);
+
+  bool useNormalRam();
 };
 
 extern RamClass RAM;

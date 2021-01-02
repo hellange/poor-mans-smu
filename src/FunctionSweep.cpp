@@ -241,7 +241,7 @@ void FunctionSweepClass::operateSmuVoltage(float high, float low, float step, in
 
      useBestRange = true; // do it anyway. Gives better accuracy. Ok as long as the sweep is slow...
      
-     SMU[0].fltSetCommitVoltageSource(currentSweepValue, useBestRange);
+     SMU[0].fltSetCommitVoltageSource(currentSweepValue*1000.0, useBestRange);
    } 
 }
 
@@ -255,6 +255,6 @@ void FunctionSweepClass::operateSmuCurrent(float high, float low, float step, in
       currentSweepDir = +1;
      }
      currentSweepValue += step*currentSweepDir;
-     SMU[0].fltSetCommitCurrentSource(currentSweepValue);
+     SMU[0].fltSetCommitCurrentSource(currentSweepValue*1000.0);
    } 
 }

@@ -274,7 +274,7 @@ void setup()
     pinMode(10,OUTPUT);
 
     pinMode(4,OUTPUT); // current range io pin for switching on/off 100ohm shunt
-    digitalWrite(4, HIGH);
+    digitalWrite(4, LOW);
 
 
     // Changed in later revisions to be inpur for limits
@@ -1444,19 +1444,10 @@ int logTimer = millis();
 int digitizeCounter = 0;
 int msDigit = 0;
 float simulatedWaveform;
-static void handleSampling() {
-
-     int dataR = SMU[0].dataReady();
-      //Serial.print("DataReady:");  
-      //Serial.println(dataR, HEX); 
-
-   
 
 
-   if (digitize == true && bufferOverflow==false && (dataR == 0 or dataR == 1)) {
-
-
- digitizeCounter ++;
+void handleSamplingForDigitizer(int dataR) {
+  digitizeCounter ++;
     
 //     if (count % 20== 0) {
 //       SMU[0].fltSetCommitVoltageSource(sampleVolt, false);
@@ -1468,9 +1459,9 @@ static void handleSampling() {
 //     }
 //     count ++;
 
-       if (dataR == 1) {
-        return;
-       }
+  if (dataR == 1) {
+    return;
+  }
 //     if (dataR == 1) {
 //      float i = SMU[0].measureCurrent(AMP1);   
 //      RAM.writeRAMfloat(ramAdrPtr, i);
@@ -1492,53 +1483,60 @@ static void handleSampling() {
 
 
 
-      float v = SMU[0].measureMilliVoltage();  
-     // float v=100.0 + random(10)/100.0;
-     // simulatedWaveform += 0.1;
-    //  v = v + sin(simulatedWaveform);
+  float v = SMU[0].measureMilliVoltage();  
+   //v=100.0 + random(20)/100.0;
+   //simulatedWaveform += 0.05;
+   // v = v + sin(simulatedWaveform)*5.0;
+    
 
 
       
-      bool continuous = true;
-      if (!triggered) {
-        if (continuous or (lastVoltage < 1000.0 && v > 1500.0)) {
-          triggered = true;
-          //Serial.println("Triggered!");
-          //Serial.println(lastVoltage);
-        } else {
-          lastVoltage = v;
-          return;
-        }
+  bool continuous = true;
+  if (!triggered) {
+    if (continuous or (lastVoltage < 100.0 && v > 100.0)) {
+      triggered = true;
+      //Serial.println("Triggered!");
+      //Serial.println(lastVoltage);
+      } else {
+       lastVoltage = v;         
+       return;
       }
-      lastVoltage = v;
+    }
+    lastVoltage = v;
 
-      //RAM.writeRAMfloat(ramAdrPtr, v);
-      ramEmulator[ramAdrPtr/4] = v;
-      if (ramAdrPtr == 0) {
-        digitizeDuration = millis();
-      }
-      ramAdrPtr += 4;
-      if (ramAdrPtr > nrOfFloats*4) {
-        bufferOverflow = true;
-        triggered = false;
-        //lastVoltage = 0.0;
-        //Serial.println("Overflow!");
-        ramAdrPtr = 0;
-        //Serial.print("Digitize duration:");
-        //Serial.println(millis() - digitizeDuration);
-        //Serial.print("Adr:");
-        //Serial.println(ramAdrPtr);
-        
-      }
-      curDigV = v;
-      if (v > maxDigV) {
-        maxDigV = v;
-      } 
-      if (v < minDigV) {
-        minDigV = v;
-      }      
-      return;
-   }
+    //RAM.writeRAMfloat(ramAdrPtr, v);
+    ramEmulator[ramAdrPtr/4] = v;
+    if (ramAdrPtr == 0) {
+      digitizeDuration = millis();
+    }
+    ramAdrPtr += 4;
+    if (ramAdrPtr > nrOfFloats*4) {
+      bufferOverflow = true;
+      triggered = false;
+      //lastVoltage = 0.0;
+      //Serial.println("Overflow!");
+      ramAdrPtr = 0;
+      //Serial.print("Digitize duration:");
+      //Serial.println(millis() - digitizeDuration);
+      //Serial.print("Adr:");
+      //Serial.println(ramAdrPtr);  
+    }
+    curDigV = v;
+    if (v > maxDigV) {
+      maxDigV = v;
+    } 
+    if (v < minDigV) {
+      minDigV = v;
+    }      
+    return;
+  }
+  
+static void handleSampling() {
+
+  int dataR = SMU[0].dataReady();
+  if (digitize == true && bufferOverflow==false && (dataR == 0 or dataR == 1)) {
+    handleSamplingForDigitizer(dataR);
+  }
  
   if (dataR == -1) {
     return;
@@ -1551,50 +1549,27 @@ static void handleSampling() {
   }
   
   else if (dataR == 1) {
-    
     float Cout = SMU[0].measureCurrent(current_range);
-//Serial.print("Current raw:");
-//Serial.println(Cout);
     //TODO: DIffer between constant current and constant voltage nulling
     Cout = Cout - V_CALIBRATION.nullValueCur[current_range];
-    
     Cout = Cout - C_CALIBRATION.relativeValue[current_range];
-
     C_STATS.addSample(Cout);
     C_FILTERS.updateMean(Cout, false);
-   
-//    
-//  Serial.print("Measured raw:");  
-//  Serial.print(Cout, 3);
-//  Serial.print(" mA");  
-//  Serial.print(", mean:");
-//  Serial.println(C_FILTERS.mean);
-//  Serial.flush();
   }
   else if(dataR == 0) {
     float Vout = SMU[0].measureMilliVoltage();
-
-//  Serial.print("Measured raw:");  
-//  Serial.print(Vout, 3);
-//  Serial.println(" mV");  
-//  Serial.flush();
-
     Vout = Vout - V_CALIBRATION.relativeValue[current_range];
-
     V_STATS.addSample(Vout);    
     V_FILTERS.updateMean(Vout, true);
     SIMPLE_STATS.registerValue(V_FILTERS.mean);
     LOGGER.registerValue2(Vout);
-
     // store now and then
     if (logTimer + 1000 < (int)millis()) {
      logTimer = millis();
      //RAM.logData(V_FILTERS.mean);
      RAM.logDataCalculateMean(V_FILTERS.mean, 1);
     }
-    
   }
-
 }
 
 void handleAutoCurrentRange() {
@@ -1715,6 +1690,9 @@ void loop() {
     PUSHBUTTONS.handle();
     GD.swap();
     GD.__end();
+    #ifndef SAMPLING_BY_INTERRUPT 
+    handleSampling(); 
+   #endif
     
   }
   else {
@@ -1729,9 +1707,9 @@ void loop() {
 int samplingDelayTimer = millis();
 
 void loopDigitize() {
-  if (loopUpdateTimer + 10 > (int)millis() ) {
-    return;
-  }
+  //if (loopUpdateTimer + 10 > (int)millis() ) {
+  //  return;
+  //}
   
   loopUpdateTimer = millis();
   operationType = getOperationType();
@@ -1829,7 +1807,7 @@ digitizeCounter = 0;
       float mid = (maxDigV + minDigV) /2.0;
       float relative = mid - mva[x];
      
-      float y = relative*50;
+      float y = relative*20;
      // float y = mva[x] / 100.0;
       GD.Vertex2ii(x*4, 200 - y);
    }
@@ -2497,11 +2475,11 @@ void rotaryChangedDontCareFn(float changeVal) {
 }
 
 
-void closeMainMenuCallback(FUNCTION_TYPE functionType_) {
+void closeMainMenuCallback(FUNCTION_TYPE newFunctionType) {
   
   Serial.println("Closed main menu callback");
   Serial.println("New Selected function:");
-  Serial.println(functionType_);
+  Serial.println(newFunctionType);
   Serial.println("Old function:");
   Serial.println(functionType);
 
@@ -2516,9 +2494,9 @@ void closeMainMenuCallback(FUNCTION_TYPE functionType_) {
 
   // do a close on the existing function. It should do neccessary cleanup
   if (functionType == SOURCE_PULSE) {
-    FUNCTION_PULSE.close();
+    FUNCTION_PULSE.close(); // Hmmm... how to let something go in the background while showing logger ????
   } else if (functionType == SOURCE_SWEEP) {
-    FUNCTION_SWEEP.close();
+    FUNCTION_SWEEP.close(); //Hmmm... how to let something go in the background while showing logger ????
   } else if (functionType == DIGITIZE) {
     //TODO: Use method when digitizer is moved out as separate class
     //      For now, just readjust sampling speed
@@ -2527,36 +2505,50 @@ void closeMainMenuCallback(FUNCTION_TYPE functionType_) {
  
 
   // The newly selected function...
-  functionType = functionType_;
-  if (functionType == SOURCE_PULSE) {
+  if (newFunctionType == SOURCE_PULSE) {
     FUNCTION_PULSE.open(operationType, closedPulse);
-  } else if (functionType == SOURCE_SWEEP) {
+  } else if (newFunctionType == SOURCE_SWEEP) {
     FUNCTION_SWEEP.open(operationType, closedSweep);
   }
-  else if (functionType == SOURCE_DC_VOLTAGE) {   
+  else if (newFunctionType == SOURCE_DC_VOLTAGE) {   
     //disable_ADC_DAC_SPI_units();
     GD.__end();
-      ROTARY_ENCODER.init(rotaryChangedVoltCurrentFn);
-
-    if (SMU[0].fltSetCommitVoltageSource(SETTINGS.setMilliVoltage*1000, true)) printError(_PRINT_ERROR_VOLTAGE_SOURCE_SETTING);
-    if (SMU[0].fltSetCommitCurrentLimit(SETTINGS.setCurrentLimit*1000, true)) printError(_PRINT_ERROR_VOLTAGE_SOURCE_SETTING);
-    GD.resume();
+    ROTARY_ENCODER.init(rotaryChangedVoltCurrentFn);
+    if (SMU[0].operationType == SOURCE_VOLTAGE) {
+      // If previous SMU operation was sourcing voltage, use that voltage
+      if (SMU[0].fltSetCommitVoltageSource(SMU[0].getSetValue_micro(), true)) printError(_PRINT_ERROR_VOLTAGE_SOURCE_SETTING);
+      if (SMU[0].fltSetCommitCurrentLimit(SMU[0].getLimitValue_micro(), true)) printError(_PRINT_ERROR_VOLTAGE_SOURCE_SETTING);
+    } else {
+      // If previous SMU operation was sourcing current, use a predefined voltage
+      if (SMU[0].fltSetCommitVoltageSource(SETTINGS.setMilliVoltage*1000, true)) printError(_PRINT_ERROR_VOLTAGE_SOURCE_SETTING);
+      if (SMU[0].fltSetCommitCurrentLimit(SETTINGS.setCurrentLimit*1000, true)) printError(_PRINT_ERROR_VOLTAGE_SOURCE_SETTING);
+    }
+     GD.resume();
   }
-  else if (functionType == SOURCE_DC_CURRENT) {
+  else if (newFunctionType == SOURCE_DC_CURRENT) {
       ROTARY_ENCODER.init(rotaryChangedVoltCurrentFn);
 
     //disable_ADC_DAC_SPI_units();
     GD.__end();
-    //if (SMU[0].fltSetCommitVoltageSource(SMU[0].getSetValuemV(), true)) printError(_PRINT_ERROR_VOLTAGE_SOURCE_SETTING);
-    if (SMU[0].fltSetCommitCurrentSource(SETTINGS.setMilliAmpere*1000/*SETTINGS.setMilliAmpere*/)) printError(_PRINT_ERROR_VOLTAGE_SOURCE_SETTING);
-    if (SMU[0].fltSetCommitVoltageLimit(SETTINGS.setVoltageLimit*1000, true)) printError(_PRINT_ERROR_VOLTAGE_SOURCE_SETTING);
+    if (SMU[0].operationType == SOURCE_CURRENT) {
+      // If previous SMU operation was sourcing current, use that current
+      if (SMU[0].fltSetCommitCurrentSource(SMU[0].getSetValue_micro()/*SETTINGS.setMilliAmpere*/)) printError(_PRINT_ERROR_VOLTAGE_SOURCE_SETTING);
+      if (SMU[0].fltSetCommitVoltageLimit(SMU[0].getLimitValue_micro(), true)) printError(_PRINT_ERROR_VOLTAGE_SOURCE_SETTING);
+    } else {
+      // If previous SMU operation was sourcing voltage, use a predefined current
+      if (SMU[0].fltSetCommitCurrentSource(SETTINGS.setMilliAmpere*1000/*SETTINGS.setMilliAmpere*/)) printError(_PRINT_ERROR_VOLTAGE_SOURCE_SETTING);
+      if (SMU[0].fltSetCommitVoltageLimit(SETTINGS.setVoltageLimit*1000, true)) printError(_PRINT_ERROR_VOLTAGE_SOURCE_SETTING);
+    }
+
     GD.resume();
   }
-  else if (functionType == DATALOGGER) {
+  else if (newFunctionType == DATALOGGER) {
      //ROTARY_ENCODER.init(TRENDGRAPH.rotaryChangedFn);
      ROTARY_ENCODER.init(LOGGER.rotaryChangedFn);
 
   }
+  functionType = newFunctionType;
+
   
 }
 

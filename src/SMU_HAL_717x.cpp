@@ -411,6 +411,7 @@ bool ADCClass::use100uVSetResolution() {
 }
 
 int64_t ADCClass::fltSetCommitVoltageSource(int64_t voltage_uV, bool dynamicRange) {
+  operationType = SOURCE_VOLTAGE;
   setValue_micro = voltage_uV;
 
   float mv = voltage_uV / 1000.0;
@@ -493,6 +494,7 @@ int64_t ADCClass::fltSetCommitVoltageSource(int64_t voltage_uV, bool dynamicRang
 
  
  int64_t ADCClass::fltSetCommitCurrentSource(int64_t current_uA) {
+   operationType = SOURCE_CURRENT;
   setValue_micro = current_uA;
 
   float mv = current_uA / 1000.0;

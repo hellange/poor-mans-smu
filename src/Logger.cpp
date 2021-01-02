@@ -4,6 +4,7 @@
 extern "C" uint8_t external_psram_size;
 
 int LoggerClass::rotary = 1;
+int LoggerClass::scrollRotary = 0;
 
 
 void LoggerClass::init() {
@@ -40,10 +41,13 @@ void LoggerClass::clear() {
   maximum = undefinedValue;
   samples = 0;
   address = 0;
+  scrollAddress = 0;
   full = false;
   empty = true;
   percentageFull = 0.0;
   totalSamplesCounted = 0;
+  autoScrolling=true;
+  scrollRotary = 0;
 }
 
 int oldRot = 0;
@@ -58,13 +62,68 @@ void LoggerClass::registerValue2(float value) {
  logData.value=value;
  logData.timestamp= millis();
  registerValue(logData);
+
+
+// --- scaling option---
+scrollAddress = address;
  if (oldRot != rotary) {
     updateViewData(samplesPrViewPoint);
     oldRot = rotary;
  } else {
    samplesPrViewPoint = rotary;
-
  }
+
+
+
+
+
+//  --- manual scroll option---
+/*
+if (autoScrolling) {
+    scrollAddress = address;
+}
+// Check if rotary operation has been performed
+if (oldRot != scrollRotary) {
+    // yes, rotary has changed
+    if (autoScrolling) {
+      // If at the latest address, stop autoscroll
+      scrollAddress = address - scrollRotary;
+      autoScrolling=false;
+    } else {
+      // update the manual scroll address based on rotary movement
+      scrollAddress = scrollAddress - (scrollRotary - oldRot);
+    }
+    // Check if manual scroll is at the latest sample
+    bool future = ((int)address - (int)scrollAddress)<=0;  
+    if (!autoScrolling && future) {
+      // yes, then start autoscroll from lates sample again
+      autoScrolling = true;
+      scrollRotary = 0;
+      scrollAddress = address;
+    } 
+    oldRot = scrollRotary;
+ }
+    Serial.print("Address:");
+    Serial.print(address);
+    Serial.print(", ScrollAddress");
+    Serial.print(scrollAddress);
+    Serial.print(", scrollRotary:");
+    Serial.println(scrollRotary);
+*/
+
+
+
+  // if (scrollAddress>=address) {
+  //   scrollAddress = address;
+  //   scrolling = true;
+  //   scrollRotary = 0;
+
+  // }
+
+
+
+
+
  // Important the the update of view data is "in sync" with number of samples used.
  // If not, the grah can look like it's shivering...
  if (totalSamplesCounted%samplesPrViewPoint == 0) {
@@ -93,13 +152,13 @@ void LoggerClass::registerValue(LogDataWithTimeStamp logData) {
   
   percentageFull = 100.0*((float)samples/(float)maxSize);
   LogDataWithTimeStamp *adrP = (LogDataWithTimeStamp*)(memory_begin);
-  Serial.print("Store ");
-  Serial.print(logData.value,3);
-  Serial.print(" at address ");
-  Serial.print(address);
-  Serial.print(", Using ");
-  Serial.print(percentageFull,1);
-  Serial.println("% of log buffer");
+  // Serial.print("Store ");
+  // Serial.print(logData.value,3);
+  // Serial.print(" at address ");
+  // Serial.print(address);
+  // Serial.print(", Using ");
+  // Serial.print(percentageFull,1);
+  // Serial.println("% of log buffer");
 
 
 
@@ -205,6 +264,9 @@ float mid;
 
 
   GD.cmd_number(10,410, 28, 3, (int)rotary);
+    GD.cmd_number(100,410, 28, 3, scrollRotary);
+
+
 
   //IGIT_UTIL.renderValue(10,  80+70 ,rotary*100, 2, 0); 
 
@@ -276,7 +338,7 @@ loggerMinValue = 10000.0;
   
   
 
-uint32_t lastSampleAdr = address;
+uint32_t lastSampleAdr = scrollAddress; //address;
 /*
   uint32_t older = rotary;
   uint32_t lastSampleAdr = address - older; // - backlash;
@@ -341,7 +403,8 @@ uint32_t lastSampleAdr = address;
          buffer[i].value = -999999.99;
          buffer[i].timestamp = 0; 
          fillEmpty=true;
-         Serial.println(" NO_MORE ");
+         //Serial.println(" NO_MORE ");
+         
          //break;
       } else {
         //buffer[i] = adrP[lastSampleAdr];
@@ -433,9 +496,21 @@ void LoggerClass::printBuffer() {
     //   changeVal = 0.1; 
     //  }
      
+
+     
+    // for manual scroll
+
+    //  if (changeVal>10) {
+    //    changeVal = 10;
+    //  }
+    //  scrollRotary = scrollRotary + changeVal * 10;
+
+
+    // for zoom 
+
      rotary = rotary + changeVal*10;
      if (rotary<=1) {
-       rotary=1;
+        rotary=1;
      }
   }
 

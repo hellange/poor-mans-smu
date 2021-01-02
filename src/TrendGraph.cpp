@@ -45,21 +45,22 @@ void TrendGraphClass::loop(OPERATION_TYPE operationType) {
    GD.resume();
    
    float v = logData.value.val;
-   if (v < 50000.0) {
-     if (v>maxV) {
-     //Serial.print("Registred max:");
-     //Serial.println(v,3);
-     maxV = v;
-
+   
+   if (RAM.useNormalRam()) {
+     if (v < 50000.0) {
+       if (v>maxV) {
+       //Serial.print("Registred max:");
+       //Serial.println(v,3);
+       maxV = v;
+       }
+       if (v<minV) {
+         minV = v;
+       }
+       
      }
-     if (v<minV) {
-       minV = v;
-
-     }
-     //maxV = RAM.max;
-     //minV = RAM.min;
-
-    
+   } else {
+     maxV = RAM.max;
+     minV = RAM.min;
    }
    
 

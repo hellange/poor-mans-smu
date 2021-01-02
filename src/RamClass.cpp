@@ -4,7 +4,7 @@
 
 // Set to false if you have external SPI ram mounted on your SMU.
 // Set to true if you want to use smaller internal ram
-boolean USE_NORMAL_RAM = false; 
+boolean USE_NORMAL_RAM = true; 
 
 
 float normalRamUndefinedValue = 999999.0;
@@ -129,7 +129,9 @@ void RamClass::writeRAMfloat(uint32_t address, float value) {
 }
 
 
-
+bool RamClass::useNormalRam() {
+  return USE_NORMAL_RAM;
+}
 
 // log data stored as 8 bytes: <4 byte time><4 byte floatvalue>
 timedLog RamClass::readLogData(uint32_t address) {
@@ -193,10 +195,11 @@ int oldestLogAddress;
 void RamClass::logData(float value) {
   uint32_t t = timeElapsed;
 
-  Serial.print("Trying to log ");
-  Serial.print(value,3);
-  Serial.print(" at log address ");
-  Serial.print(currentLogAddress);
+  // Serial.print("Trying to log ");
+  // Serial.print(value,3);
+  // Serial.print(" at log address ");
+  // Serial.print(currentLogAddress);
+
   //Serial.println(t);
 
   unsigned long allSeconds=t/1000;

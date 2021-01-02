@@ -40,7 +40,7 @@ void FunctionPulseClass::open(OPERATION_TYPE operationType_, void (*closedFn_)(O
   operationType = operationType_;
 
   GD.__end();
- 
+
   SMU[0].setCurrentRange(AMP1, operationType);
      
     SMU[0].disable_ADC_DAC_SPI_units();
@@ -268,7 +268,7 @@ void FunctionPulseClass::sourcePulse() {
      pulseHigh = false;
     // pulseTimer = millis();
      bool useDynamicRange = (abs(low)<4500 && abs(high)<4500); // if both values are within one softspan DAC range, you can use dynamic
-     SMU[0].fltSetCommitVoltageSource(low, useDynamicRange);
+     SMU[0].fltSetCommitVoltageSource(low*1000.0, useDynamicRange);
      measuredLow =  V_STATS.rawValue;
      //Serial.println("Set pulse low");
   // } else if (!pulseHigh && pulseTimer+duration/2 < millis()) {
@@ -276,7 +276,7 @@ void FunctionPulseClass::sourcePulse() {
   else {
      pulseHigh = true;
      //pulseTimer = millis();
-     SMU[0].fltSetCommitVoltageSource(high, useDynamicRange);
+     SMU[0].fltSetCommitVoltageSource(high*1000.0, useDynamicRange);
      measuredHigh =  V_STATS.rawValue;
      //Serial.println("Set pulse high");
 
@@ -289,7 +289,7 @@ void FunctionPulseClass::sourcePulse() {
    if (pulseHigh) {
      pulseHigh = false;
      //pulseTimer = millis();
-     SMU[0].fltSetCommitCurrentSource(low);
+     SMU[0].fltSetCommitCurrentSource(low*1000.0);
      measuredLow =  C_STATS.rawValue;
      //Serial.println("Set pulse low");
    }
@@ -297,7 +297,7 @@ void FunctionPulseClass::sourcePulse() {
   else {
      pulseHigh = true;
      //pulseTimer = millis();
-     SMU[0].fltSetCommitCurrentSource(high);
+     SMU[0].fltSetCommitCurrentSource(high*1000.0);
      measuredHigh =  C_STATS.rawValue;
      //Serial.println("Set pulse high");
 
