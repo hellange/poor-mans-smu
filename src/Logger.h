@@ -16,6 +16,8 @@ class LogDataWithTimeStamp {
 class LoggerClass {
 
  private:
+  static bool encButtonScroll;// = true;
+  static bool encButtonZoom;// = false;
 
   bool notAvailable = true;
   uint32_t *memory_begin, *memory_end;

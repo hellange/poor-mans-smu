@@ -6,6 +6,9 @@ extern "C" uint8_t external_psram_size;
 int LoggerClass::rotary = 1;
 int LoggerClass::scrollRotary = 0;
 
+bool LoggerClass::encButtonScroll = true;
+bool LoggerClass::encButtonZoom = false;
+
 
 void LoggerClass::init() {
 //	while (!Serial) ; // wait
@@ -65,6 +68,8 @@ void LoggerClass::registerValue2(float value) {
 
 
 // --- scaling option---
+if (encButtonScroll == false) {
+
 scrollAddress = address;
  if (oldRot != rotary) {
     updateViewData(samplesPrViewPoint);
@@ -72,13 +77,13 @@ scrollAddress = address;
  } else {
    samplesPrViewPoint = rotary;
  }
-
+}
 
 
 
 
 //  --- manual scroll option---
-/*
+if (encButtonScroll == true) {
 if (autoScrolling) {
     scrollAddress = address;
 }
@@ -92,6 +97,7 @@ if (oldRot != scrollRotary) {
     } else {
       // update the manual scroll address based on rotary movement
       scrollAddress = scrollAddress - (scrollRotary - oldRot);
+
     }
     // Check if manual scroll is at the latest sample
     bool future = ((int)address - (int)scrollAddress)<=0;  
@@ -101,6 +107,7 @@ if (oldRot != scrollRotary) {
       scrollRotary = 0;
       scrollAddress = address;
     } 
+
     oldRot = scrollRotary;
  }
     Serial.print("Address:");
@@ -109,7 +116,7 @@ if (oldRot != scrollRotary) {
     Serial.print(scrollAddress);
     Serial.print(", scrollRotary:");
     Serial.println(scrollRotary);
-*/
+
 
 
 
@@ -119,7 +126,7 @@ if (oldRot != scrollRotary) {
   //   scrollRotary = 0;
 
   // }
-
+}
 
 
 
@@ -255,7 +262,6 @@ float mid;
   GD.ColorA(255);
 
 
-
   GD.ColorRGB(0xffffff);
 
   DIGIT_UTIL.renderValue(0,  80-10 ,loggerMaxValue, 1, 1); 
@@ -263,8 +269,16 @@ float mid;
   DIGIT_UTIL.renderValue(0,  80+300-10 ,loggerMinValue, 1, 1); 
 
 
-  GD.cmd_number(10,410, 28, 3, (int)rotary);
-    GD.cmd_number(100,410, 28, 3, scrollRotary);
+  GD.cmd_number(10,420, 28, 6, (int)rotary);
+    GD.cmd_number(100,420, 28, 6, scrollRotary);
+
+  if (encButtonZoom) {
+   GD.cmd_text(250, 410 ,   30, 0, "zoom");
+
+  } 
+  if (encButtonScroll) {
+   GD.cmd_text(250, 410 ,   30, 0, "scroll");
+  }
 
 
 
@@ -499,19 +513,22 @@ void LoggerClass::printBuffer() {
 
      
     // for manual scroll
+if (encButtonScroll == true) {
 
-    //  if (changeVal>10) {
-    //    changeVal = 10;
-    //  }
-    //  scrollRotary = scrollRotary + changeVal * 10;
-
+      if (changeVal>10) {
+        changeVal = 10;
+      }
+     scrollRotary = scrollRotary + changeVal * 10;
+}
 
     // for zoom 
+if (encButtonScroll == false) {
 
-     rotary = rotary + changeVal*10;
+   rotary = rotary + changeVal*10;
      if (rotary<=1) {
         rotary=1;
-     }
+    }
+}
   }
 
 
@@ -537,6 +554,14 @@ int LoggerClass::next(uint32_t adr_) {
 
 
 void LoggerClass::rotarySwitchFn(int key, bool quickPress, bool holdAfterLongPress, bool releaseAfterLongPress) {
+  if (encButtonScroll) {
+    encButtonScroll=false;
+    encButtonZoom = true;
+  } else {
+    encButtonScroll=true;
+    encButtonZoom = false;
+  }
+
   Serial.print("Logger rotarySwitch operated");
   Serial.println(quickPress==true?"QUICK" : "");
   Serial.println(holdAfterLongPress==true?"HOLDING" : "");
