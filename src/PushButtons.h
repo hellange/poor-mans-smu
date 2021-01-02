@@ -23,5 +23,3 @@ public:
   void setCallback(void (*callback)(int button, bool quickPress, bool holdAfterLongPress, bool releaseAfterLongPress));
 
 };
-
-extern PushbuttonsClass PUSHBUTTONS;

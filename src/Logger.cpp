@@ -533,3 +533,12 @@ int LoggerClass::next(uint32_t adr_) {
   return adr;
 }
 */
+
+
+
+void LoggerClass::rotarySwitchFn(int key, bool quickPress, bool holdAfterLongPress, bool releaseAfterLongPress) {
+  Serial.print("Logger rotarySwitch operated");
+  Serial.println(quickPress==true?"QUICK" : "");
+  Serial.println(holdAfterLongPress==true?"HOLDING" : "");
+  Serial.println(releaseAfterLongPress==true?"RELEASED AFTER HOLDING" : "");
+}

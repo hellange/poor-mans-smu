@@ -62,6 +62,10 @@
 SimpleStatsClass SIMPLE_STATS;
 LoggerClass LOGGER;
 
+PushbuttonsClass PUSHBUTTONS;
+PushbuttonsClass PUSHBUTTON_ENC;
+
+
 bool anyDialogOpen();
 void openMainMenu();
 void renderAnalogGauge(int x, int y, int size, float degrees, float value, const char *title);
@@ -220,6 +224,14 @@ void rotaryChangedVoltCurrentFn(float changeVal) {
 
 bool showSettings = false;
 
+void pushButtonEncInterrupt(int key, bool quickPress, bool holdAfterLongPress, bool releaseAfterLongPress) {
+Serial.print("XXXKey pressed:");
+  Serial.print(key);
+  Serial.print(" ");
+  Serial.println(quickPress==true?"QUICK" : "");
+  Serial.println(holdAfterLongPress==true?"HOLDING" : "");
+  Serial.println(releaseAfterLongPress==true?"RELEASED AFTER HOLDING" : "");
+}
 void pushButtonInterrupt(int key, bool quickPress, bool holdAfterLongPress, bool releaseAfterLongPress) {
   Serial.print("Key pressed:");
   Serial.print(key);
@@ -285,7 +297,8 @@ void setup()
 
     PUSHBUTTONS.init(3, 1000); // bushbuttons based on analog pin 3, and holding 1000ms
     PUSHBUTTONS.setCallback(pushButtonInterrupt);
-    
+    PUSHBUTTON_ENC.init(16, 1000); 
+    PUSHBUTTON_ENC.setCallback(pushButtonEncInterrupt);
     
     FAN.init();
     
@@ -1124,6 +1137,11 @@ void renderMainHeader() {
   //showFanSpeed(220, 0);
   //GD.cmd_number(50,0,27,2,LOGGER.percentageFull);
   GD.cmd_number(520,0,27,2,UTILS.LM60_getTemperature(6));
+
+    GD.cmd_number(50,0,27,3,analogRead(16));
+
+
+
   int temp = UTILS.TC74_getTemperature();
   GD.ColorRGB(0xdddddd);
   GD.cmd_text(410,0,27,0,"Temp:");
@@ -1665,6 +1683,8 @@ void loop() {
     // TODO: don't need to check buttons for inactive menus or functions...
     MAINMENU.handleButtonAction(tag);
     PUSHBUTTONS.handle();
+        PUSHBUTTON_ENC.handle();
+
     GD.swap();
     GD.__end();
     
@@ -1688,6 +1708,8 @@ void loop() {
     // TODO: don't need to check buttons for inactive menus or functions...
     MAINMENU.handleButtonAction(tag);
     PUSHBUTTONS.handle();
+        PUSHBUTTON_ENC.handle();
+
     GD.swap();
     GD.__end();
     #ifndef SAMPLING_BY_INTERRUPT 
@@ -1844,6 +1866,8 @@ digitizeCounter = 0;
    // TODO: don't need to check buttons for inactive menus or functions...
   MAINMENU.handleButtonAction(tag);
         PUSHBUTTONS.handle();
+                PUSHBUTTON_ENC.handle();
+
 
    GD.swap();
     GD.__end();
@@ -2438,6 +2462,8 @@ void loopMain()
   
   
   PUSHBUTTONS.handle();
+    PUSHBUTTON_ENC.handle();
+
   
   if (V_CALIBRATION.autoCalInProgress or C_CALIBRATION.autoCalInProgress) {
     notification("Auto calibration in progress...");
@@ -2471,7 +2497,9 @@ void closedSweep(OPERATION_TYPE t) {
 }
 
 void rotaryChangedDontCareFn(float changeVal) {
+}
 
+void pushButtonEncDontCareFn(int key, bool quickPress, bool holdAfterLongPress, bool releaseAfterLongPress) {
 }
 
 
@@ -2491,6 +2519,7 @@ void closeMainMenuCallback(FUNCTION_TYPE newFunctionType) {
   // This is to avoid unwanted stuff to happen when rotating the knob in
   // different function views.
   ROTARY_ENCODER.init(rotaryChangedDontCareFn); 
+  PUSHBUTTON_ENC.setCallback(pushButtonEncDontCareFn); 
 
   // do a close on the existing function. It should do neccessary cleanup
   if (functionType == SOURCE_PULSE) {
@@ -2514,6 +2543,8 @@ void closeMainMenuCallback(FUNCTION_TYPE newFunctionType) {
     //disable_ADC_DAC_SPI_units();
     GD.__end();
     ROTARY_ENCODER.init(rotaryChangedVoltCurrentFn);
+    PUSHBUTTON_ENC.setCallback(pushButtonEncInterrupt); 
+
     if (SMU[0].operationType == SOURCE_VOLTAGE) {
       // If previous SMU operation was sourcing voltage, use that voltage
       if (SMU[0].fltSetCommitVoltageSource(SMU[0].getSetValue_micro(), true)) printError(_PRINT_ERROR_VOLTAGE_SOURCE_SETTING);
@@ -2527,6 +2558,8 @@ void closeMainMenuCallback(FUNCTION_TYPE newFunctionType) {
   }
   else if (newFunctionType == SOURCE_DC_CURRENT) {
       ROTARY_ENCODER.init(rotaryChangedVoltCurrentFn);
+          PUSHBUTTON_ENC.setCallback(pushButtonEncInterrupt); 
+
 
     //disable_ADC_DAC_SPI_units();
     GD.__end();
@@ -2545,6 +2578,8 @@ void closeMainMenuCallback(FUNCTION_TYPE newFunctionType) {
   else if (newFunctionType == DATALOGGER) {
      //ROTARY_ENCODER.init(TRENDGRAPH.rotaryChangedFn);
      ROTARY_ENCODER.init(LOGGER.rotaryChangedFn);
+         PUSHBUTTON_ENC.setCallback(LOGGER.rotarySwitchFn); 
+
 
   }
   functionType = newFunctionType;

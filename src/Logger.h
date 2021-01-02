@@ -70,6 +70,6 @@ public:
   static int rotary;
   static int scrollRotary;
   static void rotaryChangedFn(float changeVal);
-
+  static void rotarySwitchFn(int key, bool quickPress, bool holdAfterLongPress, bool releaseAfterLongPress);
   
 };

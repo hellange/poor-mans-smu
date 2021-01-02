@@ -3,7 +3,6 @@
 #include "GD2.h"
 
 
-PushbuttonsClass PUSHBUTTONS;
 
 void PushbuttonsClass::init(int analogPin_, int holdPeriodms_) {
   analogPin = analogPin_;
@@ -26,21 +25,36 @@ void PushbuttonsClass::handle() {
   // with just an analog input...
   if (buttonDetectedTimer + 50 < (int)millis()) {
     buttonDetectedTimer = millis();
-    if (buttonValue >95 && buttonValue <105) {
-      buttonFunction = 0;
-      keyHeldLong= false;
-    }
-    else if (buttonValue >82 && buttonValue <94) {
-      buttonFunction = 1;
-    }
-    else if (buttonValue >70 && buttonValue <81) {
-      buttonFunction = 2;  
-    }
-    else if (buttonValue >50 && buttonValue <70) {
-      buttonFunction = 3;  
-    }
-   else  if (buttonValue <10) {
-      buttonFunction = 4;
+
+    // hacked in here for encoder switch connected to analog input....
+    // TODO: Cleanup this mess...
+    if (analogPin == 16) {
+      if (analogRead(analogPin)<3) {
+        buttonFunction = 1;
+      } else {
+        buttonFunction = 0;
+          keyHeldLong= false;
+      }
+
+ 
+    } else {
+
+        if (buttonValue >95 && buttonValue <105) {
+          buttonFunction = 0;
+          keyHeldLong= false;
+        }
+        else if (buttonValue >82 && buttonValue <94) {
+          buttonFunction = 1;
+        }
+        else if (buttonValue >70 && buttonValue <81) {
+          buttonFunction = 2;  
+        }
+        else if (buttonValue >50 && buttonValue <70) {
+          buttonFunction = 3;  
+        }
+        else  if (buttonValue <10) {
+          buttonFunction = 4;
+        }
     }
 
     if (buttonFunction != prevButtonFunction) {
