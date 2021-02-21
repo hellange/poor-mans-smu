@@ -333,7 +333,7 @@ void setup()
    GD.cmd_text(250, 200 ,   31, 0, "Poor man's SMU");
    GD.ColorRGB(0xaaaaaa);
    GD.cmd_text(250, 240 ,   28, 0, "Designed    by    Helge Langehaug");
-   GD.cmd_text(250, 270 ,   28, 1, "V0.160");
+   GD.cmd_text(250, 270 ,   28, 1, "V0.161");
 
    GD.swap();
    delay(501);
@@ -359,6 +359,8 @@ void setup()
    if (operationType == SOURCE_VOLTAGE) {
      SMU[0].fltSetCommitVoltageSource(SETTINGS.setMilliVoltage*1000, true);
      Serial.println("Source voltage");
+     current_range = AMP1;
+     SMU[0].setCurrentRange(current_range, operationType);
      SMU[0].fltSetCommitCurrentLimit(SETTINGS.setCurrentLimit*1000, _SOURCE_AND_SINK); 
    } 
    Serial.print("Default source voltage ");
@@ -532,7 +534,7 @@ void sourceVoltagePanel(int x, int y) {
 
   GD.Tag(0);
 /*  TODO: Fix. Preliminary removed because it causes exception often when clicking buttons...
-*/
+
   if (!reduceDetails()) {
     // Add some minor statistics on screen. Nice while looking at long time stability...
     GD.ColorRGB(0xaaaaaa);
@@ -549,6 +551,7 @@ void sourceVoltagePanel(int x, int y) {
     //DIGIT_UTIL.renderValue(x + 350+40+170+20,y + 132+ 40, SIMPLE_STATS.samples / 1000.0, 1, -1); 
     GD.cmd_number(x + 350+40+170+35,y + 132+ 40, 28, 6, SIMPLE_STATS.samples);
   }
+  */
 
 
 
@@ -1133,7 +1136,7 @@ void renderMainHeader() {
   GD.ColorA(255);
   GD.ColorRGB(0xdddddd);
   //GD.cmd_text(20, 0, 27, 0, "Input 25.4V / - 25.3V"); // NOTE: Currently only dummy info
-  showLoadResistance(590,0);
+  //showLoadResistance(590,0);
   //showFanSpeed(220, 0);
   //GD.cmd_number(50,0,27,2,LOGGER.percentageFull);
   GD.cmd_number(520,0,27,2,UTILS.LM60_getTemperature(6));
@@ -2121,7 +2124,7 @@ int checkButtons() {
       } 
        timeSinceLastChange = millis();
        DIGIT_UTIL.startIndicator(tag);
-       float mv = SMU[0].getSetValue_micro()/1000;
+       float mv = SMU[0].getSetValue_micro()/1000.0;
        if (operationType == SOURCE_VOLTAGE) {
          if (mv < 0) {
             V_CALIBRATION.adjDacGainCompNeg(-0.000005);
@@ -2139,7 +2142,7 @@ int checkButtons() {
             C_CALIBRATION.adjDacGainCompPos(-0.00001 );
          }
          GD.__end();
-         if (SMU[0].fltSetCommitCurrentSource(mv*1000)) printError(_PRINT_ERROR_VOLTAGE_SOURCE_SETTING);
+         if (SMU[0].fltSetCommitCurrentSource(mv*1000.0)) printError(_PRINT_ERROR_VOLTAGE_SOURCE_SETTING);
          GD.resume();
        }   
     } 
@@ -2457,6 +2460,15 @@ void loopMain()
     handleWidgetScrollPosition();
     displayWidget();  
     handleMenuScrolldown();
+  } else {
+
+    renderUpperDisplay(operationType, functionType);  
+    //detectGestures();
+ GD.get_inputs();
+    int tag = GD.inputs.tag;
+
+    Serial.println(tag);
+    
   }
 
   
@@ -2565,11 +2577,11 @@ void closeMainMenuCallback(FUNCTION_TYPE newFunctionType) {
     GD.__end();
     if (SMU[0].operationType == SOURCE_CURRENT) {
       // If previous SMU operation was sourcing current, use that current
-      if (SMU[0].fltSetCommitCurrentSource(SMU[0].getSetValue_micro()/*SETTINGS.setMilliAmpere*/)) printError(_PRINT_ERROR_VOLTAGE_SOURCE_SETTING);
+      fltCommitCurrentSourceAutoRange(SMU[0].getSetValue_micro(), true);
       if (SMU[0].fltSetCommitVoltageLimit(SMU[0].getLimitValue_micro(), true)) printError(_PRINT_ERROR_VOLTAGE_SOURCE_SETTING);
     } else {
       // If previous SMU operation was sourcing voltage, use a predefined current
-      if (SMU[0].fltSetCommitCurrentSource(SETTINGS.setMilliAmpere*1000/*SETTINGS.setMilliAmpere*/)) printError(_PRINT_ERROR_VOLTAGE_SOURCE_SETTING);
+      fltCommitCurrentSourceAutoRange(SETTINGS.setMilliAmpere*1000, true);
       if (SMU[0].fltSetCommitVoltageLimit(SETTINGS.setVoltageLimit*1000, true)) printError(_PRINT_ERROR_VOLTAGE_SOURCE_SETTING);
     }
 

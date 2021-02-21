@@ -528,7 +528,7 @@ int64_t ADCClass::fltSetCommitVoltageSource(int64_t voltage_uV, bool dynamicRang
 
       //dac_voltage = dac_voltage * 3.125; // after using 3 opamp diff amplifier before 1997-3.... hmm...
 
- dac_voltage = dac_voltage *1.24;
+ dac_voltage = dac_voltage *1.09;
       //Serial.println("Calculating current to set for 1A range");
       //Serial.flush();
 
@@ -705,8 +705,8 @@ int64_t ADCClass::fltSetCommitVoltageLimit(int64_t voltage_uV, int8_t up_down_bo
     double v = (float) ((AD7176_regs[4].value*VFSR*1000.0)/FSR); 
     v=v-VREF*1000.0;
 
-    v = v / 0.8;  // funnel amplifier x0.8
-    //v = v / 0.4;  // funnel amplifier x0.4
+    //v = v / 0.8;  // funnel amplifier x0.8
+    v = v / 0.4;  // funnel amplifier x0.4
 
     float i = v;
     // DONT INCLUDE THESE ADJUSTMENTS WHEN TESTING ONLY DAC/ADC BOARD !!!!
@@ -736,6 +736,7 @@ int64_t ADCClass::fltSetCommitVoltageLimit(int64_t voltage_uV, int8_t up_down_bo
         //i=i*0.79; // apprx.... why ?
         if (i>0) {
           i = i * C_CALIBRATION.getAdcGainCompPos();
+          //i = i * 0.002;
         } else {
           i = i * C_CALIBRATION.getAdcGainCompNeg();
           i = i *0.98;
