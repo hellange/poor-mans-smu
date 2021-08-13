@@ -110,12 +110,12 @@ if (oldRot != scrollRotary) {
 
     oldRot = scrollRotary;
  }
-    Serial.print("Address:");
-    Serial.print(address);
-    Serial.print(", ScrollAddress");
-    Serial.print(scrollAddress);
-    Serial.print(", scrollRotary:");
-    Serial.println(scrollRotary);
+    // Serial.print("Address:");
+    // Serial.print(address);
+    // Serial.print(", ScrollAddress");
+    // Serial.print(scrollAddress);
+    // Serial.print(", scrollRotary:");
+    // Serial.println(scrollRotary);
 
 
 

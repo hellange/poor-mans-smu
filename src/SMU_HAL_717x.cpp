@@ -37,7 +37,13 @@ static st_reg init_state[] =
     {0x13, 2, 0, 0x0000l, "Ch_Map_3 "}, //CH_Map_4
     
     //              c means disable ref? input buffers
- {0x20, 2, 0, 0x1c00l, "SetupCfg0"}, //Setup_Config_1   //ext ref 
+    
+  //  {0x20, 2, 0, 0x1300l, "SetupCfg0"}, //Setup_Config_1   //ext ref, dis refbuffer
+
+ //{0x20, 2, 0, 0x1c00l, "SetupCfg0"}, //Setup_Config_1   //ext ref, dis buffer
+
+{0x20, 2, 0, 0x1f00l, "SetupCfg0"}, //Setup_Config_1   //ext ref, enable buffer
+
 //{0x20, 2, 0, 0x1c20l, "SetupCfg0"}, //Setup_Config_1  //int ref, unipolar 
 
     {0x21, 2, 0, 0x1020l, "SetupCfg1"}, //Setup_Config_2
@@ -158,7 +164,7 @@ void ADCClass::writeSamplingRate() {
   } else if (value == 25000) {
       AD7176_WriteRegister({0x28, 2, 0, 0x0205l}); 
   } else if (value == 31250) {
-      AD7176_WriteRegister({0x28, 2, 0, 0x0204l}); 
+      AD7176_WriteRegister({0x28, 2, 0, 0x0204l}); // sinc3 
   } else if (value == 50000) {
       AD7176_WriteRegister({0x28, 2, 0, 0x0203l}); 
   } else {
@@ -300,8 +306,11 @@ double ADCClass::measureMilliVoltage() {
   float v = (float) ((AD7176_regs[4].value*VFSR*1000.0)/FSR); 
   v=v-VREF*1000.0;
 
-  //v = v / 0.8;  // funnel amplifiersetNullValue x0.8
-  v = v / 0.4;  // funnel amplifier x0.4
+  v = v / 0.8;  // funnel amplifiersetNullValue x0.8
+  //v = v / 0.4;  // funnel amplifier x0.4
+  
+  
+  //v = v / 8.0; // gain
   
   // DONT INCLUDE THESE ADJUSTMENTS WHEN TESTING ONLY DAC/ADC BOARD !!!!
   if (full_board == true) {
@@ -329,9 +338,11 @@ double ADCClass::measureMilliVoltage() {
     }
 
     // crude adjustment, will differ between hardware
-    v=v * 0.9970;
-    v=v * 1.0255;
-    v =v* 0.991;
+   
+    // v=v * 0.9970;
+    //v=v * 1.0255;
+    //v =v* 0.991;
+    
   }
   //Serial.print("Voltage nonlinear comp ");
   //Serial.print(v);
@@ -422,14 +433,13 @@ int64_t ADCClass::fltSetCommitVoltageSource(int64_t voltage_uV, bool dynamicRang
   float dac_voltage = mv / 1000.0;  // DAC code operates with V instead of mV 
  
   dac_voltage = dac_voltage + V_CALIBRATION.getDacZeroComp();
-
   // DONT INCLUDE THESE ADJUSTMENTS WHEN TESTING ONLY DAC/ADC BOARD !!!!
   if (full_board) {
 
     // There is a apprx. /2 on the sense input. This means that the voltage from DAC must be half of the expected output
     //float voltageInputDividerCompensation = 0.5; 
     
-    dac_voltage = dac_voltage * 0.994; // crude adjustment that will differ between hardware
+  //  dac_voltage = dac_voltage * 0.994; // crude adjustment that will differ between hardware
 
   
     if (dac_voltage>0) {
@@ -705,8 +715,12 @@ int64_t ADCClass::fltSetCommitVoltageLimit(int64_t voltage_uV, int8_t up_down_bo
     double v = (float) ((AD7176_regs[4].value*VFSR*1000.0)/FSR); 
     v=v-VREF*1000.0;
 
+    //TODO: Change when testing with ADA4254!
     //v = v / 0.8;  // funnel amplifier x0.8
-    v = v / 0.4;  // funnel amplifier x0.4
+    v = v / 0.4;  // funnel amplifier x0.4 
+
+
+    //v=v*10.0;
 
     float i = v;
     // DONT INCLUDE THESE ADJUSTMENTS WHEN TESTING ONLY DAC/ADC BOARD !!!!
@@ -728,10 +742,10 @@ int64_t ADCClass::fltSetCommitVoltageLimit(int64_t voltage_uV, int8_t up_down_bo
 
       } else {
         //i=i/1.04600; // 1ohm shunt + resistance in range switch mosfet
-       // i=i*2.0; // if 0.5 ohm shunt instead of ohm shunt;
+        i=i*5.0; // if 0.5 ohm shunt instead of ohm shunt;
 
       
-        i=i/(R_shunt_1A + R_mosfetSwitch); 
+      i=i/(R_shunt_1A + R_mosfetSwitch); 
         
         //i=i*0.79; // apprx.... why ?
         if (i>0) {
@@ -745,8 +759,8 @@ int64_t ADCClass::fltSetCommitVoltageLimit(int64_t voltage_uV, int8_t up_down_bo
               //i=i/3.125; // After using two opamps in fromt of 1997-3....   Why did that give 3.125 gain ????
 
       }
-      i=i/10.0; // x10 amplifier
-
+      //i=i/10.0; // x10 amplifier
+      i = i / 32.0;
 
       // account for resistor value not perfect
       if (range == AMP1) {

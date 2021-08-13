@@ -45,6 +45,8 @@
 #include "utils.h"
 #include "analogGauge.h"
 
+#include "Ada4254.h"
+
 //#define _SOURCE_AND_SINK 111
 
 #define _PRINT_ERROR_VOLTAGE_SOURCE_SETTING 0
@@ -333,14 +335,39 @@ void setup()
    GD.cmd_text(250, 200 ,   31, 0, "Poor man's SMU");
    GD.ColorRGB(0xaaaaaa);
    GD.cmd_text(250, 240 ,   28, 0, "Designed    by    Helge Langehaug");
-   GD.cmd_text(250, 270 ,   28, 1, "V0.161");
+   GD.cmd_text(250, 270 ,   28, 1, "V0.162");
 
    GD.swap();
-   delay(501);
+   //delay(501);
 
    GD.__end();
    Serial.println("Graphics initialized.");
    Serial.flush();
+delay(1000);
+   Serial.println("====== ADA4254 =====");
+   ADA4254.ada4254_reset();
+        //ADA4254.ada4254_2(true);
+
+      ADA4254.ada4254_id();
+
+   ADA4254.ada4254_4();
+   delay(100);
+   ADA4254.ada4254_5_gain();
+  // ADA4254.ada4254_setgain(4);
+
+   delay(1000);
+
+//ADA4254.ada4254_clear_analog_error();
+
+delay(1000);
+   ADA4254.ada4254_clear_analog_error();
+     //ADA4254.ada4254_5_gainx1d25();
+
+     Serial.println("====== ADA4254 done =====");
+
+       // ADA4254.ada4254_5_gain();
+
+
 
    disable_ADC_DAC_SPI_units();
    delay(100);
@@ -390,6 +417,9 @@ void setup()
   // SPI.usingInterrupt(2);
   // pinMode(2,INPUT);
   // attachInterrupt(2, handleSampling, CHANGE);
+
+
+
 
 #ifdef SAMPLING_BY_INTERRUPT
   myTimer.begin(handleSampling, 20); // in microseconds.Lower that 20 hangs the display... why ?
@@ -533,9 +563,9 @@ void sourceVoltagePanel(int x, int y) {
   GD.cmd_button(x + 350 + 20, y + 132, 95 + 0, 50, 29, 0, "AUTO");
 
   GD.Tag(0);
-/*  TODO: Fix. Preliminary removed because it causes exception often when clicking buttons...
 
-  if (!reduceDetails()) {
+  // TODO: Fix. adding details caused some crashes...
+  if (1 == 0 && !reduceDetails()) {
     // Add some minor statistics on screen. Nice while looking at long time stability...
     GD.ColorRGB(0xaaaaaa);
 
@@ -551,7 +581,7 @@ void sourceVoltagePanel(int x, int y) {
     //DIGIT_UTIL.renderValue(x + 350+40+170+20,y + 132+ 40, SIMPLE_STATS.samples / 1000.0, 1, -1); 
     GD.cmd_number(x + 350+40+170+35,y + 132+ 40, 28, 6, SIMPLE_STATS.samples);
   }
-  */
+  
 
 
 
@@ -1468,7 +1498,6 @@ float simulatedWaveform;
 
 
 void handleSamplingForDigitizer(int dataR) {
-  digitizeCounter ++;
     
 //     if (count % 20== 0) {
 //       SMU[0].fltSetCommitVoltageSource(sampleVolt, false);
@@ -1503,6 +1532,7 @@ void handleSamplingForDigitizer(int dataR) {
 //     }
 
 
+  digitizeCounter ++;
 
   float v = SMU[0].measureMilliVoltage();  
    //v=100.0 + random(20)/100.0;
@@ -1512,11 +1542,11 @@ void handleSamplingForDigitizer(int dataR) {
 
 
       
-  bool continuous = true;
+  bool continuous = false;
   if (!triggered) {
-    if (continuous or (lastVoltage < 100.0 && v > 100.0)) {
+    if (continuous or (lastVoltage < 0.0 && v > 0.0)) {
       triggered = true;
-      //Serial.println("Triggered!");
+      Serial.println("Triggered!");
       //Serial.println(lastVoltage);
       } else {
        lastVoltage = v;         
@@ -1531,9 +1561,10 @@ void handleSamplingForDigitizer(int dataR) {
       digitizeDuration = millis();
     }
     ramAdrPtr += 4;
-    if (ramAdrPtr > nrOfFloats*4) {
+    if (ramAdrPtr > nrOfFloats*4 *2) {
       bufferOverflow = true;
       triggered = false;
+      lastVoltage=0.0;
       //lastVoltage = 0.0;
       //Serial.println("Overflow!");
       ramAdrPtr = 0;
@@ -1549,6 +1580,8 @@ void handleSamplingForDigitizer(int dataR) {
     if (v < minDigV) {
       minDigV = v;
     }      
+
+  
     return;
   }
   
@@ -1557,6 +1590,7 @@ static void handleSampling() {
   int dataR = SMU[0].dataReady();
   if (digitize == true && bufferOverflow==false && (dataR == 0 or dataR == 1)) {
     handleSamplingForDigitizer(dataR);
+    return;
   }
  
   if (dataR == -1) {
@@ -1639,7 +1673,7 @@ int displayUpdateTimer = millis();
 int loopUpdateTimer = millis();
 
 void loop() {
-
+ 
   if (V_CALIBRATION.autoCalInProgress) {
     V_CALIBRATION.autoCalADCfromDAC();
   } 
@@ -1658,12 +1692,15 @@ void loop() {
 
   //TODO: Not sure if this should be here.... this is more that "display time"... it also handles sampling of not driven by timer interrupt...
   if (displayUpdateTimer + 20 > (int)millis()) {
-    return; 
+    //return; 
   }
  
   displayUpdateTimer = millis();
  
  if (functionType == DIGITIZE) {
+   #ifndef SAMPLING_BY_INTERRUPT 
+    handleSampling(); 
+   #endif
     loopDigitize();
 
   } else if (functionType == GRAPH) {
@@ -1729,33 +1766,34 @@ void loop() {
 
 
 
-int samplingDelayTimer = millis();
+int samplingDelayTimer = micros();
 
 void loopDigitize() {
   //if (loopUpdateTimer + 10 > (int)millis() ) {
   //  return;
   //}
+
   
-  loopUpdateTimer = millis();
+  //loopUpdateTimer = millis();
   operationType = getOperationType();
   disable_ADC_DAC_SPI_units();
   
   //int fullSamplePeriod;
-   if (digitize == false && !MAINMENU.active /*&&  samplingDelayTimer + 50 < millis()*/){
+   if (digitize == false && !MAINMENU.active /*&&  samplingDelayTimer + 50000 < micros()*/){
      
     ramAdrPtr = 0;
      minDigV = 1000000;
      maxDigV = - 1000000;
      minDigI = 1000000;
      maxDigI = - 1000000;
-     SMU[0].setSamplingRate(10000);
+     SMU[0].setSamplingRate(31250); //31250
      nrOfFloats = 400;
           //bufferOverflowed=false;
      digitize = true;
          bufferOverflow = false;
     
 
-  msDigit= millis();
+  //msDigit= millis();
      
    }
 
@@ -1763,7 +1801,7 @@ void loopDigitize() {
   if (bufferOverflow == true) {
     digitize = false;
     Serial.println("Initiate new samping round...");
-    samplingDelayTimer = millis();
+    samplingDelayTimer = micros();
     
   }
   //TODO: Move digitizine to a separate class
@@ -1795,10 +1833,12 @@ void loopDigitize() {
     renderMainHeader();
     VOLT_DISPLAY.renderMeasured(10,50, minDigV, false);
     VOLT_DISPLAY.renderMeasured(10,150, maxDigV, false);
-    CURRENT_DISPLAY.renderMeasured(10,250, minDigI, false, false,current_range);
-    CURRENT_DISPLAY.renderMeasured(10,350, maxDigI, false, false, current_range);
+  //  CURRENT_DISPLAY.renderMeasured(10,250, minDigI, false, false,current_range);
+  //  CURRENT_DISPLAY.renderMeasured(10,350, maxDigI, false, false, current_range);
 
-   // VOLT_DISPLAY.renderMeasured(10,50, digitizeCounter, false);
+      GD.cmd_number(10,320, 28, 6, digitizeCounter);
+
+
     //    VOLT_DISPLAY.renderMeasured(10,200, fullSamplePeriod, false);
 
 digitizeCounter = 0;
@@ -1810,16 +1850,16 @@ digitizeCounter = 0;
   float mva[400];
   float mia[400];
 
-  GD.__end();
-  for (int x = 0; x<nrOfFloats/2; x++) {
+  //GD.__end();
+  for (int x = 0; x<nrOfFloats; x++) {
     int adr = x*8;
     mva[x] = ramEmulator[adr/4]; //RAM.readRAMfloat(adr);
     
     mia[x] = ramEmulator[adr/4 + 1]; //RAM.readRAMfloat(adr+4);
   }
-  GD.resume();
+  //GD.resume();
   
-  for (int x = 0; x<nrOfFloats/2; x++) {
+  for (int x = 0; x<nrOfFloats; x++) {
     //int adr = x*8;
     //GD.__end();
     //float mv = RAM.readRAMfloat(adr);
@@ -1832,13 +1872,14 @@ digitizeCounter = 0;
       float mid = (maxDigV + minDigV) /2.0;
       float relative = mid - mva[x];
      
-      float y = relative*20;
+      float y = relative*40;
      // float y = mva[x] / 100.0;
-      GD.Vertex2ii(x*4, 200 - y);
+      GD.Vertex2ii(x*2, 200 + mva[x]/1000.0 * 50.0);
    }
     
   }
 
+/*
   GD.Begin(LINE_STRIP);
   GD.ColorA(255);
   GD.ColorRGB(0xff0000);
@@ -1859,7 +1900,7 @@ digitizeCounter = 0;
     }
     
   }
-  
+  */
     //VOLT_DISPLAY.renderMeasured(100,50, V_FILTERS.mean);
     //CURRENT_DISPLAY.renderMeasured(100,150, C_FILTERS.mean, false, false);
 
@@ -2406,6 +2447,9 @@ int checkButtons() {
 
 
 
+int relayTimer = millis();
+bool relayState = false;
+
 void loopMain()
 {
  
@@ -2421,6 +2465,28 @@ void loopMain()
   }
 
   GD.__end();
+
+
+      //ADA4254.ada4254_5_gain();
+
+ if (relayTimer+1000 < millis()) {
+   relayState = !relayState;
+  relayTimer = millis();
+ // ADA4254.ada4254_id();
+    ADA4254.ada4254_2(relayState);
+
+//ADA4254.ada4254_clear_analog_error();
+
+   ADA4254.ada4254_check();
+  // delay(500);
+//Serial.println("here333");
+   //ADA4254.ada4254(relayState);
+      //ADA4254.ada4254_5_gain();
+
+
+ }
+
+
 
   // Auto range current measurement while sourcing voltage. 
   // Note that this gives small glitches in voltage.
