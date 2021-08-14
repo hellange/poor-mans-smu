@@ -6,9 +6,10 @@ class EtnernetClass {
 public:
  
   void setup();
-  void loop();
+  bool loop();
   void httpRequest();
-  
+  void teensyMAC(uint8_t *mac);
+  int status;
 };
 extern EtnernetClass ETHERNET_UTIL;
 

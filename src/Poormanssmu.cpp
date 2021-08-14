@@ -44,7 +44,7 @@
 
 #include "utils.h"
 #include "analogGauge.h"
-#include "Ethernet.h"
+#include "Network.h"
 
 #include "Ada4254.h"
 
@@ -271,7 +271,6 @@ void  disable_ADC_DAC_SPI_units() {
 void setup()
 {
 	//while (!Serial) ; // wait
-  //ETHERNET_UTIL.setup();
 
   LOGGER.init();
 
@@ -337,9 +336,14 @@ void setup()
    GD.cmd_text(250, 200 ,   31, 0, "Poor man's SMU");
    GD.ColorRGB(0xaaaaaa);
    GD.cmd_text(250, 240 ,   28, 0, "Designed    by    Helge Langehaug");
-   GD.cmd_text(250, 270 ,   28, 1, "V0.163");
+   GD.cmd_text(250, 270 ,   28, 1, "V0.164");
+   
+   GD.cmd_text(0, 450 ,   28, 1, "Configuring ethernet...");
 
    GD.swap();
+
+     ETHERNET_UTIL.setup(); // Comment out to avoid delay of ethernet not connected !!!!
+
    //delay(501);
 
    GD.__end();
@@ -1175,6 +1179,13 @@ void renderMainHeader() {
 
     GD.cmd_number(50,0,27,3,analogRead(16));
 
+if (ETHERNET_UTIL.status == 1) {
+  GD.cmd_text(600, 0, 27, 0, "Ethernet:OK");
+} else {
+  GD.cmd_text(600,0,27,2, "Ethernet code:");
+    GD.cmd_number(710,0,27,2, ETHERNET_UTIL.status);
+
+}
 
 
   int temp = UTILS.TC74_getTemperature();

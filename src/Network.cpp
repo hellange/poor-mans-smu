@@ -15,20 +15,21 @@
 
 #include <SPI.h>
 #include <NativeEthernet.h>
-#include "ethernet.h"
+#include "Network.h"
 
 // Enter a MAC address for your controller below.
 // Newer Ethernet shields have a MAC address printed on a sticker on the shield
-byte mac[] = { 0xDE, 0xAD, 0xBE, 0xEF, 0xFE, 0xED };
+// byte mac[] = { 0xDE, 0xAD, 0xBE, 0xEF, 0xFE, 0xED };
+uint8_t *mac;
 
 // if you don't want to use DNS (and reduce your sketch size)
 // use the numeric IP instead of the name for the server:
-IPAddress server(192,168,0,100);  // numeric IP for your DMM6500  (original file was Google (no DNS)
-//char server[] = "www.google.com";    // NOT RELEVANT FOR DMM6500 test. Original comment: name address for Google (using DNS)
+IPAddress server(192,168,1,117);  // numeric IP for your DMM6500  (original file was Google (no DNS)
+//char server[] = "worldtimeapi.org";    // NOT RELEVANT FOR DMM6500 test. Original comment: name address for Google (using DNS)
 
 // Set the static IP address to use if the DHCP fails to assign
-IPAddress ip(192, 168, 0, 177);
-IPAddress myDns(192, 168, 0, 1);
+IPAddress ip(192, 168, 1, 123);
+IPAddress myDns(192, 168, 1, 1);
 
 // Initialize the Ethernet client library
 // with the IP address and port of the server
@@ -46,21 +47,28 @@ byteCount = 0;
 beginMicros = micros();
    // if you get a connection, report back via serial:
   if (client.connect(server, 80)) {
-      return;
+
     Serial.print("connected to ");
     Serial.println(client.remoteIP());
     // Make a HTTP request:
-    //client.println("GET /search?q=arduino HTTP/1.1");
-    client.println("POST /ajax_proc");
+    //client.println("GET /api/timezone/Europe/Oslo");
+     client.println("POST /ajax_proc HTTP/1.1");
     
-    client.println("Host: 192.168.0.100");
-    client.println("Content-Type: text/plain");
-    client.println("Content-length: 28");
-    client.println("Connection: close");
-    client.println();
-    client.println("function=1&command=:MEASure?");
+     client.println("Host: 192.168.1.117");
+     //client.println("User-Agent: Arduino/1.0");
+     client.println("Connection: keep-alive");
+
+     client.println("Content-Type: application/x-www-form-urlencoded");
+     client.println("Content-length: 27");
+     client.println("function=1&command=MEASure?");
+
+     client.println();
+
+
     //client.flush();
     //client.stop();
+
+
   
   } else {
     // if you didn't get a connection to the server:
@@ -70,7 +78,10 @@ beginMicros = micros();
   
    
 }
+
+
 void EtnernetClass::setup() {
+  status = 0;
   // You can use Ethernet.init(pin) to configure the CS pin
   //Ethernet.init(10);  // Most Arduino shields
   //Ethernet.init(5);   // MKR ETH shield
@@ -89,25 +100,30 @@ void EtnernetClass::setup() {
 
   // start the Ethernet connection:
   Serial.println("Initialize Ethernet with DHCP:");
+ 
   if (Ethernet.begin(mac) == 0) {
     Serial.println("Failed to configure Ethernet using DHCP");
-    return;
+    status = 99;
+    //return;
     // Check for Ethernet hardware present
     if (Ethernet.hardwareStatus() == EthernetNoHardware) {
       Serial.println("Ethernet shield was not found.  Sorry, can't run without hardware. :(");
-      while (true) {
-        delay(1); // do nothing, no point running without Ethernet hardware
-      }
+      status = 98;
+      return;
+      //while (true) {
+      //  delay(1); // do nothing, no point running without Ethernet hardware
+      //}
     }
     if (Ethernet.linkStatus() == LinkOFF) {
       Serial.println("Ethernet cable is not connected.");
+      status = 97;
     }
     // try to congifure using IP address instead of DHCP:
     Ethernet.begin(mac, ip, myDns);
   } else {
-      return;
     Serial.print("  DHCP assigned IP ");
     Serial.println(Ethernet.localIP());
+    status = 1;
   }
   
   // give the Ethernet shield a second to initialize:
@@ -116,11 +132,21 @@ void EtnernetClass::setup() {
   Serial.print(server);
   Serial.println("...");
 
+//httpRequest();
+//bool done = false;
+//while (!done) {
+//  done = loop();
+//}
+//  Serial.println("DONE!!!!!");
+
+
+
+
   
 }
 
-void EtnernetClass::loop() {
-  //delay(1000);
+bool EtnernetClass::loop() {
+  delay(100);
   // if there are incoming bytes available
   // from the server, read them and print them:
   int len = client.available();
@@ -153,7 +179,7 @@ void EtnernetClass::loop() {
     Serial.print(" kbytes/second");
     Serial.println();
     httpRequest();
-     
+     return true;
      
     
     
@@ -161,9 +187,18 @@ void EtnernetClass::loop() {
     //while (true) {
     //  delay(1);
    // }
-  } 
+  } else {
+    return false;
+  }
+
+ 
   
 }
+
+
+
+
+ 
 
 
 EtnernetClass ETHERNET_UTIL;
