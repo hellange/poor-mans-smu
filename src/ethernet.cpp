@@ -15,7 +15,7 @@
 
 #include <SPI.h>
 #include <NativeEthernet.h>
-#include "Ethernet.h"
+#include "ethernet.h"
 
 // Enter a MAC address for your controller below.
 // Newer Ethernet shields have a MAC address printed on a sticker on the shield

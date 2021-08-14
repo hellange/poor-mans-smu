@@ -337,7 +337,7 @@ void setup()
    GD.cmd_text(250, 200 ,   31, 0, "Poor man's SMU");
    GD.ColorRGB(0xaaaaaa);
    GD.cmd_text(250, 240 ,   28, 0, "Designed    by    Helge Langehaug");
-   GD.cmd_text(250, 270 ,   28, 1, "V0.162");
+   GD.cmd_text(250, 270 ,   28, 1, "V0.163");
 
    GD.swap();
    //delay(501);
@@ -345,7 +345,7 @@ void setup()
    GD.__end();
    Serial.println("Graphics initialized.");
    Serial.flush();
-delay(1000);
+//delay(1000);
    Serial.println("====== ADA4254 =====");
    ADA4254.ada4254_reset();
         //ADA4254.ada4254_2(true);
