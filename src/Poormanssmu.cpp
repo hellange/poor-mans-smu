@@ -44,6 +44,7 @@
 
 #include "utils.h"
 #include "analogGauge.h"
+#include "Ethernet.h"
 
 #include "Ada4254.h"
 
@@ -269,7 +270,8 @@ void  disable_ADC_DAC_SPI_units() {
 
 void setup()
 {
-//	while (!Serial) ; // wait
+	//while (!Serial) ; // wait
+  //ETHERNET_UTIL.setup();
 
   LOGGER.init();
 
@@ -1535,16 +1537,20 @@ void handleSamplingForDigitizer(int dataR) {
   digitizeCounter ++;
 
   float v = SMU[0].measureMilliVoltage();  
+       // float v = SMU[0].measureCurrent(AMP1);   
+
    //v=100.0 + random(20)/100.0;
    //simulatedWaveform += 0.05;
    // v = v + sin(simulatedWaveform)*5.0;
     
 
 
-      
+  bool zeroCross = lastVoltage < 0.0 && v > 0.0 ;
+  bool positiveEdge = v > lastVoltage;
+
   bool continuous = false;
   if (!triggered) {
-    if (continuous or (lastVoltage < 0.0 && v > 0.0)) {
+    if (continuous or positiveEdge) {
       triggered = true;
       Serial.println("Triggered!");
       //Serial.println(lastVoltage);
@@ -1696,8 +1702,7 @@ void loop() {
   }
  
   displayUpdateTimer = millis();
- 
- if (functionType == DIGITIZE) {
+  if (functionType == DIGITIZE) {
    #ifndef SAMPLING_BY_INTERRUPT 
     handleSampling(); 
    #endif
@@ -1796,8 +1801,7 @@ void loopDigitize() {
   //msDigit= millis();
      
    }
-
-  disable_ADC_DAC_SPI_units();
+   disable_ADC_DAC_SPI_units();
   if (bufferOverflow == true) {
     digitize = false;
     Serial.println("Initiate new samping round...");
@@ -1841,7 +1845,7 @@ void loopDigitize() {
 
     //    VOLT_DISPLAY.renderMeasured(10,200, fullSamplePeriod, false);
 
-digitizeCounter = 0;
+  digitizeCounter = 0;
 
   GD.Begin(LINE_STRIP);
   GD.ColorA(255);
@@ -1872,7 +1876,7 @@ digitizeCounter = 0;
       float mid = (maxDigV + minDigV) /2.0;
       float relative = mid - mva[x];
      
-      float y = relative*40;
+      float y = relative*20;
      // float y = mva[x] / 100.0;
       GD.Vertex2ii(x*2, 200 + mva[x]/1000.0 * 50.0);
    }
