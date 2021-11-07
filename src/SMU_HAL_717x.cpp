@@ -32,6 +32,9 @@ static st_reg init_state[] =
     // current meas
     {0x11, 2, 0, 0x8043l, "Ch_Map_1 "}, //CH_Map_2   ain3, ain2
     //{0x11, 2, 0, 0x0001l, "Ch_Map_1 "}, //CH_Map_2   ain3, ain2
+       // {0x11, 2, 0, 0x82c5l, "Ch_Map_1 "}, //CH_Map_2   ref- ref+
+       // {0x11, 2, 0, 0x8232l, "Ch_Map_1 "}, //CH_Map_2   temp- temp+
+
 
     {0x12, 2, 0, 0x0000l, "Ch_Map_2 "}, //CH_Map_3
     {0x13, 2, 0, 0x0000l, "Ch_Map_3 "}, //CH_Map_4
@@ -306,8 +309,8 @@ double ADCClass::measureMilliVoltage() {
   float v = (float) ((AD7176_regs[4].value*VFSR*1000.0)/FSR); 
   v=v-VREF*1000.0;
 
-  v = v / 0.8;  // funnel amplifiersetNullValue x0.8
-  //v = v / 0.4;  // funnel amplifier x0.4
+  //v = v / 0.8;  // funnel amplifiersetNullValue x0.8
+  v = v / 0.4;  // funnel amplifier x0.4
   
   
   //v = v / 8.0; // gain

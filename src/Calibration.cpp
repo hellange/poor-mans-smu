@@ -135,6 +135,7 @@ void CalibrationClass::init(OPERATION_TYPE operationType_) {
   nullValueCur[1] = 0.0;
   timeSinceLastChange = millis();
   
+  // DAC gain compensation adjust
   dacGainCompPos = floatFromEeprom(ea_dac_gain_comp_pos);
   Serial.print("Read dacGainCompPos from eeprom address ");
   Serial.print(ea_dac_gain_comp_pos,HEX);
@@ -691,6 +692,7 @@ void CalibrationClass::floatToEeprom(int address, float f) {
 }
 
 float CalibrationClass::floatFromEeprom(int address) {
+  //return NAN;  // Returning this will reset calibration data to default. 
     cvt eepromfloat;
 
   eepromfloat.b[0] = EEPROM.read(address);

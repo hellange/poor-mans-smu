@@ -3,7 +3,7 @@
  *  Initial GUI prototype for
  *  P O O R  M A N ' s  S M U
  *  
- *  by Helge Langehaug (2018, 2019, 2020)
+ *  by Helge Langehaug (2018, 2019, 2020, 2021)
  * 
  *****************************************************************/
 
@@ -45,7 +45,7 @@
 #include "utils.h"
 #include "analogGauge.h"
 #include "Network.h"
-
+#include "Digitizer.h"
 #include "Ada4254.h"
 
 //#define _SOURCE_AND_SINK 111
@@ -67,6 +67,8 @@ LoggerClass LOGGER;
 
 PushbuttonsClass PUSHBUTTONS;
 PushbuttonsClass PUSHBUTTON_ENC;
+
+DigitizerClass DIGITIZER;
 
 
 bool anyDialogOpen();
@@ -121,7 +123,7 @@ OPERATION_TYPE operationType = SOURCE_VOLTAGE;
 FUNCTION_TYPE functionType = SOURCE_DC_VOLTAGE;
 
 
-FUNCTION_TYPE prevFuncType = SOURCE_DC_VOLTAGE;
+
 
 void printError(int16_t  errorNum)
 {
@@ -139,14 +141,6 @@ OPERATION_TYPE getOperationType() {
   } else {
     ot = SOURCE_VOLTAGE;
   }
-
-  // Only update the GPIO bit when operation has changed!  Originally put this in the callback from menu selection, but it failed... not sure why. Investigate.
-  if (functionType != prevFuncType) {
-    SMU[0].setGPIO(0, ot != SOURCE_VOLTAGE);
-Serial.println("Changing mode !");
-
-  }
-    prevFuncType = functionType;
 
   return ot;
 
@@ -336,13 +330,13 @@ void setup()
    GD.cmd_text(250, 200 ,   31, 0, "Poor man's SMU");
    GD.ColorRGB(0xaaaaaa);
    GD.cmd_text(250, 240 ,   28, 0, "Designed    by    Helge Langehaug");
-   GD.cmd_text(250, 270 ,   28, 1, "V0.164");
+   GD.cmd_text(250, 270 ,   28, 1, "V0.166");
    
    GD.cmd_text(0, 450 ,   28, 1, "Configuring ethernet...");
 
    GD.swap();
 
-     ETHERNET_UTIL.setup(); // Comment out to avoid delay of ethernet not connected !!!!
+    //ETHERNET_UTIL.setup(); // Comment out to avoid delay of ethernet not connected !!!!
 
    //delay(501);
 
@@ -437,6 +431,7 @@ delay(1000);
   //TC74 
   Wire.begin();
 
+DIGITIZER.init(getOperationType());
     
 } 
 
@@ -1486,129 +1481,21 @@ void notification(const char *text) {
     GD.cmd_text(250, 200 , 29, 0, text);
 }
 
-
-bool digitize = false;
-
-int ramAdrPtr = 0;
-
-float ramEmulator[1000];
-
-int maxFloats = 32000; // 32000 is max for the ram
-int nrOfFloats = 400;
-
-bool bufferOverflow = false;
-float maxDigV = -100000.00, minDigV = 100000.00, curDigV;
-float maxDigI = -100000.00, minDigI = 100000.00, curDigI;
-int digitizeDuration = millis();
-float lastVoltage = 0.0;
-bool triggered = false;
 int count = 1;
 float sampleVolt = 10.0;
 int logTimer = millis();
-int digitizeCounter = 0;
 int msDigit = 0;
 float simulatedWaveform;
 
 
-void handleSamplingForDigitizer(int dataR) {
-    
-//     if (count % 20== 0) {
-//       SMU[0].fltSetCommitVoltageSource(sampleVolt, false);
-//       if (sampleVolt == 2000.0) {
-//        sampleVolt = -2000.0;
-//       } else {
-//        sampleVolt = 2000.0;
-//       }
-//     }
-//     count ++;
 
-  if (dataR == 1) {
-    return;
-  }
-//     if (dataR == 1) {
-//      float i = SMU[0].measureCurrent(AMP1);   
-//      RAM.writeRAMfloat(ramAdrPtr, i);
-//      ramAdrPtr += 4;
-//      if (ramAdrPtr > maxFloats*4) {
-//        bufferOverflow = true;
-//      }
-//      //Serial.println(i);
-//      curDigI = i;
-//      if (i > maxDigI) {
-//        maxDigI= i;
-//      } 
-//      if (i < minDigI) {
-//        minDigI = i;
-//      }
-//      
-//      return;
-//     }
-
-
-  digitizeCounter ++;
-
-  float v = SMU[0].measureMilliVoltage();  
-       // float v = SMU[0].measureCurrent(AMP1);   
-
-   //v=100.0 + random(20)/100.0;
-   //simulatedWaveform += 0.05;
-   // v = v + sin(simulatedWaveform)*5.0;
-    
-
-
-  bool zeroCross = lastVoltage < 0.0 && v > 0.0 ;
-  bool positiveEdge = v > lastVoltage;
-
-  bool continuous = false;
-  if (!triggered) {
-    if (continuous or positiveEdge) {
-      triggered = true;
-      Serial.println("Triggered!");
-      //Serial.println(lastVoltage);
-      } else {
-       lastVoltage = v;         
-       return;
-      }
-    }
-    lastVoltage = v;
-
-    //RAM.writeRAMfloat(ramAdrPtr, v);
-    ramEmulator[ramAdrPtr/4] = v;
-    if (ramAdrPtr == 0) {
-      digitizeDuration = millis();
-    }
-    ramAdrPtr += 4;
-    if (ramAdrPtr > nrOfFloats*4 *2) {
-      bufferOverflow = true;
-      triggered = false;
-      lastVoltage=0.0;
-      //lastVoltage = 0.0;
-      //Serial.println("Overflow!");
-      ramAdrPtr = 0;
-      //Serial.print("Digitize duration:");
-      //Serial.println(millis() - digitizeDuration);
-      //Serial.print("Adr:");
-      //Serial.println(ramAdrPtr);  
-    }
-    curDigV = v;
-    if (v > maxDigV) {
-      maxDigV = v;
-    } 
-    if (v < minDigV) {
-      minDigV = v;
-    }      
-
-  
-    return;
-  }
-  
 static void handleSampling() {
 
   int dataR = SMU[0].dataReady();
-  if (digitize == true && bufferOverflow==false && (dataR == 0 or dataR == 1)) {
-    handleSamplingForDigitizer(dataR);
-    return;
-  }
+   if (DIGITIZER.digitize == true && DIGITIZER.bufferOverflow ==false && (dataR == 0 or dataR == 1)) {
+     DIGITIZER.handleSamplingForDigitizer(dataR);
+     return;
+   }
  
   if (dataR == -1) {
     return;
@@ -1709,7 +1596,7 @@ void loop() {
 
   //TODO: Not sure if this should be here.... this is more that "display time"... it also handles sampling of not driven by timer interrupt...
   if (displayUpdateTimer + 20 > (int)millis()) {
-    //return; 
+    return; 
   }
  
   displayUpdateTimer = millis();
@@ -1717,7 +1604,17 @@ void loop() {
    #ifndef SAMPLING_BY_INTERRUPT 
     handleSampling(); 
    #endif
-    loopDigitize();
+    if (DIGITIZER.loopDigitize()) {
+      int tag = GD.inputs.tag;
+      // TODO: don't need to check buttons for inactive menus or functions...
+      MAINMENU.handleButtonAction(tag);
+      PUSHBUTTONS.handle();
+      handleMenuScrolldown();
+      detectGestures();
+      renderMainHeader();
+      GD.swap();
+      GD.__end();
+    }
 
   } else if (functionType == GRAPH) {
 
@@ -1777,165 +1674,6 @@ void loop() {
     loopMain();
   }
 }
-
-
-
-
-
-int samplingDelayTimer = micros();
-
-void loopDigitize() {
-  //if (loopUpdateTimer + 10 > (int)millis() ) {
-  //  return;
-  //}
-
-  
-  //loopUpdateTimer = millis();
-  operationType = getOperationType();
-  disable_ADC_DAC_SPI_units();
-  
-  //int fullSamplePeriod;
-   if (digitize == false && !MAINMENU.active /*&&  samplingDelayTimer + 50000 < micros()*/){
-     
-    ramAdrPtr = 0;
-     minDigV = 1000000;
-     maxDigV = - 1000000;
-     minDigI = 1000000;
-     maxDigI = - 1000000;
-     SMU[0].setSamplingRate(31250); //31250
-     nrOfFloats = 400;
-          //bufferOverflowed=false;
-     digitize = true;
-         bufferOverflow = false;
-    
-
-  //msDigit= millis();
-     
-   }
-   disable_ADC_DAC_SPI_units();
-  if (bufferOverflow == true) {
-    digitize = false;
-    Serial.println("Initiate new samping round...");
-    samplingDelayTimer = micros();
-    
-  }
-  //TODO: Move digitizine to a separate class
-  if (bufferOverflow == false && digitize == true){
-//    //GD.cmd_number(100, 100, 1, 6, ramAdrPtr);  
-//    GD.resume();
-//    GD.Clear();
-//    VOLT_DISPLAY.renderMeasured(100,200, maxDigV);
-//    VOLT_DISPLAY.renderMeasured(100,300, minDigV);
-//    //VOLT_DISPLAY.renderMeasured(100,400, curDigV);
-//    Serial.println(ramAdrPtr);
-//    GD.swap();
-//    GD.__end();
-  } else {
-    //fullSamplePeriod = millis()-msDigit;
-//         SMU[0].setSamplingRate(10);
-
-    //digitize = false; 
-    bufferOverflow = false;
-
-    
-    GD.resume();
-      GD.Clear();
-        //SMU[0].setSamplingRate(100);
-
-        
-
-    detectGestures();
-    renderMainHeader();
-    VOLT_DISPLAY.renderMeasured(10,50, minDigV, false);
-    VOLT_DISPLAY.renderMeasured(10,150, maxDigV, false);
-  //  CURRENT_DISPLAY.renderMeasured(10,250, minDigI, false, false,current_range);
-  //  CURRENT_DISPLAY.renderMeasured(10,350, maxDigI, false, false, current_range);
-
-      GD.cmd_number(10,320, 28, 6, digitizeCounter);
-
-
-    //    VOLT_DISPLAY.renderMeasured(10,200, fullSamplePeriod, false);
-
-  digitizeCounter = 0;
-
-  GD.Begin(LINE_STRIP);
-  GD.ColorA(255);
-  GD.ColorRGB(0x00ff00);
-
-  float mva[400];
-  float mia[400];
-
-  //GD.__end();
-  for (int x = 0; x<nrOfFloats; x++) {
-    int adr = x*8;
-    mva[x] = ramEmulator[adr/4]; //RAM.readRAMfloat(adr);
-    
-    mia[x] = ramEmulator[adr/4 + 1]; //RAM.readRAMfloat(adr+4);
-  }
-  //GD.resume();
-  
-  for (int x = 0; x<nrOfFloats; x++) {
-    //int adr = x*8;
-    //GD.__end();
-    //float mv = RAM.readRAMfloat(adr);
-    //float i = RAM.readRAMfloat(adr+4);
-    //GD.resume();
-   // Serial.println(mv,5);
-
-   if (minDigV < 100000) {
-      //float span = (maxDig - minDig);
-      float mid = (maxDigV + minDigV) /2.0;
-      float relative = mid - mva[x];
-     
-      float y = relative*20;
-     // float y = mva[x] / 100.0;
-      GD.Vertex2ii(x*2, 200 + mva[x]/1000.0 * 50.0);
-   }
-    
-  }
-
-/*
-  GD.Begin(LINE_STRIP);
-  GD.ColorA(255);
-  GD.ColorRGB(0xff0000);
-
-  for (int x = 0; x<nrOfFloats/2; x++) {
-    //int adr = x*8;
-    //GD.__end();
-    //float mv = RAM.readRAMfloat(adr);
-    //float i = RAM.readRAMfloat(adr+4);
-    //GD.resume();
-   // Serial.println(mv,5);
-
-    if (minDigI < 100000) {
-      //float relative = minDigI - mia[x];
-      //float y = relative*50;
-      float y = mia[x]/10.0;
-      GD.Vertex2ii(x*4, 400 - y);
-    }
-    
-  }
-  */
-    //VOLT_DISPLAY.renderMeasured(100,50, V_FILTERS.mean);
-    //CURRENT_DISPLAY.renderMeasured(100,150, C_FILTERS.mean, false, false);
-
-      handleMenuScrolldown();
-
-  int tag = GD.inputs.tag;
-   // TODO: don't need to check buttons for inactive menus or functions...
-  MAINMENU.handleButtonAction(tag);
-        PUSHBUTTONS.handle();
-                PUSHBUTTON_ENC.handle();
-
-
-   GD.swap();
-    GD.__end();
-  
-  }
-  
-}
-
-
 
 
 
@@ -2623,7 +2361,9 @@ void closeMainMenuCallback(FUNCTION_TYPE newFunctionType) {
     //TODO: Use method when digitizer is moved out as separate class
     //      For now, just readjust sampling speed
     SMU[0].setSamplingRate(20); //TODO: Should get back to same as before, not a default one
-  } 
+  } else if (functionType == SOURCE_DC_CURRENT) {
+      SMU[0].setGPIO(0, 0); // use volt feedback
+  }
  
 
   // The newly selected function...
@@ -2643,6 +2383,7 @@ void closeMainMenuCallback(FUNCTION_TYPE newFunctionType) {
       if (SMU[0].fltSetCommitVoltageSource(SMU[0].getSetValue_micro(), true)) printError(_PRINT_ERROR_VOLTAGE_SOURCE_SETTING);
       if (SMU[0].fltSetCommitCurrentLimit(SMU[0].getLimitValue_micro(), true)) printError(_PRINT_ERROR_VOLTAGE_SOURCE_SETTING);
     } else {
+    
       // If previous SMU operation was sourcing current, use a predefined voltage
       if (SMU[0].fltSetCommitVoltageSource(SETTINGS.setMilliVoltage*1000, true)) printError(_PRINT_ERROR_VOLTAGE_SOURCE_SETTING);
       if (SMU[0].fltSetCommitCurrentLimit(SETTINGS.setCurrentLimit*1000, true)) printError(_PRINT_ERROR_VOLTAGE_SOURCE_SETTING);
@@ -2656,6 +2397,8 @@ void closeMainMenuCallback(FUNCTION_TYPE newFunctionType) {
 
     //disable_ADC_DAC_SPI_units();
     GD.__end();
+          SMU[0].setGPIO(0, 1); // use current feedback
+
     if (SMU[0].operationType == SOURCE_CURRENT) {
       // If previous SMU operation was sourcing current, use that current
       fltCommitCurrentSourceAutoRange(SMU[0].getSetValue_micro(), true);

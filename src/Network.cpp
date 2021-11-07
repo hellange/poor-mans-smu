@@ -52,6 +52,7 @@ beginMicros = micros();
     Serial.println(client.remoteIP());
     // Make a HTTP request:
     //client.println("GET /api/timezone/Europe/Oslo");
+     /*
      client.println("POST /ajax_proc HTTP/1.1");
     
      client.println("Host: 192.168.1.117");
@@ -63,7 +64,7 @@ beginMicros = micros();
      client.println("function=1&command=MEASure?");
 
      client.println();
-
+*/
 
     //client.flush();
     //client.stop();
@@ -100,7 +101,7 @@ void EtnernetClass::setup() {
 
   // start the Ethernet connection:
   Serial.println("Initialize Ethernet with DHCP:");
- 
+
   if (Ethernet.begin(mac) == 0) {
     Serial.println("Failed to configure Ethernet using DHCP");
     status = 99;
@@ -126,8 +127,8 @@ void EtnernetClass::setup() {
     status = 1;
   }
   
-  // give the Ethernet shield a second to initialize:
-  delay(1000);
+  // give the Ethernet shield some time to initialize:
+  delay(100);
   Serial.print("connecting to ");
   Serial.print(server);
   Serial.println("...");

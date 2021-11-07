@@ -1,3 +1,6 @@
+#ifndef VOLTDISPLAY_H
+#define VOLTDISPLAY_H
+
 #include <stdint.h>
 
 class VoltDisplayClass {
@@ -13,3 +16,4 @@ private:
 };
 
 extern VoltDisplayClass VOLT_DISPLAY;
+#endif

@@ -1,3 +1,6 @@
+#ifndef MAINMENU_H
+#define MAINMENU_H
+
 #include "operations.h"
 
 class MainMenuClass {
@@ -17,3 +20,4 @@ class MainMenuClass {
   };
 
 extern MainMenuClass MAINMENU;
+#endif

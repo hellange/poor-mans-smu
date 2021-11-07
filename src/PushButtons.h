@@ -1,3 +1,6 @@
+#ifndef PUSHBUTTONS_H
+#define PUSHBUTTONS_H
+
 #include "Arduino.h"
 #include <SPI.h>
 
@@ -23,3 +26,4 @@ public:
   void setCallback(void (*callback)(int button, bool quickPress, bool holdAfterLongPress, bool releaseAfterLongPress));
 
 };
+#endif
