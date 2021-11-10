@@ -21,6 +21,11 @@ public:
 
   bool bufferOverflow = false;
   bool digitize = false;
+int samplesAfterTrigger;
+  int countSinceLastSample;
+
+  int adrAtTrigger;
+  int allowTrigger;
 
 };
 

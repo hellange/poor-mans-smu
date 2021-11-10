@@ -13,6 +13,8 @@ bool triggered = false;
 int digitizeDuration = millis();
 float lastVoltage = 0.0;
 float ramEmulator[1000];
+float ramEmulator2[1000];
+
 int digitizeCounter = 0;
 int dummyCounter=0;
 
@@ -47,11 +49,38 @@ bool DigitizerClass::loopDigitize() {
     SMU[0].disable_ADC_DAC_SPI_units();
     GD.resume();
     GD.Clear();
-    VOLT_DISPLAY.renderMeasured(10,50, minDigV, false);
-    VOLT_DISPLAY.renderMeasured(10,150, maxDigV, false);
+
+    GD.Tag(171);
+       GD.cmd_button(0,350,95,50,29,0, "trigger");
+       int tag = GD.inputs.tag;
+       if (tag == 171) {
+         DIGITIZER.allowTrigger++;
+       }
+
+    //VOLT_DISPLAY.renderMeasured(10,50, minDigV, false);
+    //VOLT_DISPLAY.renderMeasured(10,150, maxDigV, false);
     //  CURRENT_DISPLAY.renderMeasured(10,250, minDigI, false, false,current_range);
     //  CURRENT_DISPLAY.renderMeasured(10,350, maxDigI, false, false, current_range);
-    GD.cmd_number(10,320, 28, 6, digitizeCounter);
+    //GD.cmd_number(10,320, 28, 6, digitizeCounter);
+    //GD.cmd_number(210,320, 28, 6, adrAtTrigger);
+    //GD.cmd_number(410,320, 28, 6, ramAdrPtr);
+    
+    GD.cmd_number(500,320, 28, 6, allowTrigger);
+
+
+int yAxisPx = 220;
+int xAxisPx = 400;
+
+    GD.Begin(LINE_STRIP);
+    GD.ColorA(255);
+    GD.ColorRGB(0x0000ff);
+    GD.Vertex2ii(xAxisPx, 20);
+    GD.Vertex2ii(xAxisPx, 400);
+    GD.Begin(LINE_STRIP);
+    GD.Vertex2ii(0, yAxisPx);
+    GD.Vertex2ii(800, yAxisPx);
+
+
     //    VOLT_DISPLAY.renderMeasured(10,200, fullSamplePeriod, false);
     digitizeCounter = 0;
     GD.Begin(LINE_STRIP);
@@ -60,12 +89,29 @@ bool DigitizerClass::loopDigitize() {
 
     float mva[400];
     float mia[400];
-
+/*
     for (int x = 0; x<nrOfFloats; x++) {
       int adr = x*8;
       mva[x] = ramEmulator[adr/4]; //RAM.readRAMfloat(adr);
       mia[x] = ramEmulator[adr/4 + 1]; //RAM.readRAMfloat(adr+4);
     }
+    */
+   for (int x=0; x<=nrOfFloats;x++) {
+       mva[x] = 0.0;
+   }
+   for (int x=0; x<=nrOfFloats/2;x++) {
+       mva[x+nrOfFloats/2] = ramEmulator2[x];
+   }
+
+   int adr = adrAtTrigger;
+   for (int x=nrOfFloats/2; x>=0 ;x--) {
+       //mva[x] = 0.0;
+        mva[x] = ramEmulator[adr];
+        adr--;
+        if (adr < 0) {
+            adr = nrOfFloats;
+        }
+   }
   
     for (int x = 0; x<nrOfFloats; x++) {
 
@@ -75,7 +121,7 @@ bool DigitizerClass::loopDigitize() {
         float relative = mid - mva[x]; 
         float y = relative*20;
         // float y = mva[x] / 100.0;
-        GD.Vertex2ii(x*2, 200 + mva[x]/1000.0 * 50.0);
+        GD.Vertex2ii(x*2, yAxisPx - mva[x]/1000.0 * 50.0);
       }  
     }
     return true; // must end GD
@@ -142,36 +188,46 @@ bool DigitizerClass::handleSamplingForDigitizer(int dataR) {
 
   bool zeroCross = lastVoltage < 0.0 && v > 0.0 ;
   bool positiveEdge = v > lastVoltage + 10.0;
+  countSinceLastSample ++;
+  if (countSinceLastSample<nrOfFloats) {
+      positiveEdge = false; // dont trust edge detection before some samples after last full buffer
+  }
+
+  if (triggered) {
+      ramEmulator2[samplesAfterTrigger++] = v;
+  }
 
   bool continuous = false;
   if (!triggered) {
     if (continuous or positiveEdge) {
       triggered = true;
+      adrAtTrigger = ramAdrPtr;
       //Serial.println("Triggered!");
       } else {
        lastVoltage = v;         
-       return true;
+       //return true;
       }
     }
+
     lastVoltage = v;
 
     //RAM.writeRAMfloat(ramAdrPtr, v);
-    ramEmulator[ramAdrPtr/4] = v;
+    ramEmulator[ramAdrPtr] = v;
     if (ramAdrPtr == 0) {
       digitizeDuration = millis();
     }
-    ramAdrPtr += 4;
-    if (ramAdrPtr > nrOfFloats*4 *2) {
+    ramAdrPtr ++;
+    if (ramAdrPtr > nrOfFloats) {
+        ramAdrPtr = 0;
+    }
+    //if (ramAdrPtr > nrOfFloats*4 *2) {
+    if (samplesAfterTrigger == nrOfFloats/2) {
       bufferOverflow = true;
       triggered = false;
+      samplesAfterTrigger = 0;
+      countSinceLastSample = 0;
       lastVoltage=0.0;
-      //lastVoltage = 0.0;
-      //Serial.println("Overflow!");
-      ramAdrPtr = 0;
-      //Serial.print("Digitize duration:");
-      //Serial.println(millis() - digitizeDuration);
-      //Serial.print("Adr:");
-      //Serial.println(ramAdrPtr);  
+
     }
     curDigV = v;
     if (v > maxDigV) {
