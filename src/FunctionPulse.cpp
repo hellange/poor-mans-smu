@@ -54,7 +54,7 @@ void FunctionPulseClass::open(OPERATION_TYPE operationType_, void (*closedFn_)(O
 
   //myPulseTimer.begin(sourcePulse, 10000); // in microseconds
   updateSamplingPeriod(hz);
-  SPI.usingInterrupt(myPulseTimer);
+  //SPI.usingInterrupt(myPulseTimer);
   
 }
 
@@ -64,16 +64,17 @@ void FunctionPulseClass::close() {
 }
 
 void FunctionPulseClass::updateSamplingPeriod(int hz) {
-   myPulseTimer.end();
+   //myPulseTimer.end();
    float period = 1.0/(float)hz;
    float ms = period * 1000.0;
    float us = ms * 1000;
    Serial.print("Updating pulse sampling rate, us=");
    Serial.println(us);
    Serial.flush();
+   SPI.usingInterrupt(myPulseTimer);
    myPulseTimer.begin(sourcePulse, us);
    myPulseTimer.priority(0); // highest pri
-   SPI.usingInterrupt(myPulseTimer);
+   //SPI.usingInterrupt(myPulseTimer);
 }
 
 int sinceLastPress = millis();

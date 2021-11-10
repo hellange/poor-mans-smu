@@ -2260,6 +2260,15 @@ void loopMain()
   #ifndef SAMPLING_BY_INTERRUPT 
     handleSampling(); 
   #endif
+  // Dont use interrupt driven voltage measurement when in pulse mode
+  // becuase pulse uses interrupt to create pulses.
+  // Should work woth two interrupts at the same time ???? Why do I have problems ?
+  // TODO: Fix the above problem and see if this hack below can be removed 
+  #ifdef SAMPLING_BY_INTERRUPT 
+  if (functionType == SOURCE_PULSE) {
+    handleSampling(); 
+  }
+  #endif
 
 
   if (functionType == SOURCE_SWEEP) {
@@ -2342,6 +2351,7 @@ void rotaryChangedDontCareFn(float changeVal) {
 void pushButtonEncDontCareFn(int key, bool quickPress, bool holdAfterLongPress, bool releaseAfterLongPress) {
 }
 
+float oldSetVoltage;
 
 void closeMainMenuCallback(FUNCTION_TYPE newFunctionType) {
   
@@ -2364,6 +2374,10 @@ void closeMainMenuCallback(FUNCTION_TYPE newFunctionType) {
   // do a close on the existing function. It should do neccessary cleanup
   if (functionType == SOURCE_PULSE) {
     FUNCTION_PULSE.close(); // Hmmm... how to let something go in the background while showing logger ????
+    #ifdef SAMPLING_BY_INTERRUPT
+  myTimer.begin(handleSampling, 20); // in microseconds.Lower that 20 hangs the display... why ?
+  SPI.usingInterrupt(myTimer);
+#endif
   } else if (functionType == SOURCE_SWEEP) {
     FUNCTION_SWEEP.close(); //Hmmm... how to let something go in the background while showing logger ????
   } else if (functionType == DIGITIZE) {
@@ -2379,6 +2393,12 @@ void closeMainMenuCallback(FUNCTION_TYPE newFunctionType) {
 
   // The newly selected function...
   if (newFunctionType == SOURCE_PULSE) {
+    #ifdef SAMPLING_BY_INTERRUPT
+    GD.__end();
+    myTimer.end();  // stop normal voltage mesurement sampling
+#endif
+
+
     FUNCTION_PULSE.open(operationType, closedPulse);
   } else if (newFunctionType == SOURCE_SWEEP) {
     FUNCTION_SWEEP.open(operationType, closedSweep);
