@@ -386,7 +386,7 @@ int32_t AD7176_Setup(void)
     enum AD7176_registers regNr;
 
     /* Initialize the SPI communication. */
-    AD7176_Init(0, 6000000, 1,0);
+    AD7176_Init(0, 12000000, 1,0);
 
     /*  Reset the device interface.*/
     AD7176_Reset();

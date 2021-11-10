@@ -1492,7 +1492,7 @@ float simulatedWaveform;
 static void handleSampling() {
 
   int dataR = SMU[0].dataReady();
-   if (DIGITIZER.digitize == true && DIGITIZER.bufferOverflow ==false && (dataR == 0 or dataR == 1)) {
+   if (DIGITIZER.digitize == true && (dataR == 0 or dataR == 1)) {
      DIGITIZER.handleSamplingForDigitizer(dataR);
      return;
    }
@@ -1573,6 +1573,7 @@ void handleAutoCurrentRange() {
 }
 
 int displayUpdateTimer = millis();
+int samplesUpdateTimer = millis();
 
 int loopUpdateTimer = millis();
 
@@ -1596,7 +1597,7 @@ void loop() {
 
   //TODO: Not sure if this should be here.... this is more that "display time"... it also handles sampling of not driven by timer interrupt...
   if (displayUpdateTimer + 20 > (int)millis()) {
-    return; 
+    //return; 
   }
  
   displayUpdateTimer = millis();
@@ -1604,7 +1605,14 @@ void loop() {
    #ifndef SAMPLING_BY_INTERRUPT 
     handleSampling(); 
    #endif
-    if (DIGITIZER.loopDigitize()) {
+    DIGITIZER.loopDigitize();
+    if (!DIGITIZER.digitize || (int)millis() > samplesUpdateTimer + 500  || MAINMENU.active){
+      DIGITIZER.rendering = true;
+      samplesUpdateTimer = (int)millis();
+      SMU[0].disable_ADC_DAC_SPI_units();
+      GD.resume();
+      GD.Clear();
+      DIGITIZER.renderGraph();
       int tag = GD.inputs.tag;
       // TODO: don't need to check buttons for inactive menus or functions...
       MAINMENU.handleButtonAction(tag);
@@ -1614,6 +1622,7 @@ void loop() {
       renderMainHeader();
       GD.swap();
       GD.__end();
+      DIGITIZER.rendering = false;
     }
 
   } else if (functionType == GRAPH) {
@@ -2360,8 +2369,10 @@ void closeMainMenuCallback(FUNCTION_TYPE newFunctionType) {
   } else if (functionType == DIGITIZE) {
     //TODO: Use method when digitizer is moved out as separate class
     //      For now, just readjust sampling speed
-    SMU[0].setSamplingRate(20); //TODO: Should get back to same as before, not a default one
+    DIGITIZER.close();
+    //SMU[0].setSamplingRate(20); //TODO: Should get back to same as before, not a default one
   } else if (functionType == SOURCE_DC_CURRENT) {
+      GD.__end();
       SMU[0].setGPIO(0, 0); // use volt feedback
   }
  

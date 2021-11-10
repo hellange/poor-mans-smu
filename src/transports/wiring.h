@@ -27,7 +27,7 @@ public:
 
     SPI.begin();
 #if defined(TEENSYDUINO) || defined(ARDUINO_ARCH_STM32L4)
-    SPI.beginTransaction(SPISettings(8000000, MSBFIRST, SPI_MODE0));
+    SPI.beginTransaction(SPISettings(16000000, MSBFIRST, SPI_MODE0));
 #else
 #if !defined(__DUE__) && !defined(ESP8266)
     SPI.setClockDivider(SPI_CLOCK_DIV2);
@@ -297,7 +297,7 @@ public:
   static void __start(uint32_t addr) // start an SPI transaction to addr
   {
 delayMicroseconds(1);
-SPI.beginTransaction(SPISettings(4000000, MSBFIRST, SPI_MODE0));
+SPI.beginTransaction(SPISettings(16000000, MSBFIRST, SPI_MODE0));
     digitalWrite(CS, LOW);
 //digitalWrite(7,HIGH);
     SPI.transfer(addr >> 16);
@@ -311,7 +311,7 @@ SPI.beginTransaction(SPISettings(4000000, MSBFIRST, SPI_MODE0));
   static void __wstart(uint32_t addr) // start an SPI write transaction to addr
   {
 delayMicroseconds(1);
-SPI.beginTransaction(SPISettings(4000000, MSBFIRST, SPI_MODE0));
+SPI.beginTransaction(SPISettings(16000000, MSBFIRST, SPI_MODE0));
     digitalWrite(CS, LOW);
 //digitalWrite(7,HIGH);
     SPI.transfer(0x80 | (addr >> 16));
