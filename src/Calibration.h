@@ -1,3 +1,5 @@
+#ifndef CALIBRATION_H
+#define CALIBRATION_H
 
 #include "operations.h"
 #include "Filters.h"
@@ -139,3 +141,5 @@ public:
 
 extern CalibrationClass V_CALIBRATION;
 extern CalibrationClass C_CALIBRATION;
+
+#endif
