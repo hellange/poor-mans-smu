@@ -1,4 +1,5 @@
 #include "Calibration.h"
+#include "Stats.h"
 #include "Arduino.h"
 #include <SPI.h>
 #include "GD2.h"
@@ -1270,4 +1271,346 @@ void CalibrationClass::renderCal(int x, int y, float valM, float setM, CURRENT_R
   GD.Tag(BUTTON_DAC_GAIN_COMP_LIM_DOWN);
   GD.ColorRGB(DIGIT_UTIL.indicateColor(0x000000, 0x00ff00, 50, BUTTON_DAC_GAIN_COMP_LIM_DOWN));
   GD.cmd_button(x + 10, y + 155, 100, 50, 29, 0, "DOWN");
+}
+
+
+bool CalibrationClass::handleCalibrationButtons(int tag, OPERATION_TYPE operationType) {
+
+    int valueToReturnIfTooFast = false;
+
+    if (tag == BUTTON_DAC_GAIN_COMP_UP) {
+       if (timeSinceLastChange + 200 > millis()){
+        return valueToReturnIfTooFast;
+       } 
+       timeSinceLastChange = millis();
+       DIGIT_UTIL.startIndicator(tag);
+       float mv = SMU[0].getSetValue_micro()/1000.0;
+       if (operationType == SOURCE_VOLTAGE) {
+         if (mv < 0) {
+            V_CALIBRATION.adjDacGainCompNeg(0.000005);
+         } else {
+            V_CALIBRATION.adjDacGainCompPos(0.000005);
+         }
+         GD.__end();
+         //if (SMU[0].fltSetCommitVoltageSource(mv*1000, true)) printError(_PRINT_ERROR_VOLTAGE_SOURCE_SETTING);
+         SMU[0].fltSetCommitVoltageSource(mv*1000, true);
+
+         GD.resume();
+       } else {
+          if (mv < 0) {
+            C_CALIBRATION.adjDacGainCompNeg(0.00001);
+         } else {
+            C_CALIBRATION.adjDacGainCompPos(0.00001);
+         }
+         GD.__end();
+         //if (SMU[0].fltSetCommitCurrentSource(mv*1000)) printError(_PRINT_ERROR_VOLTAGE_SOURCE_SETTING);
+         SMU[0].fltSetCommitCurrentSource(mv*1000);
+
+         GD.resume();
+       }
+    } 
+    
+    else if (tag == BUTTON_DAC_GAIN_COMP_UP2) {
+       if (timeSinceLastChange + 200 > millis()){
+        return valueToReturnIfTooFast;
+       } 
+       timeSinceLastChange = millis();
+       DIGIT_UTIL.startIndicator(tag);
+       float mv = SMU[0].getSetValue_micro()/1000.0;
+       if (operationType == SOURCE_VOLTAGE) {
+         if (mv < 0) {
+            V_CALIBRATION.adjDacGainCompNeg2(0.000005);
+         } else {
+            V_CALIBRATION.adjDacGainCompPos2(0.000005);
+         }
+         GD.__end();
+         //if (SMU[0].fltSetCommitVoltageSource(mv*1000, true)) printError(_PRINT_ERROR_VOLTAGE_SOURCE_SETTING);
+         SMU[0].fltSetCommitVoltageSource(mv*1000, true);
+
+         GD.resume();
+       } else {
+          if (mv < 0) {
+            C_CALIBRATION.adjDacGainCompNeg2(0.000005);
+         } else {
+            C_CALIBRATION.adjDacGainCompPos2(0.000005);
+         }
+         GD.__end();
+         //if (SMU[0].fltSetCommitCurrentSource(mv*1000)) printError(_PRINT_ERROR_VOLTAGE_SOURCE_SETTING);
+         SMU[0].fltSetCommitCurrentSource(mv*1000);
+
+         GD.resume();
+       }
+    } 
+
+    else if (tag == BUTTON_DAC_GAIN_COMP_DOWN) {
+       if (timeSinceLastChange + 200 > millis()){
+        return valueToReturnIfTooFast;
+      } 
+       timeSinceLastChange = millis();
+       DIGIT_UTIL.startIndicator(tag);
+       float mv = SMU[0].getSetValue_micro()/1000.0;
+       if (operationType == SOURCE_VOLTAGE) {
+         if (mv < 0) {
+            V_CALIBRATION.adjDacGainCompNeg(-0.000005);
+         } else {
+            V_CALIBRATION.adjDacGainCompPos(-0.000005);
+         }
+         //if (operationType == SOURCE_VOLTAGE) {
+         GD.__end();
+         //if (SMU[0].fltSetCommitVoltageSource(mv*1000, true)) printError(_PRINT_ERROR_VOLTAGE_SOURCE_SETTING);
+         SMU[0].fltSetCommitVoltageSource(mv*1000, true);
+
+         GD.resume();
+       } else {
+          if (mv < 0) {
+            C_CALIBRATION.adjDacGainCompNeg(-0.00001 );
+         } else {
+            C_CALIBRATION.adjDacGainCompPos(-0.00001 );
+         }
+         GD.__end();
+         //if (SMU[0].fltSetCommitCurrentSource(mv*1000.0)) printError(_PRINT_ERROR_VOLTAGE_SOURCE_SETTING);
+         SMU[0].fltSetCommitCurrentSource(mv*1000.0);
+         GD.resume();
+       }   
+    } 
+    
+    else if (tag == BUTTON_DAC_GAIN_COMP_DOWN2) {
+       if (timeSinceLastChange + 200 > millis()){
+        return valueToReturnIfTooFast;
+      } 
+       timeSinceLastChange = millis();
+       DIGIT_UTIL.startIndicator(tag);
+       float mv = SMU[0].getSetValue_micro()/1000.0;
+       if (operationType == SOURCE_VOLTAGE) {
+         if (mv < 0) {
+            V_CALIBRATION.adjDacGainCompNeg2(-0.000005);
+         } else {
+            V_CALIBRATION.adjDacGainCompPos2(-0.000005);
+         }
+         //if (operationType == SOURCE_VOLTAGE) {
+         GD.__end();
+         //if (SMU[0].fltSetCommitVoltageSource(mv*1000, true)) printError(_PRINT_ERROR_VOLTAGE_SOURCE_SETTING);
+         SMU[0].fltSetCommitVoltageSource(mv*1000, true);
+         GD.resume();
+       } else {
+          if (mv < 0) {
+            C_CALIBRATION.adjDacGainCompNeg2(-0.000005);
+         } else {
+            C_CALIBRATION.adjDacGainCompPos2(-0.000005);
+         }
+         GD.__end();
+         //if (SMU[0].fltSetCommitCurrentSource(mv*1000)) printError(_PRINT_ERROR_VOLTAGE_SOURCE_SETTING);
+         SMU[0].fltSetCommitCurrentSource(mv*1000);
+         GD.resume();
+       }   
+    } 
+ 
+    else if (tag == BUTTON_DAC_GAIN_COMP_LIM_UP) {
+       if (timeSinceLastChange + 200 > millis()){
+        return valueToReturnIfTooFast;
+      } 
+       timeSinceLastChange = millis();
+       DIGIT_UTIL.startIndicator(tag);
+       float mv = SMU[0].getLimitValue_micro();
+       if (operationType == SOURCE_VOLTAGE) {
+         V_CALIBRATION.adjDacGainCompLim(+0.000005*10.0);
+         
+         //if (operationType == SOURCE_VOLTAGE) {
+         GD.__end();
+         //if (SMU[0].fltSetCommitCurrentLimit(mv*1000, true)) printError(_PRINT_ERROR_VOLTAGE_SOURCE_SETTING);
+         SMU[0].fltSetCommitCurrentLimit(mv*1000, true);
+         GD.resume();
+       }
+    } 
+    
+    else if (tag == BUTTON_DAC_GAIN_COMP_LIM_DOWN) {
+       if (timeSinceLastChange + 200 > millis()){
+        return valueToReturnIfTooFast;
+      } 
+       timeSinceLastChange = millis();
+       DIGIT_UTIL.startIndicator(tag);
+       float mv = SMU[0].getLimitValue_micro();
+       if (operationType == SOURCE_VOLTAGE) {
+         V_CALIBRATION.adjDacGainCompLim(-0.000005*10.0);
+         
+         //if (operationType == SOURCE_VOLTAGE) {
+         GD.__end();
+         //if (SMU[0].fltSetCommitCurrentLimit(mv*1000, true)) printError(_PRINT_ERROR_VOLTAGE_SOURCE_SETTING);
+         SMU[0].fltSetCommitCurrentLimit(mv*1000, true);
+
+         GD.resume();
+       }   
+    } 
+    
+    else if (tag == BUTTON_ADC_GAIN_COMP_UP) {
+       if (timeSinceLastChange + 200 > millis()){
+        return valueToReturnIfTooFast;
+        
+       } 
+       timeSinceLastChange = millis();
+       DIGIT_UTIL.startIndicator(tag);
+       float mv = SMU[0].getSetValue_micro()/1000.0;
+       if (operationType == SOURCE_VOLTAGE) {
+         mv = V_STATS.rawValue;
+         if (mv < 0) {
+            V_CALIBRATION.adjAdcGainCompNeg(0.000001 * 10.0);
+         } else {
+            V_CALIBRATION.adjAdcGainCompPos(0.000001 * 10.0);
+         }
+       } else {
+         mv = C_STATS.rawValue;
+         if (mv < 0) {
+            C_CALIBRATION.adjAdcGainCompNeg(0.000005 *10.0);
+         } else {
+            C_CALIBRATION.adjAdcGainCompPos(0.000005 *10.0);
+         }
+       }
+      
+    } 
+    else if (tag == BUTTON_ADC_GAIN_COMP_DOWN) {
+       if (timeSinceLastChange + 200 > millis()){
+        return valueToReturnIfTooFast;
+       } 
+       timeSinceLastChange = millis();
+       DIGIT_UTIL.startIndicator(tag);
+       float mv = SMU[0].getSetValue_micro()/1000.0;
+       if (operationType == SOURCE_VOLTAGE) {
+         mv = V_STATS.rawValue;
+         if (mv < 0) {
+            V_CALIBRATION.adjAdcGainCompNeg(-0.000001 * 10.0);
+         } else {
+            V_CALIBRATION.adjAdcGainCompPos(-0.000001 * 10.0);
+         }
+       } else {
+        mv = C_STATS.rawValue;
+        if (mv < 0) {
+            C_CALIBRATION.adjAdcGainCompNeg(-0.000005 *2.0);
+         } else {
+            C_CALIBRATION.adjAdcGainCompPos(-0.000005 *2.0);
+         }
+       }
+      
+    } 
+
+    else if (tag == BUTTON_ADC_GAIN_COMP_UP2) {
+       if (timeSinceLastChange + 200 > millis()){
+        return valueToReturnIfTooFast;
+        
+       } 
+       timeSinceLastChange = millis();
+       DIGIT_UTIL.startIndicator(tag);
+       float mv = SMU[0].getSetValue_micro()/1000.0;
+       if (operationType == SOURCE_VOLTAGE) {
+         mv = V_STATS.rawValue;
+         if (mv < 0) {
+            V_CALIBRATION.adjAdcGainCompNeg2(0.000001);
+         } else {
+            V_CALIBRATION.adjAdcGainCompPos2(0.000001);
+         }
+       } else {
+         mv = C_STATS.rawValue;
+         if (mv < 0) {
+            C_CALIBRATION.adjAdcGainCompNeg2(0.000001);
+         } else {
+            C_CALIBRATION.adjAdcGainCompPos2(0.000001);
+         }
+       }
+      
+    } 
+    else if (tag == BUTTON_ADC_GAIN_COMP_DOWN2) {
+       if (timeSinceLastChange + 200 > millis()){
+        return valueToReturnIfTooFast;
+       } 
+       timeSinceLastChange = millis();
+       DIGIT_UTIL.startIndicator(tag);
+       float mv = SMU[0].getSetValue_micro()/1000.0;
+       if (operationType == SOURCE_VOLTAGE) {
+         mv = V_STATS.rawValue;
+         if (mv < 0) {
+            V_CALIBRATION.adjAdcGainCompNeg2(-0.000001);
+         } else {
+            V_CALIBRATION.adjAdcGainCompPos2(-0.000001);
+         }
+       } else {
+        mv = C_STATS.rawValue;
+        if (mv < 0) {
+            C_CALIBRATION.adjAdcGainCompNeg2(-0.000001);
+         } else {
+            C_CALIBRATION.adjAdcGainCompPos2(-0.000001);
+         }
+       }
+      
+    } 
+    
+    
+    
+    else if (tag == BUTTON_DAC_ZERO_COMP_UP or tag == BUTTON_DAC_ZERO_COMP_UP2 ) {
+      if (timeSinceLastChange + 200 > millis()){
+        return valueToReturnIfTooFast;
+      } 
+      timeSinceLastChange = millis();
+       DIGIT_UTIL.startIndicator(tag);
+       float mv = SMU[0].getSetValue_micro()/1000.0;
+       if (operationType == SOURCE_VOLTAGE) {
+          V_CALIBRATION.adjDacZeroComp(+0.000002);
+          GD.__end();
+         //if (SMU[0].fltSetCommitVoltageSource(mv*1000, true)) printError(_PRINT_ERROR_VOLTAGE_SOURCE_SETTING);
+         SMU[0].fltSetCommitVoltageSource(mv*1000, true);
+         GD.resume();
+         
+       } else {
+          if (tag == BUTTON_DAC_ZERO_COMP_UP) {
+            C_CALIBRATION.adjDacZeroComp(+0.000001);
+          } else {
+            C_CALIBRATION.adjDacZeroComp2(+0.000002);
+          }
+          GD.__end();
+         //if (SMU[0].fltSetCommitCurrentSource(mv*1000)) printError(_PRINT_ERROR_VOLTAGE_SOURCE_SETTING);
+         SMU[0].fltSetCommitCurrentSource(mv*1000);
+
+         GD.resume();    
+       }
+    }
+    else if (tag == BUTTON_DAC_ZERO_COMP_DOWN or tag == BUTTON_DAC_ZERO_COMP_DOWN2) {
+       if (timeSinceLastChange + 200 > millis()){
+         return valueToReturnIfTooFast;
+       } 
+       timeSinceLastChange = millis();
+       DIGIT_UTIL.startIndicator(tag);
+       float mv = SMU[0].getSetValue_micro()/1000.0;
+       if (operationType == SOURCE_VOLTAGE) {
+         V_CALIBRATION.adjDacZeroComp(-0.000002);
+         GD.__end();
+         //if (SMU[0].fltSetCommitVoltageSource(mv*1000, true)) printError(_PRINT_ERROR_VOLTAGE_SOURCE_SETTING);
+         SMU[0].fltSetCommitVoltageSource(mv*1000, true);
+         GD.resume();
+       } else {
+         if (tag == BUTTON_DAC_ZERO_COMP_DOWN) {
+           C_CALIBRATION.adjDacZeroComp(-0.000001);
+         } else {
+           C_CALIBRATION.adjDacZeroComp2(-0.000002);
+         }
+         GD.__end();
+         //if (SMU[0].fltSetCommitCurrentSource(mv*1000)) printError(_PRINT_ERROR_VOLTAGE_SOURCE_SETTING);
+         SMU[0].fltSetCommitCurrentSource(mv*1000);
+         GD.resume(); 
+       }
+    }
+    else if (tag == BUTTON_DAC_NONLINEAR_CALIBRATE) {
+       if (timeSinceLastChange + 1000 > millis()){
+        return valueToReturnIfTooFast;
+       } 
+       timeSinceLastChange = millis();
+       DIGIT_UTIL.startIndicator(tag);
+
+       if (operationType == SOURCE_VOLTAGE) {
+         Serial.println("Start auto calibration of dac non linearity in voltage source mode");
+         V_CALIBRATION.startAutoCal();
+       } else {
+         Serial.println("Start auto calibration of dac non linearity in current source mode");
+         C_CALIBRATION.startAutoCal();
+       }
+      
+    } 
+    return true; // normal
 }

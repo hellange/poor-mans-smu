@@ -1409,7 +1409,6 @@ static void handleSampling() {
 }
 
 void handleAutoCurrentRange() {
-     return;
      if (!ZEROCALIBRATION.autoNullStarted && !V_CALIBRATION.autoCalInProgress && !C_CALIBRATION.autoCalInProgress) {
       float milliAmpere = C_STATS.rawValue;
 //      Serial.print(milliAmpere,5);
@@ -1575,8 +1574,7 @@ int x[10];
 int y[10];
 int nrOfChecks = 3;
 int checkButtons() {
-
-  int valueToReturnIfTooFast = 0;
+int valueToReturnIfTooFast = 0;
 
     if (MAINMENU.active == true) {
       return 0;
@@ -1636,12 +1634,8 @@ int checkButtons() {
       //Serial.println("Button pressed :-)");
     }
 
-
-    
     buttonPressedPeriod= 0;
 
- 
-      
     prevTag = tag;
     
   
@@ -1680,40 +1674,10 @@ int checkButtons() {
         }
         timeSinceLastChange = millis();
         
-        // update limit setting 
-        //TODO: Update the limit value when changing current range.
-        //      Messy to to it here because if requires to switch between UI and DAC/ADC.
-        //      Move all operations to change DAC/ADC stuff to a common place when it needs to change? And only have that parth within the SPI settings ?
         GD.__end();
         disable_ADC_DAC_SPI_units(); 
-
-
-        
         SMU[0].setCurrentRange(current_range,operationType);
-
-        // NOTE: The current limit update is now automatically handled by the setCurrentRange function
-        /*
-        //TODO: Use getLimitValue from SMU instead of LIMIT_DIAL ?
-        if (operationType == SOURCE_CURRENT){
-   
-          if (SMU[0].fltSetCommitVoltageLimit(LIMIT_DIAL.getMv()/1000.0, _SOURCE_AND_SINK)) printError(_PRINT_ERROR_VOLTAGE_SOURCE_SETTING);
-
-        } else {
-          if (SMU[0].fltSetCommitCurrentLimit(*LIMIT_DIAL.getMv()/1000.0, _SOURCE_AND_SINK)) printError(_PRINT_ERROR_VOLTAGE_SOURCE_SETTING);
-
-         }
-        */
         GD.resume();
-
-        
-        if (operationType == SOURCE_CURRENT){
-          //Serial.println("SHOULD SET NEW OUTPUT WHEN SWITCHING CURRENT RANGE IN SOURCE CURRENT MODE ????");
-          //if (SMU[0].fltSetCommitCurrentSource(SMU[0].getSetValuemV())) printError(_PRINT_ERROR_VOLTAGE_SOURCE_SETTING);
-        }
-
-
-
-        
 
       }
     } else if (tag == BUTTON_SAMPLE_RATE_5 or tag == BUTTON_SAMPLE_RATE_20 or tag == BUTTON_SAMPLE_RATE_50 or tag == BUTTON_SAMPLE_RATE_100) { //TODO: Change name
@@ -1736,340 +1700,17 @@ int checkButtons() {
 
     } 
 
-
-
-
     #ifndef USE_SIMULATOR // dont want to mess up calibration while in simulation mode...
-    else if (tag == BUTTON_DAC_GAIN_COMP_UP) {
-       if (timeSinceLastChange + 200 > millis()){
-        return valueToReturnIfTooFast;
-       } 
-       timeSinceLastChange = millis();
-       DIGIT_UTIL.startIndicator(tag);
-       float mv = SMU[0].getSetValue_micro()/1000.0;
-       if (operationType == SOURCE_VOLTAGE) {
-         if (mv < 0) {
-            V_CALIBRATION.adjDacGainCompNeg(0.000005);
-         } else {
-            V_CALIBRATION.adjDacGainCompPos(0.000005);
-         }
-         GD.__end();
-         if (SMU[0].fltSetCommitVoltageSource(mv*1000, true)) printError(_PRINT_ERROR_VOLTAGE_SOURCE_SETTING);
-         GD.resume();
-       } else {
-          if (mv < 0) {
-            C_CALIBRATION.adjDacGainCompNeg(0.00001);
-         } else {
-            C_CALIBRATION.adjDacGainCompPos(0.00001);
-         }
-         GD.__end();
-         if (SMU[0].fltSetCommitCurrentSource(mv*1000)) printError(_PRINT_ERROR_VOLTAGE_SOURCE_SETTING);
-         GD.resume();
-       }
-      
-    } 
     
-    else if (tag == BUTTON_DAC_GAIN_COMP_UP2) {
-       if (timeSinceLastChange + 200 > millis()){
-        return valueToReturnIfTooFast;
-       } 
-       timeSinceLastChange = millis();
-       DIGIT_UTIL.startIndicator(tag);
-       float mv = SMU[0].getSetValue_micro()/1000.0;
-       if (operationType == SOURCE_VOLTAGE) {
-         if (mv < 0) {
-            V_CALIBRATION.adjDacGainCompNeg2(0.000005);
-         } else {
-            V_CALIBRATION.adjDacGainCompPos2(0.000005);
-         }
-         GD.__end();
-         if (SMU[0].fltSetCommitVoltageSource(mv*1000, true)) printError(_PRINT_ERROR_VOLTAGE_SOURCE_SETTING);
-         GD.resume();
-       } else {
-          if (mv < 0) {
-            C_CALIBRATION.adjDacGainCompNeg2(0.000005);
-         } else {
-            C_CALIBRATION.adjDacGainCompPos2(0.000005);
-         }
-         GD.__end();
-         if (SMU[0].fltSetCommitCurrentSource(mv*1000)) printError(_PRINT_ERROR_VOLTAGE_SOURCE_SETTING);
-         GD.resume();
-       }
-      
-    } 
-
-    else if (tag == BUTTON_DAC_GAIN_COMP_DOWN) {
-       if (timeSinceLastChange + 200 > millis()){
-        return valueToReturnIfTooFast;
-      } 
-       timeSinceLastChange = millis();
-       DIGIT_UTIL.startIndicator(tag);
-       float mv = SMU[0].getSetValue_micro()/1000.0;
-       if (operationType == SOURCE_VOLTAGE) {
-         if (mv < 0) {
-            V_CALIBRATION.adjDacGainCompNeg(-0.000005);
-         } else {
-            V_CALIBRATION.adjDacGainCompPos(-0.000005);
-         }
-         //if (operationType == SOURCE_VOLTAGE) {
-         GD.__end();
-         if (SMU[0].fltSetCommitVoltageSource(mv*1000, true)) printError(_PRINT_ERROR_VOLTAGE_SOURCE_SETTING);
-         GD.resume();
-       } else {
-          if (mv < 0) {
-            C_CALIBRATION.adjDacGainCompNeg(-0.00001 );
-         } else {
-            C_CALIBRATION.adjDacGainCompPos(-0.00001 );
-         }
-         GD.__end();
-         if (SMU[0].fltSetCommitCurrentSource(mv*1000.0)) printError(_PRINT_ERROR_VOLTAGE_SOURCE_SETTING);
-         GD.resume();
-       }   
-    } 
-    
-    else if (tag == BUTTON_DAC_GAIN_COMP_DOWN2) {
-       if (timeSinceLastChange + 200 > millis()){
-        return valueToReturnIfTooFast;
-      } 
-       timeSinceLastChange = millis();
-       DIGIT_UTIL.startIndicator(tag);
-       float mv = SMU[0].getSetValue_micro()/1000.0;
-       if (operationType == SOURCE_VOLTAGE) {
-         if (mv < 0) {
-            V_CALIBRATION.adjDacGainCompNeg2(-0.000005);
-         } else {
-            V_CALIBRATION.adjDacGainCompPos2(-0.000005);
-         }
-         //if (operationType == SOURCE_VOLTAGE) {
-         GD.__end();
-         if (SMU[0].fltSetCommitVoltageSource(mv*1000, true)) printError(_PRINT_ERROR_VOLTAGE_SOURCE_SETTING);
-         GD.resume();
-       } else {
-          if (mv < 0) {
-            C_CALIBRATION.adjDacGainCompNeg2(-0.000005);
-         } else {
-            C_CALIBRATION.adjDacGainCompPos2(-0.000005);
-         }
-         GD.__end();
-         if (SMU[0].fltSetCommitCurrentSource(mv*1000)) printError(_PRINT_ERROR_VOLTAGE_SOURCE_SETTING);
-         GD.resume();
-       }   
-    } 
-    
-    
-
-
-
-    else if (tag == BUTTON_DAC_GAIN_COMP_LIM_UP) {
-       if (timeSinceLastChange + 200 > millis()){
-        return valueToReturnIfTooFast;
-      } 
-       timeSinceLastChange = millis();
-       DIGIT_UTIL.startIndicator(tag);
-       float mv = SMU[0].getLimitValue_micro();
-       if (operationType == SOURCE_VOLTAGE) {
-         V_CALIBRATION.adjDacGainCompLim(+0.000005*10.0);
-         
-         //if (operationType == SOURCE_VOLTAGE) {
-         GD.__end();
-         if (SMU[0].fltSetCommitCurrentLimit(mv*1000, true)) printError(_PRINT_ERROR_VOLTAGE_SOURCE_SETTING);
-         GD.resume();
-       }
-      
-       
-    } 
-    
-    
-    else if (tag == BUTTON_DAC_GAIN_COMP_LIM_DOWN) {
-       if (timeSinceLastChange + 200 > millis()){
-        return valueToReturnIfTooFast;
-      } 
-       timeSinceLastChange = millis();
-       DIGIT_UTIL.startIndicator(tag);
-       float mv = SMU[0].getLimitValue_micro();
-       if (operationType == SOURCE_VOLTAGE) {
-         V_CALIBRATION.adjDacGainCompLim(-0.000005*10.0);
-         
-         //if (operationType == SOURCE_VOLTAGE) {
-         GD.__end();
-         if (SMU[0].fltSetCommitCurrentLimit(mv*1000, true)) printError(_PRINT_ERROR_VOLTAGE_SOURCE_SETTING);
-         GD.resume();
-       }
-      
-       
-    } 
-    
-    
-    
-    
-    else if (tag == BUTTON_ADC_GAIN_COMP_UP) {
-       if (timeSinceLastChange + 200 > millis()){
-        return valueToReturnIfTooFast;
-        
-       } 
-       timeSinceLastChange = millis();
-       DIGIT_UTIL.startIndicator(tag);
-       float mv = SMU[0].getSetValue_micro()/1000.0;
-       if (operationType == SOURCE_VOLTAGE) {
-         mv = V_STATS.rawValue;
-         if (mv < 0) {
-            V_CALIBRATION.adjAdcGainCompNeg(0.000001 * 10.0);
-         } else {
-            V_CALIBRATION.adjAdcGainCompPos(0.000001 * 10.0);
-         }
-       } else {
-         mv = C_STATS.rawValue;
-         if (mv < 0) {
-            C_CALIBRATION.adjAdcGainCompNeg(0.000005 *10.0);
-         } else {
-            C_CALIBRATION.adjAdcGainCompPos(0.000005 *10.0);
-         }
-       }
-      
-    } 
-    else if (tag == BUTTON_ADC_GAIN_COMP_DOWN) {
-       if (timeSinceLastChange + 200 > millis()){
-        return valueToReturnIfTooFast;
-       } 
-       timeSinceLastChange = millis();
-       DIGIT_UTIL.startIndicator(tag);
-       float mv = SMU[0].getSetValue_micro()/1000.0;
-       if (operationType == SOURCE_VOLTAGE) {
-         mv = V_STATS.rawValue;
-         if (mv < 0) {
-            V_CALIBRATION.adjAdcGainCompNeg(-0.000001 * 10.0);
-         } else {
-            V_CALIBRATION.adjAdcGainCompPos(-0.000001 * 10.0);
-         }
-       } else {
-        mv = C_STATS.rawValue;
-        if (mv < 0) {
-            C_CALIBRATION.adjAdcGainCompNeg(-0.000005 *2.0);
-         } else {
-            C_CALIBRATION.adjAdcGainCompPos(-0.000005 *2.0);
-         }
-       }
-      
-    } 
-
-
-
-
-    else if (tag == BUTTON_ADC_GAIN_COMP_UP2) {
-       if (timeSinceLastChange + 200 > millis()){
-        return valueToReturnIfTooFast;
-        
-       } 
-       timeSinceLastChange = millis();
-       DIGIT_UTIL.startIndicator(tag);
-       float mv = SMU[0].getSetValue_micro()/1000.0;
-       if (operationType == SOURCE_VOLTAGE) {
-         mv = V_STATS.rawValue;
-         if (mv < 0) {
-            V_CALIBRATION.adjAdcGainCompNeg2(0.000001);
-         } else {
-            V_CALIBRATION.adjAdcGainCompPos2(0.000001);
-         }
-       } else {
-         mv = C_STATS.rawValue;
-         if (mv < 0) {
-            C_CALIBRATION.adjAdcGainCompNeg2(0.000001);
-         } else {
-            C_CALIBRATION.adjAdcGainCompPos2(0.000001);
-         }
-       }
-      
-    } 
-    else if (tag == BUTTON_ADC_GAIN_COMP_DOWN2) {
-       if (timeSinceLastChange + 200 > millis()){
-        return valueToReturnIfTooFast;
-       } 
-       timeSinceLastChange = millis();
-       DIGIT_UTIL.startIndicator(tag);
-       float mv = SMU[0].getSetValue_micro()/1000.0;
-       if (operationType == SOURCE_VOLTAGE) {
-         mv = V_STATS.rawValue;
-         if (mv < 0) {
-            V_CALIBRATION.adjAdcGainCompNeg2(-0.000001);
-         } else {
-            V_CALIBRATION.adjAdcGainCompPos2(-0.000001);
-         }
-       } else {
-        mv = C_STATS.rawValue;
-        if (mv < 0) {
-            C_CALIBRATION.adjAdcGainCompNeg2(-0.000001);
-         } else {
-            C_CALIBRATION.adjAdcGainCompPos2(-0.000001);
-         }
-       }
-      
-    } 
-    
-    
-    
-    else if (tag == BUTTON_DAC_ZERO_COMP_UP or tag == BUTTON_DAC_ZERO_COMP_UP2 ) {
-      if (timeSinceLastChange + 200 > millis()){
-        return valueToReturnIfTooFast;
-      } 
-      timeSinceLastChange = millis();
-       DIGIT_UTIL.startIndicator(tag);
-       float mv = SMU[0].getSetValue_micro()/1000.0;
-       if (operationType == SOURCE_VOLTAGE) {
-          V_CALIBRATION.adjDacZeroComp(+0.000002);
-          GD.__end();
-         if (SMU[0].fltSetCommitVoltageSource(mv*1000, true)) printError(_PRINT_ERROR_VOLTAGE_SOURCE_SETTING);
-         GD.resume();
-         
-       } else {
-          if (tag == BUTTON_DAC_ZERO_COMP_UP) {
-            C_CALIBRATION.adjDacZeroComp(+0.000001);
-          } else {
-            C_CALIBRATION.adjDacZeroComp2(+0.000002);
-          }
-          GD.__end();
-         if (SMU[0].fltSetCommitCurrentSource(mv*1000)) printError(_PRINT_ERROR_VOLTAGE_SOURCE_SETTING);
-         GD.resume();    
-       }
+    // TODO handleCalibrationButtons combines voltage and current.
+    //      should be rewritten so that V_CALIBRATION and C_CALIBRATION handles volt and current
+    //      respectivly. 
+    //      Currently, the code is only moved to Calibration. Just use the V_CALIBRATION for now
+    //      even though it also contains current calibration
+    if (!V_CALIBRATION.handleCalibrationButtons(tag,operationType)) {
+      return valueToReturnIfTooFast;
     }
-    else if (tag == BUTTON_DAC_ZERO_COMP_DOWN or tag == BUTTON_DAC_ZERO_COMP_DOWN2) {
-       if (timeSinceLastChange + 200 > millis()){
-         return valueToReturnIfTooFast;
-       } 
-       timeSinceLastChange = millis();
-       DIGIT_UTIL.startIndicator(tag);
-       float mv = SMU[0].getSetValue_micro()/1000.0;
-       if (operationType == SOURCE_VOLTAGE) {
-         V_CALIBRATION.adjDacZeroComp(-0.000002);
-         GD.__end();
-         if (SMU[0].fltSetCommitVoltageSource(mv*1000, true)) printError(_PRINT_ERROR_VOLTAGE_SOURCE_SETTING);
-         GD.resume();
-       } else {
-         if (tag == BUTTON_DAC_ZERO_COMP_DOWN) {
-           C_CALIBRATION.adjDacZeroComp(-0.000001);
-         } else {
-           C_CALIBRATION.adjDacZeroComp2(-0.000002);
-         }
-         GD.__end();
-         if (SMU[0].fltSetCommitCurrentSource(mv*1000)) printError(_PRINT_ERROR_VOLTAGE_SOURCE_SETTING);
-         GD.resume(); 
-       }
-    }
-    else if (tag == BUTTON_DAC_NONLINEAR_CALIBRATE) {
-       if (timeSinceLastChange + 1000 > millis()){
-        return valueToReturnIfTooFast;
-       } 
-       timeSinceLastChange = millis();
-       DIGIT_UTIL.startIndicator(tag);
-
-       if (operationType == SOURCE_VOLTAGE) {
-         Serial.println("Start auto calibration of dac non linearity in voltage source mode");
-         V_CALIBRATION.startAutoCal();
-       } else {
-         Serial.println("Start auto calibration of dac non linearity in current source mode");
-         C_CALIBRATION.startAutoCal();
-       }
-      
-    } else if (tag == BUTTON_DAC_ZERO_CALIBRATE) {
+    if (tag == BUTTON_DAC_ZERO_CALIBRATE) {
        if (timeSinceLastChange + 1000 > millis()){
         return valueToReturnIfTooFast;
        } 
@@ -2079,9 +1720,20 @@ int checkButtons() {
        timeSinceLastChange = millis();
        ZEROCALIBRATION.startNullCalibration(operationType);
     }
+ 
     #endif  // USE_SIMULATOR
     
     return tag;
+}
+
+
+void handleFunctionSpecifcButtonAction(FUNCTION_TYPE functionType, int tag, int tag2) {
+  if (functionType == SOURCE_PULSE) {
+        FUNCTION_PULSE.handleButtonAction(tag);
+      } else if (functionType == SOURCE_SWEEP) {
+        // Use raw tags for sweep function. TODO: update checkBUttons to handle holding etc.
+        FUNCTION_SWEEP.handleButtonAction(tag2); 
+      }
 }
 
 
@@ -2100,53 +1752,45 @@ void loopMain()
     //if (!V_CALIBRATION.autoCalDone) {
     //  V_CALIBRATION.startAutoCal();
     //}
-    RAM.startLog();
+    RAM.startLog(); //  TODO   ??? Why is this dependent on zero calibration being done ???
   }
 
   GD.__end();
 
-
-      //ADA4254.ada4254_5_gain();
-
- if (relayTimer+1000 < millis()) {
-   relayState = !relayState;
-  relayTimer = millis();
- // ADA4254.ada4254_id();
+  //TODO: Clean up this ADA4254 prototyp/test mess !!!!
+  //ADA4254.ada4254_5_gain();
+  if (relayTimer+1000 < millis()) {
+    relayState = !relayState;
+    relayTimer = millis();
+    // ADA4254.ada4254_id();
     ADA4254.ada4254_2(relayState);
-
-//ADA4254.ada4254_clear_analog_error();
-
-   ADA4254.ada4254_check();
-  // delay(500);
-//Serial.println("here333");
-   //ADA4254.ada4254(relayState);
-      //ADA4254.ada4254_5_gain();
-
-
- }
-
-
+    //ADA4254.ada4254_clear_analog_error();
+    ADA4254.ada4254_check();
+    // delay(500);
+    //Serial.println("here333");
+    //ADA4254.ada4254(relayState);
+    //ADA4254.ada4254_5_gain();
+  }
 
   // Auto range current measurement while sourcing voltage. 
   // Note that this gives small glitches in voltage.
   // TODO: Find out how large glitches and if it's a real problem...
   if (operationType == SOURCE_VOLTAGE) {
-      handleAutoCurrentRange();
+      //handleAutoCurrentRange();
   }
 
   #ifndef SAMPLING_BY_INTERRUPT 
     handleSampling(); 
   #endif
   // Dont use interrupt driven voltage measurement when in pulse mode
-  // becuase pulse uses interrupt to create pulses.
-  // Should work woth two interrupts at the same time ???? Why do I have problems ?
+  // because pulse uses interrupt to create pulses.
+  // Should work with two interrupts at the same time ???? Why do I have problems ?
   // TODO: Fix the above problem and see if this hack below can be removed 
   #ifdef SAMPLING_BY_INTERRUPT 
   if (functionType == SOURCE_PULSE) {
     handleSampling(); 
   }
   #endif
-
 
   if (functionType == SOURCE_SWEEP) {
     FUNCTION_SWEEP.handle();
@@ -2162,35 +1806,24 @@ void loopMain()
     detectGestures();
     if (!gestureDetected) {
       int tag = checkButtons();
-      
-      // TODO: don't need to check buttons for inactive menus or functions...
       MAINMENU.handleButtonAction(GD.inputs.tag);
-      FUNCTION_PULSE.handleButtonAction(tag);
-
-      // Use raw tags for sweep function. TODO: update checkBUttons to handle holding etc.
-      FUNCTION_SWEEP.handleButtonAction(GD.inputs.tag); 
+      handleFunctionSpecifcButtonAction(functionType, tag, GD.inputs.tag);
     }
-
     handleWidgetScrollPosition();
     displayWidget();  
     handleMenuScrolldown();
   } else {
-
+    // Special page without widgets etc...
     renderUpperDisplay(operationType, functionType);  
     //detectGestures();
- GD.get_inputs();
+    GD.get_inputs();
     int tag = GD.inputs.tag;
-
     Serial.println(tag);
-    
   }
 
-  
-  
   PUSHBUTTONS.handle();
-    PUSHBUTTON_ENC.handle();
+  PUSHBUTTON_ENC.handle();
 
-  
   if (V_CALIBRATION.autoCalInProgress or C_CALIBRATION.autoCalInProgress) {
     notification("Auto calibration in progress...");
   }
@@ -2207,19 +1840,16 @@ void loopMain()
       LIMIT_DIAL.checkKeypress();
       LIMIT_DIAL.handleKeypadDialog();
     }
-
   }
-
   GD.swap(); 
   GD.__end();
 }
 
-void closedPulse(OPERATION_TYPE t) {
-  
+
+void closedPulse(OPERATION_TYPE t) {  
 }
 
 void closedSweep(OPERATION_TYPE t) {
-  
 }
 
 void rotaryChangedDontCareFn(float changeVal) {
