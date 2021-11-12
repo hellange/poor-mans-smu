@@ -1150,18 +1150,23 @@ void renderMainHeader() {
   //showLoadResistance(590,0);
   //showFanSpeed(220, 0);
   //GD.cmd_number(50,0,27,2,LOGGER.percentageFull);
-  GD.cmd_number(520,0,27,2,UTILS.LM60_getTemperature(6));
 
-    GD.cmd_number(50,0,27,3,analogRead(16));
+  GD.ColorRGB(0x444444);
+  GD.cmd_number(0,0,27,3,analogRead(3)); // pushbutton analog value
+  GD.cmd_number(30,0,27,3,analogRead(16)); // encoder button value ?
 
-if (ETHERNET_UTIL.status == 1) {
-  GD.cmd_text(600, 0, 27, 0, "Ethernet:OK");
-} else {
-  GD.cmd_text(600,0,27,2, "Ethernet code:");
+   // uptime
+  GD.ColorRGB(0xaaaaaa);
+  GD.cmd_text(80, 0, 27, 0, "Uptime:");
+  DIGIT_UTIL.displayTime(millis(), 150, 0);
+
+  GD.ColorRGB(0xaaaadd);
+  if (ETHERNET_UTIL.status == 1) {
+    GD.cmd_text(600, 0, 27, 0, "Ethernet:OK");
+  } else {
+    GD.cmd_text(600,0,27,2, "Ethernet code:");
     GD.cmd_number(710,0,27,2, ETHERNET_UTIL.status);
-
-}
-
+  }
 
   int temp = UTILS.TC74_getTemperature();
   GD.ColorRGB(0xdddddd);
@@ -1177,6 +1182,9 @@ if (ETHERNET_UTIL.status == 1) {
   }
   GD.cmd_number(470,0,27,3, UTILS.TC74_getTemperature());
   GD.cmd_text(500,0,27,0,"C");
+
+  GD.ColorRGB(0xaaaaaa);
+  GD.cmd_number(520,0,27,2,UTILS.LM60_getTemperature(6));
 
   GD.ColorRGB(0xdddddd);
   // Show log info
@@ -1203,8 +1211,7 @@ if (ETHERNET_UTIL.status == 1) {
   GD.Vertex2ii(799, y);
   GD.ColorA(255);
 
-  // uptime
-  DIGIT_UTIL.displayTime(millis(), 120, 0);
+ 
   
 }
 
@@ -1563,7 +1570,6 @@ void loop() {
 
 
 int prevTag = 0;
-int prevTag2 = 0;
 int tagTimer = millis();
 
 
@@ -1573,6 +1579,8 @@ int prevButton = 0;
 int x[10];
 int y[10];
 int nrOfChecks = 3;
+
+
 int checkButtons() {
 int valueToReturnIfTooFast = 0;
 
@@ -1604,7 +1612,6 @@ int valueToReturnIfTooFast = 0;
         x[buttonPressedPeriod] = touchX;
         y[buttonPressedPeriod] = touchY;
         buttonPressedPeriod ++;
-
         //Serial.print("Button pressed:");
         //Serial.println(buttonPressedPeriod);
       }
@@ -1619,7 +1626,8 @@ int valueToReturnIfTooFast = 0;
       return 0;
     }
     bool accidental = false;
-    // check that all registred touches was within a certain area. To make sure it's not a gesture accidentally touching a button
+    // check that all registred touches was within a certain area. 
+    // If not, the touch registered was probably part of a gesture and should be ignored
     for (int i = 0; i<nrOfChecks-1;i++) {
       if (x[i] > x[i+1] + 10 or x[i] < x[i+1] - 10 or  y[i] > y[i+1] + 10 or  y[i] < y[i+1] - 10) {
         // at least one touch outside acceptable area !
@@ -1628,17 +1636,15 @@ int valueToReturnIfTooFast = 0;
     }
 
     if (accidental) {
-      Serial.println("Gesture accidentally touched a button...");
+      //Serial.println("Gesture accidentally touched a button...");
       return 0;
     } else {
       //Serial.println("Button pressed :-)");
     }
 
     buttonPressedPeriod= 0;
-
     prevTag = tag;
     
-  
     if (tag == BUTTON_SOURCE_SET) {
       Serial.println("open dial to set source, start with value ");
       Serial.println((float)SMU[0].getSetValue_micro()/1000.0);
@@ -1882,8 +1888,8 @@ void closeMainMenuCallback(FUNCTION_TYPE newFunctionType) {
   if (functionType == SOURCE_PULSE) {
     FUNCTION_PULSE.close(); // Hmmm... how to let something go in the background while showing logger ????
     #ifdef SAMPLING_BY_INTERRUPT
-  myTimer.begin(handleSampling, 20); // in microseconds.Lower that 20 hangs the display... why ?
-  SPI.usingInterrupt(myTimer);
+    myTimer.begin(handleSampling, 20); // in microseconds.Lower that 20 hangs the display... why ?
+    SPI.usingInterrupt(myTimer);
 #endif
   } else if (functionType == SOURCE_SWEEP) {
     FUNCTION_SWEEP.close(); //Hmmm... how to let something go in the background while showing logger ????
@@ -1903,7 +1909,7 @@ void closeMainMenuCallback(FUNCTION_TYPE newFunctionType) {
     #ifdef SAMPLING_BY_INTERRUPT
     GD.__end();
     myTimer.end();  // stop normal voltage mesurement sampling
-#endif
+  #endif
 
 
     FUNCTION_PULSE.open(operationType, closedPulse);
@@ -1955,6 +1961,9 @@ void closeMainMenuCallback(FUNCTION_TYPE newFunctionType) {
          PUSHBUTTON_ENC.setCallback(LOGGER.rotarySwitchFn); 
 
 
+  }
+  else if (newFunctionType == DIGITIZE) {
+    GD.resume();
   }
   functionType = newFunctionType;
 
