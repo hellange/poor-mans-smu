@@ -223,19 +223,18 @@ void pushButtonEncInterrupt(int key, bool quickPress, bool holdAfterLongPress, b
   changeDigitTimeout = millis();
   ROTARY_ENCODER.stepless_dynamic = true;
   if (changeDigit == 0) {
-    changeDigit = 1000;
-  } else if (changeDigit == 1000){
-    changeDigit = 10000;
-  } else if (changeDigit == 10000){
+    changeDigit = 10000000;
+    ROTARY_ENCODER.stepless_dynamic = false;
+  } else if (changeDigit == 10000000){
+    changeDigit = 1000000;
+    ROTARY_ENCODER.stepless_dynamic = false;
+  } else if (changeDigit == 1000000){
     changeDigit = 100000;
   }  else if (changeDigit == 100000){
-    ROTARY_ENCODER.stepless_dynamic = false;
-    changeDigit = 1000000;
-  }  else if (changeDigit == 1000000){
-    ROTARY_ENCODER.stepless_dynamic = false;
-    changeDigit = 10000000;
-  }  else if (changeDigit == 10000000){
-    ROTARY_ENCODER.stepless_dynamic = false;
+    changeDigit = 10000;
+  }  else if (changeDigit == 10000){
+    changeDigit = 1000;
+  }  else if (changeDigit == 1000){
     changeDigit = 0;
   }
 
