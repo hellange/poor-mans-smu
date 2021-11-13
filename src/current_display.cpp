@@ -127,7 +127,7 @@ Serial.print(ma);
 
 
   
-  GD.ColorRGB(COLOR_CURRENT);
+  //GD.ColorRGB(COLOR_CURRENT);
   //Serial.print("RENDER SET:");
   //Serial.print(rawMa);
 

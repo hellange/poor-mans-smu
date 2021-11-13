@@ -193,7 +193,7 @@ void rotaryChangedVoltCurrentFn(float changeVal) {
        DIGIT_UTIL.print_uint64_t(SMU[0].getSetValue_micro());
        Serial.println();
 
-       int64_t change_uV =  changeVal*1000; 
+       int64_t change_uV =  changeVal*changeDigit; 
         Serial.print("change value in uV=");
         DIGIT_UTIL.print_uint64_t(change_uV);
         Serial.println();
@@ -238,6 +238,15 @@ void pushButtonEncInterrupt(int key, bool quickPress, bool holdAfterLongPress, b
     ROTARY_ENCODER.stepless_dynamic = false;
     changeDigit = 0;
   }
+
+  // For sourcing current. hardcode to least digit
+  // until marking works in current display
+  // TODO: Remove this override !!!!
+  if (operationType == SOURCE_CURRENT) {
+    changeDigit = 1000; 
+  }
+
+
   Serial.print("changeDigit:");
   Serial.println(changeDigit);
 
@@ -443,7 +452,55 @@ DIGITIZER.init(getOperationType());
     
 } 
 
+void markSetDigitCur(int x, int y) {
+  if (changeDigit != 0) {
 
+    GD.Begin(LINE_STRIP);
+    if ( ((millis() - changeDigitTimeout) /750) & 1) {
+      GD.ColorA(150);
+    } else {
+      GD.ColorA(255);
+    }
+    GD.LineWidth(25);
+    GD.ColorRGB(0xff5555);
+    int length = 200;
+    int position = 0;
+    GD.Vertex2ii(x + position ,y);
+    GD.Vertex2ii(x + position + length ,y);
+    GD.ColorA(255);
+  }
+}
+
+
+void markSetDigitVol(int x, int y) {
+  
+  if (changeDigit != 0) {
+    GD.Begin(LINE_STRIP);
+    if ( ((millis() - changeDigitTimeout) /750) & 1) {
+      GD.ColorA(150);
+    } else {
+      GD.ColorA(255);
+    }
+    GD.LineWidth(25);
+    GD.ColorRGB(0xff5555);
+    int length = 20;
+    int position = 0;
+    if (changeDigit == 1000) {
+      position = 167;
+    } else if (changeDigit == 10000) {
+      position = 134;
+    } else if (changeDigit == 100000) {
+      position = 112;
+    } else if (changeDigit == 1000000) {
+      position = 88;
+    } else if (changeDigit == 10000000) {
+      position = 52;
+    } 
+    GD.Vertex2ii(x + position ,y);
+    GD.Vertex2ii(x + position + length ,y);
+    GD.ColorA(255);
+  }
+}
 
 
 void showStatusIndicator(int x,int y,const char* text, bool enable, bool warn) {
@@ -487,7 +544,14 @@ void sourceCurrentPanel(int x, int y) {
   DIGIT_UTIL.renderValue(x + 290,  y-4 , C_STATS.rawValue, 4, DigitUtilClass::typeCurrent); 
 
   GD.ColorA(255);
+  if (changeDigit > 0) {
+    GD.ColorRGB(0xdddddd);
+  } else {
+    GD.ColorRGB(COLOR_CURRENT);
+  }
   CURRENT_DISPLAY.renderSet(x + 120, y + 131, SMU[0].getSetValue_micro());
+  markSetDigitCur(x+120, y+131 + 42);
+  GD.ColorRGB(COLOR_CURRENT);
 
   GD.ColorRGB(0,0,0);
   GD.cmd_fgcolor(0xaaaa90);  
@@ -502,36 +566,7 @@ void sourceCurrentPanel(int x, int y) {
   
 }
 
-void markSetDigit(int x, int y) {
-  
-if (changeDigit != 0) {
-          GD.Begin(LINE_STRIP);
-          //GD.ColorA(255);
-          if ( ((millis() - changeDigitTimeout) /750) & 1) {
-            GD.ColorA(150);
-          } else {
-            GD.ColorA(255);
-          }
-          GD.LineWidth(25);
-          GD.ColorRGB(0xff5555);
-          int length = 20;
-          int position = 0;
-          if (changeDigit == 1000) {
-            position = 167;
-          } else if (changeDigit == 10000) {
-            position = 134;
-          } else if (changeDigit == 100000) {
-            position = 112;
-          } else if (changeDigit == 1000000) {
-            position = 88;
-          } else if (changeDigit == 10000000) {
-            position = 52;
-          } 
-          GD.Vertex2ii(x + position ,y);
-          GD.Vertex2ii(x + position + length ,y);
-          GD.ColorA(255);
-        }
-}
+
 
 void houseKeeping() {
   // various stuff that shall be checked and updated "in the background"...
@@ -567,7 +602,7 @@ void sourceVoltagePanel(int x, int y) {
     GD.ColorRGB(COLOR_VOLT);
   }
   VOLT_DISPLAY.renderSet(x + 120, y + 131, SMU[0].getSetValue_micro());
-  markSetDigit(x+120, y+131 + 42);
+  markSetDigitVol(x+120, y+131 + 42);
   GD.ColorRGB(COLOR_VOLT);
 
   float uVstep = 1000000.0/ powf(2.0,18.0); // for 1V 18bit DAC
@@ -1903,6 +1938,12 @@ void closeMainMenuCallback(FUNCTION_TYPE newFunctionType) {
   } else if (functionType == SOURCE_DC_CURRENT) {
       GD.__end();
       SMU[0].setGPIO(0, 0); // use volt feedback
+      changeDigit = 0; // disable edit mode
+  } 
+  else if (functionType == SOURCE_DC_VOLTAGE) {
+      //GD.__end();
+      //SMU[0].setGPIO(0, 0); // use volt feedback
+      changeDigit = 0; // disable edit mode
   }
  
   // The newly selected function...
