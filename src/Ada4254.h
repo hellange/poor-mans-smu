@@ -2,7 +2,10 @@
 class Ada4254Class {
 
 public:
-  void ada4254_id(); 
+  void reset();
+  void printId(); 
+  
+  
   void ada4254_2(bool on); 
   void ada4254_3(bool on);
   void ada4254_4();
@@ -10,11 +13,10 @@ public:
   void ada4254_5_gain();
   void ada4254_setgain(int gain);
 
-    void ada4254_reset();
     void ada4254_clear_analog_error();
         void ada4254_check();
 
-
+void indicateADA4254status();
   void relay(bool on); // Does not belong here;
 };
 

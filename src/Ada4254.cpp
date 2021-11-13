@@ -4,22 +4,24 @@
 
 Ada4254Class ADA4254;
 
-void Ada4254Class::ada4254_id() {
- SPI.beginTransaction (SPISettings (2000000, MSBFIRST, SPI_MODE0));
-    digitalWrite(8, HIGH);
-    digitalWrite(9, HIGH);
-    digitalWrite(7, LOW);
+//
+//   Experimental testing of ADA4254 
+//   TODO: Needs a proper cleanup !!!!!!
+//
 
-  delayMicroseconds(10);      //0x2f
-   uint8_t data =  SPI.transfer(0x2f | 0x80);
- uint8_t data2 =  SPI.transfer(0);
+
+void Ada4254Class::printId() {
+  SPI.beginTransaction (SPISettings (2000000, MSBFIRST, SPI_MODE0));
+  digitalWrite(8, HIGH);
+  digitalWrite(9, HIGH);
+  digitalWrite(7, LOW);
+
+  delayMicroseconds(10);
+  uint8_t data =  SPI.transfer(0x2f | 0x80);
+  uint8_t data2 =  SPI.transfer(0);
 
   Serial.println("ADA4254 id:");
-
-  //Serial.println(data);
   Serial.println(data2, HEX);
-
- 
   delayMicroseconds(10); 
   digitalWrite(7, HIGH);
   SPI.endTransaction();
@@ -144,7 +146,7 @@ void Ada4254Class::ada4254_3(bool on) {
 
 
 
-void Ada4254Class::ada4254_reset() {
+void Ada4254Class::reset() {
  SPI.beginTransaction (SPISettings (2000000, MSBFIRST, SPI_MODE0));
     digitalWrite(8, HIGH);
     digitalWrite(9, HIGH);
@@ -433,3 +435,25 @@ void Ada4254Class::relay(bool on) {
 
 
 }
+
+
+
+int relayTimer = millis();
+bool relayState = false;
+void Ada4254Class::indicateADA4254status() {
+  //TODO: Clean up this ADA4254 prototyp/test mess !!!!
+  //ADA4254.ada4254_5_gain();
+  if (relayTimer+1000 < millis()) {
+    relayState = !relayState;
+    relayTimer = millis();
+    // ADA4254.ada4254_id();
+    ADA4254.ada4254_2(relayState);
+    //ADA4254.ada4254_clear_analog_error();
+    ADA4254.ada4254_check();
+    // delay(500);
+    //Serial.println("here333");
+    //ADA4254.ada4254(relayState);
+    //ADA4254.ada4254_5_gain();
+  }
+}
+

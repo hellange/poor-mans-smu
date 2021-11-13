@@ -333,31 +333,20 @@ void setup()
    GD.__end();
    Serial.println("Graphics initialized.");
    Serial.flush();
-//delay(1000);
+
+   // TODO: Fix this experimental mess !!!
    Serial.println("====== ADA4254 =====");
-   ADA4254.ada4254_reset();
-        //ADA4254.ada4254_2(true);
-
-      ADA4254.ada4254_id();
-
+   ADA4254.reset();
+   ADA4254.printId();
    ADA4254.ada4254_4();
    delay(100);
    ADA4254.ada4254_5_gain();
-  // ADA4254.ada4254_setgain(4);
-
    delay(1000);
-
-//ADA4254.ada4254_clear_analog_error();
-
-delay(1000);
+   //ADA4254.ada4254_clear_analog_error();
+   delay(1000);
    ADA4254.ada4254_clear_analog_error();
-     //ADA4254.ada4254_5_gainx1d25();
-
-     Serial.println("====== ADA4254 done =====");
-
-       // ADA4254.ada4254_5_gain();
-
-
+   //ADA4254.ada4254_5_gainx1d25();
+   Serial.println("====== ADA4254 done =====");
 
    disable_ADC_DAC_SPI_units();
    delay(100);
@@ -1702,25 +1691,6 @@ void handleFunctionSpecifcButtonAction(FUNCTION_TYPE functionType, int tag, int 
 }
 
 
-int relayTimer = millis();
-bool relayState = false;
-void showADA4254status() {
-  //TODO: Clean up this ADA4254 prototyp/test mess !!!!
-  //ADA4254.ada4254_5_gain();
-  if (relayTimer+1000 < millis()) {
-    relayState = !relayState;
-    relayTimer = millis();
-    // ADA4254.ada4254_id();
-    ADA4254.ada4254_2(relayState);
-    //ADA4254.ada4254_clear_analog_error();
-    ADA4254.ada4254_check();
-    // delay(500);
-    //Serial.println("here333");
-    //ADA4254.ada4254(relayState);
-    //ADA4254.ada4254_5_gain();
-  }
-}
-
 
 void loopMain()
 {
@@ -1736,7 +1706,7 @@ void loopMain()
 
   GD.__end();
 
-  showADA4254status();
+  ADA4254.indicateADA4254status();
 
   // Auto range current measurement while sourcing voltage. 
   // Note that this gives small glitches in voltage.
