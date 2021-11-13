@@ -259,7 +259,12 @@ void  disable_ADC_DAC_SPI_units() {
 
 
 
-
+void initDefaultSamplingIfByInterrupt() {
+#ifdef SAMPLING_BY_INTERRUPT
+  myTimer.begin(handleSampling, 20); // in microseconds.Lower that 20 hangs the display... why ?
+  SPI.usingInterrupt(myTimer);
+#endif
+}
 
 void setup()
 {
@@ -419,11 +424,8 @@ delay(1000);
 
 
 
+  initDefaultSamplingIfByInterrupt();
 
-#ifdef SAMPLING_BY_INTERRUPT
-  myTimer.begin(handleSampling, 20); // in microseconds.Lower that 20 hangs the display... why ?
-  SPI.usingInterrupt(myTimer);
-#endif
 
   ROTARY_ENCODER.init(rotaryChangedVoltCurrentFn);
  
@@ -1887,10 +1889,9 @@ void closeMainMenuCallback(FUNCTION_TYPE newFunctionType) {
   // do a close on the existing function. It should do neccessary cleanup
   if (functionType == SOURCE_PULSE) {
     FUNCTION_PULSE.close(); // Hmmm... how to let something go in the background while showing logger ????
-    #ifdef SAMPLING_BY_INTERRUPT
-    myTimer.begin(handleSampling, 20); // in microseconds.Lower that 20 hangs the display... why ?
-    SPI.usingInterrupt(myTimer);
-#endif
+           initDefaultSamplingIfByInterrupt();
+
+
   } else if (functionType == SOURCE_SWEEP) {
     FUNCTION_SWEEP.close(); //Hmmm... how to let something go in the background while showing logger ????
   } else if (functionType == DIGITIZE) {
@@ -1936,7 +1937,7 @@ void closeMainMenuCallback(FUNCTION_TYPE newFunctionType) {
   }
   else if (newFunctionType == SOURCE_DC_CURRENT) {
       ROTARY_ENCODER.init(rotaryChangedVoltCurrentFn);
-          PUSHBUTTON_ENC.setCallback(pushButtonEncInterrupt); 
+      PUSHBUTTON_ENC.setCallback(pushButtonEncInterrupt); 
 
 
     //disable_ADC_DAC_SPI_units();
@@ -1957,12 +1958,14 @@ void closeMainMenuCallback(FUNCTION_TYPE newFunctionType) {
   }
   else if (newFunctionType == DATALOGGER) {
      //ROTARY_ENCODER.init(TRENDGRAPH.rotaryChangedFn);
-     ROTARY_ENCODER.init(LOGGER.rotaryChangedFn);
-         PUSHBUTTON_ENC.setCallback(LOGGER.rotarySwitchFn); 
-
-
+      GD.__end();
+      ROTARY_ENCODER.init(LOGGER.rotaryChangedFn);
+      PUSHBUTTON_ENC.setCallback(LOGGER.rotarySwitchFn); 
+      GD.resume();
   }
   else if (newFunctionType == DIGITIZE) {
+    GD.resume();
+  } else {
     GD.resume();
   }
   functionType = newFunctionType;
