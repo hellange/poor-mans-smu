@@ -11,56 +11,43 @@ FunctionPulseClass FUNCTION_PULSE;
 
 
 //TODO: Clean up the static mess...
-float FunctionPulseClass::max = 2000.0;
-float FunctionPulseClass::min = -2000.0;
-//int IntervalTimer::myPulseTimer;
-int FunctionPulseClass::pulseTimer = millis();
+float FunctionPulseClass::max;
+float FunctionPulseClass::min;
 
 int FunctionPulseClass::pulseHigh = false;
 
 float FunctionPulseClass::measuredHigh = 0.0;
 float FunctionPulseClass::measuredLow = 0.0;
-int FunctionPulseClass::hz = 20;
+int FunctionPulseClass::hz = 0;
 float FunctionPulseClass::duration = 1000;
 OPERATION_TYPE FunctionPulseClass::operationType = SOURCE_VOLTAGE;
     
 extern ADCClass SMU[];
 
-void FunctionPulseClass::init(/*ADCClass& smu_*/) {
-  
-//  smu = smu_;
+void FunctionPulseClass::init() {
+  // TODO: Fetch from settings
   min = -2000.0;
   max = 2000.0;
-  pulseTimer = millis();
-
+  hz = 10;
 }
+
 void FunctionPulseClass::open(OPERATION_TYPE operationType_, void (*closedFn_)(OPERATION_TYPE type)) {
   closedFn = closedFn_;
-  
   operationType = operationType_;
-
   GD.__end();
-
   SMU[0].setCurrentRange(AMP1, operationType);
-     
-    SMU[0].disable_ADC_DAC_SPI_units();
-    GD.resume();
-
-    
+  SMU[0].disable_ADC_DAC_SPI_units();
+  GD.resume();
   if (operationType == SOURCE_CURRENT) {
     max = 20.0;
     min = -20.0;
   } 
-
-  //myPulseTimer.begin(sourcePulse, 10000); // in microseconds
   updateSamplingPeriod(hz);
-  //SPI.usingInterrupt(myPulseTimer);
-  
 }
 
 void FunctionPulseClass::close() {
-      closedFn(operationType); // do we need this ?
-      myPulseTimer.end();
+    closedFn(operationType); // do we need this ?
+    myPulseTimer.end();
 }
 
 void FunctionPulseClass::updateSamplingPeriod(int hz) {
@@ -74,7 +61,6 @@ void FunctionPulseClass::updateSamplingPeriod(int hz) {
    SPI.usingInterrupt(myPulseTimer);
    myPulseTimer.begin(sourcePulse, us);
    myPulseTimer.priority(0); // highest pri
-   //SPI.usingInterrupt(myPulseTimer);
 }
 
 int sinceLastPress = millis();
@@ -92,9 +78,7 @@ void FunctionPulseClass::handleButtonAction(int inputTag) {
 
     } else if (inputTag == PULSE_BUTTON_DEC) {
       hz = hz - (hz<=10 ? 1 : 10);
-      if (hz < 1) {
-        hz = 1;
-      }
+      hz = hz < 1? 1: hz;
       sinceLastPress = millis();
       updateSamplingPeriod(hz);
     } else if (inputTag == PULSE_BUTTON_INC2) {
@@ -304,3 +288,23 @@ void FunctionPulseClass::sourcePulse() {
 
    }
  }
+
+
+
+
+void FunctionPulseClass::rotaryEncChanged(float changeValue) {
+  hz = hz + changeValue * 10;
+  hz = hz < 1? 1: hz;
+
+  updateSamplingPeriod(hz);
+  Serial.print("PULSE rotaryEncChanged, value:");
+  Serial.print(changeValue);
+  Serial.print(",hz:");
+  Serial.println(hz);
+
+};
+void FunctionPulseClass::rotaryEncButtonChanged(int key, bool quickPress, bool holdAfterLongPress, bool releaseAfterLongPress) {
+  Serial.println("PULSE rotaryEncChanged NOT IMPLEMENTED");
+};
+
+

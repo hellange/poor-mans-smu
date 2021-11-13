@@ -1950,6 +1950,8 @@ void closeMainMenuCallback(FUNCTION_TYPE newFunctionType) {
   if (newFunctionType == SOURCE_PULSE) {
     #ifdef SAMPLING_BY_INTERRUPT
     GD.__end();
+    ROTARY_ENCODER.init(FUNCTION_PULSE.rotaryEncChanged); // helge
+    PUSHBUTTON_ENC.setCallback(FUNCTION_PULSE.rotaryEncButtonChanged);
     normalSamplingTimer.end();  // stop normal voltage mesurement sampling
   #endif
 
