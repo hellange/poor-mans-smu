@@ -11,7 +11,7 @@ Encoder knobLeft(DT, CLK);
 void RotaryEncoderClass::init(void (*changedFn_)(float value)) {
   changedFn = changedFn_;
 }
-void RotaryEncoderClass::handle(bool use100uVSetResolution)
+void RotaryEncoderClass::handle(bool reduceResolution)
 {
  long newLeft;//, newRight;
  int speed = 0;
@@ -34,21 +34,13 @@ void RotaryEncoderClass::handle(bool use100uVSetResolution)
       dir=+1;
     }
 
-    bool stepless_dynamic = false;  // decide if the dynamic speed shall be directly dependent on rotation speed or if there shall just be a few different speeds 
 
    
    
     float feely = 0.4;  // how fast will value change when you turn the knob.  High value changes faster than low value
    
-    if (stepless_dynamic) {
-      speed = millis() - millisSinceLastStep;
-      if (speed > 100) {
-        speed = 100;
-      }
-      speed = 1001 - speed * 10;
-       
-    } else {
 
+    if (stepless_dynamic) {
       
       if (millisSinceLastStep + 30 * feely > millis()) {
         speed = 1000;
@@ -62,11 +54,13 @@ void RotaryEncoderClass::handle(bool use100uVSetResolution)
       } else {
         speed = 1;
       }
-      
-    
+    } else {
+      speed = 1;
     }
+    
+    
 
-    if (!use100uVSetResolution) {
+    if (reduceResolution) {
       speed = speed * 2.0;
     }
    

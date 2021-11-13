@@ -20,7 +20,9 @@ class RotaryEncoderClass {
     boolean ready = false;
   public:
     void init(void (*changedFn)(float value));
-    void handle(bool use100uVSetResolution);
+    void handle(bool reduceResolution);
+    bool stepless_dynamic = false;  // decide if the dynamic speed shall be directly dependent on rotation speed or if there shall just be a few different speeds 
+
 };
 
 

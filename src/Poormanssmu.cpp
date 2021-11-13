@@ -140,14 +140,16 @@ int changeDigitTimeout;
 void rotaryChangedVoltCurrentFn(float changeVal) {
   changeDigitTimeout = millis();
 
-   if (changeDigit == 0) {
+   if (changeDigit == 0 && !SOURCE_DIAL.isDialogOpen()) {
        Serial.println("change not enabled");
        return;
    }
+
    if (operationType == SOURCE_VOLTAGE) {
        Serial.print("rotary changeval:");
        Serial.println(changeVal);
      if(SOURCE_DIAL.isDialogOpen()) {
+       //TODO: Fix problem with resolution and selected digit to change !!!
        float mv = SOURCE_DIAL.getMv();
        int64_t change_uV =  changeVal*1000;
        int64_t new_uV = mv*1000 + change_uV;
@@ -212,14 +214,14 @@ void rotaryChangedVoltCurrentFn(float changeVal) {
 bool showSettings = false;
 
 void pushButtonEncInterrupt(int key, bool quickPress, bool holdAfterLongPress, bool releaseAfterLongPress) {
-  Serial.print("XXXKey pressed:");
+  Serial.print("Key pressed:");
   Serial.print(key);
   Serial.print(" ");
   Serial.println(quickPress==true?"QUICK" : "");
   Serial.println(holdAfterLongPress==true?"HOLDING" : "");
   Serial.println(releaseAfterLongPress==true?"RELEASED AFTER HOLDING" : "");
   changeDigitTimeout = millis();
-  // Swap between adjusting 100uV and mV
+  ROTARY_ENCODER.stepless_dynamic = true;
   if (changeDigit == 0) {
     changeDigit = 1000;
   } else if (changeDigit == 1000){
@@ -227,10 +229,13 @@ void pushButtonEncInterrupt(int key, bool quickPress, bool holdAfterLongPress, b
   } else if (changeDigit == 10000){
     changeDigit = 100000;
   }  else if (changeDigit == 100000){
+    ROTARY_ENCODER.stepless_dynamic = false;
     changeDigit = 1000000;
   }  else if (changeDigit == 1000000){
+    ROTARY_ENCODER.stepless_dynamic = false;
     changeDigit = 10000000;
   }  else if (changeDigit == 10000000){
+    ROTARY_ENCODER.stepless_dynamic = false;
     changeDigit = 0;
   }
   Serial.print("changeDigit:");
@@ -1493,7 +1498,8 @@ void loop() {
   //
   // Note that the scrolling speed and gesture detection speed will be affected.
   // 
-  ROTARY_ENCODER.handle(SMU[0].use100uVSetResolution());
+  bool reduceResolution = !SMU[0].use100uVSetResolution() && changeDigit == 1000;
+  ROTARY_ENCODER.handle(reduceResolution);
 
   //TODO: Not sure if this should be here.... this is more that "display time"... it also handles sampling of not driven by timer interrupt...
   if (displayUpdateTimer + 20 > (int)millis()) {
