@@ -18,9 +18,9 @@ private:
 public:
   void ios() {
     pinMode(CS, OUTPUT);
-    digitalWrite(CS, HIGH);
+    digitalWriteFast(CS, HIGH);
     pinMode(SD_PIN, OUTPUT);
-    digitalWrite(SD_PIN, HIGH);
+    digitalWriteFast(SD_PIN, HIGH);
   }
   void begin0() {
     ios();
@@ -56,9 +56,9 @@ public:
 
     // Test point: saturate SPI
     while (0) {
-      digitalWrite(CS, LOW);
+      digitalWriteFast(CS, LOW);
       SPI.transfer(0x55);
-      digitalWrite(CS, HIGH);
+      digitalWriteFast(CS, HIGH);
     }
 
 #if 0
@@ -296,9 +296,9 @@ public:
 
   static void __start(uint32_t addr) // start an SPI transaction to addr
   {
-delayMicroseconds(1);
+//delayMicroseconds(1);
 SPI.beginTransaction(SPISettings(16000000, MSBFIRST, SPI_MODE0));
-    digitalWrite(CS, LOW);
+    digitalWriteFast(CS, LOW);
 //digitalWrite(7,HIGH);
     SPI.transfer(addr >> 16);
     SPI.transfer(highByte(addr));
@@ -310,9 +310,9 @@ SPI.beginTransaction(SPISettings(16000000, MSBFIRST, SPI_MODE0));
 
   static void __wstart(uint32_t addr) // start an SPI write transaction to addr
   {
-delayMicroseconds(1);
+//delayMicroseconds(1);
 SPI.beginTransaction(SPISettings(16000000, MSBFIRST, SPI_MODE0));
-    digitalWrite(CS, LOW);
+    digitalWriteFast(CS, LOW);
 //digitalWrite(7,HIGH);
     SPI.transfer(0x80 | (addr >> 16));
     SPI.transfer(highByte(addr));
@@ -324,8 +324,8 @@ SPI.beginTransaction(SPISettings(16000000, MSBFIRST, SPI_MODE0));
 
   static void __end() // end the SPI transaction
   {
-    digitalWrite(CS, HIGH);
-delayMicroseconds(1);
+    digitalWriteFast(CS, HIGH);
+//delayMicroseconds(1);
 SPI.endTransaction(); 
   }
 
@@ -365,11 +365,11 @@ SPI.endTransaction();
 
   static void hostcmd(byte a)
   {
-    digitalWrite(CS, LOW);
+    digitalWriteFast(CS, LOW);
     SPI.transfer(a);
     SPI.transfer(0x00);
     SPI.transfer(0x00);
-    digitalWrite(CS, HIGH);
+    digitalWriteFast(CS, HIGH);
   }
 
   void getfree(uint16_t n)
