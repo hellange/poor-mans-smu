@@ -76,7 +76,6 @@ ZeroCalibrationlass ZEROCALIBRATION;
 bool anyDialogOpen();
 void openMainMenu();
 void renderAnalogGauge(int x, int y, int size, float degrees, float value, const char *title);
-void showLoadResistance(int x, int y);
 void loopMain();
 void loopDigitize();
 void handleSampling();
@@ -96,33 +95,23 @@ SMU_HAL_dummy SMU[1] = {
 };
 #endif
 
-int scroll = 0;
-int scrollDir = 0;
-
-
-
 int timeAtStartup;
 
-
+// Used by scrolling related to widgets (lower part of the main screen)
+int scroll = 0;
+int scrollDir = 0;
 int noOfWidgets = 7;
 int activeWidget = 0;
 
 CURRENT_RANGE current_range = AMP1; // TODO: get rid of global
 
-bool voltage_range = true;
 
-
+// Used to make sure buttons are not triggered multiple times by a single touch
 uint32_t timeSinceLastChange = 0;  // TODO: get rid of global
 
 
-
 OPERATION_TYPE operationType = SOURCE_VOLTAGE;
-
-
 FUNCTION_TYPE functionType = SOURCE_DC_VOLTAGE;
-
-
-
 
 void printError(int16_t  errorNum)
 {
@@ -134,17 +123,14 @@ void printError(int16_t  errorNum)
 OPERATION_TYPE getOperationType() {
   OPERATION_TYPE ot;
   //TODO:  This is messy! Based on older concept where function and operation were different stuff... this has slightly changed....
-
   if (functionType == SOURCE_DC_CURRENT) {
     ot = SOURCE_CURRENT;
   } else {
     ot = SOURCE_VOLTAGE;
   }
-
   return ot;
-
 }
-IntervalTimer myTimer;
+IntervalTimer normalSamplingTimer;
 
 #define SAMPLING_BY_INTERRUPT
 
@@ -261,8 +247,8 @@ void  disable_ADC_DAC_SPI_units() {
 
 void initDefaultSamplingIfByInterrupt() {
 #ifdef SAMPLING_BY_INTERRUPT
-  myTimer.begin(handleSampling, 20); // in microseconds.Lower that 20 hangs the display... why ?
-  SPI.usingInterrupt(myTimer);
+  normalSamplingTimer.begin(handleSampling, 20); // in microseconds.Lower that 20 hangs the display... why ?
+  SPI.usingInterrupt(normalSamplingTimer);
 #endif
 }
 
@@ -415,7 +401,8 @@ delay(1000);
    FUNCTION_SWEEP.init(/*SMU[0]*/);
 
    RAM.init();
-  
+   RAM.startLog(); // TODO: Start it after things have "warmed up" a bit ?
+
    timeAtStartup = millis();
 
   // SPI.usingInterrupt(2);
@@ -1148,8 +1135,6 @@ void renderMainHeader() {
   
   GD.ColorA(255);
   GD.ColorRGB(0xdddddd);
-  //GD.cmd_text(20, 0, 27, 0, "Input 25.4V / - 25.3V"); // NOTE: Currently only dummy info
-  //showLoadResistance(590,0);
   //showFanSpeed(220, 0);
   //GD.cmd_number(50,0,27,2,LOGGER.percentageFull);
 
@@ -1226,30 +1211,7 @@ void showFanSpeed(int x, int y) {
 //  Serial.print(FAN.getFanWidth());
 //  Serial.flush();
 }
-void showLoadResistance(int x, int y) {
-   // calculate resistance only if the voltage and current is above some limits. Else the calculation will just be noise...
-    if(abs(V_FILTERS.mean) > 10.0 or abs(C_FILTERS.mean) > 0.010) {
-      float resistance = abs(V_FILTERS.mean / C_FILTERS.mean);
-      GD.ColorRGB(0xdddddd);
-      int kOhm, ohm, mOhm;
-      bool neg;
-      //DIGIT_UTIL.separate(&a, &ma, &ua, &neg, rawMa);
-      DIGIT_UTIL.separate(&kOhm, &ohm, &mOhm, &neg, resistance);
 
-      if (kOhm > 0) {
-        GD.cmd_number(x, y, 27, 3, kOhm);
-        GD.cmd_text(x+30, y,  27, 0, ".");
-        GD.cmd_number(x+35, y, 27, 3, ohm);
-        GD.cmd_text(x+70, y,  27, 0, "kOhm");
-      } else {
-        GD.cmd_number(x, y, 27, 3, ohm);
-        GD.cmd_text(x+30, y,  27, 0, ".");
-        GD.cmd_number(x+35, y, 27, 3, mOhm);
-        GD.cmd_text(x+70, y,  27, 0, "ohm");
-      }
-
-    }
-}
 void renderUpperDisplay(OPERATION_TYPE operationType, FUNCTION_TYPE functionType) {
 
   int x = 0;
@@ -1573,18 +1535,15 @@ void loop() {
 
 int prevTag = 0;
 int tagTimer = millis();
-
-
 bool buttonPressed=false;
 int buttonPressedPeriod = 0;
 int prevButton = 0;
 int x[10];
 int y[10];
-int nrOfChecks = 3;
-
 
 int checkButtons() {
-int valueToReturnIfTooFast = 0;
+  int valueToReturnIfTooFast = 0;
+  int nrOfChecks = 3;
 
     if (MAINMENU.active == true) {
       return 0;
@@ -1728,12 +1687,10 @@ int valueToReturnIfTooFast = 0;
        timeSinceLastChange = millis();
        ZEROCALIBRATION.startNullCalibration(operationType);
     }
- 
-    #endif  // USE_SIMULATOR
     
+    #endif  // USE_SIMULATOR
     return tag;
 }
-
 
 void handleFunctionSpecifcButtonAction(FUNCTION_TYPE functionType, int tag, int tag2) {
   if (functionType == SOURCE_PULSE) {
@@ -1745,26 +1702,9 @@ void handleFunctionSpecifcButtonAction(FUNCTION_TYPE functionType, int tag, int 
 }
 
 
-
 int relayTimer = millis();
 bool relayState = false;
-
-void loopMain()
-{
- 
-  
-  ZEROCALIBRATION.handleAutoNull();
-  operationType = getOperationType();
-  
-  if (ZEROCALIBRATION.nullCalibrationDone2) { 
-    //if (!V_CALIBRATION.autoCalDone) {
-    //  V_CALIBRATION.startAutoCal();
-    //}
-    RAM.startLog(); //  TODO   ??? Why is this dependent on zero calibration being done ???
-  }
-
-  GD.__end();
-
+void showADA4254status() {
   //TODO: Clean up this ADA4254 prototyp/test mess !!!!
   //ADA4254.ada4254_5_gain();
   if (relayTimer+1000 < millis()) {
@@ -1779,6 +1719,24 @@ void loopMain()
     //ADA4254.ada4254(relayState);
     //ADA4254.ada4254_5_gain();
   }
+}
+
+
+void loopMain()
+{
+  ZEROCALIBRATION.handleAutoNull();
+  operationType = getOperationType();
+  
+  if (ZEROCALIBRATION.nullCalibrationDone2) { 
+    //if (!V_CALIBRATION.autoCalDone) {
+    //  V_CALIBRATION.startAutoCal();
+    //}
+    // RAM.startLog();
+  }
+
+  GD.__end();
+
+  showADA4254status();
 
   // Auto range current measurement while sourcing voltage. 
   // Note that this gives small glitches in voltage.
@@ -1866,8 +1824,6 @@ void rotaryChangedDontCareFn(float changeVal) {
 void pushButtonEncDontCareFn(int key, bool quickPress, bool holdAfterLongPress, bool releaseAfterLongPress) {
 }
 
-float oldSetVoltage;
-
 void closeMainMenuCallback(FUNCTION_TYPE newFunctionType) {
   
   Serial.println("Closed main menu callback");
@@ -1875,8 +1831,6 @@ void closeMainMenuCallback(FUNCTION_TYPE newFunctionType) {
   Serial.println(newFunctionType);
   Serial.println("Old function:");
   Serial.println(functionType);
-
-  
   Serial.flush();
 
   // "unregister" function to be called when rotaty encoder is detected.
@@ -1889,9 +1843,7 @@ void closeMainMenuCallback(FUNCTION_TYPE newFunctionType) {
   // do a close on the existing function. It should do neccessary cleanup
   if (functionType == SOURCE_PULSE) {
     FUNCTION_PULSE.close(); // Hmmm... how to let something go in the background while showing logger ????
-           initDefaultSamplingIfByInterrupt();
-
-
+    initDefaultSamplingIfByInterrupt();
   } else if (functionType == SOURCE_SWEEP) {
     FUNCTION_SWEEP.close(); //Hmmm... how to let something go in the background while showing logger ????
   } else if (functionType == DIGITIZE) {
@@ -1904,12 +1856,11 @@ void closeMainMenuCallback(FUNCTION_TYPE newFunctionType) {
       SMU[0].setGPIO(0, 0); // use volt feedback
   }
  
-
   // The newly selected function...
   if (newFunctionType == SOURCE_PULSE) {
     #ifdef SAMPLING_BY_INTERRUPT
     GD.__end();
-    myTimer.end();  // stop normal voltage mesurement sampling
+    normalSamplingTimer.end();  // stop normal voltage mesurement sampling
   #endif
 
 
@@ -1933,16 +1884,14 @@ void closeMainMenuCallback(FUNCTION_TYPE newFunctionType) {
       if (SMU[0].fltSetCommitVoltageSource(SETTINGS.setMilliVoltage*1000, true)) printError(_PRINT_ERROR_VOLTAGE_SOURCE_SETTING);
       if (SMU[0].fltSetCommitCurrentLimit(SETTINGS.setCurrentLimit*1000, true)) printError(_PRINT_ERROR_VOLTAGE_SOURCE_SETTING);
     }
-     GD.resume();
+    GD.resume();
   }
   else if (newFunctionType == SOURCE_DC_CURRENT) {
-      ROTARY_ENCODER.init(rotaryChangedVoltCurrentFn);
-      PUSHBUTTON_ENC.setCallback(pushButtonEncInterrupt); 
-
-
+    ROTARY_ENCODER.init(rotaryChangedVoltCurrentFn);
+    PUSHBUTTON_ENC.setCallback(pushButtonEncInterrupt); 
     //disable_ADC_DAC_SPI_units();
     GD.__end();
-          SMU[0].setGPIO(0, 1); // use current feedback
+    SMU[0].setGPIO(0, 1); // use current feedback
 
     if (SMU[0].operationType == SOURCE_CURRENT) {
       // If previous SMU operation was sourcing current, use that current
@@ -1984,17 +1933,11 @@ void fltCommitCurrentSourceAutoRange(float uV, bool autoRange) {
         SMU[0].setCurrentRange(current_range,operationType);
       }
       
-
       if (SMU[0].fltSetCommitCurrentSource(uV)) printError(_PRINT_ERROR_VOLTAGE_SOURCE_SETTING);
    }
    else {
-          if (SMU[0].fltSetCommitCurrentSource(uV)) printError(_PRINT_ERROR_VOLTAGE_SOURCE_SETTING);
-
+      if (SMU[0].fltSetCommitCurrentSource(uV)) printError(_PRINT_ERROR_VOLTAGE_SOURCE_SETTING);
    }
-
-
-
-    
 }
 
 void closeSourceDCCallback(int set_or_limit, bool cancel) {
