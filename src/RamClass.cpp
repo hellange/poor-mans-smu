@@ -208,13 +208,13 @@ void RamClass::logData(float value) {
   int runMinutes=secsRemaining/60;
   int runSeconds=secsRemaining%60;
 
-  Serial.print(" at time ");
-  char buf[21];
-  sprintf(buf,"%02d:%02d:%02d",runHours,runMinutes,runSeconds);
-  Serial.print(buf);
-  Serial.print(" (millis=");
-  Serial.print(t);
-  Serial.print("). ");
+  //Serial.print(" at time ");
+  // char buf[21];
+  // sprintf(buf,"%02d:%02d:%02d",runHours,runMinutes,runSeconds);
+  // Serial.print(buf);
+  // Serial.print(" (millis=");
+  // Serial.print(t);
+  // Serial.print("). ");
 
   //if (RAM.initFailure) {
   //  Serial.println(" Failed because of initial RAM failure");
@@ -222,7 +222,7 @@ void RamClass::logData(float value) {
     writeLogData(currentLogAddress, value, t);
   //  Serial.print(" Done.");
   //}
-  Serial.println("");
+  //Serial.println("");
 
   currentLogAddress ++;
   if (currentLogAddress > maxLogAddress) {

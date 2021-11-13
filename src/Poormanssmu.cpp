@@ -134,11 +134,16 @@ IntervalTimer normalSamplingTimer;
 
 #define SAMPLING_BY_INTERRUPT
 
-
-
+float changeDigit = 0; 
+int changeDigitTimeout;
 
 void rotaryChangedVoltCurrentFn(float changeVal) {
+  changeDigitTimeout = millis();
 
+   if (changeDigit == 0) {
+       Serial.println("change not enabled");
+       return;
+   }
    if (operationType == SOURCE_VOLTAGE) {
        Serial.print("rotary changeval:");
        Serial.println(changeVal);
@@ -152,7 +157,7 @@ void rotaryChangedVoltCurrentFn(float changeVal) {
        DIGIT_UTIL.print_uint64_t(SMU[0].getSetValue_micro());
        Serial.println();
 
-       int64_t change_uV =  changeVal*1000;
+       int64_t change_uV =  changeVal*changeDigit;
        Serial.print("change value in uV=");
        DIGIT_UTIL.print_uint64_t(change_uV);
        Serial.println();
@@ -186,7 +191,7 @@ void rotaryChangedVoltCurrentFn(float changeVal) {
        DIGIT_UTIL.print_uint64_t(SMU[0].getSetValue_micro());
        Serial.println();
 
-       int64_t change_uV =  changeVal*1000;
+       int64_t change_uV =  changeVal*1000; 
         Serial.print("change value in uV=");
         DIGIT_UTIL.print_uint64_t(change_uV);
         Serial.println();
@@ -207,13 +212,34 @@ void rotaryChangedVoltCurrentFn(float changeVal) {
 bool showSettings = false;
 
 void pushButtonEncInterrupt(int key, bool quickPress, bool holdAfterLongPress, bool releaseAfterLongPress) {
-Serial.print("XXXKey pressed:");
+  Serial.print("XXXKey pressed:");
   Serial.print(key);
   Serial.print(" ");
   Serial.println(quickPress==true?"QUICK" : "");
   Serial.println(holdAfterLongPress==true?"HOLDING" : "");
   Serial.println(releaseAfterLongPress==true?"RELEASED AFTER HOLDING" : "");
+  changeDigitTimeout = millis();
+  // Swap between adjusting 100uV and mV
+  if (changeDigit == 0) {
+    changeDigit = 1000;
+  } else if (changeDigit == 1000){
+    changeDigit = 10000;
+  } else if (changeDigit == 10000){
+    changeDigit = 100000;
+  }  else if (changeDigit == 100000){
+    changeDigit = 1000000;
+  }  else if (changeDigit == 1000000){
+    changeDigit = 10000000;
+  }  else if (changeDigit == 10000000){
+    changeDigit = 0;
+  }
+  Serial.print("changeDigit:");
+  Serial.println(changeDigit);
+
+
 }
+
+
 void pushButtonInterrupt(int key, bool quickPress, bool holdAfterLongPress, bool releaseAfterLongPress) {
   Serial.print("Key pressed:");
   Serial.print(key);
@@ -471,12 +497,43 @@ void sourceCurrentPanel(int x, int y) {
   
 }
 
+void markSetDigit(int x, int y) {
+  
+if (changeDigit != 0) {
+          GD.Begin(LINE_STRIP);
+          //GD.ColorA(255);
+          GD.LineWidth(25);
+          GD.ColorRGB(0xff5555);
+          int length = 20;
+          int position = 0;
+          if (changeDigit == 1000) {
+            position = 167;
+          } else if (changeDigit == 10000) {
+            position = 134;
+          } else if (changeDigit == 100000) {
+            position = 112;
+          } else if (changeDigit == 1000000) {
+            position = 88;
+          } else if (changeDigit == 10000000) {
+            position = 52;
+          } 
+          GD.Vertex2ii(x + position ,y);
+          GD.Vertex2ii(x + position + length ,y);
+        }
+}
 
+void houseKeeping() {
+  // various stuff that shall be checked and updated "in the background"...
 
+  if (changeDigit > 0 && changeDigitTimeout + 5000 < millis()) {
+     changeDigit = 0;  // turn off digit change mode after 5 seconds
+  }
+}
 
 void sourceVoltagePanel(int x, int y) {
 
   // heading
+
   GD.ColorRGB(COLOR_VOLT);
   GD.ColorA(120);
   GD.cmd_text(x+20, y + 2 ,   29, 0, "SOURCE VOLTAGE");
@@ -491,8 +548,14 @@ void sourceVoltagePanel(int x, int y) {
   DIGIT_UTIL.renderValue(x + 300,  y-4 , V_STATS.rawValue, 4, DigitUtilClass::typeVoltage); 
 
   GD.ColorA(255);
+  if (changeDigit > 0) {
+    GD.ColorRGB(0xdddddd);
+  } else {
+    GD.ColorRGB(COLOR_VOLT);
+  }
   VOLT_DISPLAY.renderSet(x + 120, y + 131, SMU[0].getSetValue_micro());
-
+  markSetDigit(x+120, y+131 + 42);
+  GD.ColorRGB(COLOR_VOLT);
 
   float uVstep = 1000000.0/ powf(2.0,18.0); // for 1V 18bit DAC
 
@@ -517,6 +580,7 @@ void sourceVoltagePanel(int x, int y) {
     } else {
          GD.cmd_text(x+120,y+170, 27, 0, " ?");
     }
+
     y=y-5;
   }
   GD.ColorRGB(0,0,0);
@@ -1341,7 +1405,7 @@ static void handleSampling() {
     Serial.println("DONT USE SAMPLE!");  
   } 
   else if (dataR == -98) {
-    Serial.println("OVERFLOW"); // haven't been able to get this to work...
+    //Serial.println("OVERFLOW"); // haven't been able to get this to work...
   }
   
   else if (dataR == 1) {
@@ -1706,6 +1770,7 @@ void loopMain()
 
   GD.__end();
 
+  houseKeeping();
   ADA4254.indicateADA4254status();
 
   // Auto range current measurement while sourcing voltage. 

@@ -256,9 +256,9 @@ int AD7176_dataReady()
 
     if ((stat & STATUS_REG_ADC_ERR) >= 0x01) {
       // Is this when overflow ?  
-      Serial.println("!!! STATUS_REG_ADC_ERR. Returned:");
-      Serial.println(stat, BIN);
-          Serial.flush();
+      //Serial.println("!!! STATUS_REG_ADC_ERR. Returned:");
+      //Serial.println(stat, BIN);
+      //Serial.flush();
 
       return -98;
     } 

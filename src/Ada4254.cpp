@@ -64,8 +64,8 @@ void Ada4254Class::ada4254_check() {
   delayMicroseconds(10);   //    ANALOG_ERR
   SPI.transfer(0x04 | 0x80);
    uint8_t data2 =  SPI.transfer(0);
-  Serial.println("ADA4254 analog err:");
-  Serial.println(data2, BIN);
+  //Serial.println("ADA4254 analog err:");
+  //Serial.println(data2, BIN);
   delayMicroseconds(10); 
   digitalWrite(7, HIGH);
 
@@ -76,8 +76,8 @@ void Ada4254Class::ada4254_check() {
   delayMicroseconds(10);   //    DIGITAL_ERR
   SPI.transfer(0x03 | 0x80);
    data2 =  SPI.transfer(0);
-  Serial.println("ADA4254 digital err:");
-  Serial.println(data2, BIN);
+  //Serial.println("ADA4254 digital err:");
+  //Serial.println(data2, BIN);
   delayMicroseconds(10); 
   digitalWrite(7, HIGH);
 
