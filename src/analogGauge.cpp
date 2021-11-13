@@ -45,6 +45,25 @@ void AnalogGaugeClass::renderAnalogGauge(int x, int y, int width, float degrees,
     GD.ColorRGB(0xdddddd);
   }
   
+  
+}
+
+void AnalogGaugeClass::renderAnalogGaugeValue(int x, int y, int width, float degrees, float value, const char *unit, const char *title) {
+  renderAnalogGauge(x,y,width,degrees,value,title);
+  int gaugeRadius = width/2;
+  y=y+gaugeRadius-22;
+  x=x+gaugeRadius*1.2/2;
+  x=x-10;
+  int font = 29;
+    GD.cmd_number(x+30, y, font, 5, value);
+    GD.cmd_text(x+100, y, font, 0, unit);
+
+}
+
+void AnalogGaugeClass::renderAnalogGaugePercent(int x, int y, int width, float degrees, float value, const char *title) {
+  renderAnalogGauge(x,y,width,degrees,value,title);
+  
+  int gaugeRadius = width/2;
   y=y+gaugeRadius-22;
   x=x+gaugeRadius*1.2/2;
   float deviationInPercent = abs(value);
@@ -64,7 +83,9 @@ void AnalogGaugeClass::renderAnalogGauge(int x, int y, int width, float degrees,
     GD.cmd_number(x+30, y, font, 2, (deviationInPercent - (float)whole) * 100.0);
     GD.cmd_text(x+65, y, font, 0, "%");
   }
- }
+}
+
+
 
 
   void AnalogGaugeClass::showAnalogPin(int x, int y, int radius, int radiusStart, int degreeRelativeToTop, int needleColor, int lineWidth, bool needle) {

@@ -75,7 +75,7 @@ ZeroCalibrationlass ZEROCALIBRATION;
 
 bool anyDialogOpen();
 void openMainMenu();
-void renderAnalogGauge(int x, int y, int size, float degrees, float value, const char *title);
+//void renderAnalogGauge(int x, int y, int size, float degrees, float value, const char *title);
 void loopMain();
 void loopDigitize();
 void handleSampling();
@@ -824,7 +824,7 @@ void renderExperimental(int x, int y, float valM, float setM, bool cur, bool les
   }
   float degrees = -deviationInPercent * 700.0;
   if (!lessDetails) {
-    ANALOG_GAUGE.renderAnalogGauge(x+90,y,240, degrees, deviationInPercent, "Deviation from SET");
+    ANALOG_GAUGE.renderAnalogGaugePercent(x+90,y,240, degrees, deviationInPercent, "Deviation from SET");
   }
 
 
@@ -1864,6 +1864,15 @@ void loopMain()
   } else {
     // Special page without widgets etc...
     renderUpperDisplay(operationType, functionType);  
+
+    //45 max degree ?
+    float degreeV = (V_FILTERS.mean) * 45.0/10000.0; 
+    ANALOG_GAUGE.renderAnalogGaugeValue(25,300,350, degreeV, V_FILTERS.mean, "mV", "+/-10V");
+    
+    float degreeC = (C_FILTERS.mean) * 45.0/1000.0; 
+    ANALOG_GAUGE.renderAnalogGaugeValue(425,300,350, degreeC, C_FILTERS.mean, "mA", "+/-1000mA");
+
+
     //detectGestures();
     GD.get_inputs();
     int tag = GD.inputs.tag;
