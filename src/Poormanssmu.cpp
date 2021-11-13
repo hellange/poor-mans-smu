@@ -1976,8 +1976,8 @@ void closeMainMenuCallback(FUNCTION_TYPE newFunctionType) {
 
     if (SMU[0].operationType == SOURCE_VOLTAGE) {
       // If previous SMU operation was sourcing voltage, use that voltage
-      if (SMU[0].fltSetCommitVoltageSource(SMU[0].getSetValue_micro(), true)) printError(_PRINT_ERROR_VOLTAGE_SOURCE_SETTING);
-      if (SMU[0].fltSetCommitCurrentLimit(SMU[0].getLimitValue_micro(), true)) printError(_PRINT_ERROR_VOLTAGE_SOURCE_SETTING);
+      if (SMU[0].fltSetCommitVoltageSource(SETTINGS.setMilliVoltage*1000, true)) printError(_PRINT_ERROR_VOLTAGE_SOURCE_SETTING);
+      if (SMU[0].fltSetCommitCurrentLimit(SETTINGS.setCurrentLimit*1000, true)) printError(_PRINT_ERROR_VOLTAGE_SOURCE_SETTING);
     } else {
     
       // If previous SMU operation was sourcing current, use a predefined voltage
@@ -1995,8 +1995,8 @@ void closeMainMenuCallback(FUNCTION_TYPE newFunctionType) {
 
     if (SMU[0].operationType == SOURCE_CURRENT) {
       // If previous SMU operation was sourcing current, use that current
-      fltCommitCurrentSourceAutoRange(SMU[0].getSetValue_micro(), true);
-      if (SMU[0].fltSetCommitVoltageLimit(SMU[0].getLimitValue_micro(), true)) printError(_PRINT_ERROR_VOLTAGE_SOURCE_SETTING);
+      fltCommitCurrentSourceAutoRange(SETTINGS.setMilliAmpere*1000, true);
+      if (SMU[0].fltSetCommitVoltageLimit(SETTINGS.setVoltageLimit*1000, true)) printError(_PRINT_ERROR_VOLTAGE_SOURCE_SETTING);
     } else {
       // If previous SMU operation was sourcing voltage, use a predefined current
       fltCommitCurrentSourceAutoRange(SETTINGS.setMilliAmpere*1000, true);
