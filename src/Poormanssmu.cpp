@@ -507,6 +507,11 @@ void markSetDigit(int x, int y) {
 if (changeDigit != 0) {
           GD.Begin(LINE_STRIP);
           //GD.ColorA(255);
+          if ( ((millis() - changeDigitTimeout) /750) & 1) {
+            GD.ColorA(150);
+          } else {
+            GD.ColorA(255);
+          }
           GD.LineWidth(25);
           GD.ColorRGB(0xff5555);
           int length = 20;
@@ -524,6 +529,7 @@ if (changeDigit != 0) {
           } 
           GD.Vertex2ii(x + position ,y);
           GD.Vertex2ii(x + position + length ,y);
+          GD.ColorA(255);
         }
 }
 
@@ -533,6 +539,8 @@ void houseKeeping() {
   if (changeDigit > 0 && changeDigitTimeout + 5000 < millis()) {
      changeDigit = 0;  // turn off digit change mode after 5 seconds
   }
+
+
 }
 
 void sourceVoltagePanel(int x, int y) {
