@@ -35,9 +35,10 @@ void DigitizerClass::close() {
 
 void DigitizerClass::loopDigitize() {
   //operationType = getOperationType();
-  SMU[0].disable_ADC_DAC_SPI_units();
   
-  if (digitize == false && !MAINMENU.active){   
+  if (digitize == false && !MAINMENU.active){
+        SMU[0].disable_ADC_DAC_SPI_units();
+   
     //minDigV = 1000000;
     //maxDigV = - 1000000;
     //minDigI = 1000000;
@@ -258,12 +259,12 @@ void DigitizerClass::handleSamplingForDigitizer(int dataR) {
 
 
 
-
-      simulatedWaveform += modulation;
-      v=sin(simulatedWaveform)*1000.0 * amplitude;
-      v=v+random(100); // simulate noise;
-      zeroCross = lastVoltage < 0.0 && v > 0.0  && v>lastVoltage; // zero crossing positive edge
-      trigg = zeroCross;
+    //  SIMULATE WAVEFORM
+    //   simulatedWaveform += modulation;
+    //   v=sin(simulatedWaveform)*1000.0 * amplitude;
+    //   v=v+random(100); // simulate noise;
+    //   zeroCross = lastVoltage < 0.0 && v > 0.0  && v>lastVoltage; // zero crossing positive edge
+    //   trigg = zeroCross;
 
   
   if (!allowTrigger) {
