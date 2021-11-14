@@ -5,18 +5,32 @@
 FanClass FAN;
 volatile uint32_t _PWMFanWidth;
 
+
+int fanPin = 33; // 23;     // TODO: Move to global definitions
+int fanSpeedPin = 2; // TODO: Move to global definitions
+
 void FanClass::init()
 {
-  int fanPin = 23;     // TODO: Move to global definitions
-  int fanSpeedPin = 2; // TODO: Move to global definitions
+  // Teensy 4.1 PWM capable pins: 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 18, 19, 22, 23,
+  //                              24, 25, 28, 29, 33, 36, 37, 42, 43, 44, 45, 46, 47, 51, 54
+  
   pinMode(fanPin, OUTPUT);
   digitalWriteFast(9, LOW);
   pinMode(fanSpeedPin, INPUT);
   attachInterrupt(fanSpeedPin, fanSpeedInterruptHandler, CHANGE);
 
-  // For now, just hardcode a value for testing
-  analogWriteFrequency(fanPin, 10000);
-  analogWrite(fanPin, 100);
+  analogWriteFrequency(fanPin, 20000);
+  setSpeed(50);
+}
+
+// speedPercent 0 - 100
+void FanClass::setSpeed(int speedPercent) {
+  if (speedPercent > 100) {
+    speedPercent = 100;
+  } else if (speedPercent < 0) {
+    speedPercent = 0;
+  }
+  analogWrite(fanPin, speedPercent * 255/100);
 }
 
 int FanClass::getFanWidth()
