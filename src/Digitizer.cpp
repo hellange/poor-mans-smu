@@ -53,23 +53,33 @@ void DigitizerClass::loopDigitize() {
  
 }
 
-
+int digitizerCheckButtonTimer = millis();
 void DigitizerClass::renderGraph() {
-    GD.Tag(171);
-    //GD.ColorA(255);
-    if (DIGITIZER.allowTrigger) {
-            GD.ColorRGB(0xff0000);
-       GD.cmd_button(200,380,100,40,29,0, "STOP");
-    } else {
-                    GD.ColorRGB(0x0000ff);
 
-       GD.cmd_button(200,380,120,40,29,0, "SET AUTO");
-    }
-    GD.Tag(0);
-    int tag = GD.inputs.tag;
-    if (tag == 171) {
-        DIGITIZER.allowTrigger = ! DIGITIZER.allowTrigger ;
-    }
+    
+      GD.Tag(171);
+      GD.ColorA(255);
+      GD.ColorRGB(0x000000);
+      if (DIGITIZER.allowTrigger) {
+         GD.cmd_button(200,420,100,40,29,0, "STOP");
+      } else {
+         GD.cmd_button(200,420,120,40,29,0, "SET AUTO");
+      }
+      GD.Tag(172);
+      GD.cmd_button(50,420,140,40,29,0, "TRIGGER");
+
+      GD.Tag(0);
+      int tag = GD.inputs.tag;
+      if (digitizerCheckButtonTimer+1000 < millis()) {
+        digitizerCheckButtonTimer = millis();
+        if (tag == 171) {
+          DIGITIZER.allowTrigger = ! DIGITIZER.allowTrigger ;
+        }
+        if (tag == 172) {
+          continuous = !continuous;
+        }
+      }
+    
 
     //VOLT_DISPLAY.renderMeasured(10,50, minDigV, false);
     //VOLT_DISPLAY.renderMeasured(10,150, maxDigV, false);
@@ -77,13 +87,21 @@ void DigitizerClass::renderGraph() {
     //  CURRENT_DISPLAY.renderMeasured(10,350, maxDigI, false, false, current_range);
     //GD.cmd_number(210,320, 28, 6, adrAtTrigger);
     //GD.cmd_number(410,320, 28, 6, ramAdrPtr);
-    
+          GD.ColorRGB(0xff0000);
+
     if (allowTrigger) {
-      //GD.cmd_number(500,320, 28, 6, allowTrigger);
-      GD.cmd_text(500, 390 ,  28, 0, "AUTO");
-    } else {
-      GD.cmd_text(500, 390 ,  28, 0, "STOPPED");
-    }
+       //GD.cmd_number(500,320, 28, 6, allowTrigger);
+       GD.cmd_text(200, 380 ,  28, 0, "AUTO");
+     } else  {
+       GD.cmd_text(200, 380 ,  28, 0, "STOPPED");
+     }
+
+     if (continuous) {
+       //GD.cmd_number(500,320, 28, 6, allowTrigger);
+       GD.cmd_text(50, 380 ,  28, 0, "CONTINOUS");
+     } else  {
+       GD.cmd_text(50, 380 ,  28, 0, "EDGE");
+     }
 
 
 int yAxisPx = 240;
@@ -111,7 +129,6 @@ GD.Vertex2ii(xAxisPx, yAxisPx - height/2);
 GD.LineWidth(3);
 
 for (int i=xStep; i<width/2; i=i+xStep ) {
-    
     GD.Begin(LINE_STRIP);
     GD.Vertex2ii(xAxisPx + i, yAxisPx-height/2);
     GD.Vertex2ii(xAxisPx + i, yAxisPx+height/2);
@@ -121,7 +138,6 @@ for (int i=xStep; i<width/2; i=i+xStep ) {
 }
 
 for (int i=yStep; i<height/2; i=i+yStep) {
-
     GD.Begin(LINE_STRIP);
     GD.Vertex2ii(xAxisPx+width/2, yAxisPx + i);
     GD.Vertex2ii(xAxisPx-width/2, yAxisPx + i);
@@ -138,8 +154,10 @@ for (int i=yStep; i<height/2; i=i+yStep) {
     GD.ColorRGB(0x00ff00);
     clearMaxMin();
     float pixelsPrVolt = 20;
-    for (int x = 0; x<nrOfFloats; x++) {
 
+    // render main graph
+    int resolution = 2; // 1 is best
+    for (int x = 0; x<nrOfFloats; x += resolution) {
       GD.Vertex2ii(x*2, yAxisPx - mva[x]/1000.0 * pixelsPrVolt);
 
       if (mva[x] > maxDigV) {
@@ -255,7 +273,7 @@ void DigitizerClass::handleSamplingForDigitizer(int dataR) {
   
   bool positiveEdge = v > lastVoltage + 10.0;
   
-  bool trigg = positiveEdge;
+  bool trigg = positiveEdge || continuous;
 
 
 
@@ -280,7 +298,6 @@ void DigitizerClass::handleSamplingForDigitizer(int dataR) {
       ramEmulator2[samplesAfterTrigger++] = v;
   }
 
-  bool continuous = false;
   if (!triggered) {
     if (trigg) {
       triggered = true;

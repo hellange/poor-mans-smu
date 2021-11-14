@@ -32,6 +32,8 @@ private:
   void updateModulation();
 
 public:
+  bool continuous = false;
+
   void clearMaxMin();
   void init(OPERATION_TYPE operationType_);
   void open();

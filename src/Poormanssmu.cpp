@@ -1554,7 +1554,7 @@ void loop() {
     handleSampling(); 
    #endif
     DIGITIZER.loopDigitize();
-    if (!DIGITIZER.digitize && ( (int)millis() > samplesUpdateTimer + 100  || MAINMENU.active)){
+    if ( (!DIGITIZER.digitize || !DIGITIZER.allowTrigger || !DIGITIZER.continuous) && ( (int)millis() > samplesUpdateTimer + 100  || MAINMENU.active)){
       DIGITIZER.rendering = true;
       samplesUpdateTimer = (int)millis();
       SMU[0].disable_ADC_DAC_SPI_units();
