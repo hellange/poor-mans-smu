@@ -64,6 +64,9 @@
 #define GEST_MOVE_DOWN 3
 #define LOWER_WIDGET_Y_POS 250
 
+
+#define SAMPLING_BY_INTERRUPT
+
 SimpleStatsClass SIMPLE_STATS;
 LoggerClass LOGGER;
 
@@ -78,7 +81,7 @@ void openMainMenu();
 //void renderAnalogGauge(int x, int y, int size, float degrees, float value, const char *title);
 void loopMain();
 void loopDigitize();
-void handleSampling();
+static void handleSampling();
 void closeMainMenuCallback(FUNCTION_TYPE functionType_);
 void showFanSpeed(int x, int y);
 void fltCommitCurrentSourceAutoRange(float mv, bool autoRange);
@@ -132,10 +135,8 @@ OPERATION_TYPE getOperationType() {
 }
 IntervalTimer normalSamplingTimer;
 
-#define SAMPLING_BY_INTERRUPT
-
 float changeDigit = 0; 
-int changeDigitTimeout;
+uint32_t changeDigitTimeout;
 
 void rotaryChangedVoltCurrentFn(float changeVal) {
   changeDigitTimeout = millis();
@@ -1605,7 +1606,6 @@ void loop() {
 //    }
 //    loopUpdateTimer = millis();
 
-    OPERATION_TYPE ot = getOperationType();
     disable_ADC_DAC_SPI_units();
     GD.resume();
     GD.Clear();
@@ -1618,7 +1618,7 @@ void loop() {
     // TODO: don't need to check buttons for inactive menus or functions...
     MAINMENU.handleButtonAction(tag);
     PUSHBUTTONS.handle();
-        PUSHBUTTON_ENC.handle();
+    PUSHBUTTON_ENC.handle();
 
     GD.swap();
     GD.__end();
