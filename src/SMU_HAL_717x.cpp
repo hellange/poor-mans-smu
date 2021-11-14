@@ -103,6 +103,19 @@ int ADCClass::getSamplingRate() {
   return samplingRate;
 }
 
+void ADCClass::updateSettings() {
+  if (enableCurrentMeasurement) {
+      AD7176_WriteRegister({0x11, 2, 0, 0x8043l  });  
+} else {
+      AD7176_WriteRegister({0x11, 2, 0, 0x0001l  });  
+}
+if (enableVoltageMeasurement) {
+      AD7176_WriteRegister({0x10, 2, 0, 0x8001l  }); // current
+} else {
+      AD7176_WriteRegister({0x10, 2, 0, 0x0001l  }); // current
+}
+
+}
 
 void ADCClass::writeSamplingRate() {
   if (oldSamplingRate == samplingRate) {
@@ -244,7 +257,7 @@ void ADCClass::setCurrentRange(CURRENT_RANGE range, OPERATION_TYPE operationType
   if (range == AMP1) {    
     digitalWrite(4, HIGH); 
     if (operationType == SOURCE_VOLTAGE) {
-      Serial.println("Switching current range (to A) while in voltage source must also update DAC output for limiting circuit.");
+      //Serial.println("Switching current range (to A) while in voltage source must also update DAC output for limiting circuit.");
       delay(1); // WARNING !!!! Had to add delay here to avoid voltage drop when changing from 10mA to 1A.
                //              Why?
                //              TODO: Find out why setting the current limit right after switch causes spike !!!!
@@ -258,7 +271,7 @@ void ADCClass::setCurrentRange(CURRENT_RANGE range, OPERATION_TYPE operationType
       fltSetCommitCurrentLimit(setLimit_micro, _SOURCE_AND_SINK);//printError(_PRINT_ERROR_VOLTAGE_SOURCE_SETTING);
     } 
     else {
-      Serial.println("Switching current range (to A) while in current source must also update DAC output");
+      //Serial.println("Switching current range (to A) while in current source must also update DAC output");
       fltSetCommitCurrentSource(setValue_micro);
     }
 

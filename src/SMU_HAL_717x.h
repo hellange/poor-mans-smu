@@ -65,6 +65,11 @@ class ADCClass {
     void setGPIO(int nr, bool on);
 
     bool use100uVSetResolution();
+
+    void updateSettings();
+    bool enableVoltageMeasurement = true;
+    bool enableCurrentMeasurement = true;
+
 };
 
 #endif

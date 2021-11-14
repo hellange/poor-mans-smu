@@ -28,13 +28,16 @@ void FunctionPulseClass::init() {
   // TODO: Fetch from settings
   min = -2000.0;
   max = 2000.0;
-  hz = 10;
+  hz = 9;
+  
+
 }
 
 void FunctionPulseClass::open(OPERATION_TYPE operationType_, void (*closedFn_)(OPERATION_TYPE type)) {
   closedFn = closedFn_;
   operationType = operationType_;
   GD.__end();
+  
   SMU[0].setCurrentRange(AMP1, operationType);
   SMU[0].disable_ADC_DAC_SPI_units();
   GD.resume();

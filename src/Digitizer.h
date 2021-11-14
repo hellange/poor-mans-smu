@@ -28,9 +28,13 @@ private:
 
   void copyDataBufferToDisplayBuffer();
 
+  // for test
+  void updateModulation();
+
 public:
   void clearMaxMin();
   void init(OPERATION_TYPE operationType_);
+  void open();
   void loopDigitize();
   void renderGraph();
   void a();

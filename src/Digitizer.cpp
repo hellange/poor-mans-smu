@@ -12,9 +12,23 @@ void DigitizerClass::init(OPERATION_TYPE operationType_) {
 
 }
 
+void DigitizerClass::open() {
+  GD.__end();
+  SMU[0].disable_ADC_DAC_SPI_units();
+  SMU[0].enableVoltageMeasurement = true;
+  SMU[0].enableCurrentMeasurement = false;
+  SMU[0].updateSettings();
+  GD.resume();
+}
+
 void DigitizerClass::close() {
     // TODO: Check that graphics are not "on" ???
-    SMU[0].setSamplingRate(20); //TODO: Should get back to same as before, not a default one
+    GD.__end();
+    SMU[0].disable_ADC_DAC_SPI_units();
+    //SMU[0].setSamplingRate(20); //TODO: Should get back to same as before, not a default one
+    SMU[0].enableVoltageMeasurement = true;
+    SMU[0].enableCurrentMeasurement = true;
+    SMU[0].updateSettings();
     digitize = false;
     bufferOverflow = false;
 }
@@ -186,6 +200,38 @@ void DigitizerClass::clearMaxMin() {
   maxDigV = -100000.00, minDigV = 100000.00;
 }
 
+
+// For testing
+float modulation = 0.05;
+float ampDir = 1;
+float modDir = 1;
+
+float amplitude = 2;
+int modulationTimer = millis();
+  void DigitizerClass::updateModulation() {
+        //for test
+  if (modulationTimer + 100 < millis()) {
+    if (modulation > 0.2) {
+        modDir = -1;
+    } else if (modulation <0.02) {
+                modDir = 1;
+    }
+     //   modulation = modulation + 0.001 * modDir;
+
+    modulationTimer = millis();
+    amplitude += 0.1 * ampDir;
+    if (amplitude>5) {
+        ampDir = -1;
+    } else if (amplitude <1){
+        ampDir = +1;
+
+    }
+   }
+
+  }
+
+
+
 void DigitizerClass::handleSamplingForDigitizer(int dataR) {
 
   if (rendering) {
@@ -204,16 +250,20 @@ void DigitizerClass::handleSamplingForDigitizer(int dataR) {
   float v = SMU[0].measureMilliVoltage();  
 
   bool zeroCross = false;
-     //for test
-    //  simulatedWaveform += 0.05;
-    //  v=sin(simulatedWaveform)*500.0;
-    //  v=v+random(100); // simulate noise;
-    //  zeroCross = lastVoltage < 0.0 && v > 0.0 ;
+     
   
   bool positiveEdge = v > lastVoltage + 10.0;
   
   bool trigg = positiveEdge;
-    //bool trigg = zeroCross;
+
+
+
+
+      simulatedWaveform += modulation;
+      v=sin(simulatedWaveform)*1000.0 * amplitude;
+      v=v+random(100); // simulate noise;
+      zeroCross = lastVoltage < 0.0 && v > 0.0  && v>lastVoltage; // zero crossing positive edge
+      trigg = zeroCross;
 
   
   if (!allowTrigger) {
@@ -253,8 +303,12 @@ void DigitizerClass::handleSamplingForDigitizer(int dataR) {
       countSinceLastSample = 0;
       lastVoltage=0.0;
       copyDataBufferToDisplayBuffer();
+
+      //for test
+      updateModulation();
     }
 
   
 
   }
+

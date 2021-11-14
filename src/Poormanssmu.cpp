@@ -559,11 +559,9 @@ void sourceCurrentPanel(int x, int y) {
   GD.Tag(BUTTON_SOURCE_SET);
   GD.cmd_button(x + 20,y + 132,95,50,29,OPT_NOTEAR,"SET");
   
- 
   GD.Tag(BUTTON_CUR_AUTO);
   GD.cmd_button(x+350,y+132,95,50,29,0,current_range==AMP1 ? "1A" : "10mA");
   GD.Tag(0); // Note: Prevents button in some cases to react also when touching other places in UI. Why ?
-  
 }
 
 
@@ -747,6 +745,7 @@ void handleSliders(int x, int y) {
     GD.Tag(BUTTON_CLEAR_BUFFER);
     GD.ColorRGB(DIGIT_UTIL.indicateColor(0x000000, 0x00ff00, 50, BUTTON_CLEAR_BUFFER));
     GD.cmd_button(x+500,y+130,95,50,29,0,"CLEAR");
+    GD.Tag(0);
   }
   
   if (!anyDialogOpen()) {
@@ -760,6 +759,7 @@ void handleSliders(int x, int y) {
   }
   GD.Tag(BUTTON_REL);
   GD.cmd_button(x+700,y+130,95,50,29,0,"REL");
+  GD.Tag(0);
 
   if (!anyDialogOpen()) {
     if (V_CALIBRATION.useCalibratedValues == false) {
@@ -912,8 +912,7 @@ void measureVoltagePanel(int x, int y, boolean compliance) {
   GD.cmd_fgcolor(0xaaaa90);  
   GD.Tag(BUTTON_LIM_SET);
   GD.cmd_button(x+20,y,95,50,29,0,"LIM");
- 
-  GD.Tag(0); // Note: Prevents button in some cases to react also when touching other places in UI. Why ?
+  GD.Tag(0); 
   
 }
 void measureCurrentPanel(int x, int y, boolean compliance, bool showBar) {
@@ -957,7 +956,7 @@ void measureCurrentPanel(int x, int y, boolean compliance, bool showBar) {
   GD.cmd_button(x+20,y,95,50,29,0,"LIM");
   GD.Tag(BUTTON_CUR_AUTO);
   GD.cmd_button(x+350,y,95,50,29,0,current_range==AMP1 ? "1A" : "10mA");
-  GD.Tag(0); // Note: Prevents button in some cases to react also when touching other places in UI. Why ?
+  GD.Tag(0); 
 }
 
 void drawBall(int x, int y, bool set) {
@@ -1398,7 +1397,7 @@ int detectGestures() {
         gestDurationX = 0;
       }
     } 
-    else if (touchY > 0 && touchY<150 && gestDistanceY > 10 && scrollDir == 0) {
+    else if (touchY > 0 && touchY<150 && gestDistanceY > 10 && scrollDir == 0 && gestDistanceX<20) {
        if (++gestDurationY >= 2) {
         Serial.println("gesture = move down from upper");
         Serial.flush();
@@ -1967,6 +1966,8 @@ void closeMainMenuCallback(FUNCTION_TYPE newFunctionType) {
     FUNCTION_PULSE.open(operationType, closedPulse);
   } else if (newFunctionType == SOURCE_SWEEP) {
     FUNCTION_SWEEP.open(operationType, closedSweep);
+  } else if (newFunctionType == DIGITIZE) {
+    DIGITIZER.open();
   }
   else if (newFunctionType == SOURCE_DC_VOLTAGE) {   
     //disable_ADC_DAC_SPI_units();

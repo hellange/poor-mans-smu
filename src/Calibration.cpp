@@ -1271,6 +1271,7 @@ void CalibrationClass::renderCal(int x, int y, float valM, float setM, CURRENT_R
   GD.Tag(BUTTON_DAC_GAIN_COMP_LIM_DOWN);
   GD.ColorRGB(DIGIT_UTIL.indicateColor(0x000000, 0x00ff00, 50, BUTTON_DAC_GAIN_COMP_LIM_DOWN));
   GD.cmd_button(x + 10, y + 155, 100, 50, 29, 0, "DOWN");
+  GD.Tag(0);
 }
 
 
