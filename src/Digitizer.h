@@ -32,6 +32,10 @@ private:
   void updateModulation();
 
 public:
+    static bool zoomed;
+    static bool adjustLevel;
+    static int ampLevel;
+
   bool continuous = false;
 
   void clearMaxMin();
@@ -51,6 +55,9 @@ public:
   int adrAtTrigger;
   bool allowTrigger = true;
   bool rendering = false;
+
+  static void rotaryEncChanged(float changeValue);
+  static void rotaryEncButtonChanged(int key, bool quickPress, bool holdAfterLongPress, bool releaseAfterLongPress);
 
 };
 

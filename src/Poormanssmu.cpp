@@ -73,7 +73,6 @@ LoggerClass LOGGER;
 PushbuttonsClass PUSHBUTTONS;
 PushbuttonsClass PUSHBUTTON_ENC;
 
-DigitizerClass DIGITIZER;
 ZeroCalibrationlass ZEROCALIBRATION;
 
 bool anyDialogOpen();
@@ -1565,6 +1564,7 @@ void loop() {
       // TODO: don't need to check buttons for inactive menus or functions...
       MAINMENU.handleButtonAction(tag);
       PUSHBUTTONS.handle();
+      PUSHBUTTON_ENC.handle();
       handleMenuScrolldown();
       detectGestures();
       renderMainHeader();
@@ -1913,6 +1913,8 @@ void rotaryChangedDontCareFn(float changeVal) {
 }
 
 void pushButtonEncDontCareFn(int key, bool quickPress, bool holdAfterLongPress, bool releaseAfterLongPress) {
+  Serial.println("pushButtonEncDontCareFn disabled pushbutton");
+
 }
 
 void closeMainMenuCallback(FUNCTION_TYPE newFunctionType) {
@@ -1957,17 +1959,20 @@ void closeMainMenuCallback(FUNCTION_TYPE newFunctionType) {
   if (newFunctionType == SOURCE_PULSE) {
     #ifdef SAMPLING_BY_INTERRUPT
     GD.__end();
-    ROTARY_ENCODER.init(FUNCTION_PULSE.rotaryEncChanged); // helge
+    ROTARY_ENCODER.init(FUNCTION_PULSE.rotaryEncChanged);  
     PUSHBUTTON_ENC.setCallback(FUNCTION_PULSE.rotaryEncButtonChanged);
     normalSamplingTimer.end();  // stop normal voltage mesurement sampling
-  #endif
+    #endif
 
 
     FUNCTION_PULSE.open(operationType, closedPulse);
   } else if (newFunctionType == SOURCE_SWEEP) {
     FUNCTION_SWEEP.open(operationType, closedSweep);
   } else if (newFunctionType == DIGITIZE) {
+    ROTARY_ENCODER.init(DIGITIZER.rotaryEncChanged); 
+    PUSHBUTTON_ENC.setCallback(DIGITIZER.rotaryEncButtonChanged);
     DIGITIZER.open();
+    
   }
   else if (newFunctionType == SOURCE_DC_VOLTAGE) {   
     //disable_ADC_DAC_SPI_units();
@@ -2013,9 +2018,10 @@ void closeMainMenuCallback(FUNCTION_TYPE newFunctionType) {
       PUSHBUTTON_ENC.setCallback(LOGGER.rotarySwitchFn); 
       GD.resume();
   }
-  else if (newFunctionType == DIGITIZE) {
-    GD.resume();
-  } else {
+  // else if (newFunctionType == DIGITIZE) {
+  //   GD.resume();
+  //} 
+  else {
     GD.resume();
   }
   functionType = newFunctionType;

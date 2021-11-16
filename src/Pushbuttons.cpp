@@ -13,6 +13,7 @@ void PushbuttonsClass::init(int analogPin_, int holdPeriodms_) {
 
 void PushbuttonsClass::setCallback(void (*callback)(int button, bool quickPress, bool holdAfterLongPress, bool releaseAfterLongPress)) {
   callbackFn = callback;
+  Serial.println("-->Set new callback ");
 }
 
 void PushbuttonsClass::handle() {

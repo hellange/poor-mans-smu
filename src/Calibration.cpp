@@ -1454,9 +1454,9 @@ bool CalibrationClass::handleCalibrationButtons(int tag, OPERATION_TYPE operatio
        if (operationType == SOURCE_VOLTAGE) {
          mv = V_STATS.rawValue;
          if (mv < 0) {
-            V_CALIBRATION.adjAdcGainCompNeg(0.000001 * 10.0);
+            V_CALIBRATION.adjAdcGainCompNeg(0.000002);
          } else {
-            V_CALIBRATION.adjAdcGainCompPos(0.000001 * 10.0);
+            V_CALIBRATION.adjAdcGainCompPos(0.000002);
          }
        } else {
          mv = C_STATS.rawValue;

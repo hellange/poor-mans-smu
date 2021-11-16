@@ -8,6 +8,7 @@ volatile uint32_t _PWMFanWidth;
 
 int fanPin = 33; // 23;     // TODO: Move to global definitions
 int fanSpeedPin = 2; // TODO: Move to global definitions
+int kHz25 = 25000; //
 
 void FanClass::init()
 {
@@ -19,8 +20,8 @@ void FanClass::init()
   pinMode(fanSpeedPin, INPUT);
   attachInterrupt(fanSpeedPin, fanSpeedInterruptHandler, CHANGE);
 
-  analogWriteFrequency(fanPin, 20000);
-  setSpeed(50);
+  analogWriteFrequency(fanPin, kHz25); // 25kHz seems to be normal frequency for pwm speed control...
+  setSpeed(50); //start with half speed...
 }
 
 // speedPercent 0 - 100

@@ -5,7 +5,11 @@ extern VoltDisplayClass VOLT_DISPLAY;
 
 //OPERATION_TYPE operationType;
 
+bool DigitizerClass::zoomed = false;
+bool DigitizerClass::adjustLevel = false;
+int DigitizerClass::ampLevel = 2;
 
+DigitizerClass DIGITIZER;
 
 
 void DigitizerClass::init(OPERATION_TYPE operationType_) {
@@ -70,7 +74,7 @@ void DigitizerClass::renderGraph() {
 
       GD.Tag(0);
       int tag = GD.inputs.tag;
-      if (digitizerCheckButtonTimer+1000 < millis()) {
+      if (digitizerCheckButtonTimer+500 < millis()) {
         digitizerCheckButtonTimer = millis();
         if (tag == 171) {
           DIGITIZER.allowTrigger = ! DIGITIZER.allowTrigger ;
@@ -95,6 +99,17 @@ void DigitizerClass::renderGraph() {
      } else  {
        GD.cmd_text(200, 380 ,  28, 0, "STOPPED");
      }
+     
+     if (adjustLevel) {
+       GD.cmd_text(400, 380 ,  28, 0, "ADJ VOLT");
+       GD.cmd_number(550, 380, 27, 6, ampLevel);
+
+     } else {
+       GD.cmd_text(400, 380 ,  27, 0, "ADJ TIME");
+       GD.cmd_number(550, 380, 27, 6, zoomed);
+     }
+
+
 
      if (continuous) {
        //GD.cmd_number(500,320, 28, 6, allowTrigger);
@@ -153,13 +168,21 @@ for (int i=yStep; i<height/2; i=i+yStep) {
     GD.ColorA(255);
     GD.ColorRGB(0x00ff00);
     clearMaxMin();
-    float pixelsPrVolt = 20;
+    float pixelsPrVolt = ampLevel * 10;
 
     // render main graph
     int resolution = 2; // 1 is best
-    for (int x = 0; x<nrOfFloats; x += resolution) {
-      GD.Vertex2ii(x*2, yAxisPx - mva[x]/1000.0 * pixelsPrVolt);
-
+    int from = 0;
+    int to = nrOfFloats;
+    if (zoomed) {
+        from = nrOfFloats*0.25;
+        to = nrOfFloats*0.75;
+        resolution = 1;
+    }
+    int xCoordinate = 0;
+    for (int x = from; x<to; x += resolution) {
+      GD.Vertex2ii(xCoordinate, yAxisPx - mva[x]/1000.0 * pixelsPrVolt);
+xCoordinate +=4;
       if (mva[x] > maxDigV) {
         maxDigV = mva[x];
       } 
@@ -220,6 +243,7 @@ void DigitizerClass::clearMaxMin() {
 }
 
 
+
 // For testing
 float modulation = 0.05;
 float ampDir = 1;
@@ -269,7 +293,6 @@ void DigitizerClass::handleSamplingForDigitizer(int dataR) {
   float v = SMU[0].measureMilliVoltage();  
 
   bool zeroCross = false;
-     
   
   bool positiveEdge = v > lastVoltage + 10.0;
   
@@ -330,3 +353,29 @@ void DigitizerClass::handleSamplingForDigitizer(int dataR) {
 
   }
 
+void DigitizerClass::rotaryEncChanged(float changeValue) {
+  Serial.print("DigitizerClass rotaryEncChanged, value:");
+  Serial.println(changeValue);
+  if (!adjustLevel) {
+    zoomed = !zoomed;
+    Serial.print("zoomed=");
+    Serial.println(zoomed);
+  } else {
+    if (changeValue < 0) {
+      ampLevel = ampLevel - 1;
+    } else {
+      ampLevel = ampLevel + 1;
+    }
+     Serial.print("ampLevel=");
+    Serial.println(ampLevel);
+  }
+
+ 
+
+};
+void DigitizerClass::rotaryEncButtonChanged(int key, bool quickPress, bool holdAfterLongPress, bool releaseAfterLongPress) {
+  Serial.println("DigitizerClass rotaryEncChanged");
+  adjustLevel = !adjustLevel;
+  Serial.print("adjustLevel=");
+  Serial.println(adjustLevel);
+};
