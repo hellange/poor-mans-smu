@@ -257,7 +257,7 @@ int modulationTimer = millis();
     if (modulation > 0.2) {
         modDir = -1;
     } else if (modulation <0.02) {
-                modDir = 1;
+        modDir = 1;
     }
      //   modulation = modulation + 0.001 * modDir;
 
@@ -267,7 +267,6 @@ int modulationTimer = millis();
         ampDir = -1;
     } else if (amplitude <1){
         ampDir = +1;
-
     }
    }
 
@@ -362,9 +361,9 @@ void DigitizerClass::rotaryEncChanged(float changeValue) {
     Serial.println(zoomed);
   } else {
     if (changeValue < 0) {
-      ampLevel = ampLevel - 1;
+      ampLevel = (ampLevel>1)?ampLevel - 1 : 1;
     } else {
-      ampLevel = ampLevel + 1;
+      ampLevel = (ampLevel<10)?ampLevel + 1 : 10;
     }
      Serial.print("ampLevel=");
     Serial.println(ampLevel);
