@@ -57,7 +57,7 @@ void DigitizerClass::loopDigitize() {
  
 }
 
-int digitizerCheckButtonTimer = millis();
+unsigned long digitizerCheckButtonTimer = millis();
 void DigitizerClass::renderGraph() {
 
     
@@ -91,30 +91,34 @@ void DigitizerClass::renderGraph() {
     //  CURRENT_DISPLAY.renderMeasured(10,350, maxDigI, false, false, current_range);
     //GD.cmd_number(210,320, 28, 6, adrAtTrigger);
     //GD.cmd_number(410,320, 28, 6, ramAdrPtr);
-          GD.ColorRGB(0xff0000);
 
     if (allowTrigger) {
        //GD.cmd_number(500,320, 28, 6, allowTrigger);
+       GD.ColorRGB(0x00ff00);
        GD.cmd_text(200, 380 ,  28, 0, "AUTO");
      } else  {
+       GD.ColorRGB(0xff0000);
        GD.cmd_text(200, 380 ,  28, 0, "STOPPED");
      }
      
      if (adjustLevel) {
+       GD.ColorRGB(0x00ff00);
        GD.cmd_text(400, 380 ,  28, 0, "ADJ VOLT");
-       GD.cmd_number(550, 380, 27, 6, ampLevel);
-
+       GD.cmd_number(550, 380, 28, 6, ampLevel);
      } else {
-       GD.cmd_text(400, 380 ,  27, 0, "ADJ TIME");
-       GD.cmd_number(550, 380, 27, 6, zoomed);
+       GD.ColorRGB(0xff0000);
+       GD.cmd_text(400, 380 ,  28, 0, "ADJ TIME");
+       GD.cmd_number(550, 380, 28, 6, zoomed);
      }
 
 
 
      if (continuous) {
        //GD.cmd_number(500,320, 28, 6, allowTrigger);
+       GD.ColorRGB(0x0000ff);
        GD.cmd_text(50, 380 ,  28, 0, "CONTINOUS");
      } else  {
+       GD.ColorRGB(0x00ff00);
        GD.cmd_text(50, 380 ,  28, 0, "EDGE");
      }
 
@@ -179,17 +183,26 @@ for (int i=yStep; i<height/2; i=i+yStep) {
         to = nrOfFloats*0.75;
         resolution = 1;
     }
+
+    // experimental small graph with higher resolution
+    GD.ColorRGB(0x0000ff);
+    GD.Begin(LINE_STRIP);
+    int xCoordinate2 = 330;
+    int from2 = nrOfFloats*0.30;
+    int to2 = nrOfFloats*0.70;
+    for (int x = from2; x<to2; x += 1) {
+      GD.Vertex2ii(xCoordinate2, -100 + yAxisPx - mva[x]/1000.0 * pixelsPrVolt);
+      xCoordinate2 +=1;
+    }
+
+    //main graph
+    GD.ColorRGB(0x00ff00);
+    GD.Begin(LINE_STRIP);
     int xCoordinate = 0;
     for (int x = from; x<to; x += resolution) {
       GD.Vertex2ii(xCoordinate, yAxisPx - mva[x]/1000.0 * pixelsPrVolt);
-xCoordinate +=4;
-      if (mva[x] > maxDigV) {
-        maxDigV = mva[x];
-      } 
-      if (mva[x] < minDigV) {
-        minDigV = mva[x];
-      } 
- 
+      xCoordinate +=4;
+      updateMaxMin(mva[x]);
     }
 GD.ColorRGB(0xffffff);
 GD.cmd_text(0, yAxisPx-height/2 , 28, 0, "Max:");
@@ -211,6 +224,15 @@ if (minDigV < 0.0000) {
   GD.cmd_text(250+80, yAxisPx-height/2 , 28, 0, "mV");
 }
     
+}
+
+void DigitizerClass::updateMaxMin(float v) {
+    if (v > maxDigV) {
+        maxDigV = v;
+      } 
+      if (v < minDigV) {
+        minDigV = v;
+      } 
 }
 
 void DigitizerClass::copyDataBufferToDisplayBuffer() {
@@ -250,7 +272,7 @@ float ampDir = 1;
 float modDir = 1;
 
 float amplitude = 2;
-int modulationTimer = millis();
+unsigned long modulationTimer = millis();
   void DigitizerClass::updateModulation() {
         //for test
   if (modulationTimer + 100 < millis()) {
