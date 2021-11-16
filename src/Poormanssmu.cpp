@@ -1967,7 +1967,9 @@ void closeMainMenuCallback(FUNCTION_TYPE newFunctionType) {
 
     FUNCTION_PULSE.open(operationType, closedPulse);
   } else if (newFunctionType == SOURCE_SWEEP) {
+    GD.__end();
     FUNCTION_SWEEP.open(operationType, closedSweep);
+    GD.resume();
   } else if (newFunctionType == DIGITIZE) {
     ROTARY_ENCODER.init(DIGITIZER.rotaryEncChanged); 
     PUSHBUTTON_ENC.setCallback(DIGITIZER.rotaryEncButtonChanged);
