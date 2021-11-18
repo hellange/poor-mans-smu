@@ -1315,7 +1315,7 @@ void renderUpperDisplay(OPERATION_TYPE operationType, FUNCTION_TYPE functionType
 
   int x = 0;
   int y = 32;
- 
+ GD.Tag(0); // added to avoid wrong button detections when touching upper area...
   // show upper panel
   if (functionType == SOURCE_DC_VOLTAGE || functionType == SOURCE_DC_CURRENT) {
     if (operationType == SOURCE_VOLTAGE) {
