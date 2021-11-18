@@ -11,6 +11,7 @@ int DigitizerClass::ampLevel = 2;
 
 DigitizerClass DIGITIZER;
 
+bool digitizeVoltage = false;
 
 void DigitizerClass::init(OPERATION_TYPE operationType_) {
 
@@ -19,8 +20,14 @@ void DigitizerClass::init(OPERATION_TYPE operationType_) {
 void DigitizerClass::open() {
   GD.__end();
   SMU[0].disable_ADC_DAC_SPI_units();
-  SMU[0].enableVoltageMeasurement = true;
-  SMU[0].enableCurrentMeasurement = false;
+  if (digitizeVoltage) {
+    SMU[0].enableVoltageMeasurement = true;
+    SMU[0].enableCurrentMeasurement = false;
+  } else {
+    SMU[0].enableVoltageMeasurement = false;
+    SMU[0].enableCurrentMeasurement = true;
+  }
+
   SMU[0].updateSettings();
   GD.resume();
 }
@@ -60,10 +67,11 @@ void DigitizerClass::loopDigitize() {
 unsigned long digitizerCheckButtonTimer = millis();
 void DigitizerClass::renderGraph() {
 
-    
-      GD.Tag(171);
+          GD.Tag(0);
+
       GD.ColorA(255);
       GD.ColorRGB(0x000000);
+      GD.Tag(171);
       if (DIGITIZER.allowTrigger) {
          GD.cmd_button(200,420,100,40,29,0, "STOP");
       } else {
@@ -173,6 +181,9 @@ for (int i=yStep; i<height/2; i=i+yStep) {
     GD.ColorRGB(0x00ff00);
     clearMaxMin();
     float pixelsPrVolt = ampLevel * 10;
+    if (digitizeVoltage == false) {
+        pixelsPrVolt = ampLevel * 50;
+    }
 
     // render main graph
     int resolution = 2; // 1 is best
@@ -208,7 +219,7 @@ GD.ColorRGB(0xffffff);
 GD.cmd_text(0, yAxisPx-height/2 , 28, 0, "Max:");
 GD.ColorRGB(0x00ff00);
 GD.cmd_number(50,yAxisPx-height/2, 28, 6, maxDigV);
-GD.cmd_text(50+80, yAxisPx-height/2 , 28, 0, "mV");
+GD.cmd_text(50+80, yAxisPx-height/2 , 28, 0, "m");
 
 GD.ColorRGB(0xffffff);
 GD.cmd_text(200, yAxisPx-height/2 , 28, 0, "Min:");
@@ -216,7 +227,7 @@ if (minDigV < 0.0000) {
   GD.ColorRGB(0x00ff00);
   GD.cmd_text(250, yAxisPx-height/2 , 28, 0, "-");
   GD.cmd_number(260,yAxisPx-height/2, 28, 6, abs(minDigV));
-  GD.cmd_text(260+80, yAxisPx-height/2 , 28, 0, "mV");
+  GD.cmd_text(260+80, yAxisPx-height/2 , 28, 0, "m");
 
 } else {
   GD.ColorRGB(0x00ff00);
@@ -302,16 +313,26 @@ void DigitizerClass::handleSamplingForDigitizer(int dataR) {
       return; // Dont' handle sampling while rendering
   }
 
-  if (dataR == 1) {
-    return;
-  }
+ // No need to filter voltage or current as long as only single channel is used on ADC for sampling.
+ // 0 volt,   1 current
+ //   if (dataR == 0) {
+ //     return;
+ //   }
+
 
   if (bufferOverflow) {
       return;
   }
 
+  
+  float v;  
+  if (digitizeVoltage) {
+      v = SMU[0].measureMilliVoltage();
+  } else {
+      v = SMU[0].measureCurrent(AMP1);
+      //v = SMU[0].measureMilliVoltage();
 
-  float v = SMU[0].measureMilliVoltage();  
+  }
 
   bool zeroCross = false;
   
