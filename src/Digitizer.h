@@ -19,7 +19,12 @@ private:
   float mva[400];
   float mia[400]; 
   bool triggered = false;
+  
+  // Used for edge detect
   float lastVoltage = 0.0;
+  float lastVoltageOld = 0.0;
+  float lastVoltageOld2 = 0.0;
+  
   float ramEmulator[1000];
   float ramEmulator2[1000];
 

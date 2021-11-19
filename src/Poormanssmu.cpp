@@ -1439,8 +1439,10 @@ float simulatedWaveform;
 static void handleSampling() {
 
   int dataR = SMU[0].dataReady();
-   if (DIGITIZER.digitize == true && (dataR == 0 or dataR == 1)) {
-     DIGITIZER.handleSamplingForDigitizer(dataR);
+   if (DIGITIZER.digitize == true) {
+     if (dataR == 0 or dataR == 1) {
+       DIGITIZER.handleSamplingForDigitizer(dataR);
+     }
      return;
    }
  
@@ -1562,6 +1564,7 @@ void loop() {
       renderMainHeader();
       detectGestures();
       DIGITIZER.renderGraph();
+      showStatusIndicator(700, 40, "COMP", SMU[0].hasCompliance(), true);
       if (MAINMENU.active) {
         int tag = GD.inputs.tag;
         // TODO: don't need to check buttons for inactive menus or functions...

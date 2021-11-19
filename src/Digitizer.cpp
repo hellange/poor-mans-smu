@@ -425,7 +425,10 @@ void DigitizerClass::handleSamplingForDigitizer(int dataR) {
 
   bool zeroCross = false;
   
-  bool positiveEdge = v > lastVoltage + 3.0;
+  float edgeSteepnessToDetect = 1.0;
+  bool positiveEdge = v > lastVoltage + edgeSteepnessToDetect 
+        && lastVoltage > lastVoltageOld + edgeSteepnessToDetect
+        && lastVoltageOld > lastVoltageOld2 + edgeSteepnessToDetect;
   
   bool trigg = positiveEdge || continuous;
 
@@ -459,6 +462,8 @@ void DigitizerClass::handleSamplingForDigitizer(int dataR) {
       } 
     }
 
+    lastVoltageOld2 = lastVoltageOld;
+    lastVoltageOld = lastVoltage;
     lastVoltage = v;
     ramEmulator[ramAdrPtr] = v;
 
@@ -474,6 +479,9 @@ void DigitizerClass::handleSamplingForDigitizer(int dataR) {
       samplesAfterTrigger = 0;
       countSinceLastSample = 0;
       lastVoltage=0.0;
+      lastVoltageOld=0.0;
+      lastVoltageOld2=0.0;
+
       copyDataBufferToDisplayBuffer();
 
       //for test
