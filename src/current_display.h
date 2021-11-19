@@ -1,3 +1,6 @@
+#ifndef CURRENT_DISPLAY_H
+#define CURRENT_DISPLAY_H
+
 #include "operations.h"
 #include <stdint.h>
 
@@ -13,3 +16,4 @@ private:
 };
 
 extern CurrentDisplayClass CURRENT_DISPLAY;
+#endif

@@ -535,6 +535,8 @@ void sourceCurrentPanel(int x, int y) {
   // primary
   bool shownA = current_range == MILLIAMP10;
   shownA = false; // Override. Dont show nA
+  
+  GD.ColorA(255);
   CURRENT_DISPLAY.renderMeasured(x /*+ 17*/,y + 26, C_FILTERS.mean, false, shownA, current_range);
 
   // secondary
@@ -943,6 +945,7 @@ void measureCurrentPanel(int x, int y, boolean compliance, bool showBar) {
     GD.ColorA(255);
     bool shownA = current_range == MILLIAMP10;
     shownA = false; // Override. Dont show nA
+    GD.ColorA(255);
     CURRENT_DISPLAY.renderMeasured(x /*+ 17*/, y, C_FILTERS.mean, compliance, shownA, current_range); 
   }
   CURRENT_DISPLAY.renderSet(x+120, y+105, SMU[0].getLimitValue_micro());

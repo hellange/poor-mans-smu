@@ -6,12 +6,15 @@
 #include "GD2.h"
 #include "volt_display.h"
 #include "Mainmenu.h"
+#include "digit_util.h"
+#include "colors.h"
 
 extern MainMenuClass MAINMENU;
 
 class DigitizerClass {
 
 private:
+  float v; 
 
   float maxDigV = -100000.00, minDigV = 100000.00;
   int ramAdrPtr = 0;

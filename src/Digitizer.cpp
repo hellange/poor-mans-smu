@@ -73,6 +73,13 @@ void DigitizerClass::renderGraph() {
 
           GD.Tag(0);
 
+      GD.ColorA(100);
+  GD.ColorRGB(COLOR_CURRENT);
+
+      DIGIT_UTIL.renderValue(170,  32 , v, 3, DigitUtilClass::typeCurrent); 
+
+
+
       GD.ColorA(255);
       GD.ColorRGB(0x000000);
       GD.Tag(171);
@@ -185,7 +192,7 @@ for (int i=yStep; i<height/2; i=i+yStep) {
     GD.LineWidth(10);
     GD.Begin(LINE_STRIP);
     GD.ColorA(255);
-    GD.ColorRGB(0x00ff00);
+    //GD.ColorRGB(0x00ff00);
     //clearMaxMin();
     int multiplyBy = 1;
     if (ampLevel ==2) {
@@ -223,7 +230,7 @@ for (int i=yStep; i<height/2; i=i+yStep) {
     */
 
     //main graph
-    GD.ColorRGB(0x00ff00);
+    GD.ColorRGB(COLOR_CURRENT);
     GD.Begin(LINE_STRIP);
     int xCoordinate = 0;
     for (int x = from; x<to; x += resolution) {
@@ -231,25 +238,26 @@ for (int i=yStep; i<height/2; i=i+yStep) {
       xCoordinate +=4;
       //updateMaxMin(mva[x]);
     }
-GD.ColorRGB(0xffffff);
-GD.cmd_text(0, yAxisPx-height/2 , 28, 0, "Max:");
-GD.ColorRGB(0x00ff00);
-GD.cmd_number(50,yAxisPx-height/2, 28, 6, maxDigV);
-GD.cmd_text(50+80, yAxisPx-height/2 , 28, 0, "m");
+ GD.ColorRGB(0xaaaaaa);
+GD.cmd_text(0, yAxisPx-height/2 -10 , 27, 0, "Max:");
+GD.ColorRGB(COLOR_CURRENT);
+GD.cmd_number(50,yAxisPx-height/2 -10, 27, 6, maxDigV);
+GD.cmd_text(50+70, yAxisPx-height/2 -10 , 27, 0, "mA");
 
-GD.ColorRGB(0xffffff);
-GD.cmd_text(200, yAxisPx-height/2 , 28, 0, "Min:");
+GD.ColorRGB(0xaaaaaa);
+GD.cmd_text(0, yAxisPx-height/2 +20 -10, 27, 0, "Min:");
 if (minDigV < 0.0000) {
-  GD.ColorRGB(0x00ff00);
-  GD.cmd_text(250, yAxisPx-height/2 , 28, 0, "-");
-  GD.cmd_number(260,yAxisPx-height/2, 28, 6, abs(minDigV));
-  GD.cmd_text(260+80, yAxisPx-height/2 , 28, 0, "m");
+  GD.ColorRGB(COLOR_CURRENT);
+  GD.cmd_text(50, yAxisPx-height/2+20 -10 , 27, 0, "-");
+  GD.cmd_number(60,yAxisPx-height/2+20 -10, 27, 6, abs(minDigV));
+  GD.cmd_text(60+70, yAxisPx-height/2+20 -10 , 27, 0, "mA");
 
 } else {
-  GD.ColorRGB(0x00ff00);
-  GD.cmd_number(250,yAxisPx-height/2, 28, 6, abs(minDigV));
-  GD.cmd_text(250+80, yAxisPx-height/2 , 28, 0, "mV");
+  GD.ColorRGB(COLOR_CURRENT);
+  GD.cmd_number(50,yAxisPx-height/2+20 -10, 27, 6, abs(minDigV));
+  GD.cmd_text(50+70, yAxisPx-height/2+20 -10 , 27, 0, "mA");
 }
+    
     
  // render scale digits
 int time = 0;
@@ -418,7 +426,7 @@ void DigitizerClass::handleSamplingForDigitizer(int dataR) {
   }
 
   
-  float v;  
+  //float v;  
   if (digitizeVoltage) {
       v = SMU[0].measureMilliVoltage();
   } else {

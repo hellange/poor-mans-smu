@@ -33,7 +33,7 @@ void CurrentDisplayClass::renderMeasured(int x, int y, float rawMa, boolean comp
 
   DIGIT_UTIL.separate2(&a, &ma, &ua, &na, &neg, rawMa);
 
-  GD.ColorA(255);
+  //GD.ColorA(255);
   if (compliance) {
     GD.ColorRGB(complianceColor); //0xFF4522); //0xdd1120
   } else {

@@ -303,7 +303,7 @@ void CalibrationClass::init(OPERATION_TYPE operationType_) {
   Serial.println(adcZeroCompVol,7);
   //TODO: Differ between the two null value (ranges)
   nullValueVol[0] = adcZeroCompVol;
-  nullValueVol[1] = adcZeroCompVol;
+  //nullValueVol[1] = adcZeroCompVol;
 
 
 
@@ -904,14 +904,15 @@ void CalibrationClass::renderCal2(int x, int y, float valM, float setM, CURRENT_
 
  GD.ColorRGB(0xaaaaaa);
 
-    GD.cmd_text(x,y+45,27,0,"ADC NullV(1A)");
+    // TODO: Differ between current ranges for voltage zero ?
+    GD.cmd_text(x,y+45,27,0,"ADC Null V");
     DIGIT_UTIL.renderValue(x,  y+60 ,nullValueVol[0], 1, -1); 
-    GD.cmd_text(x+150,y+45,27,0,"ADC NullV(10mA)");
-    DIGIT_UTIL.renderValue(x + 150,  y+60 ,nullValueVol[1], 1, -1); 
+    //GD.cmd_text(x+150,y+45,27,0,"ADC NullV(10mA)");
+    //DIGIT_UTIL.renderValue(x + 150,  y+60 ,nullValueVol[1], 1, -1); 
 
-    GD.cmd_text(x,y+35+60,27,0,"ADC NullC(1A)");
+    GD.cmd_text(x,y+35+60,27,0,"ADC Null C(1A)");
     DIGIT_UTIL.renderValue(x,  y+110 ,nullValueCur[0], 1, -1); 
-    GD.cmd_text(x+150,y+35+60,27,0,"ADC NullC(10mA)");
+    GD.cmd_text(x+150,y+35+60,27,0,"ADC Null C(10mA)");
     DIGIT_UTIL.renderValue(x + 150,  y+110 ,nullValueCur[1], 1, -1); 
     GD.Tag(0);
 
@@ -1009,6 +1010,7 @@ void CalibrationClass::renderCal2(int x, int y, float valM, float setM, CURRENT_
     GD.Tag(BUTTON_DAC_NONLINEAR_CALIBRATE);
     GD.ColorRGB(DIGIT_UTIL.indicateColor(0x000000, 0x00ff00, 50, BUTTON_DAC_NONLINEAR_CALIBRATE));
     GD.cmd_button(x+310,y+45,120,50,29,0,"AUTOCAL");
+    GD.Tag(0);
 
     GD.Tag(BUTTON_DAC_ZERO_CALIBRATE);
     GD.ColorRGB(DIGIT_UTIL.indicateColor(0x000000, 0x00ff00, 50, BUTTON_DAC_ZERO_CALIBRATE));
