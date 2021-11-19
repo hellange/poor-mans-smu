@@ -1559,15 +1559,15 @@ void loop() {
       SMU[0].disable_ADC_DAC_SPI_units();
       GD.resume();
       GD.Clear();
+      renderMainHeader();
+      detectGestures();
       DIGITIZER.renderGraph();
-      int tag = GD.inputs.tag;
+      //int tag = GD.inputs.tag;
       // TODO: don't need to check buttons for inactive menus or functions...
-      MAINMENU.handleButtonAction(tag);
+      //MAINMENU.handleButtonAction(tag);
       PUSHBUTTONS.handle();
       PUSHBUTTON_ENC.handle();
       handleMenuScrolldown();
-      detectGestures();
-      renderMainHeader();
       GD.swap();
       GD.__end();
       DIGITIZER.rendering = false;

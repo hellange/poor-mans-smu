@@ -193,7 +193,7 @@ for (int i=yStep; i<height/2; i=i+yStep) {
     }
     float pixelsPrVolt = multiplyBy * 10;
     if (digitizeVoltage == false) {
-        pixelsPrVolt = multiplyBy * 100;
+        pixelsPrVolt = multiplyBy * 100  / 0.8;
     }
 
     int resolution = 2; // 1 is best
