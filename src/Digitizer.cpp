@@ -19,6 +19,7 @@ void DigitizerClass::init(OPERATION_TYPE operationType_) {
 
 void DigitizerClass::open() {
   GD.__end();
+  prevSamplingRate = SMU[0].getSamplingRate();
   SMU[0].disable_ADC_DAC_SPI_units();
   if (digitizeVoltage) {
     SMU[0].enableVoltageMeasurement = true;
@@ -40,6 +41,9 @@ void DigitizerClass::close() {
     SMU[0].enableVoltageMeasurement = true;
     SMU[0].enableCurrentMeasurement = true;
     SMU[0].updateSettings();
+    SMU[0].setSamplingRate(prevSamplingRate); //TODO: Should get back to same as before, not a default one
+
+
     digitize = false;
     bufferOverflow = false;
 }

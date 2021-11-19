@@ -36,6 +36,8 @@ private:
   // for test
   void updateModulation();
   void updateMaxMin(float v);
+
+  int prevSamplingRate;
 public:
     static bool zoomed;
     static bool adjustLevel;
