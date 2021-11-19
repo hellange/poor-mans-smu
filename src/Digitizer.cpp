@@ -71,14 +71,11 @@ void DigitizerClass::loopDigitize() {
 unsigned long digitizerCheckButtonTimer = millis();
 void DigitizerClass::renderGraph() {
 
-          GD.Tag(0);
-
-      GD.ColorA(100);
-  GD.ColorRGB(COLOR_CURRENT);
-
-      DIGIT_UTIL.renderValue(170,  32 , v, 3, DigitUtilClass::typeCurrent); 
+      GD.Tag(0);
 
 
+
+          if (!MAINMENU.active) {
 
       GD.ColorA(255);
       GD.ColorRGB(0x000000);
@@ -92,6 +89,7 @@ void DigitizerClass::renderGraph() {
       GD.cmd_button(50,420,140,40,29,0, "TRIGGER");
 
       GD.Tag(0);
+
       int tag = GD.inputs.tag;
       if (digitizerCheckButtonTimer+500 < millis()) {
         digitizerCheckButtonTimer = millis();
@@ -140,6 +138,14 @@ void DigitizerClass::renderGraph() {
        GD.ColorRGB(0x00ff00);
        GD.cmd_text(50, 380 ,  28, 0, "EDGE");
      }
+
+
+ 
+      GD.ColorA(100);
+      GD.ColorRGB(COLOR_CURRENT);
+
+      DIGIT_UTIL.renderValue(170,  32 , v, 3, DigitUtilClass::typeCurrent); 
+}
 
 
 int yAxisPx = 240;
@@ -238,6 +244,9 @@ for (int i=yStep; i<height/2; i=i+yStep) {
       xCoordinate +=4;
       //updateMaxMin(mva[x]);
     }
+
+    if (!MAINMENU.active) {
+
  GD.ColorRGB(0xaaaaaa);
 GD.cmd_text(0, yAxisPx-height/2 -10 , 27, 0, "Max:");
 GD.ColorRGB(COLOR_CURRENT);
@@ -257,7 +266,7 @@ if (minDigV < 0.0000) {
   GD.cmd_number(50,yAxisPx-height/2+20 -10, 27, 6, abs(minDigV));
   GD.cmd_text(50+70, yAxisPx-height/2+20 -10 , 27, 0, "mA");
 }
-    
+    }
     
  // render scale digits
 int time = 0;
