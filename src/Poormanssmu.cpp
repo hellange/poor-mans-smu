@@ -286,7 +286,7 @@ void  disable_ADC_DAC_SPI_units() {
 
 void initDefaultSamplingIfByInterrupt() {
 #ifdef SAMPLING_BY_INTERRUPT
-  normalSamplingTimer.begin(handleSampling, 20); // in microseconds.Too low value gives problems... 
+  normalSamplingTimer.begin(handleSampling, 10); // in microseconds.Too low value gives problems... 
   SPI.usingInterrupt(normalSamplingTimer);
 #endif
 }
@@ -1562,9 +1562,11 @@ void loop() {
       renderMainHeader();
       detectGestures();
       DIGITIZER.renderGraph();
-      int tag = GD.inputs.tag;
-      // TODO: don't need to check buttons for inactive menus or functions...
-      MAINMENU.handleButtonAction(tag);
+      if (MAINMENU.active) {
+        int tag = GD.inputs.tag;
+        // TODO: don't need to check buttons for inactive menus or functions...
+        MAINMENU.handleButtonAction(tag);
+      }
       PUSHBUTTONS.handle();
       PUSHBUTTON_ENC.handle();
       handleMenuScrolldown();
