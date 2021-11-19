@@ -7,7 +7,7 @@ extern VoltDisplayClass VOLT_DISPLAY;
 
 bool DigitizerClass::zoomed = false;
 bool DigitizerClass::adjustLevel = false;
-int DigitizerClass::ampLevel = 2;
+int DigitizerClass::ampLevel = 1;
 
 DigitizerClass DIGITIZER;
 
@@ -144,7 +144,7 @@ GD.ColorA(255);
 //GD.cmd_number(0,yAxisPx, 28, 6, 0);
 
 GD.ColorRGB(0xbbbbee);
-
+// origo horizontal and vertical
 GD.LineWidth(5);
 GD.Begin(LINE_STRIP);
 GD.Vertex2ii(xAxisPx-width/2, yAxisPx);
@@ -153,8 +153,8 @@ GD.Begin(LINE_STRIP);
 GD.Vertex2ii(xAxisPx, yAxisPx + height/2);
 GD.Vertex2ii(xAxisPx, yAxisPx - height/2);
 
+// vertical lines
 GD.LineWidth(3);
-
 for (int i=xStep; i<width/2; i=i+xStep ) {
     GD.Begin(LINE_STRIP);
     GD.Vertex2ii(xAxisPx + i, yAxisPx-height/2);
@@ -164,6 +164,8 @@ for (int i=xStep; i<width/2; i=i+xStep ) {
     GD.Vertex2ii(xAxisPx - i, yAxisPx+height/2);
 }
 
+/*
+//horizontal lines
 for (int i=yStep; i<height/2; i=i+yStep) {
     GD.Begin(LINE_STRIP);
     GD.Vertex2ii(xAxisPx+width/2, yAxisPx + i);
@@ -172,6 +174,7 @@ for (int i=yStep; i<height/2; i=i+yStep) {
     GD.Vertex2ii(xAxisPx+width/2, yAxisPx - i);
     GD.Vertex2ii(xAxisPx-width/2, yAxisPx - i);
 }
+*/
 
     //    VOLT_DISPLAY.renderMeasured(10,200, fullSamplePeriod, false);
 
@@ -179,13 +182,20 @@ for (int i=yStep; i<height/2; i=i+yStep) {
     GD.Begin(LINE_STRIP);
     GD.ColorA(255);
     GD.ColorRGB(0x00ff00);
-    clearMaxMin();
-    float pixelsPrVolt = ampLevel * 10;
+    //clearMaxMin();
+    int multiplyBy = 1;
+    if (ampLevel ==2) {
+        multiplyBy = 2;
+    } else if (ampLevel ==3) {
+        multiplyBy = 4;
+    } else if (ampLevel ==4) {
+        multiplyBy = 10;
+    }
+    float pixelsPrVolt = multiplyBy * 10;
     if (digitizeVoltage == false) {
-        pixelsPrVolt = ampLevel * 50;
+        pixelsPrVolt = multiplyBy * 100;
     }
 
-    // render main graph
     int resolution = 2; // 1 is best
     int from = 0;
     int to = nrOfFloats;
@@ -196,6 +206,7 @@ for (int i=yStep; i<height/2; i=i+yStep) {
     }
 
     // experimental small graph with higher resolution
+    /*
     GD.ColorRGB(0x0000ff);
     GD.Begin(LINE_STRIP);
     int xCoordinate2 = 330;
@@ -205,6 +216,7 @@ for (int i=yStep; i<height/2; i=i+yStep) {
       GD.Vertex2ii(xCoordinate2, -100 + yAxisPx - mva[x]/1000.0 * pixelsPrVolt);
       xCoordinate2 +=1;
     }
+    */
 
     //main graph
     GD.ColorRGB(0x00ff00);
@@ -213,7 +225,7 @@ for (int i=yStep; i<height/2; i=i+yStep) {
     for (int x = from; x<to; x += resolution) {
       GD.Vertex2ii(xCoordinate, yAxisPx - mva[x]/1000.0 * pixelsPrVolt);
       xCoordinate +=4;
-      updateMaxMin(mva[x]);
+      //updateMaxMin(mva[x]);
     }
 GD.ColorRGB(0xffffff);
 GD.cmd_text(0, yAxisPx-height/2 , 28, 0, "Max:");
@@ -235,6 +247,78 @@ if (minDigV < 0.0000) {
   GD.cmd_text(250+80, yAxisPx-height/2 , 28, 0, "mV");
 }
     
+ // render scale digits
+int time = 0;
+int digits = 0;
+int step =50;
+int axisScew = 5;
+int yAxis = yAxisPx + 20;
+GD.ColorRGB(0xaaaaaa);
+// x-axis digits (minus time)
+for (int x = xAxisPx; x > xAxisPx-width/2; x=x-step) {
+    if (time != 0) {
+        GD.cmd_text(x-20 - axisScew, yAxis, 26, 0, "-");
+    }
+    GD.cmd_number(x -axisScew,yAxis, 26, digits, time);
+    time = time + resolution;
+}
+// x-axis digits (plus time)
+time = resolution;
+for (int x = xAxisPx + step; x < xAxisPx+width/2; x=x+step) {
+    GD.cmd_number(x-axisScew,yAxis, 26, digits, time);
+    time = time + resolution;
+ }
+
+
+ // y-axis (voltage/current)
+ int valStep = 1;
+ if (ampLevel == 1) { // x1
+     valStep = 4;
+     step = 50;
+ }
+ if (ampLevel == 2) { // x2
+     valStep = 2;
+     step = 50;
+ } else if (ampLevel ==3) { // x4
+     valStep = 1;
+     step = 50;
+ } else if (ampLevel ==4) { // x10
+     valStep=0.4 /0.4;
+     step = 50 /0.4;
+ } 
+digits = 4;
+int xAxisScew = 100;
+int val = valStep;
+// positive
+for (int y= yAxisPx-step; y > yAxisPx-height/2; y=y-step) {
+    GD.ColorRGB(0xaaaaaa);
+    GD.cmd_number(15, y-axisScew, 26, digits, val * 100);
+    
+    GD.Begin(LINE_STRIP);
+    GD.ColorRGB(0xbbbbee);
+    GD.LineWidth(3);
+    GD.Vertex2ii(xAxisPx+width/2, y);
+    GD.Vertex2ii(xAxisPx-width/2, y);
+
+    val = val + valStep;
+}
+val = valStep;
+// negative
+for (int y= yAxisPx+step; y < yAxisPx+height/2; y=y+step) {
+    GD.ColorRGB(0xaaaaaa);
+    GD.cmd_text(0, y-axisScew, 26, 0, "-");
+    GD.cmd_number(15, y-axisScew, 26, digits, val* 100);
+
+    GD.Begin(LINE_STRIP);
+    GD.ColorRGB(0xbbbbee);
+    GD.LineWidth(3);
+    GD.Vertex2ii(xAxisPx+width/2, y);
+    GD.Vertex2ii(xAxisPx-width/2, y);
+
+    val = val + valStep;
+ }
+
+
 }
 
 void DigitizerClass::updateMaxMin(float v) {
@@ -250,14 +334,19 @@ void DigitizerClass::copyDataBufferToDisplayBuffer() {
     for (int x=0; x<=nrOfFloats;x++) {
        mva[x] = 0.0;
    }
+   clearMaxMin();
    for (int x=0; x<=nrOfFloats/2;x++) {
        mva[x+nrOfFloats/2] = ramEmulator2[x];
+       updateMaxMin(ramEmulator2[x]); // Note: uses all samples, but extreme may be masked out by display only some
+
    }
 
    int adr = adrAtTrigger;
    for (int x=nrOfFloats/2; x>=0 ;x--) {
        //mva[x] = 0.0;
         mva[x] = ramEmulator[adr];
+        updateMaxMin(ramEmulator[adr]);// Note: uses all samples, but extreme may be masked out by display only some
+
         adr--;
         if (adr < 0) {
             adr = nrOfFloats;
@@ -336,7 +425,7 @@ void DigitizerClass::handleSamplingForDigitizer(int dataR) {
 
   bool zeroCross = false;
   
-  bool positiveEdge = v > lastVoltage + 10.0;
+  bool positiveEdge = v > lastVoltage + 3.0;
   
   bool trigg = positiveEdge || continuous;
 
@@ -406,7 +495,7 @@ void DigitizerClass::rotaryEncChanged(float changeValue) {
     if (changeValue < 0) {
       ampLevel = (ampLevel>1)?ampLevel - 1 : 1;
     } else {
-      ampLevel = (ampLevel<10)?ampLevel + 1 : 10;
+      ampLevel = (ampLevel<4)?ampLevel + 1 : 4;
     }
      Serial.print("ampLevel=");
     Serial.println(ampLevel);
