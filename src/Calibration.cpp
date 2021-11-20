@@ -1279,10 +1279,11 @@ void CalibrationClass::renderCal(int x, int y, float valM, float setM, CURRENT_R
 
 bool CalibrationClass::handleCalibrationButtons(int tag, OPERATION_TYPE operationType) {
 
+    int repeatDelay = 50;
     int valueToReturnIfTooFast = false;
 
     if (tag == BUTTON_DAC_GAIN_COMP_UP) {
-       if (timeSinceLastChange + 200 > millis()){
+       if (timeSinceLastChange + repeatDelay > millis()){
         return valueToReturnIfTooFast;
        } 
        timeSinceLastChange = millis();
@@ -1314,7 +1315,7 @@ bool CalibrationClass::handleCalibrationButtons(int tag, OPERATION_TYPE operatio
     } 
     
     else if (tag == BUTTON_DAC_GAIN_COMP_UP2) {
-       if (timeSinceLastChange + 200 > millis()){
+       if (timeSinceLastChange + repeatDelay > millis()){
         return valueToReturnIfTooFast;
        } 
        timeSinceLastChange = millis();
@@ -1346,7 +1347,7 @@ bool CalibrationClass::handleCalibrationButtons(int tag, OPERATION_TYPE operatio
     } 
 
     else if (tag == BUTTON_DAC_GAIN_COMP_DOWN) {
-       if (timeSinceLastChange + 200 > millis()){
+       if (timeSinceLastChange + repeatDelay > millis()){
         return valueToReturnIfTooFast;
       } 
        timeSinceLastChange = millis();
@@ -1378,7 +1379,7 @@ bool CalibrationClass::handleCalibrationButtons(int tag, OPERATION_TYPE operatio
     } 
     
     else if (tag == BUTTON_DAC_GAIN_COMP_DOWN2) {
-       if (timeSinceLastChange + 200 > millis()){
+       if (timeSinceLastChange + repeatDelay > millis()){
         return valueToReturnIfTooFast;
       } 
        timeSinceLastChange = millis();
@@ -1409,7 +1410,7 @@ bool CalibrationClass::handleCalibrationButtons(int tag, OPERATION_TYPE operatio
     } 
  
     else if (tag == BUTTON_DAC_GAIN_COMP_LIM_UP) {
-       if (timeSinceLastChange + 200 > millis()){
+       if (timeSinceLastChange + repeatDelay > millis()){
         return valueToReturnIfTooFast;
       } 
        timeSinceLastChange = millis();
@@ -1421,13 +1422,13 @@ bool CalibrationClass::handleCalibrationButtons(int tag, OPERATION_TYPE operatio
          //if (operationType == SOURCE_VOLTAGE) {
          GD.__end();
          //if (SMU[0].fltSetCommitCurrentLimit(mv*1000, true)) printError(_PRINT_ERROR_VOLTAGE_SOURCE_SETTING);
-         SMU[0].fltSetCommitCurrentLimit(mv*1000, true);
+         SMU[0].fltSetCommitCurrentLimit(mv, true);
          GD.resume();
        }
     } 
     
     else if (tag == BUTTON_DAC_GAIN_COMP_LIM_DOWN) {
-       if (timeSinceLastChange + 200 > millis()){
+       if (timeSinceLastChange + repeatDelay > millis()){
         return valueToReturnIfTooFast;
       } 
        timeSinceLastChange = millis();
@@ -1439,14 +1440,13 @@ bool CalibrationClass::handleCalibrationButtons(int tag, OPERATION_TYPE operatio
          //if (operationType == SOURCE_VOLTAGE) {
          GD.__end();
          //if (SMU[0].fltSetCommitCurrentLimit(mv*1000, true)) printError(_PRINT_ERROR_VOLTAGE_SOURCE_SETTING);
-         SMU[0].fltSetCommitCurrentLimit(mv*1000, true);
-
+         SMU[0].fltSetCommitCurrentLimit(mv, true);
          GD.resume();
        }   
     } 
     
     else if (tag == BUTTON_ADC_GAIN_COMP_UP) {
-       if (timeSinceLastChange + 200 > millis()){
+       if (timeSinceLastChange + repeatDelay > millis()){
         return valueToReturnIfTooFast;
         
        } 
@@ -1471,7 +1471,7 @@ bool CalibrationClass::handleCalibrationButtons(int tag, OPERATION_TYPE operatio
       
     } 
     else if (tag == BUTTON_ADC_GAIN_COMP_DOWN) {
-       if (timeSinceLastChange + 200 > millis()){
+       if (timeSinceLastChange + repeatDelay > millis()){
         return valueToReturnIfTooFast;
        } 
        timeSinceLastChange = millis();
@@ -1496,7 +1496,7 @@ bool CalibrationClass::handleCalibrationButtons(int tag, OPERATION_TYPE operatio
     } 
 
     else if (tag == BUTTON_ADC_GAIN_COMP_UP2) {
-       if (timeSinceLastChange + 200 > millis()){
+       if (timeSinceLastChange + repeatDelay > millis()){
         return valueToReturnIfTooFast;
         
        } 
@@ -1521,7 +1521,7 @@ bool CalibrationClass::handleCalibrationButtons(int tag, OPERATION_TYPE operatio
       
     } 
     else if (tag == BUTTON_ADC_GAIN_COMP_DOWN2) {
-       if (timeSinceLastChange + 200 > millis()){
+       if (timeSinceLastChange + repeatDelay > millis()){
         return valueToReturnIfTooFast;
        } 
        timeSinceLastChange = millis();
@@ -1548,7 +1548,7 @@ bool CalibrationClass::handleCalibrationButtons(int tag, OPERATION_TYPE operatio
     
     
     else if (tag == BUTTON_DAC_ZERO_COMP_UP or tag == BUTTON_DAC_ZERO_COMP_UP2 ) {
-      if (timeSinceLastChange + 200 > millis()){
+      if (timeSinceLastChange + repeatDelay > millis()){
         return valueToReturnIfTooFast;
       } 
       timeSinceLastChange = millis();
@@ -1575,7 +1575,7 @@ bool CalibrationClass::handleCalibrationButtons(int tag, OPERATION_TYPE operatio
        }
     }
     else if (tag == BUTTON_DAC_ZERO_COMP_DOWN or tag == BUTTON_DAC_ZERO_COMP_DOWN2) {
-       if (timeSinceLastChange + 200 > millis()){
+       if (timeSinceLastChange + repeatDelay > millis()){
          return valueToReturnIfTooFast;
        } 
        timeSinceLastChange = millis();

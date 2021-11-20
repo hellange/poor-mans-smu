@@ -687,9 +687,10 @@ int64_t ADCClass::fltSetCommitVoltageLimit(int64_t voltage_uV, int8_t up_down_bo
  }
  
  int64_t ADCClass::fltSetCommitCurrentLimit(int64_t current_uA , int8_t up_down_both) {
+
   setLimit_micro = current_uA;
 
-  bool infoSerialOut = false;
+  bool infoSerialOut = true;
 
   float DAC_RANGE_LOW = 0.0;
   float DAC_RANGE_HIGH = 10.0;
@@ -727,7 +728,6 @@ int64_t ADCClass::fltSetCommitVoltageLimit(int64_t voltage_uV, int8_t up_down_bo
     //dac_voltage = dac_voltage * 1.0685; // TODO: Should be part of initial crude calibration
     dac_voltage = dac_voltage *  V_CALIBRATION.getDacGainCompLim();
   }
-
   LTC2758_write(1, LTC2758_CS, LTC2758_WRITE_SPAN_DAC, 0, span);
   float v_adj = LTC2758_voltage_to_code(dac_voltage, DAC_RANGE_LOW, DAC_RANGE_HIGH, infoSerialOut);
   LTC2758_write(1, LTC2758_CS, LTC2758_WRITE_CODE_UPDATE_DAC, 0, v_adj); 
@@ -760,23 +760,23 @@ int64_t ADCClass::fltSetCommitVoltageLimit(int64_t voltage_uV, int8_t up_down_bo
         //i=i/3.125; // After using two opamps in fromt of 1997-3....   Why did that give 3.125 gain ????
 
 
-        // if (i>0) {
-        //   i = i * C_CALIBRATION.getAdcGainCompPos2();
+        if (i>0) {
+          i = i * C_CALIBRATION.getAdcGainCompPos2();
  
-        // } else {
-        //   i = i * C_CALIBRATION.getAdcGainCompNeg2();
-        // }
+        } else {
+          i = i * C_CALIBRATION.getAdcGainCompNeg2();
+        }
 
       } else {
  
       
          i=i/(R_shunt_1A + R_mosfetSwitch); 
         
-        //  if (i>0) {
-        //   i = i * C_CALIBRATION.getAdcGainCompPos();
-        //  } else {
-        //   i = i * C_CALIBRATION.getAdcGainCompNeg();
-        //  }
+         if (i>0) {
+          i = i * C_CALIBRATION.getAdcGainCompPos();
+         } else {
+          i = i * C_CALIBRATION.getAdcGainCompNeg();
+         }
 
         //i=i/3.125; // After using two opamps in fromt of 1997-3....   Why did that give 3.125 gain ????
 
