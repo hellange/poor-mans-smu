@@ -69,6 +69,7 @@ class ADCClass {
     void updateSettings();
     bool enableVoltageMeasurement = true;
     bool enableCurrentMeasurement = true;
+    CURRENT_RANGE getCurrentRange();
 
 };
 

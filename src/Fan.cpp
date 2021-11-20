@@ -25,13 +25,29 @@ void FanClass::init()
 }
 
 // speedPercent 0 - 100
-void FanClass::setSpeed(int speedPercent) {
+void FanClass::setSpeed(int speedPercent_) {
   if (speedPercent > 100) {
     speedPercent = 100;
   } else if (speedPercent < 0) {
     speedPercent = 0;
   }
+  speedPercent = speedPercent_;
   analogWrite(fanPin, speedPercent * 255/100);
+}
+
+int FanClass::getSpeed() {
+  return speedPercent;
+}
+
+void FanClass::setAutoSpeedBasedOnTemperature(float temp) {
+  if (temp>80) {
+    FAN.setSpeed(100);
+  } else if (temp<30) {
+    FAN.setSpeed(0);
+  } else {
+    FAN.setSpeed(temp*1.2);
+  }
+
 }
 
 int FanClass::getFanWidth()

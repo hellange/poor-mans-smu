@@ -105,7 +105,7 @@ int scrollDir = 0;
 int noOfWidgets = 7;
 int activeWidget = 0;
 
-CURRENT_RANGE current_range = AMP1; // TODO: get rid of global
+//CURRENT_RANGE current_range = AMP1; // TODO: get rid of global
 
 
 // Used to make sure buttons are not triggered multiple times by a single touch
@@ -179,7 +179,7 @@ void rotaryChangedVoltCurrentFn(float changeVal) {
 
    } else {
 
-     if (current_range == MILLIAMP10) {
+     if (SMU[0].getCurrentRange() == MILLIAMP10) {
        changeVal = changeVal / 100.0;
      }
 
@@ -404,8 +404,8 @@ void setup()
    if (operationType == SOURCE_VOLTAGE) {
      SMU[0].fltSetCommitVoltageSource(SETTINGS.setMilliVoltage*1000, true);
      Serial.println("Source voltage");
-     current_range = AMP1;
-     SMU[0].setCurrentRange(current_range, operationType);
+     //current_range = AMP1;
+     SMU[0].setCurrentRange(AMP1, operationType);
      SMU[0].fltSetCommitCurrentLimit(SETTINGS.setCurrentLimit*1000, _SOURCE_AND_SINK); 
    } 
    Serial.print("Default source voltage ");
@@ -533,11 +533,11 @@ void sourceCurrentPanel(int x, int y) {
   GD.cmd_text(x+20 + 1, y + 2 + 1 ,   29, 0, "SOURCE CURRENT");
   
   // primary
-  bool shownA = current_range == MILLIAMP10;
+  bool shownA = (SMU[0].getCurrentRange() == MILLIAMP10);
   shownA = false; // Override. Dont show nA
   
   GD.ColorA(255);
-  CURRENT_DISPLAY.renderMeasured(x /*+ 17*/,y + 26, C_FILTERS.mean, false, shownA, current_range);
+  CURRENT_DISPLAY.renderMeasured(x /*+ 17*/,y + 26, C_FILTERS.mean, false, shownA, SMU[0].getCurrentRange());
 
   // secondary
   GD.ColorRGB(COLOR_CURRENT);
@@ -561,7 +561,7 @@ void sourceCurrentPanel(int x, int y) {
   GD.cmd_button(x + 20,y + 132,95,50,29,OPT_NOTEAR,"SET");
   
   GD.Tag(BUTTON_CUR_AUTO);
-  GD.cmd_button(x+350,y+132,95,50,29,0,current_range==AMP1 ? "1A" : "10mA");
+  GD.cmd_button(x+350,y+132,95,50,29,0,SMU[0].getCurrentRange()==AMP1 ? "1A" : "10mA");
   GD.Tag(0); // Note: Prevents button in some cases to react also when touching other places in UI. Why ?
 }
 
@@ -680,12 +680,12 @@ void renderStatusIndicators(int x, int y) {
   x=x+10;
   showStatusIndicator(x+630, y+5, "FILTER", V_FILTERS.filterSize>1, false);
   if (operationType == SOURCE_VOLTAGE) {
-    showStatusIndicator(x+710, y+5, "NULLv", V_CALIBRATION.nullValueIsSet(current_range), false);
-    showStatusIndicator(x+710, y+45, "RELv", V_CALIBRATION.relativeValueIsSet(current_range), false);
+    showStatusIndicator(x+710, y+5, "NULLv", V_CALIBRATION.nullValueIsSet(SMU[0].getCurrentRange()), false);
+    showStatusIndicator(x+710, y+45, "RELv", V_CALIBRATION.relativeValueIsSet(SMU[0].getCurrentRange()), false);
 
   } else {
-    showStatusIndicator(x+710, y+5, "NULLc", C_CALIBRATION.nullValueIsSet(current_range), false);
-    showStatusIndicator(x+710, y+45, "RELc", C_CALIBRATION.relativeValueIsSet(current_range), false);
+    showStatusIndicator(x+710, y+5, "NULLc", C_CALIBRATION.nullValueIsSet(SMU[0].getCurrentRange()), false);
+    showStatusIndicator(x+710, y+45, "RELc", C_CALIBRATION.relativeValueIsSet(SMU[0].getCurrentRange()), false);
 
   }
   showStatusIndicator(x+630, y+45, "50Hz", false, false);
@@ -695,6 +695,11 @@ void renderStatusIndicators(int x, int y) {
     } else {
       showStatusIndicator(x+710, y+85, "UNCALc", !C_CALIBRATION.useCalibratedValues, true);
     }
+  
+    showStatusIndicator(x+630, y+85+40, "1AMP", SMU[0].getCurrentRange() == AMP1, false);
+    showStatusIndicator(x+710, y+85+40, "10mA", SMU[0].getCurrentRange() == MILLIAMP10, false);
+  
+
 }
 
 
@@ -750,7 +755,7 @@ void handleSliders(int x, int y) {
   }
   
   if (!anyDialogOpen()) {
-    if (V_CALIBRATION.relativeValueIsSet(current_range)) {
+    if (V_CALIBRATION.relativeValueIsSet(SMU[0].getCurrentRange())) {
       GD.ColorRGB(0x00ff00);
     } else {
       GD.ColorRGB(0x000000);
@@ -922,14 +927,14 @@ void measureCurrentPanel(int x, int y, boolean compliance, bool showBar) {
   }
   
   y=y+28;
-  if (current_range == AMP1 && abs(C_STATS.rawValue) > SETTINGS.max_current_1A_range()) {
+  if (SMU[0].getCurrentRange() == AMP1 && abs(C_STATS.rawValue) > SETTINGS.max_current_1A_range()) {
     if (showBar) {
       y=y+12; // dont show bar when overflow... just add extra space so the panel gets same size as without overflow...
     }
     GD.ColorA(255);
     CURRENT_DISPLAY.renderOverflowSW(x + 17, y);
   } else 
-   if ( (current_range == MILLIAMP10 && abs(C_STATS.rawValue) > SETTINGS.max_current_10mA_range())) {
+   if ( (SMU[0].getCurrentRange() == MILLIAMP10 && abs(C_STATS.rawValue) > SETTINGS.max_current_10mA_range())) {
     if (showBar) {
       y=y+12; // dont show bar when overflow... just add extra space so the panel gets same size as without overflow...
     }
@@ -943,10 +948,10 @@ void measureCurrentPanel(int x, int y, boolean compliance, bool showBar) {
       y=y+12;
     }
     GD.ColorA(255);
-    bool shownA = current_range == MILLIAMP10;
+    bool shownA = (SMU[0].getCurrentRange() == MILLIAMP10);
     shownA = false; // Override. Dont show nA
     GD.ColorA(255);
-    CURRENT_DISPLAY.renderMeasured(x /*+ 17*/, y, C_FILTERS.mean, compliance, shownA, current_range); 
+    CURRENT_DISPLAY.renderMeasured(x /*+ 17*/, y, C_FILTERS.mean, compliance, shownA, SMU[0].getCurrentRange()); 
   }
   CURRENT_DISPLAY.renderSet(x+120, y+105, SMU[0].getLimitValue_micro());
 
@@ -957,7 +962,7 @@ void measureCurrentPanel(int x, int y, boolean compliance, bool showBar) {
   GD.Tag(BUTTON_LIM_SET);
   GD.cmd_button(x+20,y,95,50,29,0,"LIM");
   GD.Tag(BUTTON_CUR_AUTO);
-  GD.cmd_button(x+350,y,95,50,29,0,current_range==AMP1 ? "1A" : "10mA");
+  GD.cmd_button(x+350,y,95,50,29,0,SMU[0].getCurrentRange()==AMP1 ? "1A" : "10mA");
   GD.Tag(0); 
 }
 
@@ -1102,7 +1107,7 @@ void showWidget(int y, int widgetNo, int scroll) {
        } else {
          float rawM = C_FILTERS.mean;
         float setM = SMU[0].getSetValue_micro()*1000.0;
-        C_CALIBRATION.renderCal(scroll,yPos, rawM, setM, current_range,  reduceDetails());
+        C_CALIBRATION.renderCal(scroll,yPos, rawM, setM, SMU[0].getCurrentRange(),  reduceDetails());
       }
       
   }
@@ -1115,11 +1120,11 @@ void showWidget(int y, int widgetNo, int scroll) {
       if (operationType == SOURCE_VOLTAGE) {
          float rawM = V_FILTERS.mean;
          float setM = SMU[0].getSetValue_micro()/1000.0;
-         V_CALIBRATION.renderCal2(scroll,yPos, rawM, setM, current_range, reduceDetails());
+         V_CALIBRATION.renderCal2(scroll,yPos, rawM, setM, SMU[0].getCurrentRange(), reduceDetails());
        } else {
          float rawM = C_FILTERS.mean;
          float setM = SMU[0].getSetValue_micro()/1000.0;
-         C_CALIBRATION.renderCal2(scroll,yPos, rawM, setM, current_range, reduceDetails());
+         C_CALIBRATION.renderCal2(scroll,yPos, rawM, setM, SMU[0].getCurrentRange(), reduceDetails());
       }   
   }
   
@@ -1251,13 +1256,15 @@ void renderMainHeader() {
 
   GD.ColorRGB(0xaaaadd);
   if (ETHERNET_UTIL.status == 1) {
-    GD.cmd_text(600, 0, 27, 0, "Ethernet:OK");
+    GD.cmd_text(640, 0, 27, 0, "Ethernet:OK");
   } else {
-    GD.cmd_text(600,0,27,2, "Ethernet code:");
-    GD.cmd_number(710,0,27,2, ETHERNET_UTIL.status);
+    GD.cmd_text(640,0,27,2, "Ethernet code:");
+    GD.cmd_number(750,0,27,2, ETHERNET_UTIL.status);
   }
 
   int temp = UTILS.TC74_getTemperature();
+  FAN.setAutoSpeedBasedOnTemperature(temp);
+  
   GD.ColorRGB(0xdddddd);
   GD.cmd_text(410,0,27,0,"Temp:");
   if (temp > SETTINGS.getMaxTempAllowed()) {
@@ -1269,11 +1276,15 @@ void renderMainHeader() {
   } else {
     GD.ColorRGB(0x00ff00);
   }
-  GD.cmd_number(470,0,27,3, UTILS.TC74_getTemperature());
+  GD.cmd_number(470,0,27,3, temp);
   GD.cmd_text(500,0,27,0,"C");
 
   GD.ColorRGB(0xaaaaaa);
-  GD.cmd_number(520,0,27,2,UTILS.LM60_getTemperature(6));
+  GD.cmd_text(520,0,27,0,"Fan:");
+  GD.cmd_number(560,0,27,3,FAN.getSpeed());
+
+  GD.ColorRGB(0x888888);
+  GD.cmd_number(600,0,27,2,UTILS.LM60_getTemperature(6));
 
   GD.ColorRGB(0xdddddd);
   // Show log info
@@ -1421,7 +1432,7 @@ int detectGestures() {
 
 
 
-void notification(const char *text) {
+void notification(const char *text, int progressPercent) {
    GD.Begin(RECTS);
     GD.ColorA(230);  // already opaque, why ?
     GD.ColorRGB(0x222222);
@@ -1429,6 +1440,22 @@ void notification(const char *text) {
     GD.Vertex2ii(620, 280);
     GD.ColorRGB(0xffffff);
     GD.cmd_text(250, 200 , 29, 0, text);
+
+    if (progressPercent>=0) {
+  
+  
+  GD.Begin(RECTS);
+  GD.ColorA(255);
+  GD.ColorRGB(0x00ff00);
+  GD.Vertex2ii(250,230);
+  GD.Vertex2ii(250+progressPercent*3, 260);
+
+  GD.ColorRGB(0x000000);
+
+      GD.cmd_number(260,233, 28, 3, progressPercent);
+      GD.cmd_text(305, 233 , 28, 0, "%");
+    }
+
 }
 
 int count = 1;
@@ -1460,16 +1487,16 @@ static void handleSampling() {
   }
   
   else if (dataR == 1) {
-    float Cout = SMU[0].measureCurrent(current_range);
+    float Cout = SMU[0].measureCurrent(SMU[0].getCurrentRange());
     //TODO: DIffer between constant current and constant voltage nulling
-    Cout = Cout - V_CALIBRATION.nullValueCur[current_range];
-    Cout = Cout - C_CALIBRATION.relativeValue[current_range];
+    //Cout = Cout - V_CALIBRATION.nullValueCur[current_range];
+    Cout = Cout - C_CALIBRATION.relativeValue[SMU[0].getCurrentRange()];
     C_STATS.addSample(Cout);
     C_FILTERS.updateMean(Cout, false);
   }
   else if(dataR == 0) {
     float Vout = SMU[0].measureMilliVoltage();
-    Vout = Vout - V_CALIBRATION.relativeValue[current_range];
+    Vout = Vout - V_CALIBRATION.relativeValue[SMU[0].getCurrentRange()];
     V_STATS.addSample(Vout);    
     V_FILTERS.updateMean(Vout, true);
     SIMPLE_STATS.registerValue(V_FILTERS.mean);
@@ -1494,9 +1521,9 @@ void handleAutoCurrentRange() {
       float hysteresis = 0.5;
       float switchAt = SETTINGS.max_current_10mA_range();
       
-        if (current_range == AMP1 && abs(milliAmpere) < switchAt - hysteresis) {
-          current_range = MILLIAMP10;
-          SMU[0].setCurrentRange(current_range,operationType);
+        if (SMU[0].getCurrentRange() == AMP1 && abs(milliAmpere) < switchAt - hysteresis) {
+          //current_range = MILLIAMP10;
+          SMU[0].setCurrentRange(MILLIAMP10,operationType);
           Serial.println("switching to range 1");
            //TODO: Use getLimitValue from SMU instead of LIMIT_DIAL ?
           if (operationType == SOURCE_VOLTAGE){
@@ -1509,9 +1536,9 @@ void handleAutoCurrentRange() {
 //        Serial.print(milliAmpere);
 //        Serial.print(" ");
 //        Serial.println(switchAt);
-        if (current_range == MILLIAMP10 && abs(milliAmpere) > switchAt) {
-          current_range = AMP1;
-          SMU[0].setCurrentRange(current_range,operationType);
+        if (SMU[0].getCurrentRange() == MILLIAMP10 && abs(milliAmpere) > switchAt) {
+          //current_range = AMP1;
+          SMU[0].setCurrentRange(AMP1,operationType);
           Serial.println("switching to range 0");
            //TODO: Use getLimitValue from SMU instead of LIMIT_DIAL ?
           if (operationType == SOURCE_VOLTAGE){
@@ -1724,8 +1751,8 @@ int checkButtons() {
       LIMIT_DIAL.open(operationType, LIMIT, closeSourceDCCallback, SMU[0].getLimitValue_micro());
     } else if (tag == BUTTON_REL) {
       Serial.println("Set relative");
-      V_CALIBRATION.toggleRelativeValue(V_STATS.rawValue, current_range);
-      C_CALIBRATION.toggleRelativeValue(C_STATS.rawValue, current_range);
+      V_CALIBRATION.toggleRelativeValue(V_STATS.rawValue, SMU[0].getCurrentRange());
+      C_CALIBRATION.toggleRelativeValue(C_STATS.rawValue, SMU[0].getCurrentRange());
     } else if (tag == BUTTON_UNCAL) {
       Serial.println("Uncal set");
       V_CALIBRATION.toggleCalibratedValues();
@@ -1742,16 +1769,17 @@ int checkButtons() {
         Serial.println("current range set");
        
         // swap current range
-        if (current_range == AMP1) {
-          current_range = MILLIAMP10;
+        CURRENT_RANGE currentRange = SMU[0].getCurrentRange();
+        if (currentRange == AMP1) {
+          currentRange = MILLIAMP10;
         } else {
-          current_range = AMP1;
+          currentRange = AMP1;
         }
         timeSinceLastChange = millis();
         
         GD.__end();
         disable_ADC_DAC_SPI_units(); 
-        SMU[0].setCurrentRange(current_range,operationType);
+        SMU[0].setCurrentRange(currentRange,operationType);
         GD.resume();
 
       }
@@ -1816,13 +1844,6 @@ void loopMain()
   ZEROCALIBRATION.handleAutoNull();
   operationType = getOperationType();
   
-  if (ZEROCALIBRATION.nullCalibrationDone2) { 
-    //if (!V_CALIBRATION.autoCalDone) {
-    //  V_CALIBRATION.startAutoCal();
-    //}
-    // RAM.startLog();
-  }
-
   GD.__end();
 
   houseKeeping();
@@ -1890,10 +1911,11 @@ void loopMain()
   PUSHBUTTON_ENC.handle();
 
   if (V_CALIBRATION.autoCalInProgress or C_CALIBRATION.autoCalInProgress) {
-    notification("Auto calibration in progress...");
+    notification("Auto calibration in progress...", -1);
   }
-  if (ZEROCALIBRATION.autoNullStarted && !ZEROCALIBRATION.nullCalibrationDone2) {
-    notification("Wait for null adjustment...");
+  if (ZEROCALIBRATION.autoNullStarted && !ZEROCALIBRATION.nullCalibrationReady) {
+    int progress = ZEROCALIBRATION.getProgress();
+    notification("Wait for null adjustment...", progress);
   }
 
   if (anyDialogOpen()) {
@@ -2043,11 +2065,11 @@ void fltCommitCurrentSourceAutoRange(float uV, bool autoRange) {
    // auto current range when sourcing current
    if (autoRange) {
       if (abs(uV) < 8000 ) {  // TODO: should theoretically be 10mA full scale, but there seem to be some limitations... i.e. reference volt a bit less that 5V...
-        current_range = MILLIAMP10;
-        SMU[0].setCurrentRange(current_range, operationType);
+        //current_range = MILLIAMP10;
+        SMU[0].setCurrentRange(MILLIAMP10, operationType);
       } else {
-        current_range = AMP1;
-        SMU[0].setCurrentRange(current_range,operationType);
+        //current_range = AMP1;
+        SMU[0].setCurrentRange(AMP1,operationType);
       }
       
       if (SMU[0].fltSetCommitCurrentSource(uV)) printError(_PRINT_ERROR_VOLTAGE_SOURCE_SETTING);

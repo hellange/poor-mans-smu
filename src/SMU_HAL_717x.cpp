@@ -5,8 +5,12 @@
 #include "Filters.h"
 
   float R_shunt_1A = 0.50; //0.15;
-  float R_mosfetSwitch = 0.025; // ?? TODO: What's its real resistance ? Does it change much ? Should we use relay for precision ?
+  float R_shunt_10mA = 100.0;
+  float R_mosfetSwitch = 0.005; // ?? TODO: What's its real resistance ? Does it change much ? Should we use relay for precision ?
 
+  // There is a apprx. /2 on the sense input. This means that the voltage from DAC must be half of the expected output
+  //float voltageInputDividerCompensation = 0.5; 
+  float voltageInputDividerCompensation = 1.0; // no divider
         
 static st_reg init_state[] = 
 {
@@ -247,6 +251,11 @@ void ADCClass::setGPIO(int nr, bool on) {
   AD7176_WriteRegister({0x06, 2, 0, v}); 
   
 }
+
+CURRENT_RANGE ADCClass::getCurrentRange() {
+  return current_range;
+}
+
 void ADCClass::setCurrentRange(CURRENT_RANGE range, OPERATION_TYPE operationType) {
   current_range = range;
 
@@ -260,7 +269,9 @@ void ADCClass::setCurrentRange(CURRENT_RANGE range, OPERATION_TYPE operationType
 
   if (range == AMP1) {    
     digitalWrite(4, HIGH); 
+    setGPIO(1,1); // When GPIO controls the sense relay
     if (operationType == SOURCE_VOLTAGE) {
+      Serial.println("SMU setCurrentRange to 1A (source voltage)");
       //Serial.println("Switching current range (to A) while in voltage source must also update DAC output for limiting circuit.");
       delay(1); // WARNING !!!! Had to add delay here to avoid voltage drop when changing from 10mA to 1A.
                //              Why?
@@ -275,6 +286,8 @@ void ADCClass::setCurrentRange(CURRENT_RANGE range, OPERATION_TYPE operationType
       fltSetCommitCurrentLimit(setLimit_micro, _SOURCE_AND_SINK);//printError(_PRINT_ERROR_VOLTAGE_SOURCE_SETTING);
     } 
     else {
+            Serial.println("SMU setCurrentRange to 1A (source current)");
+
       //Serial.println("Switching current range (to A) while in current source must also update DAC output");
       fltSetCommitCurrentSource(setValue_micro);
     }
@@ -282,14 +295,18 @@ void ADCClass::setCurrentRange(CURRENT_RANGE range, OPERATION_TYPE operationType
 
   } else if (range == MILLIAMP10) {
    if (operationType == SOURCE_VOLTAGE) {
+     Serial.println("SMU setCurrentRange to 10mA (source voltage)");
      Serial.println("Switching current range (to 10mA) while in voltage source must also update DAC output for limiting circuit.");
      fltSetCommitCurrentLimit(setLimit_micro, _SOURCE_AND_SINK);// printError(_PRINT_ERROR_VOLTAGE_SOURCE_SETTING);
    } 
    else {
+     Serial.println("SMU setCurrentRange to 10mA (source current)");
      Serial.println("Switching current range (to 10mA) while in current source must also update DAC output");
      fltSetCommitCurrentSource(setValue_micro);
    }
    digitalWrite(4, LOW);
+   setGPIO(1,0); // When GPIO controls the sense relay
+
 
   } else {
     Serial.println("ERROR: Unknown current range !!!");
@@ -456,8 +473,7 @@ int64_t ADCClass::fltSetCommitVoltageSource(int64_t voltage_uV, bool dynamicRang
   // DONT INCLUDE THESE ADJUSTMENTS WHEN TESTING ONLY DAC/ADC BOARD !!!!
   if (full_board) {
 
-    // There is a apprx. /2 on the sense input. This means that the voltage from DAC must be half of the expected output
-    //float voltageInputDividerCompensation = 0.5; 
+
     
   //  dac_voltage = dac_voltage * 0.994; // crude adjustment that will differ between hardware
 
@@ -476,7 +492,7 @@ int64_t ADCClass::fltSetCommitVoltageSource(int64_t voltage_uV, bool dynamicRang
       }
     }
     
-    //dac_voltage = dac_voltage * voltageInputDividerCompensation;
+    dac_voltage = dac_voltage * voltageInputDividerCompensation;
 
     
 
@@ -556,7 +572,7 @@ int64_t ADCClass::fltSetCommitVoltageSource(int64_t voltage_uV, bool dynamicRang
       }
 
 
-      //dac_voltage = dac_voltage * 3.125; // after using 3 opamp diff amplifier before 1997-3.... hmm...
+      //dac_voltage = dac_voltage * 3.125; // after using 3 opamp diff amplifier before 1997-3...
 
  dac_voltage = dac_voltage *1.09;
       //Serial.println("Calculating current to set for 1A range");
@@ -571,10 +587,7 @@ int64_t ADCClass::fltSetCommitVoltageSource(int64_t voltage_uV, bool dynamicRang
       Serial.print(dac_voltage);
       Serial.println("mV in DAC for 10mA range....");
 
-      //dac_voltage = dac_voltage * 0.960;
-
-      //dac_voltage = dac_voltage * 3.125; // after using 3 opamp diff amplifier before 1997-3.... hmm...
- //dac_voltage = dac_voltage /1.015;
+      //dac_voltage = dac_voltage * 3.125; // after using 3 opamp diff amplifier before 1997-3...
 
       dac_voltage = dac_voltage + C_CALIBRATION.getDacZeroComp2();
 
@@ -583,10 +596,6 @@ int64_t ADCClass::fltSetCommitVoltageSource(int64_t voltage_uV, bool dynamicRang
       } else {
         dac_voltage = dac_voltage * C_CALIBRATION.getDacGainCompPos2();
       }
-
-      //dac_voltage = dac_voltage + C_CALIBRATION.getDacZeroComp() * 5000.0; //TODO: Should differ between ranges !
-
-           // dac_voltage = dac_voltage -37.0; // zero comp !
 
       Serial.print("Adjusted to :");
       Serial.print(dac_voltage);
@@ -656,10 +665,8 @@ int64_t ADCClass::fltSetCommitVoltageLimit(int64_t voltage_uV, int8_t up_down_bo
   }
 
   // TODO: Use more adjustments for inaccuracies ? Can we share the ones that are used in souring voltage ?
-  mV = mV / 2.0; // divide by two in voltage measurement circuit
-  
-  mV = mV * 1.02; // TODO: Should be part of initial crude calibration 
-  mV = mV -0.78 / 2.0; // TODO: Add limit offset to calibration store
+  mV = mV * voltageInputDividerCompensation;
+  //mV = mV -0.78 / 2.0; // TODO: Add limit offset to calibration store
 
   //SPAN 0 = 0 to +5V
   //     1 = 0 to +10V
@@ -691,6 +698,8 @@ int64_t ADCClass::fltSetCommitVoltageLimit(int64_t voltage_uV, int8_t up_down_bo
      
   float dac_voltage;
   if (current_range == MILLIAMP10) {
+    //TODO: use current shunt value for 10mA range
+    //      In the code below it's hardcoded to fit to 100ohm !
     dac_voltage = current_uA/1000.0;// * 1000.0;
     if (infoSerialOut) {
       Serial.print("Set ");
@@ -715,7 +724,7 @@ int64_t ADCClass::fltSetCommitVoltageLimit(int64_t voltage_uV, int8_t up_down_bo
       Serial.println(" V out from DAC.");
     }
     
-    dac_voltage = dac_voltage * 1.0685; // TODO: Should be part of initial crude calibration
+    //dac_voltage = dac_voltage * 1.0685; // TODO: Should be part of initial crude calibration
     dac_voltage = dac_voltage *  V_CALIBRATION.getDacGainCompLim();
   }
 
@@ -746,43 +755,37 @@ int64_t ADCClass::fltSetCommitVoltageLimit(int64_t voltage_uV, int8_t up_down_bo
     // DONT INCLUDE THESE ADJUSTMENTS WHEN TESTING ONLY DAC/ADC BOARD !!!!
     if (full_board == true) {
       if (range == MILLIAMP10) {
-        i=v/100.0; // 100 ohm shunt.
+        i=v/R_shunt_10mA;
         //i=i*0.79;// apprx.... why? 
         //i=i/3.125; // After using two opamps in fromt of 1997-3....   Why did that give 3.125 gain ????
 
 
-        if (i>0) {
-          i = i * C_CALIBRATION.getAdcGainCompPos2();
-          i=i*1.012;
-
-        } else {
-          i = i * C_CALIBRATION.getAdcGainCompNeg2();
-          i = i *1.01;
-        }
+        // if (i>0) {
+        //   i = i * C_CALIBRATION.getAdcGainCompPos2();
+ 
+        // } else {
+        //   i = i * C_CALIBRATION.getAdcGainCompNeg2();
+        // }
 
       } else {
-        //i=i/1.04600; // 1ohm shunt + resistance in range switch mosfet
-        i=i*5.0; // if 0.5 ohm shunt instead of ohm shunt;
-
+ 
       
-      i=i/(R_shunt_1A + R_mosfetSwitch); 
+         i=i/(R_shunt_1A + R_mosfetSwitch); 
         
-        //i=i*0.79; // apprx.... why ?
-        if (i>0) {
-          i = i * C_CALIBRATION.getAdcGainCompPos();
-          //i = i * 0.002;
-        } else {
-          i = i * C_CALIBRATION.getAdcGainCompNeg();
-          i = i *0.98;
-        }
+        //  if (i>0) {
+        //   i = i * C_CALIBRATION.getAdcGainCompPos();
+        //  } else {
+        //   i = i * C_CALIBRATION.getAdcGainCompNeg();
+        //  }
 
-              //i=i/3.125; // After using two opamps in fromt of 1997-3....   Why did that give 3.125 gain ????
+        //i=i/3.125; // After using two opamps in fromt of 1997-3....   Why did that give 3.125 gain ????
+
 
       }
-      //i=i/10.0; // x10 amplifier
-      i = i / 32.0;
+      i=i/10.0; // x10 amplifier
+      //i = i / 32.0; // for testing with Ada4254
 
-      // account for resistor value not perfect
+      // account for common mode error
       if (range == AMP1) {
        // i = i *   1.043; // 1ohm shunt, 1A range
         //i = i -V_FILTERS.mean* 0.000042; // account for common mode voltage giving wrong current (give too high result)
@@ -791,6 +794,10 @@ int64_t ADCClass::fltSetCommitVoltageLimit(int64_t voltage_uV, int8_t up_down_bo
         //i = i -V_FILTERS.mean* 0.0000440; // account for common mode voltage giving wrong current (give too high result)      
       }
       writeSamplingRate();
+      
+      i=i - C_CALIBRATION.nullValueCur[range];
+    
+
       
     }
 
