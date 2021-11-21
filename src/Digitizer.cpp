@@ -214,7 +214,7 @@ for (int i=yStep; i<height/2; i=i+yStep) {
     }
 
     if (SMU[0].getCurrentRange() == MILLIAMP10) {
-        pixelsPrVolt=pixelsPrVolt*100; //TODO: Fix this current range scale etc !  For now just make it "visible" :-)
+        pixelsPrVolt=pixelsPrVolt*1000; //TODO: Fix this current range scale etc !  For now just make it "visible" :-)
     }
 
     int resolution = 2; // 1 is best
@@ -259,10 +259,10 @@ if (maxDigV < 0.0000) {
   }
 if (SMU[0].getCurrentRange() == AMP1) {
   GD.cmd_number(60,yAxisPx-height/2 -10, 27, 5, maxDigV);
-  GD.cmd_text(60+50, yAxisPx-height/2 -10 , 27, 0, "mA");
+  GD.cmd_text(60+55, yAxisPx-height/2 -10 , 27, 0, "mA");
 } else {
     GD.cmd_number(60,yAxisPx-height/2 -10, 27, 5, maxDigV*1000.0);
-    GD.cmd_text(60+50, yAxisPx-height/2 -10 , 27, 0, "uA");
+    GD.cmd_text(60+55, yAxisPx-height/2 -10 , 27, 0, "uA");
 }
 
 GD.ColorRGB(0xaaaaaa);
@@ -274,10 +274,10 @@ GD.cmd_text(0, yAxisPx-height/2 +20 -10, 27, 0, "Min:");
   }
   if (SMU[0].getCurrentRange() == AMP1) {
     GD.cmd_number(60,yAxisPx-height/2+20 -10, 27, 5, abs(minDigV));
-    GD.cmd_text(60+50, yAxisPx-height/2+20 -10 , 27, 0, "mA");
+    GD.cmd_text(60+55, yAxisPx-height/2+20 -10 , 27, 0, "mA");
   } else {
     GD.cmd_number(60,yAxisPx-height/2+20 -10, 27, 5, abs(minDigV)* 1000.0);
-    GD.cmd_text(60+50, yAxisPx-height/2+20 -10 , 27, 0, "uA");
+    GD.cmd_text(60+55, yAxisPx-height/2+20 -10 , 27, 0, "uA");
   }
 
 //} 
@@ -323,7 +323,7 @@ for (int x = xAxisPx + step; x < xAxisPx+width/2; x=x+step) {
      step = 50 /0.4;
  } 
 digits = 4;
-int xAxisScew = 100;
+axisScew = 8;
 int val = valStep;
 // positive
 for (int y= yAxisPx-step; y > yAxisPx-height/2; y=y-step) {
