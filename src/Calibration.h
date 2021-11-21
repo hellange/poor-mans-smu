@@ -62,6 +62,8 @@ class CalibrationClass {
 
   
   int ea_adc_zero_comp_vol;
+    int ea_adc_zero_comp_vol2;
+
   int ea_adc_zero_comp_cur;
   int ea_adc_zero_comp_cur2;
 

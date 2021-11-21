@@ -53,6 +53,8 @@ void CalibrationClass::init(OPERATION_TYPE operationType_) {
   }
 
   ea_adc_zero_comp_vol = EA_ADC_ZERO_COMP_VOL;
+  ea_adc_zero_comp_vol2 = EA_ADC_ZERO_COMP_VOL2;
+
   ea_adc_zero_comp_cur = EA_ADC_ZERO_COMP_CUR;
   ea_adc_zero_comp_cur2 = EA_ADC_ZERO_COMP_CUR2;
 
@@ -298,15 +300,27 @@ void CalibrationClass::init(OPERATION_TYPE operationType_) {
     adcZeroCompVol = 0.0;
     Serial.print("Setting adc zero to:");
     Serial.println(adcZeroCompVol);
-    
   }
   Serial.println(adcZeroCompVol,7);
-  //TODO: Differ between the two null value (ranges)
   nullValueVol[0] = adcZeroCompVol;
-  //nullValueVol[1] = adcZeroCompVol;
 
-
-
+  float adcZeroCompVol2 = floatFromEeprom(ea_adc_zero_comp_vol2);
+  Serial.print("Read adcZeroCompVol2 from eeprom address ");
+  Serial.print(ea_adc_zero_comp_vol2,HEX);
+  Serial.print(":");
+  if (isnan(adcZeroCompVol2)) {
+    Serial.print("Not defined. Write default value:");
+    adcZeroCompVol2 = 0.0; // use millivolt
+    floatToEeprom(ea_adc_zero_comp_vol2,adcZeroCompVol2); // write initial default
+  } else if (abs(adcZeroCompVol2) < -10000.0 or abs(adcZeroCompVol2) > 10000.0) {
+    Serial.print("WARNING: Suspect adc zero value:");
+    Serial.println(adcZeroCompVol2);
+    adcZeroCompVol2 = 0.0;
+    Serial.print("Setting adc zero to:");
+    Serial.println(adcZeroCompVol2);
+  }
+  Serial.println(adcZeroCompVol2,7);
+  nullValueVol[1] = adcZeroCompVol2;
 
 
    float adcZeroCompCur = floatFromEeprom(ea_adc_zero_comp_cur);
@@ -557,6 +571,7 @@ bool CalibrationClass::relativeValueIsSet(CURRENT_RANGE current_range) {
   return relativeValue[current_range] != 0.0;
 }
 
+//MANGLER FORSKJELL PÅ 1A og 10mA !!!!
 void CalibrationClass::setNullValueVol(float v, CURRENT_RANGE current_range) {
   nullValueVol[current_range] = v;
   floatToEeprom(ea_adc_zero_comp_vol, v);
@@ -907,8 +922,8 @@ void CalibrationClass::renderCal2(int x, int y, float valM, float setM, CURRENT_
     // TODO: Differ between current ranges for voltage zero ?
     GD.cmd_text(x,y+45,27,0,"ADC Null V");
     DIGIT_UTIL.renderValue(x,  y+60 ,nullValueVol[0], 1, -1); 
-    //GD.cmd_text(x+150,y+45,27,0,"ADC NullV(10mA)");
-    //DIGIT_UTIL.renderValue(x + 150,  y+60 ,nullValueVol[1], 1, -1); 
+    GD.cmd_text(x+150,y+45,27,0,"ADC NullV(10mA)");
+    DIGIT_UTIL.renderValue(x + 150,  y+60 ,nullValueVol[1], 1, -1); 
 
     GD.cmd_text(x,y+35+60,27,0,"ADC Null C(1A)");
     DIGIT_UTIL.renderValue(x,  y+110 ,nullValueCur[0], 1, -1); 
