@@ -1976,8 +1976,8 @@ void closeMainMenuCallback(FUNCTION_TYPE newFunctionType) {
     DIGITIZER.close();
     //SMU[0].setSamplingRate(20); //TODO: Should get back to same as before, not a default one
   } else if (functionType == SOURCE_DC_CURRENT) {
-      GD.__end();
-      SMU[0].setGPIO(0, 0); // use volt feedback
+      //GD.__end();
+      //SMU[0].setGPIO(0, 0); // use volt feedback
       changeDigit = 0; // disable edit mode
   } 
   else if (functionType == SOURCE_DC_VOLTAGE) {
@@ -2009,10 +2009,10 @@ void closeMainMenuCallback(FUNCTION_TYPE newFunctionType) {
   }
   else if (newFunctionType == SOURCE_DC_VOLTAGE) {   
     //disable_ADC_DAC_SPI_units();
-    GD.__end();
     ROTARY_ENCODER.init(rotaryChangedVoltCurrentFn);
     PUSHBUTTON_ENC.setCallback(pushButtonEncInterrupt); 
-
+    GD.__end();
+    SMU[0].setGPIO(0, 0); // use voltage feedback
     if (SMU[0].operationType == SOURCE_VOLTAGE) {
       // If previous SMU operation was sourcing voltage, use that voltage
       if (SMU[0].fltSetCommitVoltageSource(SETTINGS.setMilliVoltage*1000, true)) printError(_PRINT_ERROR_VOLTAGE_SOURCE_SETTING);
