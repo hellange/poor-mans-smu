@@ -144,7 +144,7 @@ void DigitizerClass::renderGraph() {
       GD.ColorA(100);
       GD.ColorRGB(COLOR_CURRENT);
 
-      DIGIT_UTIL.renderValue(170,  32 , v, 3, DigitUtilClass::typeCurrent); 
+      //DIGIT_UTIL.renderValue(170,  32 , v, 3, DigitUtilClass::typeCurrent); 
 }
 
 
@@ -213,6 +213,10 @@ for (int i=yStep; i<height/2; i=i+yStep) {
         pixelsPrVolt = multiplyBy * 100  / 0.8;
     }
 
+    if (SMU[0].getCurrentRange() == MILLIAMP10) {
+        pixelsPrVolt=pixelsPrVolt*100; //TODO: Fix this current range scale etc !  For now just make it "visible" :-)
+    }
+
     int resolution = 2; // 1 is best
     int from = 0;
     int to = nrOfFloats;
@@ -250,23 +254,34 @@ for (int i=yStep; i<height/2; i=i+yStep) {
  GD.ColorRGB(0xaaaaaa);
 GD.cmd_text(0, yAxisPx-height/2 -10 , 27, 0, "Max:");
 GD.ColorRGB(COLOR_CURRENT);
-GD.cmd_number(50,yAxisPx-height/2 -10, 27, 6, maxDigV);
-GD.cmd_text(50+70, yAxisPx-height/2 -10 , 27, 0, "mA");
+if (maxDigV < 0.0000) {
+    GD.cmd_text(50, yAxisPx-height/2+20 -10 , 27, 0, "-");
+  }
+if (SMU[0].getCurrentRange() == AMP1) {
+  GD.cmd_number(60,yAxisPx-height/2 -10, 27, 5, maxDigV);
+  GD.cmd_text(60+50, yAxisPx-height/2 -10 , 27, 0, "mA");
+} else {
+    GD.cmd_number(60,yAxisPx-height/2 -10, 27, 5, maxDigV*1000.0);
+    GD.cmd_text(60+50, yAxisPx-height/2 -10 , 27, 0, "uA");
+}
 
 GD.ColorRGB(0xaaaaaa);
 GD.cmd_text(0, yAxisPx-height/2 +20 -10, 27, 0, "Min:");
-if (minDigV < 0.0000) {
+//if (minDigV < 0.0000) {
   GD.ColorRGB(COLOR_CURRENT);
-  GD.cmd_text(50, yAxisPx-height/2+20 -10 , 27, 0, "-");
-  GD.cmd_number(60,yAxisPx-height/2+20 -10, 27, 6, abs(minDigV));
-  GD.cmd_text(60+70, yAxisPx-height/2+20 -10 , 27, 0, "mA");
+  if (minDigV < 0.0000) {
+    GD.cmd_text(50, yAxisPx-height/2+20 -10 , 27, 0, "-");
+  }
+  if (SMU[0].getCurrentRange() == AMP1) {
+    GD.cmd_number(60,yAxisPx-height/2+20 -10, 27, 5, abs(minDigV));
+    GD.cmd_text(60+50, yAxisPx-height/2+20 -10 , 27, 0, "mA");
+  } else {
+    GD.cmd_number(60,yAxisPx-height/2+20 -10, 27, 5, abs(minDigV)* 1000.0);
+    GD.cmd_text(60+50, yAxisPx-height/2+20 -10 , 27, 0, "uA");
+  }
 
-} else {
-  GD.ColorRGB(COLOR_CURRENT);
-  GD.cmd_number(50,yAxisPx-height/2+20 -10, 27, 6, abs(minDigV));
-  GD.cmd_text(50+70, yAxisPx-height/2+20 -10 , 27, 0, "mA");
+//} 
 }
-    }
     
  // render scale digits
 int time = 0;
@@ -439,7 +454,8 @@ void DigitizerClass::handleSamplingForDigitizer(int dataR) {
   if (digitizeVoltage) {
       v = SMU[0].measureMilliVoltage();
   } else {
-      v = SMU[0].measureCurrent(AMP1);
+      v = SMU[0].measureCurrent(SMU[0].getCurrentRange());
+
       //v = SMU[0].measureMilliVoltage();
 
   }

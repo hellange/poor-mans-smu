@@ -39,14 +39,31 @@ int FanClass::getSpeed() {
   return speedPercent;
 }
 
+float lastTempChecked = millis();
+float timeBetweenCheck = 10000;
 void FanClass::setAutoSpeedBasedOnTemperature(float temp) {
-  if (temp>80) {
-    FAN.setSpeed(100);
-  } else if (temp<30) {
-    FAN.setSpeed(0);
+
+
+  if (temp>50) {
+    timeBetweenCheck = 2000;
   } else {
-    FAN.setSpeed(temp*1.2);
+    timeBetweenCheck = 10000;
   }
+
+  if (temp>80) {
+    FAN.setSpeed(90); // seems 90 gives higher speed that 100 on my fan and poor controller... ????
+    return;
+  }
+  
+  if (lastTempChecked + timeBetweenCheck < millis()) {
+    if (temp<35) {
+      FAN.setSpeed(0);
+    } else {
+      FAN.setSpeed((temp-10)*1.2);
+    }
+    lastTempChecked=millis();
+  }
+
 
 }
 

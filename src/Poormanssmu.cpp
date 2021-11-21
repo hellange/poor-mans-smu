@@ -1245,9 +1245,10 @@ void renderMainHeader() {
   //showFanSpeed(220, 0);
   //GD.cmd_number(50,0,27,2,LOGGER.percentageFull);
 
-  GD.ColorRGB(0x444444);
-  GD.cmd_number(0,0,27,3,analogRead(3)); // pushbutton analog value
-  GD.cmd_number(30,0,27,3,analogRead(16)); // encoder button value ?
+  // debugging pushbutton values...
+  //GD.ColorRGB(0x444444);
+  //GD.cmd_number(0,0,27,3,analogRead(3)); // pushbutton analog value
+  //GD.cmd_number(30,0,27,3,analogRead(16)); // encoder button value ?
 
    // uptime
   GD.ColorRGB(0xaaaaaa);
