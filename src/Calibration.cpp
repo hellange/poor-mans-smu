@@ -571,10 +571,13 @@ bool CalibrationClass::relativeValueIsSet(CURRENT_RANGE current_range) {
   return relativeValue[current_range] != 0.0;
 }
 
-//MANGLER FORSKJELL PÅ 1A og 10mA !!!!
 void CalibrationClass::setNullValueVol(float v, CURRENT_RANGE current_range) {
   nullValueVol[current_range] = v;
-  floatToEeprom(ea_adc_zero_comp_vol, v);
+  if (current_range == 0) {
+    floatToEeprom(ea_adc_zero_comp_vol, v);
+  } else {
+    floatToEeprom(ea_adc_zero_comp_vol2, v);
+  }
 }
 
 void CalibrationClass::setNullValueCur(float v, CURRENT_RANGE current_range) {
