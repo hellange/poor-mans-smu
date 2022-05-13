@@ -44,12 +44,11 @@ void CalibrationClass::init(OPERATION_TYPE operationType_) {
 
   if (operationType == SOURCE_VOLTAGE) {
     ea_dac_zero_comp = EA_DAC_ZERO_COMP_VOL;
-        ea_dac_zero_comp2 = EA_DAC_ZERO_COMP_VOL2;
+    ea_dac_zero_comp2 = EA_DAC_ZERO_COMP_VOL2;
 
   } else { 
     ea_dac_zero_comp = EA_DAC_ZERO_COMP_CUR;
-        ea_dac_zero_comp2 = EA_DAC_ZERO_COMP_CUR2;
-
+    ea_dac_zero_comp2 = EA_DAC_ZERO_COMP_CUR2;
   }
 
   ea_adc_zero_comp_vol = EA_ADC_ZERO_COMP_VOL;
@@ -78,6 +77,7 @@ void CalibrationClass::init(OPERATION_TYPE operationType_) {
     ea_dac_gain_comp_neg2 = EA_DAC_GAIN_COMP_NEG_VOL2;
 
 
+    // TODO DIffer between VOLTAGE and CURRENT mode for limit !
     ea_dac_gain_comp_lim = EA_DAC_GAIN_COMP_POS_LIM;
 
     
@@ -87,15 +87,16 @@ void CalibrationClass::init(OPERATION_TYPE operationType_) {
     ea_adc_gain_comp_pos2 = EA_ADC_GAIN_COMP_POS_VOL2;
     ea_adc_gain_comp_neg2 = EA_ADC_GAIN_COMP_NEG_VOL2;
 
-
     ea_adc_nonlinear_comp_nr = EA_ADC_NONLINEAR_COMP_NR_VOL;
     ea_adc_nonlinear_comp_start = EA_ADC_NONLINEAR_COMP_START_VOL;
 
     FILTERS = &V_FILTERS;
+    Serial.println("");
+  Serial.println(" Voltage source calibration data");
+  Serial.println(" ==================================================");
 
     readAdcCalFromEeprom();
 
-    
   } else {
 
         // set value
@@ -121,12 +122,17 @@ void CalibrationClass::init(OPERATION_TYPE operationType_) {
     ea_adc_gain_comp_pos = EA_ADC_GAIN_COMP_POS_CUR;
     ea_adc_gain_comp_neg = EA_ADC_GAIN_COMP_NEG_CUR;
 
-   
+   // TODO ADD limit when in current mode, ref also comment about EA_DAC_GAIN_COMP_POS_LIM!
+    //xxxxea_dac_gain_comp_lim = XXXXEA_DAC_GAIN_COMP_POS_LIM;
 
     ea_adc_nonlinear_comp_nr = EA_ADC_NONLINEAR_COMP_NR_CUR;
     ea_adc_nonlinear_comp_start = EA_ADC_NONLINEAR_COMP_START_CUR;
 
     FILTERS = &C_FILTERS;
+        Serial.println("");
+
+  Serial.println(" Current source calibration data");
+  Serial.println(" ==================================================");
 
     readAdcCalFromEeprom();
 
@@ -139,10 +145,12 @@ void CalibrationClass::init(OPERATION_TYPE operationType_) {
   timeSinceLastChange = millis();
   
   // DAC gain compensation adjust
+   Serial.println(" READING COMPENSATION ENTRIES FROM EEPROM");
+
   dacGainCompPos = floatFromEeprom(ea_dac_gain_comp_pos);
   Serial.print("Read dacGainCompPos from eeprom address ");
   Serial.print(ea_dac_gain_comp_pos,HEX);
-  Serial.print(":");
+  Serial.print(": ");
   if (isnan(dacGainCompPos)) {
     Serial.print("Not defined. Write default value:");
     dacGainCompPos = 1.0;
@@ -153,7 +161,7 @@ void CalibrationClass::init(OPERATION_TYPE operationType_) {
   dacGainCompPos2 = floatFromEeprom(ea_dac_gain_comp_pos2);
   Serial.print("Read dacGainCompPos2 from eeprom address ");
   Serial.print(ea_dac_gain_comp_pos2,HEX);
-  Serial.print(":");
+  Serial.print(": ");
   if (isnan(dacGainCompPos2)) {
     Serial.print("Not defined. Write default value:");
     dacGainCompPos2 = 1.0;
@@ -165,7 +173,7 @@ void CalibrationClass::init(OPERATION_TYPE operationType_) {
   dacGainCompNeg = floatFromEeprom(ea_dac_gain_comp_neg);
   Serial.print("Read dacGainCompNeg from eeprom address ");
   Serial.print(ea_dac_gain_comp_neg,HEX);
-  Serial.print(":");
+  Serial.print(": ");
   if (isnan(dacGainCompNeg)) {
     Serial.print("Not defined. Write default value:");
     dacGainCompNeg = 1.0;
@@ -176,7 +184,7 @@ void CalibrationClass::init(OPERATION_TYPE operationType_) {
  dacGainCompNeg2 = floatFromEeprom(ea_dac_gain_comp_neg2);
   Serial.print("Read dacGainCompNeg2 from eeprom address ");
   Serial.print(ea_dac_gain_comp_neg2,HEX);
-  Serial.print(":");
+  Serial.print(": ");
   if (isnan(dacGainCompNeg2)) {
     Serial.print("Not defined. Write default value:");
     dacGainCompNeg2 = 1.0;
@@ -187,7 +195,7 @@ void CalibrationClass::init(OPERATION_TYPE operationType_) {
   adcGainCompPos2 = floatFromEeprom(ea_adc_gain_comp_pos2);
       Serial.print("Read adcGainCompPos2 from eeprom address ");
       Serial.print(ea_adc_gain_comp_pos2,HEX);
-      Serial.print(":");
+      Serial.print(": ");
       if (isnan(adcGainCompPos2)) {
         Serial.print("Not defined. Write default value:");
         adcGainCompPos2 = 1.0;
@@ -198,7 +206,7 @@ void CalibrationClass::init(OPERATION_TYPE operationType_) {
    adcGainCompNeg2 = floatFromEeprom(ea_adc_gain_comp_neg2);
     Serial.print("Read adcGainCompNeg2 from eeprom address ");
     Serial.print(ea_adc_gain_comp_neg2,HEX);
-    Serial.print(":");
+    Serial.print(": ");
     if (isnan(adcGainCompNeg2)) {
       Serial.print("Not defined. Write default value:");
       adcGainCompNeg2 = 1.0;
@@ -211,7 +219,7 @@ void CalibrationClass::init(OPERATION_TYPE operationType_) {
  dacGainCompLim = floatFromEeprom(ea_dac_gain_comp_lim);
   Serial.print("Read dacGainCompLim from eeprom address ");
   Serial.print(ea_dac_gain_comp_lim,HEX);
-  Serial.print(":");
+  Serial.print(": ");
   if (isnan(dacGainCompLim)) {
     Serial.print("Not defined. Write default value:");
     dacGainCompLim = 1.0;
@@ -224,7 +232,7 @@ void CalibrationClass::init(OPERATION_TYPE operationType_) {
  adcGainCompPos = floatFromEeprom(ea_adc_gain_comp_pos);
  Serial.print("Read adcGainCompPos from eeprom address ");
   Serial.print(ea_adc_gain_comp_pos,HEX);
-  Serial.print(":");  
+  Serial.print(": ");  
   if (isnan(adcGainCompPos)) {
     Serial.print("Not defined. Write default value:");
     adcGainCompPos = 1.0;
@@ -235,7 +243,7 @@ void CalibrationClass::init(OPERATION_TYPE operationType_) {
   adcGainCompNeg = floatFromEeprom(ea_adc_gain_comp_neg);
  Serial.print("Read adcGainCompNeg from eeprom address ");
   Serial.print(ea_adc_gain_comp_neg,HEX);
-  Serial.print(":");  
+  Serial.print(": ");  
   if (isnan(adcGainCompNeg)) {
     Serial.print("Not defined. Write default value:");
     adcGainCompNeg = 1.0;
@@ -246,7 +254,7 @@ void CalibrationClass::init(OPERATION_TYPE operationType_) {
  dacZeroComp = floatFromEeprom(ea_dac_zero_comp);
  Serial.print("Read dacZeroComp from eeprom address ");
   Serial.print(ea_dac_zero_comp,HEX);
-  Serial.print(":");
+  Serial.print(": ");
   if (isnan(dacZeroComp)) {
     Serial.print("Not defined. Write default value:");
     dacZeroComp = 0.0; // use millivolt
@@ -265,7 +273,7 @@ void CalibrationClass::init(OPERATION_TYPE operationType_) {
   dacZeroComp2 = floatFromEeprom(ea_dac_zero_comp2);
  Serial.print("Read dacZeroComp2 from eeprom address ");
   Serial.print(ea_dac_zero_comp2,HEX);
-  Serial.print(":");
+  Serial.print(": ");
   if (isnan(dacZeroComp2)) {
     Serial.print("Not defined. Write default value:");
     dacZeroComp2 = 0.0; // use millivolt
@@ -289,7 +297,7 @@ void CalibrationClass::init(OPERATION_TYPE operationType_) {
   
  Serial.print("Read adcZeroCompVol from eeprom address ");
   Serial.print(ea_adc_zero_comp_vol,HEX);
-  Serial.print(":");
+  Serial.print(": ");
   if (isnan(adcZeroCompVol)) {
     Serial.print("Not defined. Write default value:");
     adcZeroCompVol = 0.0; // use millivolt
@@ -307,7 +315,7 @@ void CalibrationClass::init(OPERATION_TYPE operationType_) {
   float adcZeroCompVol2 = floatFromEeprom(ea_adc_zero_comp_vol2);
   Serial.print("Read adcZeroCompVol2 from eeprom address ");
   Serial.print(ea_adc_zero_comp_vol2,HEX);
-  Serial.print(":");
+  Serial.print(": ");
   if (isnan(adcZeroCompVol2)) {
     Serial.print("Not defined. Write default value:");
     adcZeroCompVol2 = 0.0; // use millivolt
@@ -328,7 +336,7 @@ void CalibrationClass::init(OPERATION_TYPE operationType_) {
   
   Serial.print("Read adcZeroCompCur from eeprom address ");
   Serial.print(ea_adc_zero_comp_cur,HEX);
-  Serial.print(":");
+  Serial.print(": ");
   if (isnan(adcZeroCompCur)) {
     Serial.print("Not defined. Write default value:");
     adcZeroCompCur = 0.0; // use millivolt
@@ -349,7 +357,7 @@ void CalibrationClass::init(OPERATION_TYPE operationType_) {
 
  Serial.print("Read adcZeroCompCur2 from eeprom address ");
   Serial.print(ea_adc_zero_comp_cur2,HEX);
-  Serial.print(":");
+  Serial.print(": ");
   if (isnan(adcZeroCompCur2)) {
     Serial.print("Not defined. Write default value:");
     adcZeroCompCur2 = 0.0; // use millivolt
@@ -413,7 +421,6 @@ void CalibrationClass::startAutoCal() {
 
 void CalibrationClass::readAdcCalFromEeprom() {
   Serial.println(" READING NONLINEAR CALIBRATION ENTRIES FROM EEPROM");
-  Serial.println(" ==================================================");
   int dataPtr = 0;
   float nr = floatFromEeprom(ea_adc_nonlinear_comp_nr);
   if (isnan(nr)) {
@@ -621,7 +628,7 @@ float CalibrationClass::adc_nonlinear_compensation(float v){
     if (v > set_adc[i] && v <= set_adc[i+1]) {
 //      Serial.print("Found within range ");
 //      Serial.print(set_adc[i]);
-//      Serial.print(":");
+//      Serial.print(": ");
 //      Serial.println(set_adc[i+1]);
       float adj_factor_low = set_adc[i] - meas_adc[i];
       float adj_factor_high = set_adc[i+1] - meas_adc[i+1];
@@ -1481,9 +1488,9 @@ bool CalibrationClass::handleCalibrationButtons(int tag, OPERATION_TYPE operatio
        } else {
          mv = C_STATS.rawValue;
          if (mv < 0) {
-            C_CALIBRATION.adjAdcGainCompNeg(0.000005 *10.0);
+            C_CALIBRATION.adjAdcGainCompNeg(0.000005 *2.0);
          } else {
-            C_CALIBRATION.adjAdcGainCompPos(0.000005 *10.0);
+            C_CALIBRATION.adjAdcGainCompPos(0.000005 *2.0);
          }
        }
       

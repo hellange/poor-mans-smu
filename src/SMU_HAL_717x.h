@@ -33,6 +33,7 @@ class ADCClass {
 
   
   public:
+    int deviceTypeId = 0;
     OPERATION_TYPE operationType;
 
     // TODO: Why public ? Indicates poor architecture

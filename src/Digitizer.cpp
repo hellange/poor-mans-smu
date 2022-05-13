@@ -11,7 +11,8 @@ int DigitizerClass::ampLevel = 1;
 
 DigitizerClass DIGITIZER;
 
-bool digitizeVoltage = false;
+// select digitize voltage or current
+bool digitizeVoltage = true; // false
 
 void DigitizerClass::init(OPERATION_TYPE operationType_) {
 
@@ -214,7 +215,7 @@ for (int i=yStep; i<height/2; i=i+yStep) {
     }
 
     if (SMU[0].getCurrentRange() == MILLIAMP10) {
-        pixelsPrVolt=pixelsPrVolt*1000; //TODO: Fix this current range scale etc !  For now just make it "visible" :-)
+        pixelsPrVolt=pixelsPrVolt*100; //TODO: Fix this current range scale etc !  For now just make it "visible" :-)
     }
 
     int resolution = 2; // 1 is best
@@ -322,13 +323,13 @@ for (int x = xAxisPx + step; x < xAxisPx+width/2; x=x+step) {
      valStep=0.4 /0.4;
      step = 50 /0.4;
  } 
-digits = 4;
+digits = 5;
 axisScew = 8;
 int val = valStep;
 // positive
 for (int y= yAxisPx-step; y > yAxisPx-height/2; y=y-step) {
     GD.ColorRGB(0xaaaaaa);
-    GD.cmd_number(15, y-axisScew, 26, digits, val * 100);
+    GD.cmd_number(15, y-axisScew, 26, digits, val * (SMU[0].getCurrentRange() == MILLIAMP10 ? 1000:100));
     
     GD.Begin(LINE_STRIP);
     GD.ColorRGB(0xbbbbee);
@@ -343,7 +344,7 @@ val = valStep;
 for (int y= yAxisPx+step; y < yAxisPx+height/2; y=y+step) {
     GD.ColorRGB(0xaaaaaa);
     GD.cmd_text(0, y-axisScew, 26, 0, "-");
-    GD.cmd_number(15, y-axisScew, 26, digits, val* 100);
+    GD.cmd_number(15, y-axisScew, 26, digits, val * (SMU[0].getCurrentRange() == MILLIAMP10 ? 1000:100));
 
     GD.Begin(LINE_STRIP);
     GD.ColorRGB(0xbbbbee);

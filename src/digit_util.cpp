@@ -30,6 +30,22 @@ void DigitUtilClass::separate2(int *v, int *mv, int *uv, int *nv, bool *neg, dou
   *nv = (uv_f - int(uv_f)) * 1000.0;
 }
 
+
+void DigitUtilClass::separate64t(int *v, int *mv, int *uv, int *nv, bool *neg, int64_t rawMv) {
+  *neg=false;
+  if (rawMv < 0) {
+    rawMv = 0 - rawMv;
+    *neg=true;
+  }
+  *v = (int)(rawMv / 1000);
+  *mv = (int)(rawMv - *v * 1000);
+
+  float uv_f = (rawMv - (int)rawMv) * 1000;
+  *uv = uv_f;
+  *nv = (uv_f - int(uv_f)) * 1000;
+}
+
+
 void DigitUtilClass::renderValue(int x,int y,float val, int size = 0, int type = 0) {
 
     int font = 26;

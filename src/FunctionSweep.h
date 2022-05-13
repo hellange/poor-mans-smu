@@ -1,4 +1,6 @@
 #include "SMU_HAL_717x.h"
+#include "SMU_HAL_dummy.h"
+
 
 
 class FunctionSweepClass {

@@ -1,9 +1,9 @@
 /****************************************************************
  *  
- *  Initial GUI prototype for
+ *  Initial prototype for
  *  P O O R  M A N ' s  S M U
  *  
- *  by Helge Langehaug (2018, 2019, 2020, 2021)
+ *  by Helge Langehaug (2018, 2019, 2020, 2021, 2022)
  * 
  *****************************************************************/
 
@@ -49,6 +49,7 @@
 #include "ZeroCalibration.h"
 
 #include "Ada4254.h"
+#include "scpi/vrekrer_scpi_parser.h" // TESTING OUT SCPI LIBRARY, https://github.com/Vrekrer/Vrekrer_scpi_parser
 
 //#define _SOURCE_AND_SINK 111
 
@@ -85,12 +86,15 @@ void closeMainMenuCallback(FUNCTION_TYPE functionType_);
 void showFanSpeed(int x, int y);
 void fltCommitCurrentSourceAutoRange(float mv, bool autoRange);
 void closeSourceDCCallback(int set_or_limit, bool cancel);
+void scpi_setup();
+void useVoltageFeedback();
+void useCurrentFeedback();
 
 
 #ifndef USE_SIMULATOR
-ADCClass SMU[1] = {
-  ADCClass()
-};
+ ADCClass SMU[1] = {
+   ADCClass()
+ };
 #else
 SMU_HAL_dummy SMU[1] = {
   SMU_HAL_dummy()
@@ -223,7 +227,7 @@ void pushButtonEncInterrupt(int key, bool quickPress, bool holdAfterLongPress, b
   changeDigitTimeout = millis();
   ROTARY_ENCODER.stepless_dynamic = true;
   if (changeDigit == 0) {
-    changeDigit = 10000000;
+    changeDigit = 1000000;
     ROTARY_ENCODER.stepless_dynamic = false;
   } else if (changeDigit == 10000000){
     changeDigit = 1000000;
@@ -241,8 +245,8 @@ void pushButtonEncInterrupt(int key, bool quickPress, bool holdAfterLongPress, b
   // For sourcing current. hardcode to least digit
   // until marking works in current display
   // TODO: Remove this override !!!!
-  if (operationType == SOURCE_CURRENT) {
-    changeDigit = 1000; 
+  if (operationType == SOURCE_CURRENT || SMU[0].getCurrentRange() == MILLIAMP10) {
+    //changeDigit / 10000; 
   }
 
 
@@ -290,6 +294,7 @@ void initDefaultSamplingIfByInterrupt() {
   SPI.usingInterrupt(normalSamplingTimer);
 #endif
 }
+
 
 void setup()
 {
@@ -359,7 +364,7 @@ void setup()
    GD.cmd_text(250, 200 ,   31, 0, "Poor man's SMU");
    GD.ColorRGB(0xaaaaaa);
    GD.cmd_text(250, 240 ,   28, 0, "Designed    by    Helge Langehaug");
-   GD.cmd_text(250, 270 ,   28, 1, "V0.171");
+   GD.cmd_text(250, 270 ,   28, 1, "V0.180");
    
    GD.cmd_text(0, 450 ,   28, 1, "Configuring ethernet...");
 
@@ -399,6 +404,25 @@ void setup()
    V_CALIBRATION.init(SOURCE_VOLTAGE);
    C_CALIBRATION.init(SOURCE_CURRENT);
    Serial.println("SMU initialized");
+   Serial.println("");
+   Serial.print("Found DAC type:");
+   // based on datasheet...
+   //TODO: Fix this detection. Seems to read other values... 3 bytes hmm....
+   if (SMU[0].deviceTypeId == 0x0C94) {
+     Serial.print("AD7176-2");
+   } else if (SMU[0].deviceTypeId == 0x00D) { 
+     Serial.print("AD7172-2");
+   } else if (SMU[0].deviceTypeId == 0x0CD) {
+     Serial.print("AD7175-2"); 
+   } else if (SMU[0].deviceTypeId == 0x4FD) {
+     Serial.print("AD7177-2");
+   } 
+     Serial.print("    hex:");
+     Serial.println(SMU[0].deviceTypeId, 16);
+   
+   Serial.println("--------");
+   Serial.println("");
+
    Serial.flush();
 
    if (operationType == SOURCE_VOLTAGE) {
@@ -448,7 +472,9 @@ void setup()
   Wire.begin();
 
 DIGITIZER.init(getOperationType());
-    
+
+    scpi_setup();
+
 } 
 
 void markSetDigitCur(int x, int y) {
@@ -462,8 +488,35 @@ void markSetDigitCur(int x, int y) {
     }
     GD.LineWidth(25);
     GD.ColorRGB(0xff5555);
-    int length = 200;
+    int length = 20;
     int position = 0;
+
+    if (SMU[0].getCurrentRange() == MILLIAMP10) {
+      if (changeDigit == 1000) {
+        position = 130;
+      } else if (changeDigit == 10000) {
+        position = 105;
+      } else if (changeDigit == 100000) {
+        position = 82;
+      } else if (changeDigit == 1000000) {
+        position = 52;
+      } 
+
+    } else {
+      if (changeDigit == 1000) {
+        position = 142;
+      } else if (changeDigit == 10000) {
+        position = 111;
+      } else if (changeDigit == 100000) {
+        position = 87;
+      } else if (changeDigit == 1000000) {
+        position = 63;
+      } 
+
+    }
+ 
+
+
     GD.Vertex2ii(x + position ,y);
     GD.Vertex2ii(x + position + length ,y);
     GD.ColorA(255);
@@ -550,7 +603,7 @@ void sourceCurrentPanel(int x, int y) {
   } else {
     GD.ColorRGB(COLOR_CURRENT);
   }
-  CURRENT_DISPLAY.renderSet(x + 120, y + 131, SMU[0].getSetValue_micro());
+  CURRENT_DISPLAY.renderSet(x + 120, y + 131, SMU[0].getSetValue_micro(), SMU[0].getCurrentRange());
   markSetDigitCur(x+120, y+131 + 42);
   GD.ColorRGB(COLOR_CURRENT);
 
@@ -561,7 +614,7 @@ void sourceCurrentPanel(int x, int y) {
   GD.cmd_button(x + 20,y + 132,95,50,29,OPT_NOTEAR,"SET");
   
   GD.Tag(BUTTON_CUR_AUTO);
-  GD.cmd_button(x+350,y+132,95,50,29,0,SMU[0].getCurrentRange()==AMP1 ? "1A" : "10mA");
+  GD.cmd_button(x+380,y+132,95,50,29,0,SMU[0].getCurrentRange()==AMP1 ? "1A" : "10mA");
   GD.Tag(0); // Note: Prevents button in some cases to react also when touching other places in UI. Why ?
 }
 
@@ -951,9 +1004,9 @@ void measureCurrentPanel(int x, int y, boolean compliance, bool showBar) {
     bool shownA = (SMU[0].getCurrentRange() == MILLIAMP10);
     shownA = false; // Override. Dont show nA
     GD.ColorA(255);
-    CURRENT_DISPLAY.renderMeasured(x /*+ 17*/, y, C_FILTERS.mean, compliance, shownA, SMU[0].getCurrentRange()); 
+    CURRENT_DISPLAY.renderMeasured(x, y, C_FILTERS.mean, compliance, shownA, SMU[0].getCurrentRange()); 
   }
-  CURRENT_DISPLAY.renderSet(x+120, y+105, SMU[0].getLimitValue_micro());
+  CURRENT_DISPLAY.renderSet(x+120, y+105, SMU[0].getLimitValue_micro(), SMU[0].getCurrentRange());
 
   y=y+105;
   
@@ -962,7 +1015,7 @@ void measureCurrentPanel(int x, int y, boolean compliance, bool showBar) {
   GD.Tag(BUTTON_LIM_SET);
   GD.cmd_button(x+20,y,95,50,29,0,"LIM");
   GD.Tag(BUTTON_CUR_AUTO);
-  GD.cmd_button(x+350,y,95,50,29,0,SMU[0].getCurrentRange()==AMP1 ? "1A" : "10mA");
+  GD.cmd_button(x+370,y,95,50,29,0,SMU[0].getCurrentRange()==AMP1 ? "1A" : "10mA");
   GD.Tag(0); 
 }
 
@@ -1256,12 +1309,13 @@ void renderMainHeader() {
   DIGIT_UTIL.displayTime(millis(), 150, 0);
 
   GD.ColorRGB(0xaaaadd);
-  if (ETHERNET_UTIL.status == 1) {
-    GD.cmd_text(640, 0, 27, 0, "Ethernet:OK");
-  } else {
-    GD.cmd_text(640,0,27,2, "Ethernet code:");
-    GD.cmd_number(750,0,27,2, ETHERNET_UTIL.status);
-  }
+  // Comment out if no ethernet connected to avoid delay
+  // if (ETHERNET_UTIL.status == 1) {
+  //   GD.cmd_text(640, 0, 27, 0, "Ethernet:OK");
+  // } else {
+  //   GD.cmd_text(640,0,27,2, "Ethernet code:");
+  //   GD.cmd_number(750,0,27,2, ETHERNET_UTIL.status);
+  // }
 
   int temp = UTILS.TC74_getTemperature();
   FAN.setAutoSpeedBasedOnTemperature(temp);
@@ -1465,15 +1519,32 @@ int logTimer = millis();
 int msDigit = 0;
 float simulatedWaveform;
 
-
+int lastSimMs = millis();
+bool simVolt = true;
 
 static void handleSampling() {
+  if (timeAtStartup +5000 < millis());
+  int dataR = -1;
+  if (SMU[0].deviceTypeId != 0 || true /* SIMULATOR */) {
+    dataR = SMU[0].dataReady();
+  } else {
+    // TODO: Add simulation indicator...
+    // simulate sample every 100ms;
+    if (lastSimMs + 100 < millis()) {
+      lastSimMs = millis();
+      dataR = simVolt ? 100 : 101;
+      simVolt = !simVolt;
+    }
+  }
 
-  int dataR = SMU[0].dataReady();
    if (DIGITIZER.digitize == true) {
      if (dataR == 0 or dataR == 1) {
        DIGITIZER.handleSamplingForDigitizer(dataR);
-     }
+     } 
+    //  else if (dataR == 100 or dataR == 101) { 
+    //    //simulate
+    //    DIGITIZER.handleSamplingForDigitizer(dataR-100);
+    //  }
      return;
    }
  
@@ -1508,6 +1579,33 @@ static void handleSampling() {
      //RAM.logData(V_FILTERS.mean);
      RAM.logDataCalculateMean(V_FILTERS.mean, 1);
     }
+  } 
+  else if (dataR >= 100){ // simulation
+
+  if (dataR == 100) {
+    float v; // = 1000.0 + random(0, 10)/1000.0 ;
+    v = SMU[0].getSetValue_micro();
+    v = v + random(0, 20); // add 20uV simulated noise
+    v = v / 1000.0;
+
+    V_STATS.addSample(v);    
+    V_FILTERS.updateMean(v, true);
+    SIMPLE_STATS.registerValue(V_FILTERS.mean);
+    if (logTimer + 1000 < (int)millis()) {
+     logTimer = millis();
+     //RAM.logData(V_FILTERS.mean);
+     RAM.logDataCalculateMean(V_FILTERS.mean, 1);
+    }
+
+  } else {
+    float i = 0;
+        i = i + random(0, 20); // add 20uA simulated noise
+        i=i/1000.0;
+ C_STATS.addSample(i);    
+    C_FILTERS.updateMean(i, true);
+    SIMPLE_STATS.registerValue(C_FILTERS.mean);
+  }
+
   }
 }
 
@@ -1556,8 +1654,75 @@ int samplesUpdateTimer = millis();
 
 int loopUpdateTimer = millis();
 
+
+SCPI_Parser my_instrument;
+void Identify(SCPI_C commands, SCPI_P parameters, Stream& interface) {
+  interface.println(F("Langehaug Consultancy,PoormansSMU,#00,v0.8"));
+}
+void sourceVoltageSCPI(SCPI_C commands, SCPI_P parameters, Stream& interface) {
+  interface.println(F("Source voltage to given value (mV). MEAS:VOLT gives mV."));
+  if (parameters.Size() > 0) {
+    int mv = (String(parameters[0]).toInt());
+    useVoltageFeedback();
+    if (SMU[0].fltSetCommitVoltageSource(mv*1000, true)) printError(_PRINT_ERROR_VOLTAGE_SOURCE_SETTING);
+    if (SMU[0].fltSetCommitCurrentLimit(SETTINGS.setCurrentLimit*1000, true)) printError(_PRINT_ERROR_VOLTAGE_SOURCE_SETTING);
+  }
+  functionType = SOURCE_DC_VOLTAGE; // this is used to rended correct UI
+}
+
+void sourceCurrentSCPI(SCPI_C commands, SCPI_P parameters, Stream& interface) {
+  interface.println(F("Source current to given value (uA). MEAS:CURR gives mA."));
+  if (parameters.Size() > 0) {
+    int uA = (String(parameters[0]).toInt());
+    useCurrentFeedback();
+    fltCommitCurrentSourceAutoRange(uA, true);
+    if (SMU[0].fltSetCommitVoltageLimit(SETTINGS.setVoltageLimit*1000, true)) printError(_PRINT_ERROR_VOLTAGE_SOURCE_SETTING);
+  }
+  functionType = SOURCE_DC_CURRENT; // this is used to rended correct UI
+}
+
+void measureCurrentSCPI(SCPI_C commands, SCPI_P parameters, Stream& interface) {
+  float milliAmp = C_FILTERS.mean;
+  interface.println(milliAmp,4);
+}
+
+void measureVoltageSCPI(SCPI_C commands, SCPI_P parameters, Stream& interface) {
+  float millivolt = V_FILTERS.mean;
+  interface.println(millivolt,4);
+}
+
+void scpi_setup()
+{
+  // Initially based on default Vrekrer_scpi example...
+  //We change the `hash_magic_number` variable before registering the commands
+  my_instrument.hash_magic_number = 16; //16 will generate hash crashes
+  //The default value is 37 and good values are prime numbers (up to 113)
+
+  //This is a simple command tree with 8 registered commands:
+  my_instrument.RegisterCommand(F("*IDN?"), &Identify);   //*IDN?
+  
+  my_instrument.SetCommandTreeBase(F("SOURce:"));
+  my_instrument.RegisterCommand(F(":VOLTage"), &sourceVoltageSCPI);
+  my_instrument.RegisterCommand(F(":CURRent"), &sourceCurrentSCPI);
+  my_instrument.SetCommandTreeBase(F("MEASure:"));
+  my_instrument.RegisterCommand(F(":VOLTage?"), &measureVoltageSCPI);
+  my_instrument.RegisterCommand(F(":CURRent?"), &measureCurrentSCPI);
+  //  Serial.begin(9600);
+  //  while (!Serial) {;}
+  
+  //`PrintDebugInfo` will print the registered tokens and 
+  //command hashes to the serial interface.
+  my_instrument.PrintDebugInfo();
+  //See the result in the serial monitor and verify that
+  //there are no duplicated hashes or hashes equal to zero.
+  //Change the hash_magic_number to solve any problem.
+}
+
+
+
 void loop() {
- 
+   my_instrument.ProcessInput(Serial, "\n");
+
   if (V_CALIBRATION.autoCalInProgress) {
     V_CALIBRATION.autoCalADCfromDAC();
   } 
@@ -1838,7 +2003,7 @@ void handleFunctionSpecifcButtonAction(FUNCTION_TYPE functionType, int tag, int 
       }
 }
 
-
+int settingsValue = 0;
 
 void loopMain()
 {
@@ -1892,7 +2057,29 @@ void loopMain()
     handleMenuScrolldown();
   } else {
     // Special page without widgets etc...
-    renderUpperDisplay(operationType, functionType);  
+    //renderUpperDisplay(operationType, functionType); 
+   
+
+//GD.cmd_track(360, 62, 80, 20, 42);
+
+
+    int lineY = 60;
+    GD.cmd_text(180, lineY -10, 29, 0, "Divide by 10");
+    GD.Tag(42);
+    GD.cmd_toggle(50, lineY, 100, 29, OPT_FLAT, settingsValue,
+    "enabled" "\xff" "disabled");
+    GD.cmd_track(50, lineY, 100, 20, 42);
+    lineY+=60;
+    GD.cmd_text(180, lineY-10 , 29, 0, "Software max current measurement value");
+    GD.Tag(43);
+    GD.cmd_toggle(50, lineY, 100, 29, OPT_FLAT, settingsValue,
+    "enabled" "\xff" "disabled");
+    GD.cmd_track(50, lineY, 80, 20, 43);
+
+
+        GD.Tag(TAG_FILTER_SLIDER);
+    GD.cmd_slider(150, 250, 280,15, OPT_FLAT, V_FILTERS.filterSize * (65535/maxFilterSliderValue), 65535);
+  
 
     //45 max degree ?
     float degreeV = (V_FILTERS.mean) * 45.0/10000.0; 
@@ -1905,7 +2092,30 @@ void loopMain()
     //detectGestures();
     GD.get_inputs();
     int tag = GD.inputs.tag;
-    Serial.println(tag);
+    switch (tag & 0xff) {
+      case 42:
+      case 43:
+      settingsValue = GD.inputs.track_val;
+      if (settingsValue > 30000) {
+        settingsValue = 65535;
+      }
+            if (settingsValue < 30000) {
+        settingsValue = 0;
+      }
+      //if (settingsValue == 0 && GD.inputs.track_val > 20000) {
+     //   settingsValue = 65535;
+     // }
+     // if (settingsValue == 65535 && GD.inputs.track_val < 10000) {
+     //           settingsValue = 0;
+//
+  //    }
+    }
+
+
+ //   Serial.println(tag);
+ //   GD.swap(); 
+ // GD.__end();
+ // return;
   }
 
   PUSHBUTTONS.handle();
@@ -1946,6 +2156,14 @@ void rotaryChangedDontCareFn(float changeVal) {
 void pushButtonEncDontCareFn(int key, bool quickPress, bool holdAfterLongPress, bool releaseAfterLongPress) {
   Serial.println("pushButtonEncDontCareFn disabled pushbutton");
 
+}
+
+void useCurrentFeedback() {
+  SMU[0].setGPIO(0, 1);
+}
+
+void useVoltageFeedback() {
+  SMU[0].setGPIO(0, 0);
 }
 
 void closeMainMenuCallback(FUNCTION_TYPE newFunctionType) {
@@ -2012,13 +2230,15 @@ void closeMainMenuCallback(FUNCTION_TYPE newFunctionType) {
     ROTARY_ENCODER.init(rotaryChangedVoltCurrentFn);
     PUSHBUTTON_ENC.setCallback(pushButtonEncInterrupt); 
     GD.__end();
-    SMU[0].setGPIO(0, 0); // use voltage feedback
+    
+    useVoltageFeedback();
+    //SMU[0].setGPIO(0, 0); // use voltage feedback
+    
     if (SMU[0].operationType == SOURCE_VOLTAGE) {
       // If previous SMU operation was sourcing voltage, use that voltage
       if (SMU[0].fltSetCommitVoltageSource(SETTINGS.setMilliVoltage*1000, true)) printError(_PRINT_ERROR_VOLTAGE_SOURCE_SETTING);
       if (SMU[0].fltSetCommitCurrentLimit(SETTINGS.setCurrentLimit*1000, true)) printError(_PRINT_ERROR_VOLTAGE_SOURCE_SETTING);
     } else {
-    
       // If previous SMU operation was sourcing current, use a predefined voltage
       if (SMU[0].fltSetCommitVoltageSource(SETTINGS.setMilliVoltage*1000, true)) printError(_PRINT_ERROR_VOLTAGE_SOURCE_SETTING);
       if (SMU[0].fltSetCommitCurrentLimit(SETTINGS.setCurrentLimit*1000, true)) printError(_PRINT_ERROR_VOLTAGE_SOURCE_SETTING);
@@ -2030,7 +2250,9 @@ void closeMainMenuCallback(FUNCTION_TYPE newFunctionType) {
     PUSHBUTTON_ENC.setCallback(pushButtonEncInterrupt); 
     //disable_ADC_DAC_SPI_units();
     GD.__end();
-    SMU[0].setGPIO(0, 1); // use current feedback
+    
+    useCurrentFeedback();
+    //SMU[0].setGPIO(0, 1); // use current feedback
 
     if (SMU[0].operationType == SOURCE_CURRENT) {
       // If previous SMU operation was sourcing current, use that current

@@ -8,17 +8,26 @@
 
 //TODO: Use int64 instead of float for settings here (same as changed to in main SMU_HAL)
  
- int8_t SMU_HAL_dummy::fltSetCommitVoltageSource(float mv, bool dynamicRange) {
-  Serial.println("Set voltage");
+ int64_t SMU_HAL_dummy::fltSetCommitVoltageSource(int64_t voltage_uV, bool dynamicRange) {
+  Serial.println("Set simulated voltage");
+    operationType = SOURCE_VOLTAGE;
 
-   setValuemV = mv;
-   nowValuemV = mv;
-   Serial.println(nowValuemV, 5);
+   setValue_micro = voltage_uV;
+   //setValuemV = mv;
+   //nowValuemV = mv;
+   //Serial.println(nowValuemV, 5);
 
-   return nowValuemV;
+   return setValue_micro;
  }
 
+
+CURRENT_RANGE SMU_HAL_dummy::getCurrentRange() {
+  return current_range;
+}
+
  void SMU_HAL_dummy::setCurrentRange(CURRENT_RANGE range, OPERATION_TYPE operationType) {
+     current_range = range;
+
    Serial.println("WARNING: NOT IMPLEMENTED CURRENT RANGE IN SIMULATOR !");
  }
 
@@ -33,36 +42,49 @@
   return 999;    
  }
   
- int8_t SMU_HAL_dummy::fltSetCommitCurrentSource(float fVoltage) {
-   Serial.println("WARNING: NOT IMPLEMENTED CURRENT SOURCE IN SIMULATOR !");
-   return 0;
+ int64_t SMU_HAL_dummy::fltSetCommitCurrentSource(int64_t current_uA) {
+   setValue_micro = current_uA;
+     operationType = SOURCE_CURRENT;
+
+   //Serial.println("WARNING: NOT IMPLEMENTED CURRENT SOURCE IN SIMULATOR !");
+   return setValue_micro;
  }
 
- void SMU_HAL_dummy::use100uVSetResolution() {
-   Serial.println("NOTE: NOT IMPLEMENTED use100uVSetResolution IN SIMULATOR !");
+ bool SMU_HAL_dummy::use100uVSetResolution() {
+   if (DAC_RANGE_LOW == -10.0) {
+     return false;
+   } else {
+     return true;
+   }
  } 
  
- int8_t SMU_HAL_dummy::fltSetCommitCurrentLimit(float fCurrent, int8_t up_down_both) {
-  return setValueI = fCurrent;                         
+ int64_t SMU_HAL_dummy::fltSetCommitCurrentLimit(int64_t current_uA, int8_t up_down_both) {
+   setLimit_micro = current_uA;
+   return setLimit_micro;
  }
 
- int8_t SMU_HAL_dummy::fltSetCommitVoltageLimit(float fCurrent, int8_t up_down_both) {
-  //TODO: Not handling current here ?
-  return setValueI = fCurrent;                         
+ int64_t SMU_HAL_dummy::fltSetCommitVoltageLimit(int64_t voltage_uV, int8_t up_down_both) {
+   setLimit_micro = voltage_uV;
+   return setLimit_micro;
  }
 
  int SMU_HAL_dummy::init() {
-  lastSampleMilli = millis();
+   lastSampleMilli = millis();
    return 0; 
  }
 
  int SMU_HAL_dummy::dataReady() {
   
-  if (lastSampleMilli + (int)samplingDur > (int) millis()){
-    return -1;
+  // if (lastSampleMilli + (int)samplingDur > (int) millis()){
+  //   return -1;
+  // }
+  // lastSampleMilli = millis();
+
+  if (lastSampleMilli + 10000 > micros()) {
+   return -1;
   }
-  lastSampleMilli = millis();
-  
+  lastSampleMilli = micros();
+
   if (volt_current == 0) {
     volt_current = 1;
   } else {
@@ -74,12 +96,11 @@
  float SMU_HAL_dummy::measureMilliVoltage(){
 
   int inoise = 5 - random(9); // TODO: Find a better way to get random number from -x to x
-  
   float noise = ((float)inoise)/1000.0; // use uV noise 
 
   // samplingDur gets lower as sampling speed increases.
   // simulate increasing noise for high sampling speeds
-  noise = noise * (500.0 / (float)samplingDur);
+  noise = noise * (50.0 / (float)samplingDur);
 
   if (driftTimer + 10000 > (int)millis()) {
     int r = random(2);
@@ -92,10 +113,25 @@
   }
   //drift = drift + (driftDirection*(float)random(10))/1000.0;
   
-  float offset = 2.5; // simulate some mv offset
-  
- 
-  return nowValuemV+ offset + noise + drift;  // return millivolt
+   
+  float nowValuemV = 0.0;
+  if (operationType == SOURCE_CURRENT) {
+    nowValuemV = simulatedLoad * (setValue_micro / 1000.0);
+    compliance = abs(setLimit_micro) < abs(nowValuemV*1000.0);
+  } else {
+    nowValuemV = setValue_micro / 1000.0;
+  }
+
+  // adjust for compliance that can have been set both by voltage measurement or current measurement
+  if (compliance && operationType == SOURCE_VOLTAGE) {
+    return simulatedLoad * setLimit_micro / 1000.0 + noise + simulatedOffset + drift;
+  } else if (compliance && operationType == SOURCE_CURRENT) {
+    return setLimit_micro/1000.0 + noise + simulatedOffset + drift;
+  } else {
+    return nowValuemV + noise + simulatedOffset + drift;
+  }
+
+
  }
 
  void SMU_HAL_dummy::setGPIO(int nr, bool on) {
@@ -103,7 +139,7 @@
  }
 
  void SMU_HAL_dummy::disable_ADC_DAC_SPI_units(){
-     Serial.println("NOTE: Not implemented disable_ADC_DAC_SPI_units. Not relevant for simulator");
+     //Serial.println("NOTE: Not implemented disable_ADC_DAC_SPI_units. Not relevant for simulator");
 
  }
 
@@ -115,22 +151,42 @@
  
  float SMU_HAL_dummy::measureCurrent(int range){
 
-  float simulatedLoad = 10.0; //ohm
-  nowValueI = (nowValuemV) / simulatedLoad;
+    float noise = random(1,10)/ 1000.0; // 10uA
+    if (current_range == MILLIAMP10) {
+      noise = noise / 500.0;
+    }
+    
+    float nowValueI = 0;
 
-  // simulate noise
-  nowValueI =  nowValueI + (random(0, 100) / 2000000.0);
-  
-  compliance = abs(setValueI) < abs(nowValueI/1000.0);
-  return nowValueI;
+    if (operationType == SOURCE_VOLTAGE) {
+      nowValueI = (setValue_micro / 1000.0) / simulatedLoad;
+      compliance = abs(setLimit_micro) < abs(nowValueI * 1000.0);
+    } else {
+      nowValueI = setValue_micro / 1000.0;
+    }
+
+    // adjust for compliance that can have been set both by voltage measurement or current measurement
+    if (compliance && operationType == SOURCE_VOLTAGE) {
+      return setLimit_micro / 1000.0 + noise;
+    } else if (compliance && operationType == SOURCE_CURRENT) {
+      return (setLimit_micro / 1000.0) / simulatedLoad + noise;
+    } else {
+      return nowValueI + noise;
+    }
+    
  }
 
- float SMU_HAL_dummy::getSetValuemV(){
-  return setValuemV;// * 1000.0;
- }
 
  float SMU_HAL_dummy::getLimitValue(){
   return setValueI * 1000.0;
+ }
+
+  int64_t SMU_HAL_dummy::getSetValue_micro(){
+  return setValue_micro;
+ }
+
+ int64_t SMU_HAL_dummy::getLimitValue_micro(){
+   return setLimit_micro;
  }
 
  

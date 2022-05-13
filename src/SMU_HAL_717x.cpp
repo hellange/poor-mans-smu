@@ -28,7 +28,7 @@ static st_reg init_state[] =
     {0x06, 2, 0, 0x080Cl, "GPIO_Conf"}, //IOCon_Register   // both gpio output low
 //     {0x06, 2, 0, 0x0800l, "GPIO_Conf"}, //IOCon_Register
 
-    {0x07, 2, 0, 0x0000l, "ID_ST_Reg"}, //ID_st_reg
+    {0x07, 1, 0, 0x0000l, "ID_ST_Reg"}, //ID_st_reg
 
     // voltage meas
     {0x10, 2, 0, 0x8001l, "Ch_Map_0 "}, //CH_Map_1   ain1, ain0
@@ -69,7 +69,10 @@ static st_reg init_state[] =
  //{0x28, 2, 0, 0x0211l, "FilterCf0"}, //Filter_Config_1  // 20 pr sek
   // {0x28, 2, 0, 0x0210l, "FilterCf0"}, //Filter_Config_1  // 49.96 pr sek
      //{0x28, 2, 0, 0x020fl, "FilterCf0"}, //Filter_Config_1  // 59.92 pr sek
+    
     {0x28, 2, 0, 0x020el, "FilterCf0"}, //Filter_Config_1  // 100 pr sek
+
+
 //{0x28, 2, 0, 0x020dl, "FilterCf0"}, //Filter_Config_1   // 200 pr sek
 //{0x28, 2, 0, 0x020cl, "FilterCf0"}, //Filter_Config_1   // 397.5 pr sek
 //{0x28, 2, 0, 0x020bl, "FilterCf0"}, //Filter_Config_1  // 500 pr sek
@@ -436,11 +439,17 @@ void ADCClass::initADC(){
     Serial.print(AD7176_ReadRegister(&AD7176_regs[regNr]));
     Serial.print(" bytes: ");
     Serial.println(AD7176_regs[regNr].value, HEX);
+    // TODO: Find id another way. Does thus give the correct value ????
+    if (regNr == 6) {
+      deviceTypeId = AD7176_regs[regNr].value;
+    }
+
     delay(10);
   }
   AD7176_UpdateSettings();
 
 }
+
 
 void ADCClass::initDAC(){
   LTC2758_write(0, LTC2758_CS, LTC2758_WRITE_SPAN_DAC, ADDRESS_DAC_ALL, 3);  // initialising all channels to -10V - 10V range

@@ -9,8 +9,11 @@
 
 FunctionSweepClass FUNCTION_SWEEP;
 
-
-extern ADCClass SMU[];
+// #ifndef USE_SIMULATOR
+//   extern SMU_HAL_dummy SMU[];
+// #else
+  extern ADCClass SMU[];
+//#endif
 
 void FunctionSweepClass::init(/*ADCClass& smu_*/) {
   //smu = smu_;
@@ -167,7 +170,7 @@ void FunctionSweepClass::render(int x, int y) {
 
 
   GD.Tag(SWEEP_BUTTON_CLEAR);
-  GD.cmd_button(x+600,y,80,40,28,0,"Clear");
+  GD.cmd_button(x+600,y,80,40,28,0,"Zero");
   GD.Tag(0);
 
     GD.ColorRGB(COLOR_VOLT);
