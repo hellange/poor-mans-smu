@@ -2,15 +2,16 @@
 #include "PushButtons.h"
 #include "GD2.h"
 #include "TrendGraph.h"
+#include "Debug.h"
 
 
 TrendGraphClass TRENDGRAPH;
 
 void TrendGraphClass::init() {
   if (RAM.initFailure) {
-    Serial.print("Init TrendGraph not working because of initial RAM failure!");
+    DEBUG.print("Init TrendGraph not working because of initial RAM failure!");
   } else {
-    Serial.print("Init TrendGraph");
+    DEBUG.print("Init TrendGraph");
   }
 }
 
@@ -49,8 +50,8 @@ void TrendGraphClass::loop(OPERATION_TYPE operationType) {
    if (RAM.useNormalRam()) {
      if (v < 50000.0) {
        if (v>maxV) {
-       //Serial.print("Registred max:");
-       //Serial.println(v,3);
+       //DEBUG.print("Registred max:");
+       //DEBUG.println(v,3);
        maxV = v;
        }
        if (v<minV) {
@@ -184,7 +185,7 @@ int runSeconds=secsRemaining%60;
 
 //char buf[21];
 //sprintf(buf,"Runtime%02d:%02d:%02d",runHours,runMinutes,runSeconds);
-//Serial.println(buf);
+//DEBUG.println(buf);
 
 
   GD.cmd_number(150+600-x-30,400, 27, 2, runHours);
@@ -205,5 +206,5 @@ int runSeconds=secsRemaining%60;
 
 }
   void TrendGraphClass::rotaryChangedFn(float changeVal) {
-     Serial.println("TRENDGRAPH ENCODED ROTATION DETECTED");
+     DEBUG.println("TRENDGRAPH ENCODED ROTATION DETECTED");
   }

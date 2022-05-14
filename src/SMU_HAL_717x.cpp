@@ -3,6 +3,7 @@
 #include "Calibration.h"
 #include "Stats.h"
 #include "Filters.h"
+#include "Debug.h"
 
   float R_shunt_1A = 0.50; //0.15;
   float R_shunt_10mA = 100.0;
@@ -132,8 +133,8 @@ void ADCClass::writeSamplingRate() {
   if (oldSamplingRate == samplingRate) {
      return;
   }
-  Serial.print("Setting new sampling rate:");
-  Serial.println(samplingRate);
+  DEBUG.print("Setting new sampling rate:");
+  DEBUG.println(samplingRate);
   oldSamplingRate = samplingRate;
   int value = samplingRate;
   // Note that two samples are needed for both voltage and current !
@@ -195,9 +196,9 @@ void ADCClass::writeSamplingRate() {
   } else if (value == 50000) {
       AD7176_WriteRegister({0x28, 2, 0, 0x0203l}); 
   } else {
-    Serial.print("Illegal sample value:");
-    Serial.println(value);
-    Serial.flush();
+    DEBUG.print("Illegal sample value:");
+    DEBUG.println(value);
+    DEBUG.flush();
   }
   
 }
@@ -211,12 +212,12 @@ void ADCClass::setGPIO(int nr, bool on) {
 
   AD7176_ReadRegister(&AD7176_regs[6]); // GPIO register
   uint32_t v = AD7176_regs[6].value;
-//  Serial.print("Set gpio");
-//  Serial.print(nr);
-//  Serial.print(" to ");
-//  Serial.println(on==true?"true":"false");
-//  Serial.print("GPIO register before:");
-//  Serial.println(v, BIN);
+//  DEBUG.print("Set gpio");
+//  DEBUG.print(nr);
+//  DEBUG.print(" to ");
+//  DEBUG.println(on==true?"true":"false");
+//  DEBUG.print("GPIO register before:");
+//  DEBUG.println(v, BIN);
   
   v = v&0xfff0;
  
@@ -248,8 +249,8 @@ void ADCClass::setGPIO(int nr, bool on) {
   }
   v = v + b;
 
-//  Serial.print("GPIO register after:");
-//  Serial.println(v, BIN);
+//  DEBUG.print("GPIO register after:");
+//  DEBUG.println(v, BIN);
   
   AD7176_WriteRegister({0x06, 2, 0, v}); 
   
@@ -274,8 +275,8 @@ void ADCClass::setCurrentRange(CURRENT_RANGE range, OPERATION_TYPE operationType
     digitalWrite(4, HIGH); 
     setGPIO(1,1); // When GPIO controls the sense relay
     if (operationType == SOURCE_VOLTAGE) {
-      Serial.println("SMU setCurrentRange to 1A (source voltage)");
-      //Serial.println("Switching current range (to A) while in voltage source must also update DAC output for limiting circuit.");
+      DEBUG.println("SMU setCurrentRange to 1A (source voltage)");
+      //DEBUG.println("Switching current range (to A) while in voltage source must also update DAC output for limiting circuit.");
       delay(1); // WARNING !!!! Had to add delay here to avoid voltage drop when changing from 10mA to 1A.
                //              Why?
                //              TODO: Find out why setting the current limit right after switch causes spike !!!!
@@ -289,22 +290,22 @@ void ADCClass::setCurrentRange(CURRENT_RANGE range, OPERATION_TYPE operationType
       fltSetCommitCurrentLimit(setLimit_micro, _SOURCE_AND_SINK);//printError(_PRINT_ERROR_VOLTAGE_SOURCE_SETTING);
     } 
     else {
-            Serial.println("SMU setCurrentRange to 1A (source current)");
+            DEBUG.println("SMU setCurrentRange to 1A (source current)");
 
-      //Serial.println("Switching current range (to A) while in current source must also update DAC output");
+      //DEBUG.println("Switching current range (to A) while in current source must also update DAC output");
       fltSetCommitCurrentSource(setValue_micro);
     }
 
 
   } else if (range == MILLIAMP10) {
    if (operationType == SOURCE_VOLTAGE) {
-     Serial.println("SMU setCurrentRange to 10mA (source voltage)");
-     Serial.println("Switching current range (to 10mA) while in voltage source must also update DAC output for limiting circuit.");
+     DEBUG.println("SMU setCurrentRange to 10mA (source voltage)");
+     DEBUG.println("Switching current range (to 10mA) while in voltage source must also update DAC output for limiting circuit.");
      fltSetCommitCurrentLimit(setLimit_micro, _SOURCE_AND_SINK);// printError(_PRINT_ERROR_VOLTAGE_SOURCE_SETTING);
    } 
    else {
-     Serial.println("SMU setCurrentRange to 10mA (source current)");
-     Serial.println("Switching current range (to 10mA) while in current source must also update DAC output");
+     DEBUG.println("SMU setCurrentRange to 10mA (source current)");
+     DEBUG.println("Switching current range (to 10mA) while in current source must also update DAC output");
      fltSetCommitCurrentSource(setValue_micro);
    }
    digitalWrite(4, LOW);
@@ -312,8 +313,8 @@ void ADCClass::setCurrentRange(CURRENT_RANGE range, OPERATION_TYPE operationType
 
 
   } else {
-    Serial.println("ERROR: Unknown current range !!!");
-    Serial.flush();
+    DEBUG.println("ERROR: Unknown current range !!!");
+    DEBUG.flush();
   }
 
 }
@@ -384,11 +385,11 @@ double ADCClass::measureMilliVoltage() {
     //v =v* 0.991;
     
   }
-  //Serial.print("Voltage nonlinear comp ");
-  //Serial.print(v);
+  //DEBUG.print("Voltage nonlinear comp ");
+  //DEBUG.print(v);
   v = V_CALIBRATION.adc_nonlinear_compensation(v);
-  //Serial.print(" -> ");
-  //Serial.println(v); 
+  //DEBUG.print(" -> ");
+  //DEBUG.println(v); 
 
   writeSamplingRate();  // update sampling rate here seems to work. Doing randomly other places often fails.... for some reason...
 
@@ -409,10 +410,10 @@ void ADCClass::init() {
 }
 
 void ADCClass::initADC(){
-  Serial.print("SETUP: ");
+  DEBUG.print("SETUP: ");
   AD7176_Reset();
-  Serial.println(AD7176_Setup());
-  Serial.println("REGS:");
+  DEBUG.println(AD7176_Setup());
+  DEBUG.println("REGS:");
 
   // copy of AD7176 registers
   enum AD7176_registers regNr;
@@ -424,21 +425,21 @@ void ADCClass::initADC(){
     //if (regNr == Interface_Mode_Register) continue;
     //if (regNr == Register_Check) continue;
     //if (regNr == Data_Register) continue;
-    Serial.print("Write ");
-    Serial.print(init_state[regNr].name);
-    Serial.print(" ");
-    Serial.print(regNr);
-    Serial.print(" ");
-    Serial.print(init_state[regNr].value, HEX);
-    Serial.print(" ");
-    Serial.print(AD7176_WriteRegister(init_state[regNr]));
-    Serial.print(" bytes. Read ");
-    Serial.print(init_state[regNr].name);
-    Serial.print(" ");
+    DEBUG.print("Write ");
+    DEBUG.print(init_state[regNr].name);
+    DEBUG.print(" ");
+    DEBUG.print(regNr);
+    DEBUG.print(" ");
+    DEBUG.print(init_state[regNr].value, HEX);
+    DEBUG.print(" ");
+    DEBUG.print(AD7176_WriteRegister(init_state[regNr]));
+    DEBUG.print(" bytes. Read ");
+    DEBUG.print(init_state[regNr].name);
+    DEBUG.print(" ");
 
-    Serial.print(AD7176_ReadRegister(&AD7176_regs[regNr]));
-    Serial.print(" bytes: ");
-    Serial.println(AD7176_regs[regNr].value, HEX);
+    DEBUG.print(AD7176_ReadRegister(&AD7176_regs[regNr]));
+    DEBUG.print(" bytes: ");
+    DEBUG.println(AD7176_regs[regNr].value, HEX);
     // TODO: Find id another way. Does thus give the correct value ????
     if (regNr == 6) {
       deviceTypeId = AD7176_regs[regNr].value;
@@ -555,11 +556,11 @@ int64_t ADCClass::fltSetCommitVoltageSource(int64_t voltage_uV, bool dynamicRang
   float mv = current_uA / 1000.0;
 
   if (C_CALIBRATION.useDacCalibratedValues == true) {
-    //Serial.println("USE CALIBRATED VALUES FOR CURRENT");
-    //Serial.print(mv,6);
+    //DEBUG.println("USE CALIBRATED VALUES FOR CURRENT");
+    //DEBUG.print(mv,6);
     mv = C_CALIBRATION.dac_nonlinear_compensation(mv);
-    //Serial.print(" adjusted to ");
-    //Serial.println(mv,6);
+    //DEBUG.print(" adjusted to ");
+    //DEBUG.println(mv,6);
 
   }
   float dac_voltage = mv / 1000.0;  // DAC code operates with V instead of mV    
@@ -584,17 +585,17 @@ int64_t ADCClass::fltSetCommitVoltageSource(int64_t voltage_uV, bool dynamicRang
       //dac_voltage = dac_voltage * 3.125; // after using 3 opamp diff amplifier before 1997-3...
 
  dac_voltage = dac_voltage *1.09;
-      //Serial.println("Calculating current to set for 1A range");
-      //Serial.flush();
+      //DEBUG.println("Calculating current to set for 1A range");
+      //DEBUG.flush();
 
     } else if (current_range == MILLIAMP10) {
       
       
       dac_voltage = dac_voltage * 1000.0; // with 100ohm shunt and x10 amplifier: 1mA range is set by 1000mV
       //TODO: Add daczerocomp also for 10mA range. Currently only imlemented for 1A range ?
-      Serial.print("Setting:");
-      Serial.print(dac_voltage);
-      Serial.println("mV in DAC for 10mA range....");
+      DEBUG.print("Setting:");
+      DEBUG.print(dac_voltage);
+      DEBUG.println("mV in DAC for 10mA range....");
 
       //dac_voltage = dac_voltage * 3.125; // after using 3 opamp diff amplifier before 1997-3...
 
@@ -606,18 +607,18 @@ int64_t ADCClass::fltSetCommitVoltageSource(int64_t voltage_uV, bool dynamicRang
         dac_voltage = dac_voltage * C_CALIBRATION.getDacGainCompPos2();
       }
 
-      Serial.print("Adjusted to :");
-      Serial.print(dac_voltage);
-      Serial.println("mV in DAC for 10mA range....");
+      DEBUG.print("Adjusted to :");
+      DEBUG.print(dac_voltage);
+      DEBUG.println("mV in DAC for 10mA range....");
       
        
-      Serial.println("Calculating current to set for 100mA range");
-      Serial.flush();
+      DEBUG.println("Calculating current to set for 100mA range");
+      DEBUG.flush();
 
     } else {
-      Serial.print("ERROR: Unknown current range ");
-      Serial.println(current_range);
-      Serial.flush();
+      DEBUG.print("ERROR: Unknown current range ");
+      DEBUG.println(current_range);
+      DEBUG.flush();
 
     }
    
@@ -668,9 +669,9 @@ int64_t ADCClass::fltSetCommitVoltageLimit(int64_t voltage_uV, int8_t up_down_bo
   float mV = voltage_uV / 1000.0;
   
   if (infoSerialOut) {
-    Serial.print("Set voltage limit to ");
-    Serial.print(mV);
-    Serial.println(" mV out from DAC");
+    DEBUG.print("Set voltage limit to ");
+    DEBUG.print(mV);
+    DEBUG.println(" mV out from DAC");
   }
 
   // TODO: Use more adjustments for inaccuracies ? Can we share the ones that are used in souring voltage ?
@@ -712,26 +713,26 @@ int64_t ADCClass::fltSetCommitVoltageLimit(int64_t voltage_uV, int8_t up_down_bo
     //      In the code below it's hardcoded to fit to 100ohm !
     dac_voltage = current_uA/1000.0;// * 1000.0;
     if (infoSerialOut) {
-      Serial.print("Set ");
-      Serial.print(current_uA/1000.0, 3);
-      Serial.print("mA current limit for 10mA range. That will set ");
-      Serial.print(dac_voltage,6);
-      Serial.println(" V out from DAC.");
+      DEBUG.print("Set ");
+      DEBUG.print(current_uA/1000.0, 3);
+      DEBUG.print("mA current limit for 10mA range. That will set ");
+      DEBUG.print(dac_voltage,6);
+      DEBUG.println(" V out from DAC.");
     }
     if (dac_voltage > 10.0) {
       dac_voltage = 10.0;
-      Serial.println("WARNING: To high limit value in 10mA range !");
+      DEBUG.println("WARNING: To high limit value in 10mA range !");
     }
   } else {
     dac_voltage = current_uA/1000.0/1000.0;
     dac_voltage = 10.0* dac_voltage * (R_shunt_1A + R_mosfetSwitch);
     
     if (infoSerialOut) {
-      Serial.print("Set ");
-      Serial.print(current_uA/1000.0, 3);
-      Serial.print("mA current limit for 1A range. That willl set ");
-      Serial.print(dac_voltage,6);
-      Serial.println(" V out from DAC.");
+      DEBUG.print("Set ");
+      DEBUG.print(current_uA/1000.0, 3);
+      DEBUG.print("mA current limit for 1A range. That willl set ");
+      DEBUG.print(dac_voltage,6);
+      DEBUG.println(" V out from DAC.");
     }
     
     //dac_voltage = dac_voltage * 1.0685; // TODO: Should be part of initial crude calibration
@@ -810,11 +811,11 @@ int64_t ADCClass::fltSetCommitVoltageLimit(int64_t voltage_uV, int8_t up_down_bo
       
     }
 
-    //Serial.print("Current nonlinear comp ");
-    //Serial.print(i);
+    //DEBUG.print("Current nonlinear comp ");
+    //DEBUG.print(i);
 //    i = C_CALIBRATION.adc_nonlinear_compensation(i);
-    //Serial.print(" -> ");
-    //Serial.println(i);
+    //DEBUG.print(" -> ");
+    //DEBUG.println(i);
 
     return i;
  }

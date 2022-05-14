@@ -6,6 +6,7 @@
 #include "colors.h"
 #include "digit_util.h"
 #include "Stats.h"
+#include "Debug.h"
 
 FunctionPulseClass FUNCTION_PULSE;
 
@@ -58,9 +59,9 @@ void FunctionPulseClass::updateSamplingPeriod(int hz) {
    float period = 1.0/(float)hz;
    float ms = period * 1000.0;
    float us = ms * 1000;
-   Serial.print("Updating pulse sampling rate, us=");
-   Serial.println(us);
-   Serial.flush();
+   DEBUG.print("Updating pulse sampling rate, us=");
+   DEBUG.println(us);
+   DEBUG.flush();
    SPI.usingInterrupt(myPulseTimer);
    myPulseTimer.begin(sourcePulse, us);
    myPulseTimer.priority(0); // highest pri
@@ -258,7 +259,7 @@ void FunctionPulseClass::sourcePulse() {
      bool useDynamicRange = (abs(low)<4500 && abs(high)<4500); // if both values are within one softspan DAC range, you can use dynamic
      SMU[0].fltSetCommitVoltageSource(low*1000.0, useDynamicRange);
      measuredLow =  V_STATS.rawValue;
-     //Serial.println("Set pulse low");
+     //DEBUG.println("Set pulse low");
   // } else if (!pulseHigh && pulseTimer+duration/2 < millis()) {
    }
   else {
@@ -266,7 +267,7 @@ void FunctionPulseClass::sourcePulse() {
      //pulseTimer = millis();
      SMU[0].fltSetCommitVoltageSource(high*1000.0, useDynamicRange);
      measuredHigh =  V_STATS.rawValue;
-     //Serial.println("Set pulse high");
+     //DEBUG.println("Set pulse high");
 
    }
  }
@@ -279,7 +280,7 @@ void FunctionPulseClass::sourcePulse() {
      //pulseTimer = millis();
      SMU[0].fltSetCommitCurrentSource(low*1000.0);
      measuredLow =  C_STATS.rawValue;
-     //Serial.println("Set pulse low");
+     //DEBUG.println("Set pulse low");
    }
   // } else if (!pulseHigh && pulseTimer+duration/2 < millis()) {
   else {
@@ -287,7 +288,7 @@ void FunctionPulseClass::sourcePulse() {
      //pulseTimer = millis();
      SMU[0].fltSetCommitCurrentSource(high*1000.0);
      measuredHigh =  C_STATS.rawValue;
-     //Serial.println("Set pulse high");
+     //DEBUG.println("Set pulse high");
 
    }
  }
@@ -300,14 +301,14 @@ void FunctionPulseClass::rotaryEncChanged(float changeValue) {
   hz = hz < 1? 1: hz;
 
   updateSamplingPeriod(hz);
-  Serial.print("PULSE rotaryEncChanged, value:");
-  Serial.print(changeValue);
-  Serial.print(",hz:");
-  Serial.println(hz);
+  DEBUG.print("PULSE rotaryEncChanged, value:");
+  DEBUG.print(changeValue);
+  DEBUG.print(",hz:");
+  DEBUG.println(hz);
 
 };
 void FunctionPulseClass::rotaryEncButtonChanged(int key, bool quickPress, bool holdAfterLongPress, bool releaseAfterLongPress) {
-  Serial.println("PULSE rotaryEncChanged NOT IMPLEMENTED");
+  DEBUG.println("PULSE rotaryEncChanged NOT IMPLEMENTED");
 };
 
 

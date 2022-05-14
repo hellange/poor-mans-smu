@@ -1,5 +1,6 @@
 #include "Filters.h"
 #include "Arduino.h"
+#include "Debug.h"
 
 FiltersClass V_FILTERS;
 FiltersClass C_FILTERS;
@@ -8,8 +9,8 @@ void FiltersClass::init(int id_)
 {
   id = id_;
   filterSize = 5; // start out with a bit of filtering
-  Serial.print("Set initial filter length to:");
-  Serial.println(filterSize);
+  DEBUG.print("Set initial filter length to:");
+  DEBUG.println(filterSize);
   for (int i = 0; i < FILTER_MAX_LENGTH; i++)
   {
     meanRaws[i] = 0.0;
@@ -20,19 +21,19 @@ void FiltersClass::setFilterSize(int size)
 {
   if (size < 1)
   {
-    Serial.println("WARNING: Set to minium allowed filter size:");
+    DEBUG.println("WARNING: Set to minium allowed filter size:");
     filterSize = 1;
   }
   else if (size <= FILTER_MAX_LENGTH)
   {
     filterSize = size;
-    Serial.print("Set filter size to:");
+    DEBUG.print("Set filter size to:");
   }
   else
   {
-    Serial.println("WARNING: Reduced filter size to max allowed:");
+    DEBUG.println("WARNING: Reduced filter size to max allowed:");
   }
-  Serial.println(filterSize);
+  DEBUG.println(filterSize);
 }
 
 float FiltersClass::updateMean(float v, bool moving)

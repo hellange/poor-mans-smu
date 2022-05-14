@@ -5,6 +5,7 @@
 #include "GD2.h"
 #include "tags.h"
 #include "FunctionPulse.h"
+#include "Debug.h"
 
 MainMenuClass MAINMENU;
 
@@ -20,7 +21,7 @@ void MainMenuClass::close() {
 
     //TODO: Find a better way to make sure the closeMainMenuFn is called only once...
     if (active) {
-      Serial.println("MainMenuClass::close");
+      DEBUG.println("MainMenuClass::close");
       closedMainMenuFn(functionType);
     }
     

@@ -1,4 +1,5 @@
 #include "ZeroCalibration.h"
+#include "Debug.h"
 
 extern ADCClass SMU[];
 
@@ -30,11 +31,11 @@ void ZeroCalibrationlass::startNullCalibration(OPERATION_TYPE operationType_) {
 
   // set null to 0
   if (operationType == SOURCE_VOLTAGE) {
-    Serial.println("Resetting null adjust for voltage source");
+    DEBUG.println("Resetting null adjust for voltage source");
     V_CALIBRATION.setNullValueVol(0.0, MILLIAMP10);
     V_CALIBRATION.setNullValueVol(0.0, AMP1);
   } else {
-    Serial.println("Resetting null adjust for current source");
+    DEBUG.println("Resetting null adjust for current source");
     C_CALIBRATION.setNullValueCur(0.0, MILLIAMP10);
     C_CALIBRATION.setNullValueCur(0.0, AMP1);
   }
@@ -44,22 +45,22 @@ void ZeroCalibrationlass::startNullCalibration(OPERATION_TYPE operationType_) {
 
 void ZeroCalibrationlass::handleAutoNull() {
 
-//   Serial.print("x ");
-//   Serial.print(nullCalibrationDone0);
-//   Serial.print(" ");
-//   Serial.println(timeBeforeAutoNull < millis());
+//   DEBUG.print("x ");
+//   DEBUG.print(nullCalibrationDone0);
+//   DEBUG.print(" ");
+//   DEBUG.println(timeBeforeAutoNull < millis());
   if (autoNullStarted && !nullCalibrationDone0) {
-    Serial.println("Performing auto null...");
+    DEBUG.println("Performing auto null...");
     C_CALIBRATION.useCalibratedValues = false;
     V_CALIBRATION.useCalibratedValues = false;
     SMU[0].setSamplingRate(10);
     current_range = MILLIAMP10;
        SMU[0].setCurrentRange(current_range, operationType);
       if (operationType == SOURCE_VOLTAGE) {
-        Serial.println("Source 0V at output (current range 10mA)");
+        DEBUG.println("Source 0V at output (current range 10mA)");
         SMU[0].fltSetCommitVoltageSource(0, true);
        } else {
-        Serial.println("Source 0 current at output (current range 10mA)");
+        DEBUG.println("Source 0 current at output (current range 10mA)");
         SMU[0].fltSetCommitCurrentSource(0);
        }
     
@@ -77,14 +78,14 @@ void ZeroCalibrationlass::handleAutoNull() {
     if (operationType == SOURCE_VOLTAGE) {
       float v = V_FILTERS.mean;   
       V_CALIBRATION.setNullValueVol(v, current_range);
-      Serial.print("Found offset when sourcing voltage (10mA current range):");  
-      Serial.println(v,3);  
+      DEBUG.print("Found offset when sourcing voltage (10mA current range):");  
+      DEBUG.println(v,3);  
     } else {
       float v = C_FILTERS.mean; 
       //float v = SMU[0].measureCurrent(current_range);
       C_CALIBRATION.setNullValueCur(v, current_range);
-      Serial.print("Found offset when sourcing current (10mA current range):");  
-      Serial.println(v,3);  
+      DEBUG.print("Found offset when sourcing current (10mA current range):");  
+      DEBUG.println(v,3);  
     }
 
     nullCalibrationDone1 = true;
@@ -95,11 +96,11 @@ void ZeroCalibrationlass::handleAutoNull() {
      SMU[0].setCurrentRange(current_range, operationType);
 
     if (operationType == SOURCE_VOLTAGE) {
-      Serial.println("Source 0V at output (current range 1A)");
+      DEBUG.println("Source 0V at output (current range 1A)");
       SMU[0].fltSetCommitVoltageSource(0, true);
  
     } else {
-      Serial.println("Source 0 current at output (current range 1A)");
+      DEBUG.println("Source 0 current at output (current range 1A)");
       SMU[0].fltSetCommitCurrentSource(current_range);
  
     }
@@ -111,14 +112,14 @@ void ZeroCalibrationlass::handleAutoNull() {
    if (operationType == SOURCE_VOLTAGE) {
       float v = V_FILTERS.mean;   
       V_CALIBRATION.setNullValueVol(v, current_range);
-      Serial.print("Found offset when sourcing voltage (1A current range):");  
-      Serial.println(v,3);  
+      DEBUG.print("Found offset when sourcing voltage (1A current range):");  
+      DEBUG.println(v,3);  
     } else {
       float v = C_FILTERS.mean; 
       //float v = SMU[0].measureCurrent(current_range);
       C_CALIBRATION.setNullValueCur(v, current_range);
-      Serial.print("Found offset when sourcing current (1A current range):");  
-      Serial.println(v,3);  
+      DEBUG.print("Found offset when sourcing current (1A current range):");  
+      DEBUG.println(v,3);  
     }
     
     

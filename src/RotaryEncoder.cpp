@@ -1,5 +1,6 @@
 
 #include "RotaryEncoder.h"
+#include "Debug.h"
 
 RotaryEncoderClass ROTARY_ENCODER;
 
@@ -68,16 +69,16 @@ void RotaryEncoderClass::handle(bool reduceResolution)
 
     
     millisSinceLastStep = millis();
-    Serial.print("Left = ");
-    Serial.print(newLeft);
-    //Serial.print(", Right = ");
-    //Serial.print(newRight);
-    Serial.print(" speed= ");
-    Serial.print( speed);
-      Serial.print(" dir= ");
-    Serial.print( dir);
+    DEBUG.print("Left = ");
+    DEBUG.print(newLeft);
+    //DEBUG.print(", Right = ");
+    //DEBUG.print(newRight);
+    DEBUG.print(" speed= ");
+    DEBUG.print( speed);
+      DEBUG.print(" dir= ");
+    DEBUG.print( dir);
     
-    Serial.println();
+    DEBUG.println();
     positionLeft = newLeft;
 
 

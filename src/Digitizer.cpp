@@ -1,4 +1,5 @@
 #include "Digitizer.h"
+#include "Debug.h"
 
 extern ADCClass SMU[];
 extern VoltDisplayClass VOLT_DISPLAY;
@@ -531,28 +532,28 @@ void DigitizerClass::handleSamplingForDigitizer(int dataR) {
   }
 
 void DigitizerClass::rotaryEncChanged(float changeValue) {
-  Serial.print("DigitizerClass rotaryEncChanged, value:");
-  Serial.println(changeValue);
+  DEBUG.print("DigitizerClass rotaryEncChanged, value:");
+  DEBUG.println(changeValue);
   if (!adjustLevel) {
     zoomed = !zoomed;
-    Serial.print("zoomed=");
-    Serial.println(zoomed);
+    DEBUG.print("zoomed=");
+    DEBUG.println(zoomed);
   } else {
     if (changeValue < 0) {
       ampLevel = (ampLevel>1)?ampLevel - 1 : 1;
     } else {
       ampLevel = (ampLevel<4)?ampLevel + 1 : 4;
     }
-     Serial.print("ampLevel=");
-    Serial.println(ampLevel);
+     DEBUG.print("ampLevel=");
+    DEBUG.println(ampLevel);
   }
 
  
 
 };
 void DigitizerClass::rotaryEncButtonChanged(int key, bool quickPress, bool holdAfterLongPress, bool releaseAfterLongPress) {
-  Serial.println("DigitizerClass rotaryEncChanged");
+  DEBUG.println("DigitizerClass rotaryEncChanged");
   adjustLevel = !adjustLevel;
-  Serial.print("adjustLevel=");
-  Serial.println(adjustLevel);
+  DEBUG.print("adjustLevel=");
+  DEBUG.println(adjustLevel);
 };

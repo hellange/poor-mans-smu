@@ -1,5 +1,6 @@
 #include "Logger.h"
 #include "Arduino.h"
+#include "Debug.h"
 
 extern "C" uint8_t external_psram_size;
 
@@ -15,10 +16,10 @@ void LoggerClass::init() {
 
   // Based on using Teensy 4.1 with extra RAM mounted
   uint8_t size = external_psram_size;
-	Serial.printf("EXTMEM Memory: %d Mbyte\n", size);
+	DEBUG.printf("EXTMEM Memory: %d Mbyte\n", size);
 	if (size == 0) {
     notAvailable = true;
-    Serial.println("WARNING: No external ram !!!");
+    DEBUG.println("WARNING: No external ram !!!");
     return;
   } 
   notAvailable = false;
@@ -28,10 +29,10 @@ void LoggerClass::init() {
   clear();
    // fillBuffer(maxSize*0.8);
 
-    	Serial.print("INFO: Buffer filled, percentage full:");
-      Serial.print(percentageFull,2);
-      Serial.print("samples:");
-      Serial.println(samples);
+    	DEBUG.print("INFO: Buffer filled, percentage full:");
+      DEBUG.print(percentageFull,2);
+      DEBUG.print("samples:");
+      DEBUG.println(samples);
 
 //LogDataWithTimeStamp viewBuffer[100];
 //getLastSamples(viewBuffer, 15, 1);
@@ -110,12 +111,12 @@ if (oldRot != scrollRotary) {
 
     oldRot = scrollRotary;
  }
-    // Serial.print("Address:");
-    // Serial.print(address);
-    // Serial.print(", ScrollAddress");
-    // Serial.print(scrollAddress);
-    // Serial.print(", scrollRotary:");
-    // Serial.println(scrollRotary);
+    // DEBUG.print("Address:");
+    // DEBUG.print(address);
+    // DEBUG.print(", ScrollAddress");
+    // DEBUG.print(scrollAddress);
+    // DEBUG.print(", scrollRotary:");
+    // DEBUG.println(scrollRotary);
 
 
 
@@ -159,13 +160,13 @@ void LoggerClass::registerValue(LogDataWithTimeStamp logData) {
   
   percentageFull = 100.0*((float)samples/(float)maxSize);
   LogDataWithTimeStamp *adrP = (LogDataWithTimeStamp*)(memory_begin);
-  // Serial.print("Store ");
-  // Serial.print(logData.value,3);
-  // Serial.print(" at address ");
-  // Serial.print(address);
-  // Serial.print(", Using ");
-  // Serial.print(percentageFull,1);
-  // Serial.println("% of log buffer");
+  // DEBUG.print("Store ");
+  // DEBUG.print(logData.value,3);
+  // DEBUG.print(" at address ");
+  // DEBUG.print(address);
+  // DEBUG.print(", Using ");
+  // DEBUG.print(percentageFull,1);
+  // DEBUG.println("% of log buffer");
 
 
 
@@ -191,15 +192,15 @@ void LoggerClass::updateViewData(int samplesPr) {
   getLastSamples(viewBuffer, nrOfWindowSamples, samplesPr);
   noViewBuffer = false;
   // for (int i=0;i<nrOfWindowSamples;i++) {
-  //   Serial.print("Data:");
-  //   Serial.print(viewBuffer[i].value,3);
-  //   Serial.print(",timestamp:");
-  //   Serial.println(viewBuffer[i].timestamp);
+  //   DEBUG.print("Data:");
+  //   DEBUG.print(viewBuffer[i].value,3);
+  //   DEBUG.print(",timestamp:");
+  //   DEBUG.println(viewBuffer[i].timestamp);
   // }
-  // Serial.print("MAX:");
-  // Serial.print(loggerMaxValue);
-  // Serial.print(",MIN:");
-  // Serial.println(loggerMinValue);
+  // DEBUG.print("MAX:");
+  // DEBUG.print(loggerMaxValue);
+  // DEBUG.print(",MIN:");
+  // DEBUG.println(loggerMinValue);
 
 }
 
@@ -234,8 +235,8 @@ void LoggerClass::loop() {
 float mid;
   for (int i=0;i<nrOfWindowSamples-1;i++) {
     float v = viewBuffer[i].value;
-    //Serial.print("val:");
-    //Serial.println(v,3);
+    //DEBUG.print("val:");
+    //DEBUG.println(v,3);
     //loggerMaxValue =1.2330;
     //loggerMinValue =1.2350;
     float span = loggerMaxValue - loggerMinValue;
@@ -299,7 +300,7 @@ for (int i=0;i<300;i=i+49) {
 
   //char buf[21];
   //sprintf(buf,"Runtime%02d:%02d:%02d",runHours,runMinutes,runSeconds);
-  //Serial.println(buf);
+  //DEBUG.println(buf);
   GD.ColorRGB(0xdddddd);
 
   GD.cmd_number(150+600-i*(600/nrOfWindowSamples)-30,400, 27, 2, runHours);
@@ -330,10 +331,10 @@ for (int i=0;i<300;i=i+49) {
 //   int nrOfWindowSamples = 100;
 //   getLastSamples(buffer, nrOfWindowSamples, 5);
 //   for (int i=0;i<nrOfWindowSamples;i++) {
-//     Serial.print("Data:");
-//     Serial.print(buffer[i].value);
-//     Serial.print(",timestamp:");
-//     Serial.println(buffer[i].timestamp);
+//     DEBUG.print("Data:");
+//     DEBUG.print(buffer[i].value);
+//     DEBUG.print(",timestamp:");
+//     DEBUG.println(buffer[i].timestamp);
 //   }
 
 // }
@@ -411,13 +412,13 @@ uint32_t lastSampleAdr = scrollAddress; //address;
       if (lastSampleAdr == 0 && full) {
         lastSampleAdr = maxSize-1;
         //buffer[i] = adrP[lastSampleAdr];
-        Serial.print(" RUNDING ");
+        DEBUG.print(" RUNDING ");
         //break;
       } else if (lastSampleAdr == 0 && !full) {
          buffer[i].value = -999999.99;
          buffer[i].timestamp = 0; 
          fillEmpty=true;
-         //Serial.println(" NO_MORE ");
+         //DEBUG.println(" NO_MORE ");
          
          //break;
       } else {
@@ -425,10 +426,10 @@ uint32_t lastSampleAdr = scrollAddress; //address;
         lastSampleAdr--;
       }
       if (serial) {
-        Serial.print("Fetching from address=");
-        Serial.print(lastSampleAdr);
-        Serial.print(",data");
-        Serial.println(adrP[lastSampleAdr].value,2);
+        DEBUG.print("Fetching from address=");
+        DEBUG.print(lastSampleAdr);
+        DEBUG.print(",data");
+        DEBUG.println(adrP[lastSampleAdr].value,2);
       }
 
       
@@ -475,8 +476,8 @@ void LoggerClass::fillBuffer(int nrOfValues) {
     d.timestamp = i*100;
     registerValue(d);
 
-    //Serial.print("percentagefull:");
-    //Serial.println(percentageFull,1);
+    //DEBUG.print("percentagefull:");
+    //DEBUG.println(percentageFull,1);
 
   }
 }
@@ -488,20 +489,20 @@ void LoggerClass::printBuffer() {
 
   for (uint32_t adr = 0; adr<maxSize;adr++) {
    LogDataWithTimeStamp *adrP = (LogDataWithTimeStamp*)(memory_begin);
-    Serial.print("Time:");
-    Serial.print(adrP[adr].timestamp);
-    Serial.print(",value:");
-    Serial.print(adrP[adr].value);
-    Serial.println(",");
+    DEBUG.print("Time:");
+    DEBUG.print(adrP[adr].timestamp);
+    DEBUG.print(",value:");
+    DEBUG.print(adrP[adr].value);
+    DEBUG.println(",");
     delay(100);
   }
 }
 
 
   void LoggerClass::rotaryChangedFn(float changeVal) {
-     Serial.println("LOGGER ENCODED ROTATION DETECTED");
-     Serial.print(".CHANGEDVAL:");
-     Serial.println(changeVal,2);
+     DEBUG.println("LOGGER ENCODED ROTATION DETECTED");
+     DEBUG.print(".CHANGEDVAL:");
+     DEBUG.println(changeVal,2);
      
      // Override dynamic speed for now...
     //  if (changeVal < 0) {
@@ -536,16 +537,16 @@ if (encButtonScroll == false) {
 int LoggerClass::next(uint32_t adr_) {
   uint32_t adr = adr_;
   adr = adr -1;
-  //Serial.print(adr);
+  //DEBUG.print(adr);
   if (adr < 0 && full) {
     adr = maxLogAddress;
-    //Serial.print("!!!!!!!!!!!!!!!  1 ");
-    //Serial.print("Adr is");
-   // Serial.print(adr);
+    //DEBUG.print("!!!!!!!!!!!!!!!  1 ");
+    //DEBUG.print("Adr is");
+   // DEBUG.print(adr);
   }
   if (adr < 0 && !full) {
     adr = -1; //currentLogAddress;
-    //Serial.print("!!!!!!!!!!!!!!!  2");
+    //DEBUG.print("!!!!!!!!!!!!!!!  2");
   }
   return adr;
 }
@@ -562,8 +563,8 @@ void LoggerClass::rotarySwitchFn(int key, bool quickPress, bool holdAfterLongPre
     encButtonZoom = false;
   }
 
-  Serial.print("Logger rotarySwitch operated");
-  Serial.println(quickPress==true?"QUICK" : "");
-  Serial.println(holdAfterLongPress==true?"HOLDING" : "");
-  Serial.println(releaseAfterLongPress==true?"RELEASED AFTER HOLDING" : "");
+  DEBUG.print("Logger rotarySwitch operated");
+  DEBUG.println(quickPress==true?"QUICK" : "");
+  DEBUG.println(holdAfterLongPress==true?"HOLDING" : "");
+  DEBUG.println(releaseAfterLongPress==true?"RELEASED AFTER HOLDING" : "");
 }

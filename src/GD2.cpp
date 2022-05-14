@@ -12,6 +12,7 @@
 #endif
 #define VERBOSE       0
 #include "GD2.h"
+#include "Debug.h"
 
 #if defined(ESP8266)
 #define SD_PIN        D9    // pin used for the microSD enable signal
@@ -471,7 +472,7 @@ public:
       return;
     for (int i = 0; i < 128; i++) {
       *v++ = i2c_rx(i == 127);
-      // Serial.println(v[-1], DEC);
+      // DEBUG.println(v[-1], DEC);
     }
     i2c_stop();
     GDTR.resume();
@@ -499,7 +500,7 @@ uint32_t GDClass::measure_freq(void)
   unsigned long t0 = GDTR.rd32(REG_CLOCK);
   delayMicroseconds(15625);
   unsigned long t1 = GDTR.rd32(REG_CLOCK);
-  // Serial.println((t1 - t0) << 6);
+  // DEBUG.println((t1 - t0) << 6);
   return (t1 - t0) << 6;
 }
 
@@ -530,8 +531,8 @@ begin1:
   GDTR.begin1();
 
 #if 0
-  Serial.println("ID REGISTER:");
-  Serial.println(GDTR.rd(REG_ID), HEX);
+  DEBUG.println("ID REGISTER:");
+  DEBUG.println(GDTR.rd(REG_ID), HEX);
 #endif
 
 #if (BOARD == BOARD_FTDI_80x)
@@ -604,7 +605,7 @@ begin1:
 #if defined(ARDUINO) && !defined(__DUE__)
     if ((EEPROM.read(0) != 0x7c)) {
       self_calibrate();
-      // for (int i = 0; i < 24; i++) Serial.println(GDTR.rd(REG_TOUCH_TRANSFORM_A + i), HEX);
+      // for (int i = 0; i < 24; i++) DEBUG.println(GDTR.rd(REG_TOUCH_TRANSFORM_A + i), HEX);
       for (int i = 0; i < 24; i++)
         EEPROM.write(1 + i, GDTR.rd(REG_TOUCH_TRANSFORM_A + i));
       EEPROM.write(0, 0x7c);  // is written!
@@ -620,7 +621,7 @@ begin1:
 
     // self_calibrate();
     // for (int i = 0; i < 24; i++)
-    //   Serial.println(GDTR.rd(REG_TOUCH_TRANSFORM_A + i), HEX);
+    //   DEBUG.println(GDTR.rd(REG_TOUCH_TRANSFORM_A + i), HEX);
     static const byte canned_calibration[24] = {
       0xCC, 0x7C, 0xFF, 0xFF, 0x57, 0xFE, 0xFF, 0xFF,
       0xA1, 0x04, 0xF9, 0x01, 0x93, 0x00, 0x00, 0x00,
@@ -1509,10 +1510,10 @@ void GDClass::get_inputs(void) {
   inputs.xytouch.set(PIXELS(inputs.x), PIXELS(inputs.y));
 #ifdef DUMP_INPUTS
   for (size_t i = 0; i < sizeof(inputs); i++) {
-    Serial.print(bi[i], HEX);
-    Serial.print(" ");
+    DEBUG.print(bi[i], HEX);
+    DEBUG.print(" ");
   }
-  Serial.println();
+  DEBUG.println();
 #endif
 #endif
 }

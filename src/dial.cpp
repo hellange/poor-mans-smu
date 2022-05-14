@@ -4,6 +4,7 @@
 #include <SPI.h>
 #include "GD2.h"
 #include "Settings.h"
+#include "Debug.h"
 
 
 DialClass SOURCE_DIAL;
@@ -17,17 +18,17 @@ void DialClass::open(int type, int set_or_limit_, void (*callbackFn)(int set_or_
   //TODO: Convert value to visible digits. Right now it uses values/digits stored in the DialClass itself !
   //char cbuf[20];
   //sprintf(cbuf, "%10.5f", value); 
-  //Serial.print("Set string:");
-  //Serial.println(cbuf);
-  //Serial.flush();
+  //DEBUG.print("Set string:");
+  //DEBUG.println(cbuf);
+  //DEBUG.flush();
 
 
 
-   Serial.println("Open dial. OperationType=");
-   Serial.println(type == SOURCE_VOLTAGE ? "SOURCE VOLTAGE" : "SOURCE CURRENT");
-   Serial.print("Input value:");
-   Serial.print(micro/1000.0,3);
-   Serial.println("milli");
+   DEBUG.println("Open dial. OperationType=");
+   DEBUG.println(type == SOURCE_VOLTAGE ? "SOURCE VOLTAGE" : "SOURCE CURRENT");
+   DEBUG.print("Input value:");
+   DEBUG.print(micro/1000.0,3);
+   DEBUG.println("milli");
 
   closedFn = callbackFn;
   vol_cur_type = type;
@@ -72,8 +73,8 @@ void DialClass::init() {
 }
 
 void DialClass::setMv(float mv) {
-  Serial.print("SetmV:");
-  Serial.println(mv,3 );
+  DEBUG.print("SetmV:");
+  DEBUG.println(mv,3 );
   if (mv < 0.0) {
     negative = true;
   } else {
@@ -108,14 +109,14 @@ void DialClass::setMv(float mv) {
 //  }
 
   dtostrf(mv,nrOfDigitsBeforeComma + nfOfDigitsAfterComma, 4, outstr);
-  Serial.print("Get individual digit elements to display based on value ");
-  Serial.println(mv,5);
+  DEBUG.print("Get individual digit elements to display based on value ");
+  DEBUG.println(mv,5);
   int dialEntriesIndex = 0;
-  Serial.print("Digits: ");
+  DEBUG.print("Digits: ");
   for (int i=0; i< nrOfDigitsBeforeComma + nfOfDigitsAfterComma + 1 ; i++) {
     if (outstr[i]!=0x20 && outstr[i]!='-') {
-      Serial.print(outstr[i]);
-      Serial.print(",");
+      DEBUG.print(outstr[i]);
+      DEBUG.print(",");
       if (outstr[i] == '.') {
         dialEntries[dialEntriesIndex++] = KEYBOARD_COMMA;
       } else {
@@ -126,8 +127,8 @@ void DialClass::setMv(float mv) {
    
   }
   digits = dialEntriesIndex;
-  Serial.print(" # of digit elements:");
-  Serial.println(dialEntriesIndex);
+  DEBUG.print(" # of digit elements:");
+  DEBUG.println(dialEntriesIndex);
   
   strncpy(voltDecade, "mV" ,2);
 }
@@ -289,7 +290,7 @@ void DialClass::checkKeypress() {
         }
 
         if (!commaFound) {
-          Serial.println("COMMA NOT FOUND !");
+          DEBUG.println("COMMA NOT FOUND !");
           dialEntries[digits] = dialEntries[digits-1];
           dialEntries[digits-1] = KEYBOARD_COMMA;
           digits ++;
@@ -520,13 +521,13 @@ void DialClass::validate(double mv) {
   int numberValue, decimalValue;
   sprintf(buf, "%.*f", 3, mv);
   sscanf(buf, "%d.%d", &numberValue, &decimalValue);
-//  Serial.print("mV:");
-//  Serial.print(mv,5);
-//  Serial.print(" Number value:");
-//  Serial.print(numberValue);
-//  Serial.print(", decimalValue:");
-//  Serial.println(decimalValue);
-//  Serial.flush();
+//  DEBUG.print("mV:");
+//  DEBUG.print(mv,5);
+//  DEBUG.print(" Number value:");
+//  DEBUG.print(numberValue);
+//  DEBUG.print(", decimalValue:");
+//  DEBUG.println(decimalValue);
+//  DEBUG.flush();
 
   // get number of decimals in the display
   int decimalsAfterComma = -1;

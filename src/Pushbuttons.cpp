@@ -1,19 +1,19 @@
 #include "Arduino.h"
 #include "PushButtons.h"
 #include "GD2.h"
-
+#include "Debug.h"
 
 
 void PushbuttonsClass::init(int analogPin_, int holdPeriodms_) {
   analogPin = analogPin_;
   holdPeriodms = holdPeriodms_;
-  Serial.print("Init Pushbuttons using analog pin ");
-  Serial.println(analogPin);
+  DEBUG.print("Init Pushbuttons using analog pin ");
+  DEBUG.println(analogPin);
 }
 
 void PushbuttonsClass::setCallback(void (*callback)(int button, bool quickPress, bool holdAfterLongPress, bool releaseAfterLongPress)) {
   callbackFn = callback;
-  Serial.println("-->Set new callback ");
+  DEBUG.println("-->Set new callback ");
 }
 
 void PushbuttonsClass::handle() {

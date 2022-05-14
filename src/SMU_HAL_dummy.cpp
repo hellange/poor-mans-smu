@@ -5,17 +5,18 @@
  *********************************/
 
 #include "SMU_HAL_dummy.h"
+#include "Debug.h"
 
 //TODO: Use int64 instead of float for settings here (same as changed to in main SMU_HAL)
  
  int64_t SMU_HAL_dummy::fltSetCommitVoltageSource(int64_t voltage_uV, bool dynamicRange) {
-  Serial.println("Set simulated voltage");
+  DEBUG.println("Set simulated voltage");
     operationType = SOURCE_VOLTAGE;
 
    setValue_micro = voltage_uV;
    //setValuemV = mv;
    //nowValuemV = mv;
-   //Serial.println(nowValuemV, 5);
+   //DEBUG.println(nowValuemV, 5);
 
    return setValue_micro;
  }
@@ -28,7 +29,7 @@ CURRENT_RANGE SMU_HAL_dummy::getCurrentRange() {
  void SMU_HAL_dummy::setCurrentRange(CURRENT_RANGE range, OPERATION_TYPE operationType) {
      current_range = range;
 
-   Serial.println("WARNING: NOT IMPLEMENTED CURRENT RANGE IN SIMULATOR !");
+   DEBUG.println("WARNING: NOT IMPLEMENTED CURRENT RANGE IN SIMULATOR !");
  }
 
  void SMU_HAL_dummy::setSamplingRate(int value) {
@@ -38,7 +39,7 @@ CURRENT_RANGE SMU_HAL_dummy::getCurrentRange() {
   
  int SMU_HAL_dummy::getSamplingRate() {
   //TODO: Fix this
-  Serial.println("ERROR: getSampling rate has not been implemented correctly !!!!");
+  DEBUG.println("ERROR: getSampling rate has not been implemented correctly !!!!");
   return 999;    
  }
   
@@ -46,7 +47,7 @@ CURRENT_RANGE SMU_HAL_dummy::getCurrentRange() {
    setValue_micro = current_uA;
      operationType = SOURCE_CURRENT;
 
-   //Serial.println("WARNING: NOT IMPLEMENTED CURRENT SOURCE IN SIMULATOR !");
+   //DEBUG.println("WARNING: NOT IMPLEMENTED CURRENT SOURCE IN SIMULATOR !");
    return setValue_micro;
  }
 
@@ -135,11 +136,11 @@ CURRENT_RANGE SMU_HAL_dummy::getCurrentRange() {
  }
 
  void SMU_HAL_dummy::setGPIO(int nr, bool on) {
-   Serial.println("ERROR: Not implemented setGPIO !!!!");
+   DEBUG.println("ERROR: Not implemented setGPIO !!!!");
  }
 
  void SMU_HAL_dummy::disable_ADC_DAC_SPI_units(){
-     //Serial.println("NOTE: Not implemented disable_ADC_DAC_SPI_units. Not relevant for simulator");
+     //DEBUG.println("NOTE: Not implemented disable_ADC_DAC_SPI_units. Not relevant for simulator");
 
  }
 

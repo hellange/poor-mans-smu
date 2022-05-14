@@ -1,4 +1,5 @@
 #include "Settings.h"
+#include "Debug.h"
 
 extern ADCClass SMU[];
 
@@ -9,13 +10,13 @@ void SettingsClass::init() {
 
 void SettingsClass::setLowBandWidth(bool t) {
   lowBandWidth = t;
-  Serial.print("Set GPIP 1 ");
-  Serial.println(t);
+  DEBUG.print("Set GPIP 1 ");
+  DEBUG.println(t);
   SMU[0].setGPIO(1,t); // gpio1:  true = low bandwidth
 }
 
 float SettingsClass::max_current_1A_range() {
-  //Serial.println(max_current_1a_range,3);
+  //DEBUG.println(max_current_1a_range,3);
   return max_current_1a_range;
 }
 float SettingsClass::max_current_10mA_range() {

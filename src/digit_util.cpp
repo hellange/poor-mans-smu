@@ -1,6 +1,7 @@
 #include "digit_util.h"
 #include <SPI.h>
 #include "GD2.h"
+#include "Debug.h"
 
 // TODO: A possible error in this function.
 //       I often see the uV area jump from low (0-100) to high (900-999) without
@@ -174,7 +175,7 @@ void DigitUtilClass::print_uint64_t(uint64_t num) {
   p--;
   /*Print the number which is now in reverse*/
   while (p > rev) {
-    Serial.print(*p--);
+    DEBUG.print(*p--);
   }
 }
 
@@ -187,7 +188,7 @@ int runSeconds=secsRemaining%60;
 
 //char buf[21];
 //sprintf(buf,"Runtime%02d:%02d:%02d",runHours,runMinutes,runSeconds);
-//Serial.println(buf);
+//DEBUG.println(buf);
 
 
   GD.cmd_number(x,y, 27, 2, runHours);

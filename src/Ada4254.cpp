@@ -1,6 +1,8 @@
 #include "Ada4254.h"
 #include <Arduino.h>
 #include <SPI.h>
+#include <Debug.h>
+
 
 Ada4254Class ADA4254;
 
@@ -20,8 +22,8 @@ void Ada4254Class::printId() {
   uint8_t data =  SPI.transfer(0x2f | 0x80);
   uint8_t data2 =  SPI.transfer(0);
 
-  Serial.println("ADA4254 id:");
-  Serial.println(data2, HEX);
+  DEBUG.println("ADA4254 id:");
+  DEBUG.println(data2, HEX);
   delayMicroseconds(10); 
   digitalWrite(7, HIGH);
   SPI.endTransaction();
@@ -64,8 +66,8 @@ void Ada4254Class::ada4254_check() {
   delayMicroseconds(10);   //    ANALOG_ERR
   SPI.transfer(0x04 | 0x80);
    uint8_t data2 =  SPI.transfer(0);
-  //Serial.println("ADA4254 analog err:");
-  //Serial.println(data2, BIN);
+  //DEBUG.println("ADA4254 analog err:");
+  //DEBUG.println(data2, BIN);
   delayMicroseconds(10); 
   digitalWrite(7, HIGH);
 
@@ -76,8 +78,8 @@ void Ada4254Class::ada4254_check() {
   delayMicroseconds(10);   //    DIGITAL_ERR
   SPI.transfer(0x03 | 0x80);
    data2 =  SPI.transfer(0);
-  //Serial.println("ADA4254 digital err:");
-  //Serial.println(data2, BIN);
+  //DEBUG.println("ADA4254 digital err:");
+  //DEBUG.println(data2, BIN);
   delayMicroseconds(10); 
   digitalWrite(7, HIGH);
 
@@ -451,7 +453,7 @@ void Ada4254Class::indicateADA4254status() {
     //ADA4254.ada4254_clear_analog_error();
     ADA4254.ada4254_check();
     // delay(500);
-    //Serial.println("here333");
+    //DEBUG.println("here333");
     //ADA4254.ada4254(relayState);
     //ADA4254.ada4254_5_gain();
   }

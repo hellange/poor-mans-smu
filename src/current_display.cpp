@@ -3,6 +3,7 @@
 #include "GD2.h"
 #include "colors.h"
 #include "digit_util.h"
+#include "Debug.h"
 
 /*
 unsigned long compliance_blink_timer = millis();
@@ -115,21 +116,21 @@ void CurrentDisplayClass::renderSet(int x, int y, int64_t raw_uA, CURRENT_RANGE 
   ua = rest_uA;
 
 /*
- Serial.print("renderSet rawuA=");
-  Serial.print("a=");
-    Serial.print(a);
-        Serial.print(", mA=");
-Serial.print(ma);
-        Serial.print(", uA=");
-        Serial.println(ua);
+ DEBUG.print("renderSet rawuA=");
+  DEBUG.print("a=");
+    DEBUG.print(a);
+        DEBUG.print(", mA=");
+DEBUG.print(ma);
+        DEBUG.print(", uA=");
+        DEBUG.println(ua);
 */
 
 
 
   
   //GD.ColorRGB(COLOR_CURRENT);
-  //Serial.print("RENDER SET:");
-  //Serial.print(rawMa);
+  //DEBUG.print("RENDER SET:");
+  //DEBUG.print(rawMa);
 
   if (rawMa < 0.0) {
     GD.cmd_text(x, y, 31, 0, "-");

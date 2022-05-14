@@ -1,4 +1,5 @@
 #include "utils.h"
+#include "Debug.h"
 
 int UtilsClass::TC74_getTemperature() {
   // I2C based
@@ -12,7 +13,7 @@ int UtilsClass::TC74_getTemperature() {
     Wire.requestFrom(72, 1);
     if (Wire.available()) {
     temperature = Wire.read();
-    //Serial.println(temperature);
+    //DEBUG.println(temperature);
     }
   Wire.endTransmission();
   return temperature;
@@ -29,8 +30,8 @@ int UtilsClass::LM60_getTemperature(int analogPin) {
   //                 => Vout - 424mV = +6.25mV x t 
   //                 => t = (Vout-424mV) / 6.25mV
   int temp = (voltage - 0.424) / 0.00625;
-  //Serial.print(" ");
-  //Serial.println(temp,3);
+  //DEBUG.print(" ");
+  //DEBUG.println(temp,3);
   return (int)temp;
 }
 

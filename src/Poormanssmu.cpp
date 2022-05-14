@@ -50,7 +50,7 @@
 
 #include "Ada4254.h"
 #include "scpi/vrekrer_scpi_parser.h" // TESTING OUT SCPI LIBRARY, https://github.com/Vrekrer/Vrekrer_scpi_parser
-
+#include "Debug.h"
 //#define _SOURCE_AND_SINK 111
 
 #define _PRINT_ERROR_VOLTAGE_SOURCE_SETTING 0
@@ -121,9 +121,7 @@ FUNCTION_TYPE functionType = SOURCE_DC_VOLTAGE;
 
 void printError(int16_t  errorNum)
 {
-  Serial.print(F("Error("));
-  Serial.print(errorNum);
-  Serial.println(")");
+  DEBUG.printError(errorNum);
 }
 
 OPERATION_TYPE getOperationType() {
@@ -145,13 +143,13 @@ void rotaryChangedVoltCurrentFn(float changeVal) {
   changeDigitTimeout = millis();
 
    if (changeDigit == 0 && !SOURCE_DIAL.isDialogOpen()) {
-       Serial.println("change not enabled");
+       DEBUG.println("change not enabled");
        return;
    }
 
    if (operationType == SOURCE_VOLTAGE) {
-       Serial.print("rotary changeval:");
-       Serial.println(changeVal);
+       DEBUG.print("rotary changeval:");
+       DEBUG.println(changeVal);
      if(SOURCE_DIAL.isDialogOpen()) {
        //TODO: Fix problem with resolution and selected digit to change !!!
        float mv = SOURCE_DIAL.getMv();
@@ -159,24 +157,24 @@ void rotaryChangedVoltCurrentFn(float changeVal) {
        int64_t new_uV = mv*1000 + change_uV;
        SOURCE_DIAL.setMv(new_uV /1000.0);
      } else {
-       Serial.print("from smu setvalue mv=");
+       DEBUG.print("from smu setvalue mv=");
        DIGIT_UTIL.print_uint64_t(SMU[0].getSetValue_micro());
-       Serial.println();
+       DEBUG.println();
 
        int64_t change_uV =  changeVal*changeDigit;
-       Serial.print("change value in uV=");
+       DEBUG.print("change value in uV=");
        DIGIT_UTIL.print_uint64_t(change_uV);
-       Serial.println();
+       DEBUG.println();
 
        int64_t new_uV = SMU[0].getSetValue_micro() + change_uV;
-       Serial.print("new uV=");
+       DEBUG.print("new uV=");
        DIGIT_UTIL.print_uint64_t(new_uV);
-       Serial.println();
+       DEBUG.println();
 
 /*
        float newVoltage_mV = new_uV / 1000.0;
-       Serial.print("new mv=");
-       Serial.println(newVoltage_mV,5);
+       DEBUG.print("new mv=");
+       DEBUG.println(newVoltage_mV,5);
 */
        if (SMU[0].fltSetCommitVoltageSource(new_uV, true)) printError(_PRINT_ERROR_VOLTAGE_SOURCE_SETTING);
      }
@@ -193,19 +191,19 @@ void rotaryChangedVoltCurrentFn(float changeVal) {
        int64_t new_uV = mv*1000 + change_uV;
        SOURCE_DIAL.setMv(new_uV /1000.0);
      } else {
-              Serial.print("from smu setvalue mv=");
+              DEBUG.print("from smu setvalue mv=");
        DIGIT_UTIL.print_uint64_t(SMU[0].getSetValue_micro());
-       Serial.println();
+       DEBUG.println();
 
        int64_t change_uV =  changeVal*changeDigit; 
-        Serial.print("change value in uV=");
+        DEBUG.print("change value in uV=");
         DIGIT_UTIL.print_uint64_t(change_uV);
-        Serial.println();
+        DEBUG.println();
 
        int64_t new_uV = SMU[0].getSetValue_micro() + change_uV;
-       Serial.print("new uV=");
+       DEBUG.print("new uV=");
        DIGIT_UTIL.print_uint64_t(new_uV);
-       Serial.println();
+       DEBUG.println();
 
 
        fltCommitCurrentSourceAutoRange(new_uV, false);
@@ -218,12 +216,12 @@ void rotaryChangedVoltCurrentFn(float changeVal) {
 bool showSettings = false;
 
 void pushButtonEncInterrupt(int key, bool quickPress, bool holdAfterLongPress, bool releaseAfterLongPress) {
-  Serial.print("Key pressed:");
-  Serial.print(key);
-  Serial.print(" ");
-  Serial.println(quickPress==true?"QUICK" : "");
-  Serial.println(holdAfterLongPress==true?"HOLDING" : "");
-  Serial.println(releaseAfterLongPress==true?"RELEASED AFTER HOLDING" : "");
+  DEBUG.print("Key pressed:");
+  DEBUG.print(key);
+  DEBUG.print(" ");
+  DEBUG.println(quickPress==true?"QUICK" : "");
+  DEBUG.println(holdAfterLongPress==true?"HOLDING" : "");
+  DEBUG.println(releaseAfterLongPress==true?"RELEASED AFTER HOLDING" : "");
   changeDigitTimeout = millis();
   ROTARY_ENCODER.stepless_dynamic = true;
   if (changeDigit == 0) {
@@ -250,20 +248,20 @@ void pushButtonEncInterrupt(int key, bool quickPress, bool holdAfterLongPress, b
   }
 
 
-  Serial.print("changeDigit:");
-  Serial.println(changeDigit);
+  DEBUG.print("changeDigit:");
+  DEBUG.println(changeDigit);
 
 
 }
 
 
 void pushButtonInterrupt(int key, bool quickPress, bool holdAfterLongPress, bool releaseAfterLongPress) {
-  Serial.print("Key pressed:");
-  Serial.print(key);
-  Serial.print(" ");
-  Serial.println(quickPress==true?"QUICK" : "");
-  Serial.println(holdAfterLongPress==true?"HOLDING" : "");
-  Serial.println(releaseAfterLongPress==true?"RELEASED AFTER HOLDING" : "");
+  DEBUG.print("Key pressed:");
+  DEBUG.print(key);
+  DEBUG.print(" ");
+  DEBUG.println(quickPress==true?"QUICK" : "");
+  DEBUG.println(holdAfterLongPress==true?"HOLDING" : "");
+  DEBUG.println(releaseAfterLongPress==true?"RELEASED AFTER HOLDING" : "");
 
   if (quickPress && key ==1 && MAINMENU.active == false) {
     openMainMenu();
@@ -337,8 +335,8 @@ void setup()
     //pinMode(12,INPUT);
     //pinMode(13,OUTPUT);
 
-    Serial.println("Initializing graphics controller FT81x...");
-    Serial.flush();
+    DEBUG.println("Initializing graphics controller FT81x...");
+    DEBUG.flush();
 
     // bootup FT8xx
     // Drive the PD_N pin high
@@ -355,8 +353,8 @@ void setup()
    GD.begin(0);
    delay(500);
 
-   Serial.println("Initializing graphics...");
-   Serial.flush();
+   DEBUG.println("Initializing graphics...");
+   DEBUG.flush();
    GD.cmd_romfont(1, 34); // put FT81x font 34 in slot 1
    GD.Clear();
    GD.ColorRGB(0xaaaaff);
@@ -364,22 +362,21 @@ void setup()
    GD.cmd_text(250, 200 ,   31, 0, "Poor man's SMU");
    GD.ColorRGB(0xaaaaaa);
    GD.cmd_text(250, 240 ,   28, 0, "Designed    by    Helge Langehaug");
-   GD.cmd_text(250, 270 ,   28, 1, "V0.180");
+   GD.cmd_text(250, 270 ,   28, 1, "V0.181");
    
    GD.cmd_text(0, 450 ,   28, 1, "Configuring ethernet...");
 
    GD.swap();
 
-    //ETHERNET_UTIL.setup(); // Comment out to avoid delay of ethernet not connected !!!!
 
    //delay(501);
 
    GD.__end();
-   Serial.println("Graphics initialized.");
-   Serial.flush();
+   DEBUG.println("Graphics initialized.");
+   DEBUG.flush();
 
    // TODO: Fix this experimental mess !!!
-   Serial.println("====== ADA4254 =====");
+   DEBUG.println("====== ADA4254 =====");
    ADA4254.reset();
    ADA4254.printId();
    ADA4254.ada4254_4();
@@ -390,11 +387,11 @@ void setup()
    delay(1000);
    ADA4254.ada4254_clear_analog_error();
    //ADA4254.ada4254_5_gainx1d25();
-   Serial.println("====== ADA4254 done =====");
+   DEBUG.println("====== ADA4254 done =====");
 
    disable_ADC_DAC_SPI_units();
    delay(100);
-   Serial.println("Initializing SMU...");
+   DEBUG.println("Initializing SMU...");
    SMU[0].init();
    SETTINGS.init();
 
@@ -403,42 +400,42 @@ void setup()
 
    V_CALIBRATION.init(SOURCE_VOLTAGE);
    C_CALIBRATION.init(SOURCE_CURRENT);
-   Serial.println("SMU initialized");
-   Serial.println("");
-   Serial.print("Found DAC type:");
+   DEBUG.println("SMU initialized");
+   DEBUG.println("");
+   DEBUG.print("Found DAC type:");
    // based on datasheet...
    //TODO: Fix this detection. Seems to read other values... 3 bytes hmm....
    if (SMU[0].deviceTypeId == 0x0C94) {
-     Serial.print("AD7176-2");
+     DEBUG.print("AD7176-2");
    } else if (SMU[0].deviceTypeId == 0x00D) { 
-     Serial.print("AD7172-2");
+     DEBUG.print("AD7172-2");
    } else if (SMU[0].deviceTypeId == 0x0CD) {
-     Serial.print("AD7175-2"); 
+     DEBUG.print("AD7175-2"); 
    } else if (SMU[0].deviceTypeId == 0x4FD) {
-     Serial.print("AD7177-2");
+     DEBUG.print("AD7177-2");
    } 
-     Serial.print("    hex:");
-     Serial.println(SMU[0].deviceTypeId, 16);
+     DEBUG.print("    hex:");
+     DEBUG.println(SMU[0].deviceTypeId, 16);
    
-   Serial.println("--------");
-   Serial.println("");
+   DEBUG.println("--------");
+   DEBUG.println("");
 
-   Serial.flush();
+   DEBUG.flush();
 
    if (operationType == SOURCE_VOLTAGE) {
      SMU[0].fltSetCommitVoltageSource(SETTINGS.setMilliVoltage*1000, true);
-     Serial.println("Source voltage");
+     DEBUG.println("Source voltage");
      //current_range = AMP1;
      SMU[0].setCurrentRange(AMP1, operationType);
      SMU[0].fltSetCommitCurrentLimit(SETTINGS.setCurrentLimit*1000, _SOURCE_AND_SINK); 
    } 
-   Serial.print("Default source voltage ");
-   Serial.println(SETTINGS.setMilliVoltage);
-   Serial.println(" mV");
-   Serial.print("Default current limit ");
-   Serial.println(SETTINGS.setCurrentLimit);
-   Serial.println(" mA");
-   Serial.flush();
+   DEBUG.print("Default source voltage ");
+   DEBUG.println(SETTINGS.setMilliVoltage);
+   DEBUG.println(" mV");
+   DEBUG.print("Default current limit ");
+   DEBUG.println(SETTINGS.setCurrentLimit);
+   DEBUG.println(" mA");
+   DEBUG.flush();
 
    V_STATS.init(DigitUtilClass::typeVoltage);
    C_STATS.init(DigitUtilClass::typeCurrent);
@@ -457,23 +454,30 @@ void setup()
 
    timeAtStartup = millis();
 
-  // SPI.usingInterrupt(2);
-  // pinMode(2,INPUT);
-  // attachInterrupt(2, handleSampling, CHANGE);
+   // SPI.usingInterrupt(2);
+   // pinMode(2,INPUT);
+   // attachInterrupt(2, handleSampling, CHANGE);
+
+   initDefaultSamplingIfByInterrupt();
 
 
-
-  initDefaultSamplingIfByInterrupt();
-
-
-  ROTARY_ENCODER.init(rotaryChangedVoltCurrentFn);
+   ROTARY_ENCODER.init(rotaryChangedVoltCurrentFn);
  
-  //TC74 
-  Wire.begin();
+   //TC74 
+   Wire.begin();
 
-DIGITIZER.init(getOperationType());
+   DIGITIZER.init(getOperationType());
 
-    scpi_setup();
+   scpi_setup();
+
+  //  Comment out to avoid delay of ethernet not connected !!!!
+  //  TODO: Move to a config page so you must activly try to enable ethernet
+  //        That can avoid startup delay.
+  //        Altenatively find a non-blocking version of initialization...
+  //  DEBUG.print("Ethernet initialization started ");
+  //  DEBUG.flush();
+   ETHERNET_UTIL.setup(); 
+  //  DEBUG.print("Ethernet initialization ended ");
 
 } 
 
@@ -838,9 +842,9 @@ void handleSliders(int x, int y) {
   GD.get_inputs();
   switch (GD.inputs.track_tag & 0xff) {
     case TAG_FILTER_SLIDER: {
-      Serial.print("Set filter value:");
+      DEBUG.print("Set filter value:");
       int slider_val = maxFilterSliderValue * GD.inputs.track_val / 65535.0;
-      Serial.println(slider_val);
+      DEBUG.println(slider_val);
       V_FILTERS.setFilterSize(int(slider_val));
       // currently set same as for voltage
       C_FILTERS.setFilterSize(int(slider_val));
@@ -848,9 +852,9 @@ void handleSliders(int x, int y) {
       break;
     }
     case TAG_FILTER_SLIDER_B:{
-      Serial.print("Set samples value:");
+      DEBUG.print("Set samples value:");
       int slider_val = maxSamplesSliderValue * GD.inputs.track_val / 65535.0;
-      Serial.println(slider_val);
+      DEBUG.println(slider_val);
       V_STATS.setNrOfSamplesBeforeStore(int(slider_val));
       // for now, just use same is current as for voltage
       C_STATS.setNrOfSamplesBeforeStore(int(slider_val));
@@ -1309,13 +1313,19 @@ void renderMainHeader() {
   DIGIT_UTIL.displayTime(millis(), 150, 0);
 
   GD.ColorRGB(0xaaaadd);
-  // Comment out if no ethernet connected to avoid delay
-  // if (ETHERNET_UTIL.status == 1) {
-  //   GD.cmd_text(640, 0, 27, 0, "Ethernet:OK");
-  // } else {
-  //   GD.cmd_text(640,0,27,2, "Ethernet code:");
-  //   GD.cmd_number(750,0,27,2, ETHERNET_UTIL.status);
-  // }
+
+  //Comment out if no ethernet connected 
+  if (ETHERNET_UTIL.status == 42) {
+    GD.cmd_text(640, 0, 27, 0, "Ethernet N/A");
+  } else if (ETHERNET_UTIL.status == 0) {
+    String ip = ETHERNET_UTIL.localIp();
+    GD.cmd_text(680, 0, 27, 0, ip.c_str());
+  } else if (ETHERNET_UTIL.status == 1) {
+    GD.cmd_text(640, 0, 27, 0, "Ethernet:OK");
+  } else {
+    GD.cmd_text(640,0,27,2, "Ethernet code:");
+    GD.cmd_number(750,0,27,2, ETHERNET_UTIL.status);
+  }
 
   int temp = UTILS.TC74_getTemperature();
   FAN.setAutoSpeedBasedOnTemperature(temp);
@@ -1374,10 +1384,10 @@ void showFanSpeed(int x, int y) {
 //   GD.cmd_text(x,y,27,0, "Fan:");
 //  GD.cmd_number(x+30,y,27,5, FAN.getRPMValueFiltered());
 //  GD.cmd_text(x+80,y,27,0, "RPM");
-//  Serial.print(FAN.getPWMFanRPM());
-//  Serial.print("(");
-//  Serial.print(FAN.getFanWidth());
-//  Serial.flush();
+//  DEBUG.print(FAN.getPWMFanRPM());
+//  DEBUG.print("(");
+//  DEBUG.print(FAN.getFanWidth());
+//  DEBUG.flush();
 }
 
 void renderUpperDisplay(OPERATION_TYPE operationType, FUNCTION_TYPE functionType) {
@@ -1432,7 +1442,7 @@ int detectGestures() {
     return GEST_NONE;
   }
   
-  //Serial.println(GD.inputs.tag);
+  //DEBUG.println(GD.inputs.tag);
   int touchX = GD.inputs.x;
   int touchY = GD.inputs.y;
   int gestDistanceX = touchX - gestOldX;
@@ -1451,24 +1461,24 @@ int detectGestures() {
   if (gestureDetected == GEST_NONE) {
     if (touchX > 0 && touchY > LOWER_WIDGET_Y_POS && gestDistanceX < -20 && scrollDir == 0) {
       if (++gestDurationX >= 3) {
-        Serial.println("gesture = move left");
-        Serial.flush();
+        DEBUG.println("gesture = move left");
+        DEBUG.flush();
         gestureDetected = GEST_MOVE_LEFT;
         gestDurationX = 0;
       }
     }
     else if (touchX > 0 && touchY > LOWER_WIDGET_Y_POS && gestDistanceX > 20 && scrollDir == 0) {
       if (++gestDurationX >= 3) {
-        Serial.println("gesture = move right");
-        Serial.flush();
+        DEBUG.println("gesture = move right");
+        DEBUG.flush();
         gestureDetected = GEST_MOVE_RIGHT;
         gestDurationX = 0;
       }
     } 
     else if (touchY > 0 && touchY<150 && gestDistanceY > 10 && scrollDir == 0 && gestDistanceX<20) {
        if (++gestDurationY >= 2) {
-        Serial.println("gesture = move down from upper");
-        Serial.flush();
+        DEBUG.println("gesture = move down from upper");
+        DEBUG.flush();
         gestureDetected = GEST_MOVE_DOWN;
         gestDurationY = 0;
       }
@@ -1552,10 +1562,10 @@ static void handleSampling() {
     return;
   }
   if (dataR == -99) {
-    Serial.println("DONT USE SAMPLE!");  
+    DEBUG.println("DONT USE SAMPLE!");  
   } 
   else if (dataR == -98) {
-    //Serial.println("OVERFLOW"); // haven't been able to get this to work...
+    //DEBUG.println("OVERFLOW"); // haven't been able to get this to work...
   }
   
   else if (dataR == 1) {
@@ -1612,9 +1622,9 @@ static void handleSampling() {
 void handleAutoCurrentRange() {
      if (!ZEROCALIBRATION.autoNullStarted && !V_CALIBRATION.autoCalInProgress && !C_CALIBRATION.autoCalInProgress) {
       float milliAmpere = C_STATS.rawValue;
-//      Serial.print(milliAmpere,5);
-//      Serial.print("mA, current range:");
-//      Serial.println(current_range);
+//      DEBUG.print(milliAmpere,5);
+//      DEBUG.print("mA, current range:");
+//      DEBUG.println(current_range);
 
       // auto current range switch. TODO: Move to hardware ? Note that range switch also requires change in limit
       float hysteresis = 0.5;
@@ -1623,7 +1633,7 @@ void handleAutoCurrentRange() {
         if (SMU[0].getCurrentRange() == AMP1 && abs(milliAmpere) < switchAt - hysteresis) {
           //current_range = MILLIAMP10;
           SMU[0].setCurrentRange(MILLIAMP10,operationType);
-          Serial.println("switching to range 1");
+          DEBUG.println("switching to range 1");
            //TODO: Use getLimitValue from SMU instead of LIMIT_DIAL ?
           if (operationType == SOURCE_VOLTAGE){
             if (SMU[0].fltSetCommitCurrentLimit(SMU[0].getLimitValue_micro()*1000/*LIMIT_DIAL.getMv()*/, _SOURCE_AND_SINK)) printError(_PRINT_ERROR_VOLTAGE_SOURCE_SETTING);
@@ -1631,14 +1641,14 @@ void handleAutoCurrentRange() {
 
         }
         // TODO: Make separate function to calculate current based on shunt and voltage!
-//        Serial.print("Check 10mA range and if it should switch to 1A... ma=");
-//        Serial.print(milliAmpere);
-//        Serial.print(" ");
-//        Serial.println(switchAt);
+//        DEBUG.print("Check 10mA range and if it should switch to 1A... ma=");
+//        DEBUG.print(milliAmpere);
+//        DEBUG.print(" ");
+//        DEBUG.println(switchAt);
         if (SMU[0].getCurrentRange() == MILLIAMP10 && abs(milliAmpere) > switchAt) {
           //current_range = AMP1;
           SMU[0].setCurrentRange(AMP1,operationType);
-          Serial.println("switching to range 0");
+          DEBUG.println("switching to range 0");
            //TODO: Use getLimitValue from SMU instead of LIMIT_DIAL ?
           if (operationType == SOURCE_VOLTAGE){
             if (SMU[0].fltSetCommitCurrentLimit(SMU[0].getLimitValue_micro()*1000/*LIMIT_DIAL.getMv()/1000.0*/, _SOURCE_AND_SINK)) printError(_PRINT_ERROR_VOLTAGE_SOURCE_SETTING);
@@ -1691,9 +1701,9 @@ void measureVoltageSCPI(SCPI_C commands, SCPI_P parameters, Stream& interface) {
   interface.println(millivolt,4);
 }
 
+// scpi_setup is initially based on default Vrekrer_scpi example...
 void scpi_setup()
 {
-  // Initially based on default Vrekrer_scpi example...
   //We change the `hash_magic_number` variable before registering the commands
   my_instrument.hash_magic_number = 16; //16 will generate hash crashes
   //The default value is 37 and good values are prime numbers (up to 113)
@@ -1722,6 +1732,7 @@ void scpi_setup()
 
 void loop() {
    my_instrument.ProcessInput(Serial, "\n");
+  ETHERNET_UTIL.loop();
 
   if (V_CALIBRATION.autoCalInProgress) {
     V_CALIBRATION.autoCalADCfromDAC();
@@ -1874,8 +1885,8 @@ int checkButtons() {
         x[buttonPressedPeriod] = touchX;
         y[buttonPressedPeriod] = touchY;
         buttonPressedPeriod ++;
-        //Serial.print("Button pressed:");
-        //Serial.println(buttonPressedPeriod);
+        //DEBUG.print("Button pressed:");
+        //DEBUG.println(buttonPressedPeriod);
       }
       prevButton = buttonPressed;
     } else {
@@ -1898,33 +1909,33 @@ int checkButtons() {
     }
 
     if (accidental) {
-      //Serial.println("Gesture accidentally touched a button...");
+      //DEBUG.println("Gesture accidentally touched a button...");
       return 0;
     } else {
-      //Serial.println("Button pressed :-)");
+      //DEBUG.println("Button pressed :-)");
     }
 
     buttonPressedPeriod= 0;
     prevTag = tag;
     
     if (tag == BUTTON_SOURCE_SET) {
-      Serial.println("open dial to set source, start with value ");
-      Serial.println((float)SMU[0].getSetValue_micro()/1000.0);
+      DEBUG.println("open dial to set source, start with value ");
+      DEBUG.println((float)SMU[0].getSetValue_micro()/1000.0);
       SOURCE_DIAL.open(operationType, SET,  closeSourceDCCallback, SMU[0].getSetValue_micro());
     } else if (tag == BUTTON_LIM_SET) {
-      Serial.println("open dial to set limit, start with value ");
+      DEBUG.println("open dial to set limit, start with value ");
       DIGIT_UTIL.print_uint64_t(SMU[0].getLimitValue_micro());
       LIMIT_DIAL.open(operationType, LIMIT, closeSourceDCCallback, SMU[0].getLimitValue_micro());
     } else if (tag == BUTTON_REL) {
-      Serial.println("Set relative");
+      DEBUG.println("Set relative");
       V_CALIBRATION.toggleRelativeValue(V_STATS.rawValue, SMU[0].getCurrentRange());
       C_CALIBRATION.toggleRelativeValue(C_STATS.rawValue, SMU[0].getCurrentRange());
     } else if (tag == BUTTON_UNCAL) {
-      Serial.println("Uncal set");
+      DEBUG.println("Uncal set");
       V_CALIBRATION.toggleCalibratedValues();
       C_CALIBRATION.toggleCalibratedValues();
     } else if (tag == BUTTON_CLEAR_BUFFER) {
-      Serial.println("clearbuffer set");
+      DEBUG.println("clearbuffer set");
 
       SIMPLE_STATS.clear(); // TODO: Separate clearing for this ?
       V_STATS.clearBuffer();
@@ -1932,7 +1943,7 @@ int checkButtons() {
       DIGIT_UTIL.startIndicator(tag); 
     } else if (tag == BUTTON_CUR_AUTO) { //TODO: Change name
       if (timeSinceLastChange + 500 < millis()){
-        Serial.println("current range set");
+        DEBUG.println("current range set");
        
         // swap current range
         CURRENT_RANGE currentRange = SMU[0].getCurrentRange();
@@ -1983,7 +1994,7 @@ int checkButtons() {
        if (timeSinceLastChange + 1000 > millis()){
         return valueToReturnIfTooFast;
        } 
-       Serial.println("Start zero calibration of dac....");
+       DEBUG.println("Start zero calibration of dac....");
        DIGIT_UTIL.startIndicator(tag);
 
        timeSinceLastChange = millis();
@@ -2112,7 +2123,7 @@ void loopMain()
     }
 
 
- //   Serial.println(tag);
+ //   DEBUG.println(tag);
  //   GD.swap(); 
  // GD.__end();
  // return;
@@ -2154,7 +2165,7 @@ void rotaryChangedDontCareFn(float changeVal) {
 }
 
 void pushButtonEncDontCareFn(int key, bool quickPress, bool holdAfterLongPress, bool releaseAfterLongPress) {
-  Serial.println("pushButtonEncDontCareFn disabled pushbutton");
+  DEBUG.println("pushButtonEncDontCareFn disabled pushbutton");
 
 }
 
@@ -2168,12 +2179,12 @@ void useVoltageFeedback() {
 
 void closeMainMenuCallback(FUNCTION_TYPE newFunctionType) {
   
-  Serial.println("Closed main menu callback");
-  Serial.println("New Selected function:");
-  Serial.println(newFunctionType);
-  Serial.println("Old function:");
-  Serial.println(functionType);
-  Serial.flush();
+  DEBUG.println("Closed main menu callback");
+  DEBUG.println("New Selected function:");
+  DEBUG.println(newFunctionType);
+  DEBUG.println("Old function:");
+  DEBUG.println(functionType);
+  DEBUG.flush();
 
   // "unregister" function to be called when rotaty encoder is detected.
   // Has to be reinitiated by the function that needs it.
@@ -2305,15 +2316,15 @@ void fltCommitCurrentSourceAutoRange(float uV, bool autoRange) {
 void closeSourceDCCallback(int set_or_limit, bool cancel) {
 
   if (cancel) {
-      Serial.println("Closed SET/LIMIT dialog by cancel");
+      DEBUG.println("Closed SET/LIMIT dialog by cancel");
     return;
   }
   GD.__end();
   disable_ADC_DAC_SPI_units();
   if (set_or_limit == SET) {
     float mv = SOURCE_DIAL.getMv(); // TODO: get current value from another place ?
-    Serial.print("Closed SET dialog, value=");
-    Serial.println(mv);
+    DEBUG.print("Closed SET dialog, value=");
+    DEBUG.println(mv);
     if (operationType == SOURCE_VOLTAGE) {
        if (SMU[0].fltSetCommitVoltageSource(mv * 1000, true)) printError(_PRINT_ERROR_VOLTAGE_SOURCE_SETTING);
     } else {
@@ -2322,8 +2333,8 @@ void closeSourceDCCallback(int set_or_limit, bool cancel) {
   }
   if (set_or_limit == LIMIT) {
     float mv = LIMIT_DIAL.getMv(); // TODO: get current value from another place ?
-    Serial.print("Closed LIMIT dialog, value=");
-    Serial.println(mv);
+    DEBUG.print("Closed LIMIT dialog, value=");
+    DEBUG.println(mv);
     if (operationType == SOURCE_VOLTAGE) {
      if (SMU[0].fltSetCommitCurrentLimit(mv * 1000, _SOURCE_AND_SINK)) printError(_PRINT_ERROR_CURRENT_SOURCE_SETTING);
     } else {

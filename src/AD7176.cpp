@@ -49,6 +49,7 @@
 #include "AD7176_Comm.h"
 #include "AD7176.h"
 #include <SPI.h>
+#include "Debug.h"
 /******************************************************************************/
 /************************ Local variables and types ***************************/
 /******************************************************************************/
@@ -144,7 +145,7 @@ int32_t AD7176_ReadRegister(st_reg* pReg)
     pReg->value = 0l;
     for(i = 1; i < pReg->size + 1; i++)
     {
-        //Serial.println(buffer[i], HEX);
+        //DEBUG.println(buffer[i], HEX);
         pReg->value <<= 8;
         pReg->value += buffer[i];
     }
@@ -242,36 +243,36 @@ int AD7176_dataReady()
     /* Read the value of the Status Register */
     ret = AD7176_ReadRegister(&AD7176_regs[Status_Register]);
     if(ret < 0) {
-      Serial.print("!!! Register read error. Returned:");
-      Serial.println(ret, DEC);
-          Serial.flush();
+      DEBUG.print("!!! Register read error. Returned:");
+      DEBUG.println(ret, DEC);
+          DEBUG.flush();
 
       return -99;
     }
 
     byte stat = AD7176_regs[Status_Register].value;
-//         Serial.println(stat, BIN); 
-//          Serial.println(STATUS_REG_ADC_ERR, BIN); 
-//          Serial.println(STATUS_REG_CRC_ERR, BIN); 
+//         DEBUG.println(stat, BIN); 
+//          DEBUG.println(STATUS_REG_ADC_ERR, BIN); 
+//          DEBUG.println(STATUS_REG_CRC_ERR, BIN); 
 
     if ((stat & STATUS_REG_ADC_ERR) >= 0x01) {
       // Is this when overflow ?  
-      //Serial.println("!!! STATUS_REG_ADC_ERR. Returned:");
-      //Serial.println(stat, BIN);
-      //Serial.flush();
+      //DEBUG.println("!!! STATUS_REG_ADC_ERR. Returned:");
+      //DEBUG.println(stat, BIN);
+      //DEBUG.flush();
 
       return -98;
     } 
     
     if ((stat & STATUS_REG_CRC_ERR) > 0x01) {
-      Serial.println("!!! STATUS_REG_CRC_ERR. Returned:"); 
-      Serial.println(stat, BIN);
+      DEBUG.println("!!! STATUS_REG_CRC_ERR. Returned:"); 
+      DEBUG.println(stat, BIN);
       return -99;
     }
 
     /* Check the RDY bit in the Status Register */
     if ((AD7176_regs[Status_Register].value & STATUS_REG_RDY) == 0) {
-      //Serial.println(AD7176_regs[Status_Register].value, BIN); 
+      //DEBUG.println(AD7176_regs[Status_Register].value, BIN); 
       return AD7176_regs[Status_Register].value;
     } else {
       return -1;

@@ -1,5 +1,6 @@
 #include "RamClass.h"
 #include "Arduino.h"
+#include "Debug.h"
 
 
 // Set to false if you have external SPI ram mounted on your SMU.
@@ -16,7 +17,7 @@ RamClass RAM;
 elapsedMillis timeElapsed; //declare global if you don't want it reset every time loop runs
 
 void RamClass::init() {
-   Serial.println("Initial RAM testing...");
+   DEBUG.println("Initial RAM testing...");
    if (USE_NORMAL_RAM) {
      for (int i=0;i<1000;i++) {
        normalRamValue[i] = 99000.0;//normalRamUndefinedValue;
@@ -32,72 +33,72 @@ void RamClass::init() {
     ram_write(&valueToWrite, i, 1);
     uint8_t valueRead;
     ram_read(&valueRead, i, 1);
-    //Serial.println(valueRead);
-    //Serial.flush();
+    //DEBUG.println(valueRead);
+    //DEBUG.flush();
     if (valueRead != valueToWrite) {
       errors++;
     }
   }
   if (errors > 0) {
-    Serial.println("ERROR: Initial external SPI RAM test failed !  No SPI ram mounted ?");
+    DEBUG.println("ERROR: Initial external SPI RAM test failed !  No SPI ram mounted ?");
     initFailure=true;
     return;
   } else {
-    Serial.println("External SPI ram detected.");
+    DEBUG.println("External SPI ram detected.");
   }
 
  // 1Mbit = 1024Mbit = 128Kbytes = 32000 floats...
  // =128K/8 timed log data = 16K 
  int maxBytes = 32000 * 4;
- Serial.print("Test full address space of ");  
- Serial.print(maxBytes);
- Serial.println(" bytes");
+ DEBUG.print("Test full address space of ");  
+ DEBUG.print(maxBytes);
+ DEBUG.println(" bytes");
  
- Serial.println("Write all, then read all...");
+ DEBUG.println("Write all, then read all...");
  int address;
  float valueToWrite = 0;
   for (address = 0; address < maxBytes; address=address + 4) {
     writeRAMfloat(address, valueToWrite);
     valueToWrite += 0.01;
   }
-  Serial.print("Wrote to ");
-  Serial.print(maxBytes);
-  Serial.println(" bytes.");
+  DEBUG.print("Wrote to ");
+  DEBUG.print(maxBytes);
+  DEBUG.println(" bytes.");
   valueToWrite = 0.0;
  for (address = 0; address < maxBytes; address=address + 4) {
     float valueRead = readRAMfloat(address);
     if (valueRead != valueToWrite) {
-      Serial.print("ERROR in address ");
-      Serial.println(address);
-      Serial.print("Expected:");
-      Serial.print(valueToWrite);
-      Serial.println(", read:");
-      Serial.println(valueRead);
-      Serial.println("RAM test failed !");
+      DEBUG.print("ERROR in address ");
+      DEBUG.println(address);
+      DEBUG.print("Expected:");
+      DEBUG.print(valueToWrite);
+      DEBUG.println(", read:");
+      DEBUG.println(valueRead);
+      DEBUG.println("RAM test failed !");
       break;
     }
     valueToWrite += 0.01;
   }
-  Serial.print("Read from ");
-  Serial.print(maxBytes);
-  Serial.println(" bytes.");
-  Serial.println("RAM test success !");
+  DEBUG.print("Read from ");
+  DEBUG.print(maxBytes);
+  DEBUG.println(" bytes.");
+  DEBUG.println("RAM test success !");
   testReadWriteLogData();
 }
 
 void RamClass::testReadWriteLogData() {
-  Serial.println("===== TEST LOG DATA =====");
+  DEBUG.println("===== TEST LOG DATA =====");
  int address;
  float valueToWrite = 0;
  uint32_t time;
   for (address = 0; address < 10; address=address + 1) {
     time = timeElapsed;
-    Serial.print("Write to log address ");
-    Serial.print(address);
-    Serial.print(" data:");
-    Serial.print(valueToWrite);
-    Serial.print(", time:");
-    Serial.println(time);
+    DEBUG.print("Write to log address ");
+    DEBUG.print(address);
+    DEBUG.print(" data:");
+    DEBUG.print(valueToWrite);
+    DEBUG.print(", time:");
+    DEBUG.println(time);
     writeLogData(address, valueToWrite, time);
     valueToWrite += 0.01;
     delay(20);
@@ -105,12 +106,12 @@ void RamClass::testReadWriteLogData() {
 
   for (address = 0; address < 10; address=address + 1) {
     timedLog logData = readLogData(address);
-    Serial.print("Read from log address ");
-    Serial.print(address);
-    Serial.print(" data:");
-    Serial.print(logData.value.val);
-    Serial.print(", time:");
-    Serial.println(logData.time.val);
+    DEBUG.print("Read from log address ");
+    DEBUG.print(address);
+    DEBUG.print(" data:");
+    DEBUG.print(logData.value.val);
+    DEBUG.print(", time:");
+    DEBUG.println(logData.time.val);
   }
 
   
@@ -195,12 +196,12 @@ int oldestLogAddress;
 void RamClass::logData(float value) {
   uint32_t t = timeElapsed;
 
-  // Serial.print("Trying to log ");
-  // Serial.print(value,3);
-  // Serial.print(" at log address ");
-  // Serial.print(currentLogAddress);
+  // DEBUG.print("Trying to log ");
+  // DEBUG.print(value,3);
+  // DEBUG.print(" at log address ");
+  // DEBUG.print(currentLogAddress);
 
-  //Serial.println(t);
+  //DEBUG.println(t);
 
   unsigned long allSeconds=t/1000;
   int runHours= allSeconds/3600;
@@ -208,21 +209,21 @@ void RamClass::logData(float value) {
   int runMinutes=secsRemaining/60;
   int runSeconds=secsRemaining%60;
 
-  //Serial.print(" at time ");
+  //DEBUG.print(" at time ");
   // char buf[21];
   // sprintf(buf,"%02d:%02d:%02d",runHours,runMinutes,runSeconds);
-  // Serial.print(buf);
-  // Serial.print(" (millis=");
-  // Serial.print(t);
-  // Serial.print("). ");
+  // DEBUG.print(buf);
+  // DEBUG.print(" (millis=");
+  // DEBUG.print(t);
+  // DEBUG.print("). ");
 
   //if (RAM.initFailure) {
-  //  Serial.println(" Failed because of initial RAM failure");
+  //  DEBUG.println(" Failed because of initial RAM failure");
   //} else {
     writeLogData(currentLogAddress, value, t);
-  //  Serial.print(" Done.");
+  //  DEBUG.print(" Done.");
   //}
-  //Serial.println("");
+  //DEBUG.println("");
 
   currentLogAddress ++;
   if (currentLogAddress > maxLogAddress) {
@@ -242,16 +243,16 @@ void RamClass::logData(float value) {
 int RamClass::nextAdr(float adr_) {
   int adr = adr_;
   adr = adr -1;
-  //Serial.print(adr);
+  //DEBUG.print(adr);
   if (adr < 0 && full) {
     adr = maxLogAddress;
-    //Serial.print("!!!!!!!!!!!!!!!  1 ");
-    //Serial.print("Adr is");
-   // Serial.print(adr);
+    //DEBUG.print("!!!!!!!!!!!!!!!  1 ");
+    //DEBUG.print("Adr is");
+   // DEBUG.print(adr);
   }
   if (adr < 0 && !full) {
     adr = -1; //currentLogAddress;
-    //Serial.print("!!!!!!!!!!!!!!!  2");
+    //DEBUG.print("!!!!!!!!!!!!!!!  2");
   }
   return adr;
 }

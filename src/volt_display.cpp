@@ -76,13 +76,13 @@ void VoltDisplayClass::renderSet(int x, int y, int64_t raw_uV) {
 
   uv = rest_uV;
 /*
-Serial.print("renderSet ramMv=");
-  Serial.print("v=");
-    Serial.print(v);
-        Serial.print(", mV=");
-Serial.print(mv);
-        Serial.print(", uV=");
-        Serial.println(uv);
+DEBUG.print("renderSet ramMv=");
+  DEBUG.print("v=");
+    DEBUG.print(v);
+        DEBUG.print(", mV=");
+DEBUG.print(mv);
+        DEBUG.print(", uV=");
+        DEBUG.println(uv);
 */
 
 

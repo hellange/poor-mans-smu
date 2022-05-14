@@ -1,31 +1,13 @@
-/*
- DMM6500 API read
- This sketch connects to a DMM6500
- using an a W5500 based ethernet board connnected to a Teensy 3.2.
- Based on the DMM6500 ajax_proc (undocumented?) API.
- Just a first hack to see if it`s possible to read data from DMM6500 though its ethernet port.
- 
- created 25 Mar 2020 by Helge Langehaug.
- 
- Crude adaption of original WebClient (ref Ethernet library) work
- by David A. Mellis
- modified 9 Apr 2012
- by Tom Igoe, based on work by Adrian McEwen
- */
+// Based on examples at https://github.com/vjmuzik/NativeEthernet
 
 #include <SPI.h>
-#include <NativeEthernet.h>
 #include "Network.h"
+#include "Debug.h"
+#include "filters.h"
+
 
 // Enter a MAC address for your controller below.
-// Newer Ethernet shields have a MAC address printed on a sticker on the shield
-// byte mac[] = { 0xDE, 0xAD, 0xBE, 0xEF, 0xFE, 0xED };
-uint8_t *mac;
-
-// if you don't want to use DNS (and reduce your sketch size)
-// use the numeric IP instead of the name for the server:
-IPAddress server(192,168,1,117);  // numeric IP for your DMM6500  (original file was Google (no DNS)
-//char server[] = "worldtimeapi.org";    // NOT RELEVANT FOR DMM6500 test. Original comment: name address for Google (using DNS)
+byte mac[6]; // = { 0xDE, 0xAD, 0xBE, 0xEF, 0xFE, 0xED };
 
 // Set the static IP address to use if the DHCP fails to assign
 IPAddress ip(192, 168, 1, 123);
@@ -37,168 +19,94 @@ IPAddress myDns(192, 168, 1, 1);
 EthernetClient client;
 
 // Variables to measure the speed
-unsigned long beginMicros, endMicros;
 unsigned long byteCount = 0;
 bool printWebData = true;  // set to false for better speed measurement
 
-
-void EtnernetClass::httpRequest() {
-byteCount = 0;
-beginMicros = micros();
-   // if you get a connection, report back via serial:
-  if (client.connect(server, 80)) {
-
-    Serial.print("connected to ");
-    Serial.println(client.remoteIP());
-    // Make a HTTP request:
-    //client.println("GET /api/timezone/Europe/Oslo");
-     /*
-     client.println("POST /ajax_proc HTTP/1.1");
-    
-     client.println("Host: 192.168.1.117");
-     //client.println("User-Agent: Arduino/1.0");
-     client.println("Connection: keep-alive");
-
-     client.println("Content-Type: application/x-www-form-urlencoded");
-     client.println("Content-length: 27");
-     client.println("function=1&command=MEASure?");
-
-     client.println();
-*/
-
-    //client.flush();
-    //client.stop();
-
-
-  
-  } else {
-    // if you didn't get a connection to the server:
-    Serial.println("connection failed");
-  }
-
-  
-   
-}
-
-
 void EtnernetClass::setup() {
-  status = 0;
-  // You can use Ethernet.init(pin) to configure the CS pin
-  //Ethernet.init(10);  // Most Arduino shields
-  //Ethernet.init(5);   // MKR ETH shield
-  //Ethernet.init(0);   // Teensy 2.0
-  //Ethernet.init(20);  // Teensy++ 2.0
-  //Ethernet.init(15);  // ESP8266 with Adafruit Featherwing Ethernet
-  //Ethernet.init(33);  // ESP32 with Adafruit Featherwing Ethernet
-
-  // Open serial communications and wait for port to open:
-  
-  
-  //Serial.begin(9600);
-  //while (!Serial) {
-  //  ; // wait for serial port to connect. Needed for native USB port only
-  //}
+status = 0;
+  teensyMAC(mac);
 
   // start the Ethernet connection:
   Serial.println("Initialize Ethernet with DHCP:");
-
   if (Ethernet.begin(mac) == 0) {
-    Serial.println("Failed to configure Ethernet using DHCP");
     status = 99;
-    //return;
+    Serial.println("Failed to configure Ethernet using DHCP");
     // Check for Ethernet hardware present
     if (Ethernet.hardwareStatus() == EthernetNoHardware) {
-      Serial.println("Ethernet shield was not found.  Sorry, can't run without hardware. :(");
       status = 98;
-      return;
-      //while (true) {
-      //  delay(1); // do nothing, no point running without Ethernet hardware
-      //}
+      Serial.println("Ethernet shield was not found.  Sorry, can't run without hardware. :(");
+     // while (true) {
+     //   delay(1); // do nothing, no point running without Ethernet hardware
+     // }
     }
     if (Ethernet.linkStatus() == LinkOFF) {
       Serial.println("Ethernet cable is not connected.");
       status = 97;
+
     }
     // try to congifure using IP address instead of DHCP:
-    Ethernet.begin(mac, ip, myDns);
+ //   Ethernet.begin(mac, ip, myDns);
   } else {
     Serial.print("  DHCP assigned IP ");
     Serial.println(Ethernet.localIP());
-    status = 1;
   }
-  
-  // give the Ethernet shield some time to initialize:
-  delay(100);
-  Serial.print("connecting to ");
-  Serial.print(server);
-  Serial.println("...");
-
-//httpRequest();
-//bool done = false;
-//while (!done) {
-//  done = loop();
-//}
-//  Serial.println("DONE!!!!!");
-
-
-
-
-  
 }
+
+String EtnernetClass::localIp() {
+  IPAddress address = Ethernet.localIP();
+  return String(address[0]) + "." + 
+        String(address[1]) + "." + 
+        String(address[2]) + "." + 
+        String(address[3]);Ethernet.localIP();
+}
+
+
+EthernetServer serverx(80);
 
 bool EtnernetClass::loop() {
-  delay(100);
-  // if there are incoming bytes available
-  // from the server, read them and print them:
-  int len = client.available();
-  if (len > 0) {
-    byte buffer[80];
-    if (len > 80) len = 80;
-    client.read(buffer, len);
-    if (printWebData) {
-      Serial.write(buffer, len); // show in the serial monitor (slows some boards)
-    }
-    byteCount = byteCount + len;
-  }
-
-  
-
-  // if the server's disconnected, stop the client:
-  if (!client.connected()) {
-    endMicros = micros();
-    Serial.println();
-    //Serial.println("disconnecting.");
-    //client.stop();
-    Serial.print("Received ");
-    Serial.print(byteCount);
-    Serial.print(" bytes in ");
-    float seconds = (float)(endMicros - beginMicros) / 1000000.0;
-    Serial.print(seconds, 4);
-    float rate = (float)byteCount / seconds / 1000.0;
-    Serial.print(", rate = ");
-    Serial.print(rate);
-    Serial.print(" kbytes/second");
-    Serial.println();
-    httpRequest();
-     return true;
-     
-    
-    
-    // do nothing forevermore:
-    //while (true) {
-    //  delay(1);
-   // }
-  } else {
+  if (status != 0) {
     return false;
   }
+  EthernetClient client = serverx.available();
+ if (client) {
+    Serial.println("new client");
+    // an http request ends with a blank line
+    boolean currentLineIsBlank = true;
+    while (client.connected() && client.available()) {
+     // if (client.available()) {
+        char c = client.read();
+        // if you've gotten to the end of the line (received a newline
+        // character) and the line is blank, the http request has ended,
+        // so you can send a reply
+        if (c == '\n' && currentLineIsBlank) {
 
- 
-  
+          float milliVolt = V_FILTERS.mean;
+          client.println(milliVolt,4);
+
+          break;
+        }
+        if (c == '\n') {
+          // you're starting a new line
+          currentLineIsBlank = true;
+        } else if (c != '\r') {
+          // you've gotten a character on the current line
+          currentLineIsBlank = false;
+        }
+     // }
+    }
+     delay(1);
+    // close the connection:
+    client.stop();
+    //Serial.println("client disconnected");
+    }
 }
 
-
-
-
+void EtnernetClass::teensyMAC(uint8_t *mac)
+{
+for(uint8_t by=0; by<2; by++) mac[by]=(HW_OCOTP_MAC1 >> ((1-by)*8)) & 0xFF;
+for(uint8_t by=0; by<4; by++) mac[by+2]=(HW_OCOTP_MAC0 >> ((3-by)*8)) & 0xFF;
+Serial.printf("MAC: %02x:%02x:%02x:%02x:%02x:%02x\n", mac[0], mac[1], mac[2], mac[3], mac[4], mac[5]);
+}
  
 
 
