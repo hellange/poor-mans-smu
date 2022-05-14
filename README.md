@@ -1,6 +1,6 @@
 # poor-mans-smu
-Part of my efforts to create a "poor man's SMU", ref https://poormanssmu.wordpress.com/
-It's based on https://github.com/hellange/easysmu (a working prototype for EasySMU and 5" capacitive touch display)
+Part of my efforts to create a "poor man's SMU", ref https://poormanssmu.wordpress.com/2020/06/05/first-prototype/ in my blog https://poormanssmu.wordpress.com/
+Code started out from https://github.com/hellange/easysmu (a working prototype for EasySMU and 5" capacitive touch display), but has changed significantly after that.
 
 The code in this repo is currently only for a prototype. Code is messy and work-in-slow-progress...
 
