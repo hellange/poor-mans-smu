@@ -49,7 +49,7 @@
 #include "ZeroCalibration.h"
 
 #include "Ada4254.h"
-#include "scpi/vrekrer_scpi_parser.h" // TESTING OUT SCPI LIBRARY, https://github.com/Vrekrer/Vrekrer_scpi_parser
+#include "Vrekrer_scpi_parser.h" // TESTING OUT SCPI LIBRARY, https://github.com/Vrekrer/Vrekrer_scpi_parser
 #include "Debug.h"
 //#define _SOURCE_AND_SINK 111
 
