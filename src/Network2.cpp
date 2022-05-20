@@ -217,8 +217,15 @@ void Network2Class::tellServer(bool hasIP) {
   }
 }
 
+char copyBuffer[100];
 char* Network2Class::GetEthMsg() {
-  return buffer;
+
+  strncpy(copyBuffer, buffer,20);
+    Serial.print("GetEthMsg:");
+
+    Serial.println(copyBuffer);
+
+  return copyBuffer;
 }
 
 void Network2Class::clearBuffer() {
@@ -266,14 +273,32 @@ void processClientData(ClientState &state, char *buffer2, EthernetClient firstCl
     if (c == '\n') {
           strncpy(buffer2, buffer, bufferSize);
           buffer2[bufferSize-1] = '\0';
+          buffer[bufferSize-1] = '\0';
+          Serial.print("Detected Terminator LF.");
+                    Serial.print("Buffer size:");
+                    Serial.print(bufferSize);
+                    Serial.print(". buffer=");
+                    Serial.println(buffer);
+
       break;
     }
 
   }
 
   IPAddress ip = state.client.remoteIP();
-  printf("Sending response to client: %u.%u.%u.%u\n", ip[0], ip[1], ip[2], ip[3]);
-  my_instrument.Execute(buffer2, Serial);
+  Serial.print("Request:");
+  Serial.println(buffer2);
+  printf(". Sending response to client: %u.%u.%u.%u\n", ip[0], ip[1], ip[2], ip[3]);
+
+  // Seems my_instrument.Execute manipulates the buffer. Copy it before sending...
+  char cpBuf[100];
+  strncpy(cpBuf, buffer2, 20); // TODO: don't hardcode command buffer limit
+  my_instrument.Execute(cpBuf, Serial);
+
+  Serial.println("-----");
+
+  Serial.print("Request2:");
+  Serial.println(buffer2);
 /*
   if (strncmp(buffer, "*IDN?",5) == 0) {
     Serial.println(strncmp(buffer, "*IDN?",5));

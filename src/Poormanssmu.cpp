@@ -103,7 +103,7 @@ SMU_HAL_dummy SMU[1] = {
 
 char commandBuffer[100];
 
-int timeAtStartup;
+unsigned long timeAtStartup;
 
 // Used by scrolling related to widgets (lower part of the main screen)
 int scroll = 0;
@@ -736,7 +736,8 @@ void sourceVoltagePanel(int x, int y) {
 }
 
 void renderStatusIndicators(int x, int y) {
-  x=x+10;
+  x=x+20;
+  y=y+10;
   showStatusIndicator(x+630, y+5, "FILTER", V_FILTERS.filterSize>1, false);
   if (operationType == SOURCE_VOLTAGE) {
     showStatusIndicator(x+710, y+5, "NULLv", V_CALIBRATION.nullValueIsSet(SMU[0].getCurrentRange()), false);
@@ -1339,9 +1340,12 @@ void renderMainHeader() {
   }
   if (ETHERNET2_UTIL.hasIpx) {
     GD.cmd_text(665, 0, 27, 0, ETHERNET2_UTIL.ipAddressString);
-    GD.cmd_text(665, 20, 27, 0, commandBuffer);//ETHERNET2_UTIL.buffer);
 
      GD.cmd_number(640,0,27,2, ETHERNET2_UTIL.receivedMessages);
+
+          GD.ColorRGB(0xaaaaaa);
+
+     GD.cmd_text(640, 27, 27, 0, commandBuffer);//ETHERNET2_UTIL.buffer);
 
 
     
@@ -1557,7 +1561,7 @@ int logTimer = millis();
 int msDigit = 0;
 float simulatedWaveform;
 
-int lastSimMs = millis();
+unsigned long lastSimMs = millis();
 bool simVolt = true;
 
 static void handleSampling() {
@@ -1827,7 +1831,11 @@ void scpiCommandDetectionLoop() {
   ETHERNET2_UTIL.loop();
    if ( ETHERNET2_UTIL.linkState ) {
       if (ETHERNET2_UTIL.newMessageReady()) {
-        strncpy(commandBuffer, ETHERNET2_UTIL.GetEthMsg(), 40);
+        Serial.print("New message ready:");
+        Serial.println(ETHERNET2_UTIL.GetEthMsg());
+
+        strncpy(commandBuffer, ETHERNET2_UTIL.GetEthMsg(), 40); // TODO: don't hardcode command buffer limit
+      
         ETHERNET2_UTIL.clearBuffer();
         //my_instrument.Execute(commandBuffer, Serial);
 
