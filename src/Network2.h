@@ -11,7 +11,8 @@ class Network2Class {
 
  
 public: 
-  //qindesign::network::EthernetClient client;
+
+  // Reference to the first ethernet client
   qindesign::network::EthernetClient clientNow;
 
   int receivedMessages = 0;
@@ -24,7 +25,6 @@ public:
   char* GetEthMsg();
   bool newMessageReady();
   void clearBuffer();
-  void tellServer(bool hasIP);
  };
 extern Network2Class ETHERNET2_UTIL;
 

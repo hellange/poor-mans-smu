@@ -185,7 +185,7 @@ void Network2Class::setup() {
 }
 
 // Tell the server there's been an IP address change.
-void Network2Class::tellServer(bool hasIP) {
+void tellServer(bool hasIP) {
   // If there's no IP address, could optionally stop the server,
   // depending on your needs
   if (hasIP) {
@@ -299,7 +299,10 @@ void processClientData(ClientState &state, char *buffer2, EthernetClient firstCl
 
   Serial.print("Request2:");
   Serial.println(buffer2);
-/*
+
+/* Hardcoded scpi command interpreter.
+   Commented out but keep for reference in case the scpi library changes...
+
   if (strncmp(buffer, "*IDN?",5) == 0) {
     Serial.println(strncmp(buffer, "*IDN?",5));
     Serial.println("IDN command detected");
@@ -318,13 +321,6 @@ void processClientData(ClientState &state, char *buffer2, EthernetClient firstCl
   }
   */
 
-  // state.client.writeFully("HTTP/1.1 200 OK\r\n"
-  //                         "Connection: close\r\n"
-  //                         "Content-Type: text/plain\r\n"
-  //                         "\r\n"
-  //                         "Hello, Client!\r\n");
-
-  //state.client.flush();
 
   // Half close the connection, per
   // [Tear-down](https://datatracker.ietf.org/doc/html/rfc7230#section-6.6)
@@ -333,7 +329,7 @@ void processClientData(ClientState &state, char *buffer2, EthernetClient firstCl
   //  state.outputClosed = true;
 }
 
-// Main program loop.
+// Main control to be called from main program loog
 void Network2Class::loop() {
   EthernetClient client = server.accept();
   if (client) {
@@ -371,6 +367,8 @@ void Network2Class::loop() {
     //   }
     // }
 
+
+    // TODO: Make available more clients that only the first one...
     clientNow = clients.front().client;
 
     processClientData(state, &buffer[0], clientNow);

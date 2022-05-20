@@ -1315,48 +1315,24 @@ void renderMainHeader() {
   GD.cmd_text(80, 0, 27, 0, "Uptime:");
   DIGIT_UTIL.displayTime(millis(), 150, 0);
 
-
-  // //Comment out if no ethernet connected 
-  // if (ETHERNET_UTIL.status == 42) {
-  //   GD.cmd_text(640, 0, 27, 0, "Ethernet N/A");
-  // } else if (ETHERNET_UTIL.status == 0) {
-  //   String ip = ETHERNET_UTIL.localIp();
-  //   GD.cmd_text(680, 0, 27, 0, ip.c_str());
-  // } else if (ETHERNET_UTIL.status == 1) {
-  //   GD.cmd_text(640, 0, 27, 0, "Ethernet:OK");
-  // } else {
-  //   GD.cmd_text(640,0,27,2, "Ethernet code:");
-  //   GD.cmd_number(750,0,27,2, ETHERNET_UTIL.status);
-  // }
-
   if (ETHERNET2_UTIL.linkState) {
-      GD.ColorA(100);
-
-          GD.ColorRGB(0x00ff00);
+    GD.ColorA(100);
+    GD.ColorRGB(0x00ff00);
   } else {
-      GD.ColorA(200);
-
-          GD.ColorRGB(0x888888);
+    GD.ColorA(200);
+    GD.ColorRGB(0x888888);
   }
   if (ETHERNET2_UTIL.hasIpx) {
     GD.cmd_text(665, 0, 27, 0, ETHERNET2_UTIL.ipAddressString);
-
-     GD.cmd_number(640,0,27,2, ETHERNET2_UTIL.receivedMessages);
-
-          GD.ColorRGB(0xaaaaaa);
-
-     GD.cmd_text(640, 27, 27, 0, commandBuffer);//ETHERNET2_UTIL.buffer);
-
-
-    
+    GD.ColorRGB(0xaaaaaa);
+    GD.cmd_number(584,27,27,5, ETHERNET2_UTIL.receivedMessages);
+    GD.cmd_text(640, 27, 27, 0, commandBuffer);
   } else {
      GD.cmd_text(665, 0, 27, 0, "No IP Address");
   }
   //GD.cmd_text(760, 0, 27, 0, ETHERNET2_UTIL.linkState?"ON":"OFF");
-      GD.ColorA(255);
-
+  GD.ColorA(255);
   GD.ColorRGB(0xaaaadd);
-
 
   int temp = UTILS.TC74_getTemperature();
   FAN.setAutoSpeedBasedOnTemperature(temp);
