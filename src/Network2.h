@@ -1,0 +1,31 @@
+#ifndef NETWORK2_H
+#define NETWORK2_H
+
+#include "QNEthernet.h"
+#include "filters.h"
+#include "scpi/vrekrer_scpi_parser.h" // TESTING OUT SCPI LIBRARY, https://github.com/Vrekrer/Vrekrer_scpi_parser
+
+
+class Network2Class {
+
+
+ 
+public: 
+  //qindesign::network::EthernetClient client;
+  qindesign::network::EthernetClient clientNow;
+
+  int receivedMessages = 0;
+  char buffer[100];
+  void setup();
+  void loop();
+  char ipAddressString[18];
+  bool linkState = 0;
+  bool hasIpx = false;
+  char* GetEthMsg();
+  bool newMessageReady();
+  void clearBuffer();
+  void tellServer(bool hasIP);
+ };
+extern Network2Class ETHERNET2_UTIL;
+
+#endif

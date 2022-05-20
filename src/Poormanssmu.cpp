@@ -44,7 +44,7 @@
 
 #include "utils.h"
 #include "analogGauge.h"
-#include "Network.h"
+#include "Network2.h"
 #include "Digitizer.h"
 #include "ZeroCalibration.h"
 
@@ -100,6 +100,8 @@ SMU_HAL_dummy SMU[1] = {
   SMU_HAL_dummy()
 };
 #endif
+
+char commandBuffer[100];
 
 int timeAtStartup;
 
@@ -476,7 +478,7 @@ void setup()
   //        Altenatively find a non-blocking version of initialization...
   //  DEBUG.print("Ethernet initialization started ");
   //  DEBUG.flush();
-   ETHERNET_UTIL.setup(); 
+   ETHERNET2_UTIL.setup(); 
   //  DEBUG.print("Ethernet initialization ended ");
 
 } 
@@ -1312,20 +1314,45 @@ void renderMainHeader() {
   GD.cmd_text(80, 0, 27, 0, "Uptime:");
   DIGIT_UTIL.displayTime(millis(), 150, 0);
 
+
+  // //Comment out if no ethernet connected 
+  // if (ETHERNET_UTIL.status == 42) {
+  //   GD.cmd_text(640, 0, 27, 0, "Ethernet N/A");
+  // } else if (ETHERNET_UTIL.status == 0) {
+  //   String ip = ETHERNET_UTIL.localIp();
+  //   GD.cmd_text(680, 0, 27, 0, ip.c_str());
+  // } else if (ETHERNET_UTIL.status == 1) {
+  //   GD.cmd_text(640, 0, 27, 0, "Ethernet:OK");
+  // } else {
+  //   GD.cmd_text(640,0,27,2, "Ethernet code:");
+  //   GD.cmd_number(750,0,27,2, ETHERNET_UTIL.status);
+  // }
+
+  if (ETHERNET2_UTIL.linkState) {
+      GD.ColorA(100);
+
+          GD.ColorRGB(0x00ff00);
+  } else {
+      GD.ColorA(200);
+
+          GD.ColorRGB(0x888888);
+  }
+  if (ETHERNET2_UTIL.hasIpx) {
+    GD.cmd_text(665, 0, 27, 0, ETHERNET2_UTIL.ipAddressString);
+    GD.cmd_text(665, 20, 27, 0, commandBuffer);//ETHERNET2_UTIL.buffer);
+
+     GD.cmd_number(640,0,27,2, ETHERNET2_UTIL.receivedMessages);
+
+
+    
+  } else {
+     GD.cmd_text(665, 0, 27, 0, "No IP Address");
+  }
+  //GD.cmd_text(760, 0, 27, 0, ETHERNET2_UTIL.linkState?"ON":"OFF");
+      GD.ColorA(255);
+
   GD.ColorRGB(0xaaaadd);
 
-  //Comment out if no ethernet connected 
-  if (ETHERNET_UTIL.status == 42) {
-    GD.cmd_text(640, 0, 27, 0, "Ethernet N/A");
-  } else if (ETHERNET_UTIL.status == 0) {
-    String ip = ETHERNET_UTIL.localIp();
-    GD.cmd_text(680, 0, 27, 0, ip.c_str());
-  } else if (ETHERNET_UTIL.status == 1) {
-    GD.cmd_text(640, 0, 27, 0, "Ethernet:OK");
-  } else {
-    GD.cmd_text(640,0,27,2, "Ethernet code:");
-    GD.cmd_number(750,0,27,2, ETHERNET_UTIL.status);
-  }
 
   int temp = UTILS.TC74_getTemperature();
   FAN.setAutoSpeedBasedOnTemperature(temp);
@@ -1349,7 +1376,8 @@ void renderMainHeader() {
   GD.cmd_number(560,0,27,3,FAN.getSpeed());
 
   GD.ColorRGB(0x888888);
-  GD.cmd_number(600,0,27,2,UTILS.LM60_getTemperature(6));
+  int temp2=UTILS.LM60_getTemperature(6); // requires LM60 onboard temp sensor...
+  GD.cmd_number(600,0,27,0,temp2);
 
   GD.ColorRGB(0xdddddd);
   // Show log info
@@ -1667,7 +1695,9 @@ int loopUpdateTimer = millis();
 
 SCPI_Parser my_instrument;
 void Identify(SCPI_C commands, SCPI_P parameters, Stream& interface) {
-  interface.println(F("Langehaug Consultancy,PoormansSMU,#00,v0.8"));
+  //interface.println(F("Langehaug Consultancy,PoormansSMU,#00,v0.8"));
+  ETHERNET2_UTIL.clientNow.println("LOGHILL, poormanssmu,#11,v.0.1");
+  ETHERNET2_UTIL.clientNow.flush();
 }
 void sourceVoltageSCPI(SCPI_C commands, SCPI_P parameters, Stream& interface) {
   interface.println(F("Source voltage to given value (mV). MEAS:VOLT gives mV."));
@@ -1693,12 +1723,58 @@ void sourceCurrentSCPI(SCPI_C commands, SCPI_P parameters, Stream& interface) {
 
 void measureCurrentSCPI(SCPI_C commands, SCPI_P parameters, Stream& interface) {
   float milliAmp = C_FILTERS.mean;
-  interface.println(milliAmp,4);
+
+      // Serial
+ // interface.println(milliAmp,3);
+
+    // ethernet
+    ETHERNET2_UTIL.clientNow.println(milliAmp,3);
+    ETHERNET2_UTIL.clientNow.flush();
 }
 
 void measureVoltageSCPI(SCPI_C commands, SCPI_P parameters, Stream& interface) {
-  float millivolt = V_FILTERS.mean;
-  interface.println(millivolt,4);
+
+    float millivolt = V_FILTERS.mean;
+
+    // Serial
+    //interface.println(millivolt,4); 
+
+    // ethernet
+    ETHERNET2_UTIL.clientNow.println(millivolt,3);
+    ETHERNET2_UTIL.clientNow.flush();
+}
+
+void systemErrSCPI(SCPI_C commands, SCPI_P parameters, Stream& interface) {
+  // Hardcoded to 0 to make it work properly with various SCPI software tools
+
+  // serial
+  //interface.println(0);
+  //ethernet
+  ETHERNET2_UTIL.clientNow.println(0);
+    ETHERNET2_UTIL.clientNow.flush();
+}
+
+void systemTemperatureSCPI(SCPI_C commands, SCPI_P parameters, Stream& interface) {
+  float temp = (float)UTILS.TC74_getTemperature();
+  //float temp = UTILS.LM60_getTemperature(6);
+  
+  // serial
+  //interface.println(temp);
+  //ethernet
+    ETHERNET2_UTIL.clientNow.println(temp,1);
+    ETHERNET2_UTIL.clientNow.flush();
+}
+
+void finTemperatureSCPI(SCPI_C commands, SCPI_P parameters, Stream& interface) {
+  //float temp = UTILS.TC74_getTemperature();
+  float temp = (float)UTILS.LM60_getTemperature(6);
+  
+  // serial
+  //interface.println(temp);
+
+   // ethernet
+   ETHERNET2_UTIL.clientNow.println(temp,1);
+    ETHERNET2_UTIL.clientNow.flush();
 }
 
 // scpi_setup is initially based on default Vrekrer_scpi example...
@@ -1708,15 +1784,34 @@ void scpi_setup()
   my_instrument.hash_magic_number = 16; //16 will generate hash crashes
   //The default value is 37 and good values are prime numbers (up to 113)
 
-  //This is a simple command tree with 8 registered commands:
-  my_instrument.RegisterCommand(F("*IDN?"), &Identify);   //*IDN?
-  
+  // Important commands to identfy instruments
+  // SYST:ERR reponse seems to be important
+  // to support in order to use various SCPI software, such as Keysight Command Expert ?
+  my_instrument.RegisterCommand(F("*IDN?"), &Identify);
+  my_instrument.RegisterCommand(F("SYST:ERR?"),  &systemErrSCPI);
+
+  // special
+  my_instrument.SetCommandTreeBase(F("SYSTem:"));
+  my_instrument.RegisterCommand(F(":TEMPerature?"),  &systemTemperatureSCPI);
+
+  // Various supported commands
   my_instrument.SetCommandTreeBase(F("SOURce:"));
   my_instrument.RegisterCommand(F(":VOLTage"), &sourceVoltageSCPI);
   my_instrument.RegisterCommand(F(":CURRent"), &sourceCurrentSCPI);
   my_instrument.SetCommandTreeBase(F("MEASure:"));
-  my_instrument.RegisterCommand(F(":VOLTage?"), &measureVoltageSCPI);
-  my_instrument.RegisterCommand(F(":CURRent?"), &measureCurrentSCPI);
+  my_instrument.RegisterCommand(F(":VOLTage:DC?"), &measureVoltageSCPI);
+  my_instrument.RegisterCommand(F(":CURRent:DC?"), &measureCurrentSCPI);
+  
+  // Override AC to actually return temp... TODO: Find a proper SCPI command...
+  my_instrument.RegisterCommand(F(":VOLTage:AC?"), &systemTemperatureSCPI);
+  my_instrument.RegisterCommand(F(":CURRent:AC?"), &finTemperatureSCPI);
+
+
+
+ 
+
+
+  
   //  Serial.begin(9600);
   //  while (!Serial) {;}
   
@@ -1728,11 +1823,21 @@ void scpi_setup()
   //Change the hash_magic_number to solve any problem.
 }
 
+void scpiCommandDetectionLoop() {
+  ETHERNET2_UTIL.loop();
+   if ( ETHERNET2_UTIL.linkState ) {
+      if (ETHERNET2_UTIL.newMessageReady()) {
+        strncpy(commandBuffer, ETHERNET2_UTIL.GetEthMsg(), 40);
+        ETHERNET2_UTIL.clearBuffer();
+        //my_instrument.Execute(commandBuffer, Serial);
 
+      }
+   }
+}
 
 void loop() {
-   my_instrument.ProcessInput(Serial, "\n");
-  ETHERNET_UTIL.loop();
+   scpiCommandDetectionLoop();
+
 
   if (V_CALIBRATION.autoCalInProgress) {
     V_CALIBRATION.autoCalADCfromDAC();

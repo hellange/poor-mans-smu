@@ -1,0 +1,106 @@
+#######################################
+# Syntax Coloring Map for QNEthernet
+# https://arduino.github.io/arduino-cli/latest/library-specification/#keywords
+# https://github.com/arduino/Arduino/blob/master/build/shared/lib/keywords.txt
+#######################################
+
+#######################################
+# Datatypes (KEYWORD1)
+#######################################
+
+Ethernet	KEYWORD1	Ethernet
+EthernetClient	KEYWORD1	ClientConstructor
+EthernetServer	KEYWORD1	ServerConstructor
+EthernetUDP	KEYWORD1	Ethernet
+MDNS	KEYWORD1
+DNSClient	KEYWORD1
+stdPrint	KEYWORD1
+EthernetFrame	KEYWORD1
+StdioPrint	KEYWORD1
+
+#######################################
+# Methods and Functions (KEYWORD2)
+#######################################
+
+maxMulticastGroups	KEYWORD2
+macAddress	KEYWORD2	EthernetMACAddress
+setMACAddress	KEYWORD2	EthernetSetMACAddress
+mtu	KEYWORD2
+loop	KEYWORD2
+begin	KEYWORD2
+waitForLocalIP	KEYWORD2
+waitForLink	KEYWORD2
+end	KEYWORD2
+linkStatus	KEYWORD2	EthernetLinkStatus
+linkState	KEYWORD2
+linkSpeed	KEYWORD2
+linkIsFullDuplex	KEYWORD2
+onLinkState	KEYWORD2
+onAddressChanged	KEYWORD2
+localIP	KEYWORD2	EthernetLocalIP
+subnetMask	KEYWORD2	EthernetSubnetMask
+gatewayIP	KEYWORD2	EthernetGatewayIP
+dnsServerIP	KEYWORD2	EthernetDnsServerIP
+broadcastIP	KEYWORD2
+setLocalIP	KEYWORD2	EthernetSetLocalIP
+setSubnetMask	KEYWORD2	EthernetSetSubnetMask
+setGatewayIP	KEYWORD2	EthernetSetGatewayIP
+setDNSServerIP	KEYWORD2	EthernetSetDnsServerIP
+joinGroup	KEYWORD2
+leaveGroup	KEYWORD2
+setMACAddressAllowed	KEYWORD2
+setHostname	KEYWORD2
+hostname	KEYWORD2
+maxSockets	KEYWORD2
+connect	KEYWORD2	ClientConnect
+connected	KEYWORD2	ClientConnected
+setConnectionTimeout	KEYWORD2	EthernetClientSetConnectionTimeout
+stop	KEYWORD2
+close	KEYWORD2
+closeOutput	KEYWORD2
+localPort	KEYWORD2	ClientLocalPort
+data	KEYWORD2
+remoteIP	KEYWORD2
+remotePort	KEYWORD2
+writeFully	KEYWORD2
+write	KEYWORD2
+availableForWrite	KEYWORD2
+flush	KEYWORD2
+available	KEYWORD2
+read	KEYWORD2
+peek	KEYWORD2
+setNoDelay	KEYWORD2
+isNoDelay	KEYWORD2
+maxListeners	KEYWORD2
+port	KEYWORD2
+accept	KEYWORD2	EthernetServerAccept
+beginMulticast	KEYWORD2	WiFiNINAUDPBeginMulticast
+beginPacket	KEYWORD2	EthernetUDPBeginPacket
+endPacket	KEYWORD2	EthernetUDPEndPacket
+send	KEYWORD2
+parsePacket	KEYWORD2	EthernetUDPParsePacket
+maxServices	KEYWORD2
+addService	KEYWORD2
+removeService	KEYWORD2
+ttl	KEYWORD2
+maxServers	KEYWORD2
+setServer	KEYWORD2
+getServer	KEYWORD2
+getHostByName	KEYWORD2
+maxFrameLen	KEYWORD2
+minFrameLen	KEYWORD2
+beginFrame	KEYWORD2
+beginVLANFrame	KEYWORD2
+endFrame	KEYWORD2
+parseFrame	KEYWORD2
+writeMagic	KEYWORD2
+
+#######################################
+# Structures (KEYWORD3)
+#######################################
+
+#######################################
+# Constants (LITERAL1)
+#######################################
+
+kMACAddrSize	LITERAL1

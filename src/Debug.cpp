@@ -33,12 +33,12 @@ void DebugClass::println(float f, int base) {
 }
 
 void DebugClass::println(int a, int base) {
-    if (enabled == true) {
+    if (enabled == true) { 
         Serial.println(a, base);
     }
 }
 
-void DebugClass::println() {
+void DebugClass::println() { 
     if (enabled) {
         Serial.println();
     }

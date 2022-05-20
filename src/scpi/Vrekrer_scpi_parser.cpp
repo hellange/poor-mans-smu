@@ -336,6 +336,9 @@ void SCPI_Parser::SetErrorHandler(SCPI_caller_t caller){
  @see GetMessage
 */
 void SCPI_Parser::Execute(char* message, Stream &interface) {
+  Serial.println("Execute");
+    Serial.println(message);
+
   while (message != NULL) {
     //Save multicomands for later
     char* multicomands = strpbrk(message, ";");
