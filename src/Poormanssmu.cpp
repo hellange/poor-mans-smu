@@ -68,6 +68,8 @@
 
 #define SAMPLING_BY_INTERRUPT
 
+#define VERSION_NUMBER "0.2.1"
+
 SimpleStatsClass SIMPLE_STATS;
 LoggerClass LOGGER;
 
@@ -364,9 +366,8 @@ void setup()
    GD.cmd_text(250, 200 ,   31, 0, "Poor man's SMU");
    GD.ColorRGB(0xaaaaaa);
    GD.cmd_text(250, 240 ,   28, 0, "Designed    by    Helge Langehaug");
-   GD.cmd_text(250, 270 ,   28, 1, "V0.181");
-   
-   GD.cmd_text(0, 450 ,   28, 1, "Configuring ethernet...");
+   GD.cmd_text(250, 270 ,   28, 1, "Version:");
+   GD.cmd_text(340, 270 ,   28, 1, VERSION_NUMBER);
 
    GD.swap();
 
@@ -384,9 +385,9 @@ void setup()
    ADA4254.ada4254_4();
    delay(100);
    ADA4254.ada4254_5_gain();
-   delay(1000);
+   delay(100);
    //ADA4254.ada4254_clear_analog_error();
-   delay(1000);
+   delay(100);
    ADA4254.ada4254_clear_analog_error();
    //ADA4254.ada4254_5_gainx1d25();
    DEBUG.println("====== ADA4254 done =====");
@@ -1676,7 +1677,8 @@ int loopUpdateTimer = millis();
 SCPI_Parser my_instrument;
 void Identify(SCPI_C commands, SCPI_P parameters, Stream& interface) {
   //interface.println(F("Langehaug Consultancy,PoormansSMU,#00,v0.8"));
-  ETHERNET2_UTIL.clientNow.println("LOGHILL, poormanssmu,#11,v.0.1");
+  ETHERNET2_UTIL.clientNow.print("Langehaug Consultancy, Poormanssmu,123,V");
+  ETHERNET2_UTIL.clientNow.println(VERSION_NUMBER);
   ETHERNET2_UTIL.clientNow.flush();
 }
 void sourceVoltageSCPI(SCPI_C commands, SCPI_P parameters, Stream& interface) {
@@ -1686,6 +1688,11 @@ void sourceVoltageSCPI(SCPI_C commands, SCPI_P parameters, Stream& interface) {
     useVoltageFeedback();
     if (SMU[0].fltSetCommitVoltageSource(mv*1000, true)) printError(_PRINT_ERROR_VOLTAGE_SOURCE_SETTING);
     if (SMU[0].fltSetCommitCurrentLimit(SETTINGS.setCurrentLimit*1000, true)) printError(_PRINT_ERROR_VOLTAGE_SOURCE_SETTING);
+    // serial
+  //interface.println("OK");
+  //ethernet
+  ETHERNET2_UTIL.clientNow.println("OK");
+    ETHERNET2_UTIL.clientNow.flush();
   }
   functionType = SOURCE_DC_VOLTAGE; // this is used to rended correct UI
 }
@@ -1697,6 +1704,11 @@ void sourceCurrentSCPI(SCPI_C commands, SCPI_P parameters, Stream& interface) {
     useCurrentFeedback();
     fltCommitCurrentSourceAutoRange(uA, true);
     if (SMU[0].fltSetCommitVoltageLimit(SETTINGS.setVoltageLimit*1000, true)) printError(_PRINT_ERROR_VOLTAGE_SOURCE_SETTING);
+  // serial
+  //interface.println("OK");
+  //ethernet
+  ETHERNET2_UTIL.clientNow.println("OK");
+    ETHERNET2_UTIL.clientNow.flush();
   }
   functionType = SOURCE_DC_CURRENT; // this is used to rended correct UI
 }

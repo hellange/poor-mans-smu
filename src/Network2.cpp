@@ -1,6 +1,8 @@
-// Network support for Poor Man's SMU, by Helge Langehaug (2022)
+// Network support for Poor Man's SMU
 
-// Based on ServerWithListeners, part of the QNEthernet library:
+// Based on ServerWithListeners example in the QNEthernet library:
+// https://github.com/ssilverman/QNEthernet
+
 // SPDX-FileCopyrightText: (c) 2021-2022 Shawn Silverman <shawn@pobox.com>
 // SPDX-License-Identifier: MIT
 
@@ -29,7 +31,8 @@ constexpr uint32_t kDHCPTimeout = 0; //10000;  // 10 seconds
 // instead rely on the listener to inform us of a link.
 constexpr uint32_t kLinkTimeout = 0; //5000;  // 5 seconds
 
-constexpr uint16_t kServerPort = 80;
+//constexpr uint16_t kServerPort = 80;
+constexpr uint16_t kServerPort = 5025; // Use standard SCPI port
 
 // Timeout for waiting for input from the client.
 constexpr uint32_t kClientTimeout = 5000;  // 5 seconds
@@ -299,28 +302,6 @@ void processClientData(ClientState &state, char *buffer2, EthernetClient firstCl
 
   Serial.print("Request2:");
   Serial.println(buffer2);
-
-/* Hardcoded scpi command interpreter.
-   Commented out but keep for reference in case the scpi library changes...
-
-  if (strncmp(buffer, "*IDN?",5) == 0) {
-    Serial.println(strncmp(buffer, "*IDN?",5));
-    Serial.println("IDN command detected");
-    firstClientx.println("Langehaug Consultancy,Poor Mans SMU,#abc123,v0.82");
-  } else if (strncmp(buffer, "SYST:ERR?",9) == 0) {
-    Serial.println("SYST:ERR command detected");
-    firstClientx.println(0);
-  } else if (strncmp(buffer, "MEAS:VOLT:DC?",13) == 0) {
-    Serial.println("MEAS command detected");            
-    float milliVolt = V_FILTERS.mean;
-    firstClientx.println(milliVolt,3);
-  } else {
-    Serial.print("UNKNOWN COMAND, length");
-    Serial.println(bufferSize);
-    firstClientx.writeFully("unknown2222,xxxt,#00,v0.9.2\n");
-  }
-  */
-
 
   // Half close the connection, per
   // [Tear-down](https://datatracker.ietf.org/doc/html/rfc7230#section-6.6)
