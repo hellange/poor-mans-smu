@@ -78,6 +78,8 @@ PushbuttonsClass PUSHBUTTON_ENC;
 
 ZeroCalibrationlass ZEROCALIBRATION;
 
+const char compile_date[] = __DATE__ " " __TIME__;
+
 bool anyDialogOpen();
 void openMainMenu();
 //void renderAnalogGauge(int x, int y, int size, float degrees, float value, const char *title);
@@ -368,6 +370,9 @@ void setup()
    GD.cmd_text(250, 240 ,   28, 0, "Designed    by    Helge Langehaug");
    GD.cmd_text(250, 270 ,   28, 1, "Version:");
    GD.cmd_text(340, 270 ,   28, 1, VERSION_NUMBER);
+
+   GD.cmd_text(0, 430 ,   27, 1, "Build date:");
+   GD.cmd_text(0, 450 ,   27, 1, compile_date);
 
    GD.swap();
 
