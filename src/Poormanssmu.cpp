@@ -1728,7 +1728,7 @@ void Identify(SCPI_C commands, SCPI_P parameters, Stream& interface) {
   interface.flush();
 }
 void sourceVoltageSCPI(SCPI_C commands, SCPI_P parameters, Stream& interface) {
-  interface.println(F("Source voltage to given value (mV). MEAS:VOLT gives mV."));
+  DEBUG.println("Source voltage to given value (mV). MEAS:VOLT gives mV.");
   if (parameters.Size() > 0) {
     int mv = (String(parameters[0]).toInt());
     useVoltageFeedback();
@@ -1741,7 +1741,7 @@ void sourceVoltageSCPI(SCPI_C commands, SCPI_P parameters, Stream& interface) {
 }
 
 void sourceCurrentSCPI(SCPI_C commands, SCPI_P parameters, Stream& interface) {
-  interface.println(F("Source current to given value (uA). MEAS:CURR gives mA."));
+  DEBUG.println("Source current to given value (uA). MEAS:CURR gives mA.");
   if (parameters.Size() > 0) {
     int uA = (String(parameters[0]).toInt());
     useCurrentFeedback();
@@ -1785,6 +1785,34 @@ void finTemperatureSCPI(SCPI_C commands, SCPI_P parameters, Stream& interface) {
     interface.flush();
 }
 
+void sourceVoltageILimitSCPI(SCPI_C commands, SCPI_P parameters, Stream& interface) {
+    //Serial.println("sourceVoltageILimitSCPI");
+
+ if (parameters.Size() > 0) {
+    int uA = (String(parameters[0]).toInt());
+    SMU[0].fltSetCommitCurrentLimit(uA, true);
+    interface.println("OK");
+  } else {
+    interface.println("ERROR");
+  }
+  interface.flush();
+
+}
+
+void sourceCurrentVLimitSCPI(SCPI_C commands, SCPI_P parameters, Stream& interface) {
+  //Serial.println("sourceCurrentVLimitSCPI");
+ if (parameters.Size() > 0) {
+    int mV = (String(parameters[0]).toInt());
+    SMU[0].fltSetCommitVoltageLimit(mV, true);
+    interface.println("OK");
+  } else {
+    interface.println("ERROR");
+  }
+  interface.flush();
+
+}
+
+
 // scpi_setup is initially based on default Vrekrer_scpi example...
 void scpi_setup()
 {
@@ -1806,13 +1834,16 @@ void scpi_setup()
   my_instrument.SetCommandTreeBase(F("SOURce:"));
   my_instrument.RegisterCommand(F(":VOLTage"), &sourceVoltageSCPI);
   my_instrument.RegisterCommand(F(":CURRent"), &sourceCurrentSCPI);
+    my_instrument.RegisterCommand(F(":CURRent:VLIMit"), &sourceCurrentVLimitSCPI);
+    my_instrument.RegisterCommand(F(":VOLTage:ILIMit"), &sourceVoltageILimitSCPI);
+
   my_instrument.SetCommandTreeBase(F("MEASure:"));
-  my_instrument.RegisterCommand(F(":VOLTage:DC?"), &measureVoltageSCPI);
-  my_instrument.RegisterCommand(F(":CURRent:DC?"), &measureCurrentSCPI);
+  my_instrument.RegisterCommand(F(":VOLTage?"), &measureVoltageSCPI);
+  my_instrument.RegisterCommand(F(":CURRent?"), &measureCurrentSCPI);
   
   // Override AC to actually return temp... TODO: Find a proper SCPI command...
-  my_instrument.RegisterCommand(F(":VOLTage:AC?"), &systemTemperatureSCPI);
-  my_instrument.RegisterCommand(F(":CURRent:AC?"), &finTemperatureSCPI);
+  //my_instrument.RegisterCommand(F(":VOLTage:AC?"), &systemTemperatureSCPI);
+  //my_instrument.RegisterCommand(F(":CURRent:AC?"), &finTemperatureSCPI);
 
 
   //`PrintDebugInfo` will print the registered tokens and 

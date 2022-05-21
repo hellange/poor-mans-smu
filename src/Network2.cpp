@@ -223,7 +223,7 @@ void tellServer(bool hasIP) {
 char copyBuffer[100];
 char* Network2Class::GetEthMsg() {
 
-  strncpy(copyBuffer, buffer,20);
+  strncpy(copyBuffer, buffer, 40); // TODO: Dont't hardcode buffer limit
     DEBUG.println("GetEthMsg:");
 
     DEBUG.println(copyBuffer);
@@ -295,7 +295,7 @@ void processClientData(ClientState &state, char *buffer2, EthernetClient firstCl
 
   // Seems my_instrument.Execute manipulates the buffer. Copy it before sending...
   char cpBuf[100];
-  strncpy(cpBuf, buffer2, 20); // TODO: don't hardcode command buffer limit
+  strncpy(cpBuf, buffer2, 30); // TODO: don't hardcode command buffer limit
   my_instrument.Execute(cpBuf, firstClientx);
 
   DEBUG.println("-----");
