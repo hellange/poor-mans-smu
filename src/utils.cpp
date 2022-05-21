@@ -26,7 +26,16 @@ int UtilsClass::TC74_getTemperature() {
 // Pin nr on the current hardware prototyoe is 6
 // Absolute temperature is not important, so no need to calibrate (yet)...
 float UtilsClass::LM60_getTemperature(int analogPin) {
-   analogReadRes(10);
+
+  // TODO: Maybe it does not make sense to use decimals
+  //       as long as the LM60 only reports 0.5 degree resolution...
+
+  
+  if (millis() < sampleTimer + 5000) {
+    // No need to go though the calulations too often
+    return meanValueLM60;
+  }
+  analogReadRes(10);
   float maxNumber = 1023;//4095.0;
   float refV = 3.3; // LM60 connected to 3.3V on the prototype harware.
   float ar = analogRead(analogPin);
@@ -42,6 +51,7 @@ float UtilsClass::LM60_getTemperature(int analogPin) {
       //DEBUG.print("System temperature monitor probably not detected!");
       return 99.9; // Just return a value that seems wrong...
   }
+  meanValueLM60 = temp; // TODO: Calculate mean...
   return (float)temp;
 }
 
