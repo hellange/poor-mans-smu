@@ -33,9 +33,9 @@ float UtilsClass::LM60_getTemperature(int analogPin) {
 
   if (millis() < sampleTimer + 5000) {
     // No need to go though the calulations too often
-    sampleTimer = millis();
     return meanValueLM60;
   }
+  sampleTimer = millis();
   analogReadRes(10);
   float maxNumber = 1023;//4095.0;
   float refV = 3.3; // LM60 connected to 3.3V on the prototype harware.
