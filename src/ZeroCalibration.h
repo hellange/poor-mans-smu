@@ -14,7 +14,7 @@ class ZeroCalibrationlass {
 private:
   OPERATION_TYPE operationType;
   CURRENT_RANGE current_range; // was "global" in poormanssmu... Does this work after moving to separate class ?
-  int zeroCalstartTime;
+  unsigned long zeroCalstartTime;
 
   bool nullCalibrationDone0 = false;
   bool nullCalibrationDone1 = false;

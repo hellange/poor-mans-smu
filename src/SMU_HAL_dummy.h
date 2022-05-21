@@ -6,7 +6,7 @@
 
 class SMU_HAL_dummy
 {
-  int lastSampleMilli;
+  unsigned long lastSampleMilli;
   float samplingDur;
   //float nowValuemV = 0.0;
   //float nowValueI = 0.0;

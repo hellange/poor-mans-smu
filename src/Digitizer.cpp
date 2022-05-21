@@ -155,7 +155,6 @@ int xAxisPx = 400;
 int height = 400;
 int width = 790;
 int xStep = 100;
-int yStep = 75;
 
 GD.ColorA(255);
 
@@ -185,6 +184,7 @@ for (int i=xStep; i<width/2; i=i+xStep ) {
 
 /*
 //horizontal lines
+int yStep = 75;
 for (int i=yStep; i<height/2; i=i+yStep) {
     GD.Begin(LINE_STRIP);
     GD.Vertex2ii(xAxisPx+width/2, yAxisPx + i);
@@ -462,7 +462,6 @@ void DigitizerClass::handleSamplingForDigitizer(int dataR) {
 
   }
 
-  bool zeroCross = false;
   
   float edgeSteepnessToDetect = 1.0;
   bool positiveEdge = v > lastVoltage + edgeSteepnessToDetect 
@@ -474,6 +473,7 @@ void DigitizerClass::handleSamplingForDigitizer(int dataR) {
 
 
     //  SIMULATE WAVEFORM
+    //  bool zeroCross = false;
     //   simulatedWaveform += modulation;
     //   v=sin(simulatedWaveform)*1000.0 * amplitude;
     //   v=v+random(100); // simulate noise;

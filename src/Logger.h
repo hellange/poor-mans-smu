@@ -54,7 +54,7 @@ public:
 
   void clear();
   void printBuffer();
-  int getLastSamples(LogDataWithTimeStamp *buffer, int bufferSize, int samplesPr);
+  void getLastSamples(LogDataWithTimeStamp *buffer, int bufferSize, int samplesPr);
   void render();
   void loop();
   void updateViewData(int samplesPr);

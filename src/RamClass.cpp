@@ -203,11 +203,11 @@ void RamClass::logData(float value) {
 
   //DEBUG.println(t);
 
-  unsigned long allSeconds=t/1000;
-  int runHours= allSeconds/3600;
-  int secsRemaining=allSeconds%3600;
-  int runMinutes=secsRemaining/60;
-  int runSeconds=secsRemaining%60;
+  // unsigned long allSeconds=t/1000;
+  // int runHours= allSeconds/3600;
+  // int secsRemaining=allSeconds%3600;
+  // int runMinutes=secsRemaining/60;
+  // int runSeconds=secsRemaining%60;
 
   //DEBUG.print(" at time ");
   // char buf[21];

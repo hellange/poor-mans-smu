@@ -232,7 +232,7 @@ void LoggerClass::loop() {
   GD.Begin(LINE_STRIP);
   GD.ColorA(255);
   GD.ColorRGB(0x00ff00);
-float mid;
+float mid = 0.0;
   for (int i=0;i<nrOfWindowSamples-1;i++) {
     float v = viewBuffer[i].value;
     //DEBUG.print("val:");
@@ -341,7 +341,7 @@ for (int i=0;i<300;i=i+49) {
 
 bool scrolling=true;
 uint32_t backlash = 0;
-int LoggerClass::getLastSamples(LogDataWithTimeStamp *buffer, int bufferSize, int samplesPr) {
+void LoggerClass::getLastSamples(LogDataWithTimeStamp *buffer, int bufferSize, int samplesPr) {
   LogDataWithTimeStamp *adrP = (LogDataWithTimeStamp*)(memory_begin);
 bool serial = false;
 bool fillEmpty = false;
