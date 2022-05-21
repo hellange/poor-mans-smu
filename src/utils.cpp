@@ -25,7 +25,7 @@ int UtilsClass::TC74_getTemperature() {
 // Read value from a LM60 that is mounted on the mainboard
 // Pin nr on the current hardware prototyoe is 6
 // Absolute temperature is not important, so no need to calibrate (yet)...
-int UtilsClass::LM60_getTemperature(int analogPin) {
+float UtilsClass::LM60_getTemperature(int analogPin) {
    analogReadRes(10);
   float maxNumber = 1023;//4095.0;
   float refV = 3.3; // LM60 connected to 3.3V on the prototype harware.
@@ -34,15 +34,15 @@ int UtilsClass::LM60_getTemperature(int analogPin) {
   // DM60 datasheet: Vout = (+6.25mV x t) +424mV 
   //                 => Vout - 424mV = +6.25mV x t 
   //                 => t = (Vout-424mV) / 6.25mV
-  int temp = (voltage - 0.424) / 0.00625;
+  float temp = (voltage - 0.424) / 0.00625;
   //DEBUG.println(temp,3);
-  if (temp>200 || temp - 200) {
+  if (temp>200 || temp < -10.0) {
       // value does not seem right... probaby not mounted.
       // TODO: Check if there are better ways to detect the sensor
       //DEBUG.print("System temperature monitor probably not detected!");
-      return 222; // Just return a value that seems wrong...
+      return 99.9; // Just return a value that seems wrong...
   }
-  return (int)temp;
+  return (float)temp;
 }
 
 

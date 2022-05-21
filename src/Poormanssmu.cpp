@@ -68,7 +68,7 @@
 
 #define SAMPLING_BY_INTERRUPT
 
-#define VERSION_NUMBER "0.2.1"
+#define VERSION_NUMBER "0.2.15"
 
 SimpleStatsClass SIMPLE_STATS;
 LoggerClass LOGGER;
@@ -1370,7 +1370,7 @@ void renderMainHeader() {
   FAN.setAutoSpeedBasedOnTemperature(temp);
   
   GD.ColorRGB(0xdddddd);
-  GD.cmd_text(410,0,27,0,"Temp:");
+  GD.cmd_text(410,0,27,0,"Fin:");
   if (temp > SETTINGS.getMaxTempAllowed()) {
     GD.ColorRGB(0xff0000);
     GD.Begin(RECTS);
@@ -1380,16 +1380,18 @@ void renderMainHeader() {
   } else {
     GD.ColorRGB(0x00ff00);
   }
-  GD.cmd_number(470,0,27,3, temp);
-  GD.cmd_text(500,0,27,0,"C");
+  GD.cmd_number(440,0,27,3, temp);
+  GD.cmd_text(470,0,27,0,"C");
 
   GD.ColorRGB(0xaaaaaa);
-  GD.cmd_text(520,0,27,0,"Fan:");
-  GD.cmd_number(560,0,27,3,FAN.getSpeed());
+  GD.cmd_text(500,0,27,0,"Fan:");
+  GD.cmd_number(540,0,27,3,FAN.getSpeed());
 
   GD.ColorRGB(0x888888);
-  int temp2=UTILS.LM60_getTemperature(6); // requires LM60 onboard temp sensor...
-  GD.cmd_number(600,0,27,0,temp2);
+  GD.cmd_text(580,0,27,0,"Int:");
+  int temp2=(int)UTILS.LM60_getTemperature(6); // requires LM60 onboard temp sensor...
+  GD.cmd_number(610,0,27,0,temp2);
+  GD.cmd_text(630,0,27,0,"C");
 
   GD.ColorRGB(0xdddddd);
   // Show log info
@@ -1715,7 +1717,7 @@ int loopUpdateTimer = millis();
 
 SCPI_Parser my_instrument;
 void Identify(SCPI_C commands, SCPI_P parameters, Stream& interface) {
-  interface.print("Langehaug Consultancy, Poormanssmu,123,V");
+  interface.print("Langehaug Consultancy, Poormanssmu,123,");
   interface.println(VERSION_NUMBER);
   interface.flush();
 }
@@ -1764,15 +1766,15 @@ void systemErrSCPI(SCPI_C commands, SCPI_P parameters, Stream& interface) {
 }
 
 void systemTemperatureSCPI(SCPI_C commands, SCPI_P parameters, Stream& interface) {
-    float temp = (float)UTILS.TC74_getTemperature();
-    //float temp = UTILS.LM60_getTemperature(6);
+    //float temp = (float)UTILS.TC74_getTemperature();
+    float temp = UTILS.LM60_getTemperature(6);
     interface.println(temp,1);
     interface.flush();
 }
 
 void finTemperatureSCPI(SCPI_C commands, SCPI_P parameters, Stream& interface) {
-    //float temp = UTILS.TC74_getTemperature();
-    float temp = (float)UTILS.LM60_getTemperature(6);
+    float temp = UTILS.TC74_getTemperature();
+    //float temp = (float)UTILS.LM60_getTemperature(6);
     interface.println(temp,1);
     interface.flush();
 }
