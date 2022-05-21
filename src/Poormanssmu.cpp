@@ -1389,9 +1389,14 @@ void renderMainHeader() {
 
   GD.ColorRGB(0x888888);
   GD.cmd_text(580,0,27,0,"Int:");
-  int temp2=(int)UTILS.LM60_getTemperature(6); // requires LM60 onboard temp sensor...
-  GD.cmd_number(610,0,27,0,temp2);
-  GD.cmd_text(630,0,27,0,"C");
+  float temp2 = UTILS.LM60_getTemperature(6); // requires LM60 onboard temp sensor...
+  // convert to one decimal and show
+  int num = (int)temp2;
+  int dec = (temp2 - num) * 10.0;
+  GD.cmd_number(610,0,27,0,num);
+  GD.cmd_text(630,0,27,0,".");
+  GD.cmd_number(635,0,27,0,dec);
+  GD.cmd_text(645,0,27,0,"C");
 
   GD.ColorRGB(0xdddddd);
   // Show log info
