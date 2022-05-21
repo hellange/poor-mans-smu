@@ -2,7 +2,7 @@
 #define NETWORK2_H
 
 #include "QNEthernet.h"
-#include "filters.h"
+#include "Filters.h"
 #include "Vrekrer_scpi_parser.h" // TESTING OUT SCPI LIBRARY, https://github.com/Vrekrer/Vrekrer_scpi_parser
 
 
