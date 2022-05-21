@@ -341,6 +341,12 @@ bool ADCClass::hasCompliance() {
 
 double ADCClass::measureMilliVoltage() {
 
+  // AD7176_ReadRegister(&AD7176_regs[6]);
+  // int r =  AD7176_regs[6].value;
+  // Serial.print("ID:");  
+  // Serial.println(r, HEX);     
+
+
 
   AD7176_ReadRegister(&AD7176_regs[4]);
 
@@ -450,6 +456,8 @@ void ADCClass::initADC(){
   AD7176_UpdateSettings();
 
 }
+
+
 
 
 void ADCClass::initDAC(){

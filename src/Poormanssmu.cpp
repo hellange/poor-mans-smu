@@ -303,7 +303,7 @@ void initDefaultSamplingIfByInterrupt() {
 void setup()
 {
 	//while (!Serial) ; // wait
-
+  //delay(5000);
   LOGGER.init();
 
   SIMPLE_STATS.init();
@@ -431,8 +431,14 @@ void setup()
    } else if (SMU[0].deviceTypeId == 0x4FD) {
      DEBUG.print("AD7177-2");
    } 
+
+   // TODO: My prototype shows 0xDE, wrong readout ?  Why not same as "official" ? Are samples different?
+   else if (SMU[0].deviceTypeId == 0x0DE) {
+     DEBUG.print("AD7177-(prot)?");
+   }
+
      DEBUG.print("    hex:");
-     DEBUG.println(SMU[0].deviceTypeId, 16);
+     DEBUG.println(SMU[0].deviceTypeId, HEX);
    
    DEBUG.println("--------");
    DEBUG.println("");
@@ -1321,6 +1327,11 @@ void renderMainHeader() {
   if (SMU[0].deviceTypeId == 0) {
       GD.ColorRGB(0xff0000);
       GD.cmd_text(0, 0, 27, 0, "Analog Error?");
+  } else {
+          GD.ColorRGB(0xaaaaaa);
+          GD.cmd_text(0, 0, 27, 0, "ADC:");
+
+          GD.cmd_number(40,0,27,0,SMU[0].deviceTypeId);
   }
 
   //showFanSpeed(220, 0);
