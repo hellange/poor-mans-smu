@@ -296,7 +296,7 @@ void processClientData(ClientState &state, char *buffer2, EthernetClient firstCl
   // Seems my_instrument.Execute manipulates the buffer. Copy it before sending...
   char cpBuf[100];
   strncpy(cpBuf, buffer2, 20); // TODO: don't hardcode command buffer limit
-  my_instrument.Execute(cpBuf, Serial);
+  my_instrument.Execute(cpBuf, firstClientx);
 
   Serial.println("-----");
 

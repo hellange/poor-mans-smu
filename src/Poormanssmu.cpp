@@ -1704,10 +1704,9 @@ int loopUpdateTimer = millis();
 
 SCPI_Parser my_instrument;
 void Identify(SCPI_C commands, SCPI_P parameters, Stream& interface) {
-  //interface.println(F("Langehaug Consultancy,PoormansSMU,#00,v0.8"));
-  ETHERNET2_UTIL.clientNow.print("Langehaug Consultancy, Poormanssmu,123,V");
-  ETHERNET2_UTIL.clientNow.println(VERSION_NUMBER);
-  ETHERNET2_UTIL.clientNow.flush();
+  interface.print("Langehaug Consultancy, Poormanssmu,123,V");
+  interface.println(VERSION_NUMBER);
+  interface.flush();
 }
 void sourceVoltageSCPI(SCPI_C commands, SCPI_P parameters, Stream& interface) {
   interface.println(F("Source voltage to given value (mV). MEAS:VOLT gives mV."));
@@ -1716,11 +1715,8 @@ void sourceVoltageSCPI(SCPI_C commands, SCPI_P parameters, Stream& interface) {
     useVoltageFeedback();
     if (SMU[0].fltSetCommitVoltageSource(mv*1000, true)) printError(_PRINT_ERROR_VOLTAGE_SOURCE_SETTING);
     if (SMU[0].fltSetCommitCurrentLimit(SETTINGS.setCurrentLimit*1000, true)) printError(_PRINT_ERROR_VOLTAGE_SOURCE_SETTING);
-    // serial
-  //interface.println("OK");
-  //ethernet
-  ETHERNET2_UTIL.clientNow.println("OK");
-    ETHERNET2_UTIL.clientNow.flush();
+    interface.println("OK");
+    interface.flush();
   }
   functionType = SOURCE_DC_VOLTAGE; // this is used to rended correct UI
 }
@@ -1732,69 +1728,42 @@ void sourceCurrentSCPI(SCPI_C commands, SCPI_P parameters, Stream& interface) {
     useCurrentFeedback();
     fltCommitCurrentSourceAutoRange(uA, true);
     if (SMU[0].fltSetCommitVoltageLimit(SETTINGS.setVoltageLimit*1000, true)) printError(_PRINT_ERROR_VOLTAGE_SOURCE_SETTING);
-  // serial
-  //interface.println("OK");
-  //ethernet
-  ETHERNET2_UTIL.clientNow.println("OK");
-    ETHERNET2_UTIL.clientNow.flush();
+    interface.println("OK");
+    interface.flush();
   }
   functionType = SOURCE_DC_CURRENT; // this is used to rended correct UI
 }
 
 void measureCurrentSCPI(SCPI_C commands, SCPI_P parameters, Stream& interface) {
   float milliAmp = C_FILTERS.mean;
-
-      // Serial
- // interface.println(milliAmp,3);
-
-    // ethernet
-    ETHERNET2_UTIL.clientNow.println(milliAmp,3);
-    ETHERNET2_UTIL.clientNow.flush();
+    interface.println(milliAmp,3);
+    interface.flush();
 }
 
 void measureVoltageSCPI(SCPI_C commands, SCPI_P parameters, Stream& interface) {
-
     float millivolt = V_FILTERS.mean;
-
-    // Serial
-    //interface.println(millivolt,4); 
-
-    // ethernet
-    ETHERNET2_UTIL.clientNow.println(millivolt,3);
-    ETHERNET2_UTIL.clientNow.flush();
+    interface.println(millivolt,3);
+    interface.flush();
 }
 
 void systemErrSCPI(SCPI_C commands, SCPI_P parameters, Stream& interface) {
-  // Hardcoded to 0 to make it work properly with various SCPI software tools
-
-  // serial
-  //interface.println(0);
-  //ethernet
-  ETHERNET2_UTIL.clientNow.println(0);
-    ETHERNET2_UTIL.clientNow.flush();
+    // Hardcoded to 0. Required to make it work properly with various SCPI software tools ???
+    interface.println(0);
+    interface.flush();
 }
 
 void systemTemperatureSCPI(SCPI_C commands, SCPI_P parameters, Stream& interface) {
-  float temp = (float)UTILS.TC74_getTemperature();
-  //float temp = UTILS.LM60_getTemperature(6);
-  
-  // serial
-  //interface.println(temp);
-  //ethernet
-    ETHERNET2_UTIL.clientNow.println(temp,1);
-    ETHERNET2_UTIL.clientNow.flush();
+    float temp = (float)UTILS.TC74_getTemperature();
+    //float temp = UTILS.LM60_getTemperature(6);
+    interface.println(temp,1);
+    interface.flush();
 }
 
 void finTemperatureSCPI(SCPI_C commands, SCPI_P parameters, Stream& interface) {
-  //float temp = UTILS.TC74_getTemperature();
-  float temp = (float)UTILS.LM60_getTemperature(6);
-  
-  // serial
-  //interface.println(temp);
-
-   // ethernet
-   ETHERNET2_UTIL.clientNow.println(temp,1);
-    ETHERNET2_UTIL.clientNow.flush();
+    //float temp = UTILS.TC74_getTemperature();
+    float temp = (float)UTILS.LM60_getTemperature(6);
+    interface.println(temp,1);
+    interface.flush();
 }
 
 // scpi_setup is initially based on default Vrekrer_scpi example...
