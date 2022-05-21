@@ -9,7 +9,7 @@
 #include "Filters.h"
 #include "digit_util.h"
 #include "SMU_HAL_717x.h"
-#include "debug.h"
+#include "Debug.h"
 
 CalibrationClass V_CALIBRATION;
 CalibrationClass C_CALIBRATION;

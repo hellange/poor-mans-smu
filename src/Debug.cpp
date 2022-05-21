@@ -1,4 +1,4 @@
-#include "debug.h"
+#include "Debug.h"
 
 DebugClass DEBUG;
 
