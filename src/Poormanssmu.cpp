@@ -371,7 +371,7 @@ void setup()
    GD.ColorA(200);
    GD.cmd_text(250, 200 ,   31, 0, "Poor man's SMU");
    GD.ColorRGB(0xaaaaaa);
-   GD.cmd_text(250, 240 ,   28, 0, "Designed    by    Helge Langehaug");
+   GD.cmd_text(250, 245 ,   28, 0, "Designed    by    Helge Langehaug");
    GD.cmd_text(250, 270 ,   28, 1, "Version:");
    GD.cmd_text(340, 270 ,   28, 1, VERSION_NUMBER);
 
@@ -1384,8 +1384,9 @@ void renderMainHeader() {
   GD.cmd_text(470,0,27,0,"C");
 
   GD.ColorRGB(0xaaaaaa);
-  GD.cmd_text(500,0,27,0,"Fan:");
-  GD.cmd_number(540,0,27,3,FAN.getSpeed());
+  GD.cmd_text(500-10,0,27,0,"Fan:");
+  GD.cmd_number(535-10,0,27,3,FAN.getSpeed());
+  GD.cmd_text(555,0,27,0,"%");
 
   GD.ColorRGB(0x888888);
   GD.cmd_text(580,0,27,0,"Int:");
