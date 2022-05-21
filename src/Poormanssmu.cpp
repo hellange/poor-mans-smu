@@ -1374,8 +1374,8 @@ void renderMainHeader() {
   if (temp > SETTINGS.getMaxTempAllowed()) {
     GD.ColorRGB(0xff0000);
     GD.Begin(RECTS);
-    GD.Vertex2ii(465, 0);
-    GD.Vertex2ii(520, 20);
+    GD.Vertex2ii(440-3, 0);
+    GD.Vertex2ii(480+5, 20);
     GD.ColorRGB(0xffffff);
   } else {
     GD.ColorRGB(0x00ff00);
