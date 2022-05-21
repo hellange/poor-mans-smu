@@ -9,7 +9,9 @@ UI is based on display and libraries I have worked with before. Refer to by blog
 
 DAC/ADC low level code is mainly based on official documentation from Analog Device.
 
-SCPI "interpreter" is a copy of https://github.com/Vrekrer/Vrekrer_scpi_parser. 
+Also supports SCPI commands over USB or LAN.
+
+SCPI parser is a copy of https://github.com/Vrekrer/Vrekrer_scpi_parser. 
 
 Ethernet for Teensy 4.1 is a small layer on top of a copy of https://github.com/ssilverman/QNEthernet
 
