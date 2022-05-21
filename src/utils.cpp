@@ -46,14 +46,15 @@ float UtilsClass::LM60_getTemperature(int analogPin) {
   //                 => t = (Vout-424mV) / 6.25mV
   float temp = (voltage - 0.424) / 0.00625;
   //DEBUG.println(temp,3);
+  
+  meanValueLM60 = temp; // TODO: Calculate mean...
   if (temp>200 || temp < -10.0) {
       // value does not seem right... probaby not mounted.
       // TODO: Check if there are better ways to detect the sensor
-      //DEBUG.print("System temperature monitor probably not detected!");
-      return 99.9; // Just return a value that seems wrong...
+      // DEBUG.print("System temperature monitor probably not detected!");
+      meanValueLM60 = 99.9; // Just return a value that seems wrong...
   }
-  meanValueLM60 = temp; // TODO: Calculate mean...
-  return (float)temp;
+  return meanValueLM60;
 }
 
 

@@ -4,7 +4,7 @@
 #include "QNEthernet.h"
 #include "Filters.h"
 #include "Vrekrer_scpi_parser.h" // TESTING OUT SCPI LIBRARY, https://github.com/Vrekrer/Vrekrer_scpi_parser
-
+#include "Debug.h"
 
 class Network2Class {
 

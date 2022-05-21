@@ -224,9 +224,9 @@ char copyBuffer[100];
 char* Network2Class::GetEthMsg() {
 
   strncpy(copyBuffer, buffer,20);
-    Serial.print("GetEthMsg:");
+    DEBUG.println("GetEthMsg:");
 
-    Serial.println(copyBuffer);
+    DEBUG.println(copyBuffer);
 
   return copyBuffer;
 }
@@ -277,11 +277,11 @@ void processClientData(ClientState &state, char *buffer2, EthernetClient firstCl
           strncpy(buffer2, buffer, bufferSize);
           buffer2[bufferSize-1] = '\0';
           buffer[bufferSize-1] = '\0';
-          Serial.print("Detected Terminator LF.");
-                    Serial.print("Buffer size:");
-                    Serial.print(bufferSize);
-                    Serial.print(". buffer=");
-                    Serial.println(buffer);
+          DEBUG.print("Detected Terminator LF.");
+                    DEBUG.print("Buffer size:");
+                    DEBUG.print(bufferSize);
+                    DEBUG.print(". buffer=");
+                    DEBUG.println(buffer);
 
       break;
     }
@@ -289,8 +289,8 @@ void processClientData(ClientState &state, char *buffer2, EthernetClient firstCl
   }
 
   IPAddress ip = state.client.remoteIP();
-  Serial.print("Request:");
-  Serial.println(buffer2);
+  DEBUG.print("Request:");
+  DEBUG.println(buffer2);
   printf(". Sending response to client: %u.%u.%u.%u\n", ip[0], ip[1], ip[2], ip[3]);
 
   // Seems my_instrument.Execute manipulates the buffer. Copy it before sending...
@@ -298,10 +298,10 @@ void processClientData(ClientState &state, char *buffer2, EthernetClient firstCl
   strncpy(cpBuf, buffer2, 20); // TODO: don't hardcode command buffer limit
   my_instrument.Execute(cpBuf, firstClientx);
 
-  Serial.println("-----");
+  DEBUG.println("-----");
 
-  Serial.print("Request2:");
-  Serial.println(buffer2);
+  DEBUG.print("Request2:");
+  DEBUG.println(buffer2);
 
   // Half close the connection, per
   // [Tear-down](https://datatracker.ietf.org/doc/html/rfc7230#section-6.6)
