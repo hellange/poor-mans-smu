@@ -78,7 +78,7 @@ PushbuttonsClass PUSHBUTTON_ENC;
 
 ZeroCalibrationlass ZEROCALIBRATION;
 
-const char compile_date[] = __DATE__ " " __TIME__;
+const char compile_date[] = __DATE__ " " __TIME__ ", (sketch:" __FILE__ ")";
 
 bool anyDialogOpen();
 void openMainMenu();
@@ -355,9 +355,13 @@ void setup()
     delay(200);
     }
 
+   DEBUG.println("Build info");
+      DEBUG.println(compile_date);
 
+    DEBUG.flush();
    GD.begin(0);
-   delay(500);
+   
+   delay(100);
 
    DEBUG.println("Initializing graphics...");
    DEBUG.flush();
@@ -374,6 +378,8 @@ void setup()
    GD.cmd_text(0, 430 ,   27, 1, "Build date:");
    GD.cmd_text(0, 450 ,   27, 1, compile_date);
 
+
+
    GD.swap();
 
 
@@ -382,6 +388,9 @@ void setup()
    GD.__end();
    DEBUG.println("Graphics initialized.");
    DEBUG.flush();
+
+      delay(2000); // Delay a bit to show splash screen...
+
 
    // TODO: Fix this experimental mess !!!
    DEBUG.println("====== ADA4254 =====");
@@ -1307,7 +1316,13 @@ void renderMainHeader() {
   }
   
   GD.ColorA(255);
-  GD.ColorRGB(0xdddddd);
+
+  // TODO: Use other that deviceTypeId to "detect" analog board problem
+  if (SMU[0].deviceTypeId == 0) {
+      GD.ColorRGB(0xff0000);
+      GD.cmd_text(0, 0, 27, 0, "Analog Error?");
+  }
+
   //showFanSpeed(220, 0);
   //GD.cmd_number(50,0,27,2,LOGGER.percentageFull);
 
@@ -1318,8 +1333,8 @@ void renderMainHeader() {
 
    // uptime
   GD.ColorRGB(0xaaaaaa);
-  GD.cmd_text(80, 0, 27, 0, "Uptime:");
-  DIGIT_UTIL.displayTime(millis(), 150, 0);
+  GD.cmd_text(120, 0, 27, 0, "Uptime:");
+  DIGIT_UTIL.displayTime(millis(), 190, 0);
 
   if (ETHERNET2_UTIL.linkState) {
     GD.ColorA(100);
@@ -1549,14 +1564,17 @@ bool simVolt = true;
 static void handleSampling() {
   if (timeAtStartup +5000 < millis());
   int dataR = -1;
-  if (SMU[0].deviceTypeId != 0 || true /* SIMULATOR */) {
+  // TODO: Use something else that deviceTypeId to "detect" problems with analog board...
+  if (SMU[0].deviceTypeId != 0) {
     dataR = SMU[0].dataReady();
   } else {
-    // TODO: Add simulation indicator...
-    // simulate sample every 100ms;
+    // TODO: Add indicator that power is probably of on analog board
+    // Just give some simulated volt values with a litle noise.
+    // Makes it possible to test without power on the hardware.
+    // Is not the same as using USE_SIMULATOR
     if (lastSimMs + 100 < millis()) {
       lastSimMs = millis();
-      dataR = simVolt ? 100 : 101;
+      dataR = simVolt ? 100 : 101; // swap between simulated voltage and current
       simVolt = !simVolt;
     }
   }
@@ -1604,12 +1622,17 @@ static void handleSampling() {
      RAM.logDataCalculateMean(V_FILTERS.mean, 1);
     }
   } 
-  else if (dataR >= 100){ // simulation
-
+  else if (dataR >= 100){ // Probably no analog board (no power?)
+  // Just simulate voltage/current with some noise.
+  // This is NOT the same as USE_SIMULATOR !
   if (dataR == 100) {
     float v; // = 1000.0 + random(0, 10)/1000.0 ;
     v = SMU[0].getSetValue_micro();
-    v = v + random(0, 20); // add 20uV simulated noise
+    
+    int noise = 20; //20uV simulated noise
+    v = v + random(0, noise);
+    v = v - noise / 2.0;
+
     v = v / 1000.0;
 
     V_STATS.addSample(v);    
@@ -1623,9 +1646,9 @@ static void handleSampling() {
 
   } else {
     float i = 0;
-        i = i + random(0, 20); // add 20uA simulated noise
-        i=i/1000.0;
- C_STATS.addSample(i);    
+    i = i + random(0, 20); // add 20uA simulated noise
+    i=i/1000.0;
+    C_STATS.addSample(i);    
     C_FILTERS.updateMean(i, true);
     SIMPLE_STATS.registerValue(C_FILTERS.mean);
   }
@@ -1804,14 +1827,6 @@ void scpi_setup()
   my_instrument.RegisterCommand(F(":CURRent:AC?"), &finTemperatureSCPI);
 
 
-
- 
-
-
-  
-  //  Serial.begin(9600);
-  //  while (!Serial) {;}
-  
   //`PrintDebugInfo` will print the registered tokens and 
   //command hashes to the serial interface.
   my_instrument.PrintDebugInfo();

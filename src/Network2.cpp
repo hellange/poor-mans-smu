@@ -93,12 +93,12 @@ void tellServer(bool hasIP);
 
 // Program setup.
 void Network2Class::setup() {
-  Serial.begin(115200);
-  while (!Serial && millis() < 4000) {
-    // Wait for Serial to initialize
-  }
+  // Serial.begin(115200);
+  // while (!Serial && millis() < 4000) {
+  //  // Wait for Serial to initialize
+  // }
   stdPrint = &Serial;  // Make printf work (a QNEthernet feature)
-  printf("Starting...\n");
+  printf("Starting setting up Ethernet...\n");
 
   // Unlike the Arduino API (which you can still use), QNEthernet uses
   // the Teensy's internal MAC address by default, so we can retrieve

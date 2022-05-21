@@ -5,7 +5,7 @@
 
   
 class DebugClass {
-      bool enabled = false;
+      bool enabled = true;
 
   public:
     void println(char const *c);
