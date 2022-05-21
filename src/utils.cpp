@@ -30,9 +30,10 @@ float UtilsClass::LM60_getTemperature(int analogPin) {
   // TODO: Maybe it does not make sense to use decimals
   //       as long as the LM60 only reports 0.5 degree resolution...
 
-  
+
   if (millis() < sampleTimer + 5000) {
     // No need to go though the calulations too often
+    sampleTimer = millis();
     return meanValueLM60;
   }
   analogReadRes(10);
