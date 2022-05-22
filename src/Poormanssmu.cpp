@@ -1728,12 +1728,12 @@ void Identify(SCPI_C commands, SCPI_P parameters, Stream& interface) {
   interface.flush();
 }
 void sourceVoltageSCPI(SCPI_C commands, SCPI_P parameters, Stream& interface) {
-  DEBUG.println("Source voltage to given value (mV). MEAS:VOLT gives mV.");
+  DEBUG.println("SCPI Source voltage to given value (mV). MEAS:VOLT gives mV.");
   if (parameters.Size() > 0) {
     int mv = (String(parameters[0]).toInt());
     useVoltageFeedback();
-    if (SMU[0].fltSetCommitVoltageSource(mv*1000, true)) printError(_PRINT_ERROR_VOLTAGE_SOURCE_SETTING);
-    if (SMU[0].fltSetCommitCurrentLimit(SETTINGS.setCurrentLimit*1000, true)) printError(_PRINT_ERROR_VOLTAGE_SOURCE_SETTING);
+    SMU[0].fltSetCommitVoltageSource(mv*1000, true);
+    //SMU[0].fltSetCommitCurrentLimit(SETTINGS.setCurrentLimit*1000, true);
     interface.println("OK");
     interface.flush();
   }
@@ -1741,54 +1741,57 @@ void sourceVoltageSCPI(SCPI_C commands, SCPI_P parameters, Stream& interface) {
 }
 
 void sourceCurrentSCPI(SCPI_C commands, SCPI_P parameters, Stream& interface) {
-  DEBUG.println("Source current to given value (uA). MEAS:CURR gives mA.");
+  DEBUG.println("SCPI Source current to given value (uA). MEAS:CURR gives mA.");
   if (parameters.Size() > 0) {
     int uA = (String(parameters[0]).toInt());
     useCurrentFeedback();
     fltCommitCurrentSourceAutoRange(uA, true);
-    if (SMU[0].fltSetCommitVoltageLimit(SETTINGS.setVoltageLimit*1000, true)) printError(_PRINT_ERROR_VOLTAGE_SOURCE_SETTING);
+    //SMU[0].fltSetCommitVoltageLimit(SETTINGS.setVoltageLimit*1000, true);
     interface.println("OK");
-    interface.flush();
+  } else {
+    interface.println("ERROR");
   }
-  functionType = SOURCE_DC_CURRENT; // this is used to rended correct UI
+  interface.flush();
 }
 
 void measureCurrentSCPI(SCPI_C commands, SCPI_P parameters, Stream& interface) {
+  DEBUG.println("SCPI Measure current");
   float milliAmp = C_FILTERS.mean;
     interface.println(milliAmp,3);
     interface.flush();
 }
 
 void measureVoltageSCPI(SCPI_C commands, SCPI_P parameters, Stream& interface) {
+    DEBUG.println("SCPI Measure voltage");
     float millivolt = V_FILTERS.mean;
     interface.println(millivolt,3);
     interface.flush();
 }
 
 void systemErrSCPI(SCPI_C commands, SCPI_P parameters, Stream& interface) {
+    DEBUG.println("SCPI Called systemErrSCPI, return 0");
     // Hardcoded to 0. Required to make it work properly with various SCPI software tools ???
     interface.println(0);
     interface.flush();
 }
 
 void systemTemperatureSCPI(SCPI_C commands, SCPI_P parameters, Stream& interface) {
-    //float temp = (float)UTILS.TC74_getTemperature();
+    DEBUG.println("SCPI Measure system temperature");
     float temp = UTILS.LM60_getTemperature(6);
     interface.println(temp,1);
     interface.flush();
 }
 
 void finTemperatureSCPI(SCPI_C commands, SCPI_P parameters, Stream& interface) {
+    DEBUG.println("SCPI Measure (cooler) fin temperature");
     float temp = UTILS.TC74_getTemperature();
-    //float temp = (float)UTILS.LM60_getTemperature(6);
     interface.println(temp,1);
     interface.flush();
 }
 
 void sourceVoltageILimitSCPI(SCPI_C commands, SCPI_P parameters, Stream& interface) {
-    //Serial.println("sourceVoltageILimitSCPI");
-
- if (parameters.Size() > 0) {
+  DEBUG.println("SCPI Set current limit for voltage source (uA).");
+  if (parameters.Size() > 0) {
     int uA = (String(parameters[0]).toInt());
     SMU[0].fltSetCommitCurrentLimit(uA, true);
     interface.println("OK");
@@ -1800,8 +1803,8 @@ void sourceVoltageILimitSCPI(SCPI_C commands, SCPI_P parameters, Stream& interfa
 }
 
 void sourceCurrentVLimitSCPI(SCPI_C commands, SCPI_P parameters, Stream& interface) {
-  //Serial.println("sourceCurrentVLimitSCPI");
- if (parameters.Size() > 0) {
+  DEBUG.println("SCPI Set voltage limit for current source (mV).");
+  if (parameters.Size() > 0) {
     int mV = (String(parameters[0]).toInt());
     SMU[0].fltSetCommitVoltageLimit(mV, true);
     interface.println("OK");
@@ -1834,8 +1837,8 @@ void scpi_setup()
   my_instrument.SetCommandTreeBase(F("SOURce:"));
   my_instrument.RegisterCommand(F(":VOLTage"), &sourceVoltageSCPI);
   my_instrument.RegisterCommand(F(":CURRent"), &sourceCurrentSCPI);
-    my_instrument.RegisterCommand(F(":CURRent:VLIMit"), &sourceCurrentVLimitSCPI);
-    my_instrument.RegisterCommand(F(":VOLTage:ILIMit"), &sourceVoltageILimitSCPI);
+  my_instrument.RegisterCommand(F(":CURRent:VLIMit"), &sourceCurrentVLimitSCPI);
+  my_instrument.RegisterCommand(F(":VOLTage:ILIMit"), &sourceVoltageILimitSCPI);
 
   my_instrument.SetCommandTreeBase(F("MEASure:"));
   my_instrument.RegisterCommand(F(":VOLTage?"), &measureVoltageSCPI);
