@@ -1307,7 +1307,6 @@ void handleMenuScrolldown(){
 
 
 
-
 void renderMainHeader() {
 
   if (MAINMENU.active == true or anyDialogOpen()) {
@@ -1321,7 +1320,7 @@ void renderMainHeader() {
   GD.Vertex2ii(800, 22);
   
 
-  
+   
   GD.ColorA(255);
 
   // TODO: Use other that deviceTypeId to "detect" analog board problem
@@ -1509,6 +1508,9 @@ int detectGestures() {
 
  // if ((GD.inputs.tag == GESTURE_AREA_LOW || GD.inputs.tag == GESTURE_AREA_HIGH) && gestureDetected ==EST_NONE) {
   if (gestureDetected == GEST_NONE) {
+    if (MAINMENU.active || anyDialogOpen()) {
+      // dont detect swipes in lower part if dialog open
+    } else {
     if (touchX > 0 && touchY > LOWER_WIDGET_Y_POS && gestDistanceX < -20 && scrollDir == 0) {
       if (++gestDurationX >= 3) {
         DEBUG.println("gesture = move left");
@@ -1525,7 +1527,8 @@ int detectGestures() {
         gestDurationX = 0;
       }
     } 
-    else if (touchY > 0 && touchY<150 && gestDistanceY > 10 && scrollDir == 0 && gestDistanceX<20) {
+  }
+    if (touchY > 0 && touchY<150 && gestDistanceY > 10 && scrollDir == 0 && gestDistanceX<20) {
        if (++gestDurationY >= 2) {
         DEBUG.println("gesture = move down from upper");
         DEBUG.flush();

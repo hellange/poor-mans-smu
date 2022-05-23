@@ -56,13 +56,13 @@ void MainMenuClass::handleButtonAction(int inputTag) {
 }
 
 void MainMenuClass::render() {
-    int scrollSpeed = 40;
+    int scrollSpeed = 30;
     scrollMainMenu = scrollMainMenu + scrollMainMenuDir*scrollSpeed;
     if (scrollMainMenu > 350) {
       scrollMainMenu = 350;
       scrollMainMenuDir = 0;
     }
-
+if (toBeDisactive != true) {
     GD.ColorA(230);   
 
     GD.Begin(RECTS);
@@ -83,6 +83,8 @@ void MainMenuClass::render() {
     int buttonWidth = 200;
     int buttonHeight = 70;
                
+               
+
     const char * text[3][3] = {
     {"SOURCE VOLT\0", "SOURCE CURRENT\0", "LOGGER\0"},
     {"ELECTRONIC LOAD\0", "VOLTMETER\0", "PULSE GENERATOR\0"},
@@ -109,9 +111,10 @@ void MainMenuClass::render() {
         GD.cmd_button(70+(buttonWidth+30)*x,scrollMainMenu-280+(buttonHeight+20)*y,buttonWidth,buttonHeight,28,0,text[y][x]);
       }
     }
+               
     GD.Tag(MAIN_MENU_CLOSE);
     GD.cmd_button(360,scrollMainMenu-10,80,40,28,0,"CLOSE");
-
+}
     if(GD.inputs.tag == MAIN_MENU_CLOSE && scrollMainMenuDir == 0) {
       close();
     }
@@ -119,9 +122,15 @@ void MainMenuClass::render() {
   if (scrollMainMenuDir == -1){
       scrollMainMenu = scrollMainMenu + scrollMainMenuDir*15;
       if (scrollMainMenu < 0) {
+        keepActiveForAWhileTimer = millis();
         scrollMainMenu = 0;
-        active = false;
+        //active = false;
+        toBeDisactive = true;
         scrollMainMenuDir = 0;
       }
+  }
+  if (toBeDisactive == true && keepActiveForAWhileTimer + 100 < millis()) {
+    active = false;
+    toBeDisactive = false;
   }
 }

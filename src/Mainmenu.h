@@ -8,9 +8,12 @@ class MainMenuClass {
   void (*closedMainMenuFn)(FUNCTION_TYPE type);
   
   private:
+  unsigned long keepActiveForAWhileTimer;
     int scrollMainMenu = 0;
     FUNCTION_TYPE functionType = SOURCE_DC_VOLTAGE;
   public:
+      bool toBeDisactive = false;
+
     bool active = false;
     int scrollMainMenuDir = 0;
     void open(void (*closedMenuFn)(FUNCTION_TYPE type));
