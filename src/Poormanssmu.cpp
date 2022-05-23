@@ -1913,7 +1913,6 @@ void loop() {
       SMU[0].disable_ADC_DAC_SPI_units();
       GD.resume();
       GD.Clear();
-      renderMainHeader();
       detectGestures();
       DIGITIZER.renderGraph();
       showStatusIndicator(700, 40, "COMP", SMU[0].hasCompliance(), true);
@@ -1925,6 +1924,8 @@ void loop() {
       PUSHBUTTONS.handle();
       PUSHBUTTON_ENC.handle();
       handleMenuScrolldown();
+            renderMainHeader();
+
       GD.swap();
       GD.__end();
       DIGITIZER.rendering = false;
