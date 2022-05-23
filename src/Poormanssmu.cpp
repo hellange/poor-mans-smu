@@ -1310,6 +1310,9 @@ void handleMenuScrolldown(){
 
 void renderMainHeader() {
 
+  if (MAINMENU.active == true or anyDialogOpen()) {
+    return;
+  }
   // top header
   GD.Begin(RECTS);
   GD.ColorA(255);
@@ -1317,9 +1320,7 @@ void renderMainHeader() {
   GD.Vertex2ii(0,0);
   GD.Vertex2ii(800, 22);
   
-  if (MAINMENU.active == true or anyDialogOpen()) {
-    return;
-  }
+
   
   GD.ColorA(255);
 
@@ -1343,10 +1344,11 @@ void renderMainHeader() {
   //GD.cmd_number(30,0,27,3,analogRead(16)); // encoder button value ?
 
    // uptime
+  
   GD.ColorRGB(0xaaaaaa);
   GD.cmd_text(120, 0, 27, 0, "Uptime:");
   DIGIT_UTIL.displayTime(millis(), 190, 0);
-
+  
   if (ETHERNET2_UTIL.linkState) {
     GD.ColorA(100);
     GD.ColorRGB(0x00ff00);
@@ -1398,7 +1400,7 @@ void renderMainHeader() {
   GD.cmd_text(630,0,27,0,".");
   GD.cmd_number(635,0,27,0,dec);
   GD.cmd_text(645,0,27,0,"C");
-
+  
   GD.ColorRGB(0xdddddd);
   // Show log info
   //int logEntries = RAM.getCurrentLogAddress();
@@ -2196,7 +2198,6 @@ void loopMain()
   disable_ADC_DAC_SPI_units();
   GD.resume();
   GD.Clear();
-  renderMainHeader();
 
   if (showSettings == false) {
     renderUpperDisplay(operationType, functionType);  
@@ -2209,7 +2210,11 @@ void loopMain()
     handleWidgetScrollPosition();
     displayWidget();  
     handleMenuScrolldown();
+    renderMainHeader();
+
   } else {
+      renderMainHeader();
+
     // Special page without widgets etc...
     //renderUpperDisplay(operationType, functionType); 
    
