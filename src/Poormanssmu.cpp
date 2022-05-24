@@ -2163,7 +2163,10 @@ void handleFunctionSpecifcButtonAction(FUNCTION_TYPE functionType, int tag, int 
       }
 }
 
-int settingsValue = 0;
+
+int settingsValue1 = 0;
+int settingsValue2 = 0;
+int settingsValue3 = 10000;
 
 void loopMain()
 {
@@ -2227,22 +2230,25 @@ void loopMain()
 
 
     int lineY = 60;
-    GD.cmd_text(180, lineY -10, 29, 0, "Divide by 10");
+    GD.cmd_text(180, lineY -10, 29, 0, "Test setting 1");
     GD.Tag(42);
-    GD.cmd_toggle(50, lineY, 100, 29, OPT_FLAT, settingsValue,
+    GD.cmd_toggle(50, lineY, 100, 29, OPT_FLAT, settingsValue1,
     "enabled" "\xff" "disabled");
     GD.cmd_track(50, lineY, 100, 20, 42);
     lineY+=60;
-    GD.cmd_text(180, lineY-10 , 29, 0, "Software max current measurement value");
+    GD.cmd_text(180, lineY-10 , 29, 0, "Test setting 2");
     GD.Tag(43);
-    GD.cmd_toggle(50, lineY, 100, 29, OPT_FLAT, settingsValue,
+    GD.cmd_toggle(50, lineY, 100, 29, OPT_FLAT, settingsValue2,
     "enabled" "\xff" "disabled");
     GD.cmd_track(50, lineY, 80, 20, 43);
 
+    lineY+=60;
 
-        GD.Tag(TAG_FILTER_SLIDER);
-    GD.cmd_slider(150, 250, 280,15, OPT_FLAT, V_FILTERS.filterSize * (65535/maxFilterSliderValue), 65535);
-  
+    GD.Tag(44);
+    GD.cmd_slider(50, lineY, 280, 15, OPT_FLAT, settingsValue3, 65535); //V_FILTERS.filterSize * (65535/maxFilterSliderValue)
+    GD.cmd_track(50, lineY, 280, 20, 44);
+
+    GD.Tag(0);
 
     //45 max degree ?
     float degreeV = (V_FILTERS.mean) * 45.0/10000.0; 
@@ -2251,27 +2257,33 @@ void loopMain()
     float degreeC = (C_FILTERS.mean) * 45.0/1000.0; 
     ANALOG_GAUGE.renderAnalogGaugeValue(425,300,350, degreeC, C_FILTERS.mean, "mA", "+/-1000mA");
 
-
     //detectGestures();
     GD.get_inputs();
     int tag = GD.inputs.tag;
     switch (tag & 0xff) {
       case 42:
+        settingsValue1 = GD.inputs.track_val;
+        if (settingsValue1 > 30000) {
+          settingsValue1 = 65535;
+        }
+        else if (settingsValue1 <= 30000) {
+          settingsValue1 = 0;
+        }
+        break;
       case 43:
-      settingsValue = GD.inputs.track_val;
-      if (settingsValue > 30000) {
-        settingsValue = 65535;
-      }
-            if (settingsValue < 30000) {
-        settingsValue = 0;
-      }
-      //if (settingsValue == 0 && GD.inputs.track_val > 20000) {
-     //   settingsValue = 65535;
-     // }
-     // if (settingsValue == 65535 && GD.inputs.track_val < 10000) {
-     //           settingsValue = 0;
-//
-  //    }
+        settingsValue2 = GD.inputs.track_val;
+        if (settingsValue2 > 30000) {
+          settingsValue2 = 65535;
+        }
+        else if (settingsValue2 <= 30000) {
+          settingsValue2 = 0;
+        }
+        break;
+      case 44:
+        settingsValue3 = GD.inputs.track_val;
+       
+      break;
+
     }
 
 
