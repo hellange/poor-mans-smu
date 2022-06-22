@@ -24,12 +24,22 @@ class ADCClass {
 
   
   private:
-    double VREF = 5.013; //4.96625;  //5.01156          
-    double VFSR = VREF; 
+    double VREF_EXTERNAL_CAL = 5.013; //4.96625;  //5.01156   
+    double vref; //  = VREF_EXTERNAL_CAL   
+    double VFSR; //  = VREF; 
     CURRENT_RANGE current_range = AMP1;
     int samplingRate = 5;
     int oldSamplingRate = 5;
+
+    bool oldShortSetting = false;
+    bool shortSetting = false;
+
+    bool oldInternalRef = false;
+    bool internalRef = false;
+
     void writeSamplingRate();
+    void writeShortSetting();
+    void writeRefInputSetting();
 
   
   public:
@@ -40,6 +50,7 @@ class ADCClass {
     float DAC_RANGE_LOW;
     float DAC_RANGE_HIGH;
 
+    void setVrefMv(double mV);
 
     void init();
     void initADC();
@@ -66,6 +77,8 @@ class ADCClass {
     void setGPIO(int nr, bool on);
 
     bool use100uVSetResolution();
+    void shortAdcInput(bool setShort);
+        void internalRefInput(bool setInternalRef);
 
     void updateSettings();
     bool enableVoltageMeasurement = true;

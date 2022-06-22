@@ -68,7 +68,7 @@
 
 #define SAMPLING_BY_INTERRUPT
 
-#define VERSION_NUMBER "0.2.16"
+#define VERSION_NUMBER "0.2.2"
 
 SimpleStatsClass SIMPLE_STATS;
 LoggerClass LOGGER;
@@ -604,6 +604,9 @@ void sourceSweepPanel(int x, int y) {
   FUNCTION_SWEEP.render(x,y);
 }
 
+int settingsCurrentAutoRange = 0;
+
+
 void sourceCurrentPanel(int x, int y) {
 
   // heading
@@ -984,6 +987,26 @@ void renderBar(int x, int y, float rawValue, uint64_t setValue_u) {
   }
 }
 
+void measureResistancePanel(int x, int y, boolean compliance) {
+  if (x >= 800) {
+    return;
+  }
+  y=y+28;
+
+  VOLT_DISPLAY.renderMeasuredResistance(x /*+ 17*/, y, V_FILTERS.mean, C_FILTERS.mean, compliance);
+  VOLT_DISPLAY.renderSet(x+120, y+105, SMU[0].getLimitValue_micro());
+/*
+  y=y+105;
+  
+  GD.ColorRGB(0,0,0);
+  GD.cmd_fgcolor(0xaaaa90);  
+  GD.Tag(BUTTON_LIM_SET);
+  GD.cmd_button(x+20,y,95,50,29,0,"LIM");
+  GD.Tag(0); 
+  */
+  
+}
+
 void measureVoltagePanel(int x, int y, boolean compliance) {
   if (x >= 800) {
     return;
@@ -1043,7 +1066,12 @@ void measureCurrentPanel(int x, int y, boolean compliance, bool showBar) {
   GD.Tag(BUTTON_LIM_SET);
   GD.cmd_button(x+20,y,95,50,29,0,"LIM");
   GD.Tag(BUTTON_CUR_AUTO);
-  GD.cmd_button(x+370,y,95,50,29,0,SMU[0].getCurrentRange()==AMP1 ? "1A" : "10mA");
+    if (settingsCurrentAutoRange < 10000) { // auto range disabled
+     GD.cmd_button(x+370,y,95,50,29,0,SMU[0].getCurrentRange()==AMP1 ? "1A" : "10mA");
+  } else {
+     GD.cmd_button(x+370,y,95,50,28,0,SMU[0].getCurrentRange()==AMP1 ? "1A(A)" : "10mA(A)");
+  }
+  //GD.cmd_button(x+370,y,95,50,29,0,SMU[0].getCurrentRange()==AMP1 ? "1A" : "10mA");
   GD.Tag(0); 
 }
 
@@ -1119,6 +1147,12 @@ void showWidget(int y, int widgetNo, int scroll) {
        GD.cmd_text(20, yPos, 29, 0, "MEASURE CURRENT");
      }
      measureCurrentPanel(scroll, yPos + 20, SMU[0].hasCompliance(), true);
+  } else if (widgetNo ==0 && functionType==MEASURE_RESISTANCE) {
+     if (scroll ==0){
+       GD.ColorRGB(COLOR_VOLT);
+       GD.cmd_text(20, yPos, 29, 0, "MEASURE RESISTANCE");
+     }
+     measureResistancePanel(scroll, yPos + 20, SMU[0].hasCompliance());
   } else if (widgetNo ==0 && operationType == SOURCE_VOLTAGE) {
      if (scroll ==0){
        GD.ColorRGB(COLOR_CURRENT_TEXT);
@@ -1131,7 +1165,7 @@ void showWidget(int y, int widgetNo, int scroll) {
        GD.cmd_text(20, yPos, 29, 0, "MEASURE VOLTAGE");
      }
      measureVoltagePanel(scroll, yPos + 20, SMU[0].hasCompliance());
-  } else if (widgetNo == 1) {
+  }  else if (widgetNo == 1) {
     if (!anyDialogOpen()){
        if (scroll ==0){
          GD.ColorRGB(COLOR_CURRENT_TEXT);
@@ -1457,6 +1491,8 @@ void renderUpperDisplay(OPERATION_TYPE operationType, FUNCTION_TYPE functionType
     sourcePulsePanel(x,y);
   } else if (functionType == SOURCE_SWEEP) {
     sourceSweepPanel(x,y);
+  } else if (functionType == MEASURE_RESISTANCE) {
+    sourceCurrentPanel(x,y);
   }
   
 }
@@ -1630,13 +1666,13 @@ static void handleSampling() {
     //Cout = Cout - V_CALIBRATION.nullValueCur[current_range];
     Cout = Cout - C_CALIBRATION.relativeValue[SMU[0].getCurrentRange()];
     C_STATS.addSample(Cout);
-    C_FILTERS.updateMean(Cout, false);
+    C_FILTERS.updateMean(Cout, true); // moving average
   }
   else if(dataR == 0) {
     float Vout = SMU[0].measureMilliVoltage();
     Vout = Vout - V_CALIBRATION.relativeValue[SMU[0].getCurrentRange()];
     V_STATS.addSample(Vout);    
-    V_FILTERS.updateMean(Vout, true);
+    V_FILTERS.updateMean(Vout, true);// moving average
     SIMPLE_STATS.registerValue(V_FILTERS.mean);
     LOGGER.registerValue2(Vout);
     // store now and then
@@ -1681,6 +1717,9 @@ static void handleSampling() {
 }
 
 void handleAutoCurrentRange() {
+  if (settingsCurrentAutoRange < 10000) { //TODO Dont use value directly from GD toggle
+    return;
+  }
      if (!ZEROCALIBRATION.autoNullStarted && !V_CALIBRATION.autoCalInProgress && !C_CALIBRATION.autoCalInProgress) {
       float milliAmpere = C_STATS.rawValue;
 //      DEBUG.print(milliAmpere,5);
@@ -1697,7 +1736,7 @@ void handleAutoCurrentRange() {
           DEBUG.println("switching to range 1");
            //TODO: Use getLimitValue from SMU instead of LIMIT_DIAL ?
           if (operationType == SOURCE_VOLTAGE){
-            if (SMU[0].fltSetCommitCurrentLimit(SMU[0].getLimitValue_micro()*1000/*LIMIT_DIAL.getMv()*/, _SOURCE_AND_SINK)) printError(_PRINT_ERROR_VOLTAGE_SOURCE_SETTING);
+            if (SMU[0].fltSetCommitCurrentLimit(SMU[0].getLimitValue_micro()/*LIMIT_DIAL.getMv()*/, _SOURCE_AND_SINK)) printError(_PRINT_ERROR_VOLTAGE_SOURCE_SETTING);
           } 
 
         }
@@ -1712,7 +1751,7 @@ void handleAutoCurrentRange() {
           DEBUG.println("switching to range 0");
            //TODO: Use getLimitValue from SMU instead of LIMIT_DIAL ?
           if (operationType == SOURCE_VOLTAGE){
-            if (SMU[0].fltSetCommitCurrentLimit(SMU[0].getLimitValue_micro()*1000/*LIMIT_DIAL.getMv()/1000.0*/, _SOURCE_AND_SINK)) printError(_PRINT_ERROR_VOLTAGE_SOURCE_SETTING);
+            if (SMU[0].fltSetCommitCurrentLimit(SMU[0].getLimitValue_micro()/*LIMIT_DIAL.getMv()/1000.0*/, _SOURCE_AND_SINK)) printError(_PRINT_ERROR_VOLTAGE_SOURCE_SETTING);
           } 
 
           
@@ -2164,9 +2203,9 @@ void handleFunctionSpecifcButtonAction(FUNCTION_TYPE functionType, int tag, int 
 }
 
 
-int settingsValue1 = 0;
-int settingsValue2 = 0;
-int settingsValue3 = 10000;
+int settingsShortAdc = 0;
+//int settingsCurrentAutoRange = 65000;
+int settingsInternalADCRef = 0;
 
 void loopMain()
 {
@@ -2181,8 +2220,8 @@ void loopMain()
   // Auto range current measurement while sourcing voltage. 
   // Note that this gives small glitches in voltage.
   // TODO: Find out how large glitches and if it's a real problem...
-  if (operationType == SOURCE_VOLTAGE) {
-      //handleAutoCurrentRange();
+  if (operationType == SOURCE_VOLTAGE || operationType == SOURCE_CURRENT) {
+      handleAutoCurrentRange();
   }
 
   #ifndef SAMPLING_BY_INTERRUPT 
@@ -2230,23 +2269,30 @@ void loopMain()
 
 
     int lineY = 60;
-    GD.cmd_text(180, lineY -10, 29, 0, "Test setting 1");
+    GD.cmd_text(180, lineY -10, 29, 0, "Short ADC input");
     GD.Tag(42);
-    GD.cmd_toggle(50, lineY, 100, 29, OPT_FLAT, settingsValue1,
-    "enabled" "\xff" "disabled");
+    GD.cmd_toggle(50, lineY, 100, 29, OPT_FLAT, settingsShortAdc,
+    "disabled" "\xff" "enabled");
     GD.cmd_track(50, lineY, 100, 20, 42);
     lineY+=60;
-    GD.cmd_text(180, lineY-10 , 29, 0, "Test setting 2");
+    GD.cmd_text(180, lineY-10 , 29, 0, "Current auto range");
     GD.Tag(43);
-    GD.cmd_toggle(50, lineY, 100, 29, OPT_FLAT, settingsValue2,
-    "enabled" "\xff" "disabled");
+    GD.cmd_toggle(50, lineY, 100, 29, OPT_FLAT, settingsCurrentAutoRange,
+    "disabled" "\xff" "enabled");
     GD.cmd_track(50, lineY, 80, 20, 43);
+        lineY+=60;
+
+    GD.cmd_text(180, lineY-10 , 29, 0, "Internal reference");
+     GD.Tag(44);
+    GD.cmd_toggle(50, lineY, 100, 29, OPT_FLAT, settingsInternalADCRef,
+    "disabled" "\xff" "enabled");
+    GD.cmd_track(50, lineY, 80, 20, 44);
 
     lineY+=60;
 
-    GD.Tag(44);
-    GD.cmd_slider(50, lineY, 280, 15, OPT_FLAT, settingsValue3, 65535); //V_FILTERS.filterSize * (65535/maxFilterSliderValue)
-    GD.cmd_track(50, lineY, 280, 20, 44);
+    //GD.Tag(44);
+    //GD.cmd_slider(50, lineY, 280, 15, OPT_FLAT, settingsInternalADCRef, 65535); //V_FILTERS.filterSize * (65535/maxFilterSliderValue)
+    //GD.cmd_track(50, lineY, 280, 20, 44);
 
     GD.Tag(0);
 
@@ -2262,27 +2308,40 @@ void loopMain()
     int tag = GD.inputs.tag;
     switch (tag & 0xff) {
       case 42:
-        settingsValue1 = GD.inputs.track_val;
-        if (settingsValue1 > 30000) {
-          settingsValue1 = 65535;
+        settingsShortAdc = GD.inputs.track_val;
+        if (settingsShortAdc > 30000) {
+          settingsShortAdc = 65535;
+          SMU[0].shortAdcInput(true);
+
         }
-        else if (settingsValue1 <= 30000) {
-          settingsValue1 = 0;
+        else if (settingsShortAdc <= 30000) {
+          settingsShortAdc = 0;
+          SMU[0].shortAdcInput(false);
+
         }
         break;
       case 43:
-        settingsValue2 = GD.inputs.track_val;
-        if (settingsValue2 > 30000) {
-          settingsValue2 = 65535;
+        settingsCurrentAutoRange = GD.inputs.track_val;
+        if (settingsCurrentAutoRange > 30000) {
+          settingsCurrentAutoRange = 65535;
         }
-        else if (settingsValue2 <= 30000) {
-          settingsValue2 = 0;
+        else if (settingsCurrentAutoRange <= 30000) {
+          settingsCurrentAutoRange = 0;
         }
         break;
       case 44:
-        settingsValue3 = GD.inputs.track_val;
-       
-      break;
+        settingsInternalADCRef = GD.inputs.track_val;
+        if (settingsInternalADCRef > 30000) {
+          settingsInternalADCRef = 65535;
+                              SMU[0].internalRefInput(true);
+
+        }
+        else if (settingsInternalADCRef <= 30000) {
+          settingsInternalADCRef = 0;
+                    SMU[0].internalRefInput(false);
+
+        }
+        break;
 
     }
 

@@ -13,7 +13,8 @@ int DigitizerClass::ampLevel = 1;
 DigitizerClass DIGITIZER;
 
 // select digitize voltage or current
-bool digitizeVoltage = true; // false
+//bool digitizeVoltage = true;  
+bool digitizeVoltage = false;  
 
 void DigitizerClass::init(OPERATION_TYPE operationType_) {
 

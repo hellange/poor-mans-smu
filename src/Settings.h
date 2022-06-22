@@ -8,8 +8,8 @@ class SettingsClass {
 
 private:
   int maxTempAllowed = 80;
-  float max_current_10ma_range = 10.0;
-  float max_current_1a_range = 1300.0;
+  float max_current_10ma_range = 9.0;
+  float max_current_1a_range = 3300.0;
  
 public:
  

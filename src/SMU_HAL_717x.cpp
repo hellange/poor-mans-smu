@@ -33,9 +33,12 @@ static st_reg init_state[] =
 
     // voltage meas
     {0x10, 2, 0, 0x8001l, "Ch_Map_0 "}, //CH_Map_1   ain1, ain0
+    //{0x10, 2, 0, 0x8000l, "Ch_Map_0 "}, //CH_Map_1  both to ain0, same as short circuit ?
 
     // current meas
+    //{0x11, 2, 0, 0x0043l, "Ch_Map_1 "}, //CH_Map_2   ain3, ain2
     {0x11, 2, 0, 0x8043l, "Ch_Map_1 "}, //CH_Map_2   ain3, ain2
+
     //{0x11, 2, 0, 0x0001l, "Ch_Map_1 "}, //CH_Map_2   ain3, ain2
        // {0x11, 2, 0, 0x82c5l, "Ch_Map_1 "}, //CH_Map_2   ref- ref+
        // {0x11, 2, 0, 0x8232l, "Ch_Map_1 "}, //CH_Map_2   temp- temp+
@@ -51,7 +54,6 @@ static st_reg init_state[] =
  //{0x20, 2, 0, 0x1c00l, "SetupCfg0"}, //Setup_Config_1   //ext ref, dis buffer
 
 {0x20, 2, 0, 0x1f00l, "SetupCfg0"}, //Setup_Config_1   //ext ref, enable buffer
-
 //{0x20, 2, 0, 0x1c20l, "SetupCfg0"}, //Setup_Config_1  //int ref, unipolar 
 
     {0x21, 2, 0, 0x1020l, "SetupCfg1"}, //Setup_Config_2
@@ -96,6 +98,10 @@ static st_reg init_state[] =
 
 bool full_board = true; // set to true to account for shunt and gain/offsets other places that dac/adc
 
+void ADCClass::setVrefMv(double vrefMv) {
+  vref = vrefMv;
+  VFSR = vref;
+}
 void ADCClass::disable_ADC_DAC_SPI_units(){
    pinMode(7,OUTPUT); // mux master chip select
    digitalWrite(7, HIGH); // comment out if running display on spi1
@@ -129,7 +135,56 @@ void ADCClass::updateSettings() {
 
 }
 
+
+// -----  Internal short circuit of inputs---
+
+void ADCClass::shortAdcInput(bool setShort) {
+  // for voltage measurement
+  shortSetting = setShort;
+}
+
+void ADCClass::writeShortSetting() {
+if (shortSetting != oldShortSetting) {
+    oldShortSetting = shortSetting;
+  //update shortADC here as well. TODO: Move
+    if (shortSetting) {
+        AD7176_WriteRegister({0x10, 2, 0, 0x8000l  });
+        //    {0x10, 2, 0, 0x8000l, "Ch_Map_0 "}, //CH_Map_1  both to ain0, same as short circuit ?
+    } else {
+        AD7176_WriteRegister({0x10, 2, 0, 0x8001l  });
+    }
+  }
+}
+
+
+// -----  internal ref or not ---
+void ADCClass::internalRefInput(bool internalRef_) {
+  internalRef = internalRef_;
+}
+//{0x20, 2, 0, 0x1f00l, "SetupCfg0"}, //Setup_Config_1   //ext ref, enable buffer
+////{0x20, 2, 0, 0x1c20l, "SetupCfg0"}, //Setup_Config_1  //int ref, unipolar 
+void ADCClass::writeRefInputSetting() {
+if (internalRef != oldInternalRef) {
+    oldInternalRef = internalRef;
+    if (internalRef) {
+        AD7176_WriteRegister({0x20, 2, 0, 0x1c20l  });
+        setVrefMv(2.5);
+    } else {
+        AD7176_WriteRegister({0x20, 2, 0, 0x1f00l  });
+        setVrefMv(VREF_EXTERNAL_CAL);
+    }
+  }
+}
+
+
+
+
+
+
 void ADCClass::writeSamplingRate() {
+
+  
+
   if (oldSamplingRate == samplingRate) {
      return;
   }
@@ -192,7 +247,7 @@ void ADCClass::writeSamplingRate() {
   } else if (value == 25000) {
       AD7176_WriteRegister({0x28, 2, 0, 0x0205l}); 
   } else if (value == 31250) {
-      AD7176_WriteRegister({0x28, 2, 0, 0x0204l}); // sinc3 
+      AD7176_WriteRegister({0x28, 2, 0, 0x0204l}); // sinc3 ?
   } else if (value == 50000) {
       AD7176_WriteRegister({0x28, 2, 0, 0x0203l}); 
   } else {
@@ -329,7 +384,7 @@ double ADCClass::measureMilliVoltageRaw() {
   float v = (float) ((AD7176_regs[4].value*VFSR*1000.0)/FSR);
 
   
-  v=v-VREF*1000.0;
+  v=v-vref*1000.0;
   writeSamplingRate();  // update sampling rate here seems to work. Doing randomly other places often fails.... for some reason...
 
   return v;
@@ -351,7 +406,7 @@ double ADCClass::measureMilliVoltage() {
   AD7176_ReadRegister(&AD7176_regs[4]);
 
   float v = (float) ((AD7176_regs[4].value*VFSR*1000.0)/FSR); 
-  v=v-VREF*1000.0;
+  v=v-vref*1000.0;
 
   //v = v / 0.8;  // funnel amplifiersetNullValue x0.8
   v = v / 0.4;  // funnel amplifier x0.4
@@ -398,6 +453,8 @@ double ADCClass::measureMilliVoltage() {
   //DEBUG.println(v); 
 
   writeSamplingRate();  // update sampling rate here seems to work. Doing randomly other places often fails.... for some reason...
+  writeShortSetting(); // update short setting as well
+  writeRefInputSetting(); // update ref input
 
   v=v - V_CALIBRATION.nullValueVol[current_range];
 
@@ -411,9 +468,15 @@ int ADCClass::dataReady() {
 }
 
 void ADCClass::init() {
+
+  setVrefMv(VREF_EXTERNAL_CAL); // set individualy...
+  
   initADC();
   initDAC();
+
 }
+
+
 
 void ADCClass::initADC(){
   DEBUG.print("SETUP: ");
@@ -760,7 +823,7 @@ int64_t ADCClass::fltSetCommitVoltageLimit(int64_t voltage_uV, int8_t up_down_bo
 
     AD7176_ReadRegister(&AD7176_regs[4]);
     double v = (float) ((AD7176_regs[4].value*VFSR*1000.0)/FSR); 
-    v=v-VREF*1000.0;
+    v=v-vref*1000.0;
 
     //TODO: Change when testing with ADA4254!
     //v = v / 0.8;  // funnel amplifier x0.8

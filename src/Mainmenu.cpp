@@ -49,6 +49,9 @@ void MainMenuClass::handleButtonAction(int inputTag) {
     } else if (inputTag == MENU_BUTTON_GRAPH) {
       functionType = GRAPH;
       close();
+    } else if (inputTag == MENU_BUTTON_RESISTANCE) {
+      functionType = MEASURE_RESISTANCE;
+      close();
     } else if (inputTag == MENU_BUTTON_LOGGER) {
       functionType = DATALOGGER;
       close();
@@ -81,34 +84,58 @@ if (toBeDisactive != true) {
     //GD.ColorA(230);
 
     int buttonWidth = 200;
-    int buttonHeight = 70;
+    int buttonHeight = 55;
                
                
+    GD.ColorA(255);   
 
-    const char * text[3][3] = {
+    const char * text[4][3] = {
     {"SOURCE VOLT\0", "SOURCE CURRENT\0", "LOGGER\0"},
     {"ELECTRONIC LOAD\0", "VOLTMETER\0", "PULSE GENERATOR\0"},
-    {"SWEEP\0", "GRAPH\0", "DIGITIZE\0"}};
-    GD.ColorRGB(0x444444);
-    for (int y =0;y<3;y++) {
+    {"SWEEP\0", "GRAPH\0", "DIGITIZE\0"},
+    {"BATTERY SIM\0", "BATTERY MOD\0", "RESISTANCE\0"}
+    };
+    for (int y =0;y<4;y++) {
       for (int x =0;x<3;x++) {
+        bool enable = false;
         if (y==1 && x == 2) {
           GD.Tag(MENU_BUTTON_SOURCE_PULSE);
+          enable = true;
         } else if (y==0 && (x==0)) {
           GD.Tag(MENU_BUTTON_SOURCE_DC_VOLTAGE);
-        } 
-        else if (y==0 && (x==1)) {
+          enable = true;
+
+        } else if (y==0 && (x==1)) {
           GD.Tag(MENU_BUTTON_SOURCE_DC_CURRENT);
+          enable = true;
+
         }else if (y==0 && (x==2)) {
           GD.Tag(MENU_BUTTON_LOGGER);
-        }else if (y==2 && x==0) {
+          enable = true;
+
+        } else if (y==2 && x==0) {
           GD.Tag(MENU_BUTTON_SOURCE_SWEEP);
+          enable = true;
+
         } else if (y==2 && x==2) {
           GD.Tag(MENU_BUTTON_DIGITIZE);
+          enable = true;
+
         } else if (y==2 && x==1) {
           GD.Tag(MENU_BUTTON_GRAPH);
+          enable = true;
+        } else if (y==3 && x==2) {
+          GD.Tag(MENU_BUTTON_RESISTANCE);
+          enable = true;
+        } else {
+          GD.Tag(0);
         }
-        GD.cmd_button(70+(buttonWidth+30)*x,scrollMainMenu-280+(buttonHeight+20)*y,buttonWidth,buttonHeight,28,0,text[y][x]);
+        if (enable) {
+              GD.ColorRGB(0x4444ff);
+        } else {
+              GD.ColorRGB(0x666666);
+        }
+        GD.cmd_button(70+(buttonWidth+30)*x,scrollMainMenu-320+(buttonHeight+20)*y,buttonWidth,buttonHeight,28,0,text[y][x]);
       }
     }
                

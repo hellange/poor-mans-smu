@@ -57,6 +57,83 @@ void VoltDisplayClass::renderMeasured(int x, int y, float rawMv, bool compliance
  GD.ColorRGB(COLOR_VOLT);
 }
 
+//TODO: Resistance should be moved to another place...
+void VoltDisplayClass::renderMeasuredResistance(int x, int y, float rawMv, float rawMa, bool compliance) {
+
+  float ohm = rawMv / rawMa;
+  int v, mv, uv;
+  bool neg;
+  DIGIT_UTIL.separate(&v, &mv, &uv, &neg, ohm * 1000.0);
+
+
+  //int complianceColor = 0xff4522; //blinkColor(0xff4522, 0x991002, 1000);
+  int complianceColor = DIGIT_UTIL.blinkColor(0xff4522, 0x991002, 1000);
+
+
+  GD.ColorA(255);
+
+  if (compliance) {
+    GD.ColorRGB(complianceColor);
+  } else {
+    GD.ColorRGB(COLOR_VOLT);
+  }
+  
+
+  //GD.cmd_text(x, y,  1, 0, neg ? "-":"+");
+  x = x + 55;
+ 
+  // if ( (v==0 && mv > 99) || v>0 ) {
+  //   boldNumber(x,y, 2, v);
+  //   boldText(x+104,y, ".");
+  //   boldNumber(x+130,y, 3, mv);
+  
+  //   //GD.ColorA(100);
+  //   //GD.cmd_number(x+307, y+2, 1, 3, uv);
+  //   GD.ColorA(255);
+  //   GD.cmd_number(x+307, y+2, 1, 2, uv/10.0);
+
+  //   // show last digit in uV. Note that the HW is NOT designed with that precision !!!!
+  //   GD.ColorA(100);
+  //   GD.cmd_number(x+307+110, y+2+48, 31, 1, (uv/10.0 - ((int)(uv/10.0)))*10.0);
+
+  //   GD.ColorA(255);
+
+  //   GD.cmd_text(x+470 -30, y+2,  1, 0, "Ohm"); 
+  // } else {
+    //boldNumber(x,y+42-42, 2, v);
+    // boldNumber(x+104-100,y, 3, mv);
+    // boldText(x+164,y, ".");
+    // GD.ColorA(100);
+    // GD.cmd_number(x+194, y+2, 1, 3, uv);
+    // GD.ColorA(255);
+    // GD.cmd_number(x+194, y+2, 1, 2, uv/10.0);
+    // GD.cmd_text(x+360, y+2,  1, 0, "Ohm"); 
+  //}
+
+  if (ohm < 999.0) {
+  boldNumber(x+104-100,y, 3, ohm);
+    boldText(x+164,y, ".");
+    //GD.ColorA(100);
+    GD.cmd_number(x+194, y+2, 1, 3, mv);
+   // GD.ColorA(255);
+   // GD.cmd_number(x+194, y+2, 1, 2, uv/10.0);
+    GD.cmd_text(x+360, y+2,  1, 0, "Ohm");
+  } else {
+    boldNumber(x+104-100,y, 5, ohm);
+    boldText(x+164+100,y, ".");
+    //GD.ColorA(100);
+   // GD.cmd_number(x+194+50, y+2, 1, 1, uv/100.0);
+    //GD.ColorA(255);
+    //GD.cmd_number(x+194+100, y+2, 1, 3, mv);
+        GD.cmd_number(x+194+100, y+2 , 1, 2, mv/10.0);
+
+    GD.cmd_text(x+360 + 50      , y+2,  1, 0, "Ohm");
+
+    
+  }
+ GD.ColorRGB(COLOR_VOLT);
+}
+
 void VoltDisplayClass::renderSet(int x, int y, int64_t raw_uV) {
 
   float rawMv = raw_uV/1000.0;
