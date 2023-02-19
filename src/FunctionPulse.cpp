@@ -125,10 +125,10 @@ void FunctionPulseClass::handleButtonAction(int inputTag) {
 }
 
 
-void FunctionPulseClass::render(int x, int y) {
+void FunctionPulseClass::render(int x, int y, bool reduceDetails) {
   
 
-
+ 
   duration = 1000.0/hz;
   
   // heading
@@ -165,6 +165,10 @@ void FunctionPulseClass::render(int x, int y) {
   GD.cmd_button(x+130,y+55,80,40,28,0,"Inc");
   GD.Tag(0);
 
+if (reduceDetails) {
+  return;
+ }
+ 
   y=y-100;
 
   if (operationType == SOURCE_VOLTAGE) {

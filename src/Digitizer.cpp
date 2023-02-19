@@ -49,11 +49,14 @@ void DigitizerClass::close() {
 
     digitize = false;
     bufferOverflow = false;
+
 }
 
-void DigitizerClass::loopDigitize() {
+void DigitizerClass::loopDigitize(bool reduceDetails) {
   //operationType = getOperationType();
-  
+  if (reduceDetails) {
+   // return;
+  }
   if (digitize == false && !MAINMENU.active){
         SMU[0].disable_ADC_DAC_SPI_units();
    
@@ -72,7 +75,7 @@ void DigitizerClass::loopDigitize() {
 }
 
 unsigned long digitizerCheckButtonTimer = millis();
-void DigitizerClass::renderGraph() {
+void DigitizerClass::renderGraph(bool reduceDetails) {
 
       GD.Tag(0);
 

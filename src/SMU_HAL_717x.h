@@ -85,6 +85,8 @@ class ADCClass {
     bool enableCurrentMeasurement = true;
     CURRENT_RANGE getCurrentRange();
 
+    bool voltageMeasurementGainX2 = false;
+
 };
 
 #endif

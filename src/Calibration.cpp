@@ -503,9 +503,9 @@ void CalibrationClass::autoCalADCfromDAC() {
     DEBUG.println(autoCalV);
     GD.__end();
     if (operationType == SOURCE_VOLTAGE) {
-       SMU[0].fltSetCommitVoltageSource(autoCalV, true);
+       SMU[0].fltSetCommitVoltageSource(autoCalV*1000.0, true);
     } else {
-       SMU[0].fltSetCommitCurrentSource(autoCalV);
+       SMU[0].fltSetCommitCurrentSource(autoCalV*1000.0);
     }
     GD.resume();
 
@@ -929,7 +929,7 @@ void CalibrationClass::renderCal2(int x, int y, float valM, float setM, CURRENT_
 
 
  GD.ColorRGB(0xaaaaaa);
-
+if (!reduceDetails) {
     // TODO: Differ between current ranges for voltage zero ?
     GD.cmd_text(x,y+45,27,0,"ADC Null V");
     DIGIT_UTIL.renderValue(x,  y+60 ,nullValueVol[0], 1, -1); 
@@ -942,7 +942,7 @@ void CalibrationClass::renderCal2(int x, int y, float valM, float setM, CURRENT_
     DIGIT_UTIL.renderValue(x + 150,  y+110 ,nullValueCur[1], 1, -1); 
     GD.Tag(0);
 
-
+}
      GD.LineWidth(20);
   GD.Begin(LINE_STRIP);
   GD.ColorA(255);
@@ -963,7 +963,13 @@ void CalibrationClass::renderCal2(int x, int y, float valM, float setM, CURRENT_
     x_null_position = 465;
   }
   float correction_display_factor = 80000.0; // TODO: Make it show as ppm ?  uV ?
-  y=y+30+10;
+
+  // avoid drawing graph outside of target area (can happen if cal values are large...)
+  GD.ScissorXY(0,280);
+  GD.ScissorSize(640,150);
+
+
+  y=y+10;
   // correction graph
   if (!reduceDetails) {
     for (int i=0;i<adc_cal_points;i++) {
@@ -1002,6 +1008,11 @@ void CalibrationClass::renderCal2(int x, int y, float valM, float setM, CURRENT_
         GD.Vertex2ii(x+x_null_position+xv, y + 100);
     }
   }
+  
+  // reset the scissor. Is this the way ????
+  GD.ScissorXY(0,0);
+  GD.ScissorSize(800,640);
+
   y=y-50;
   // voltage labels
   if (!reduceDetails) {
@@ -1027,8 +1038,9 @@ void CalibrationClass::renderCal2(int x, int y, float valM, float setM, CURRENT_
   }
 
 
+
   x=x+350;
-  y=y+20;
+  y=y+20+30;
   GD.ColorRGB(0x000000);
     GD.ColorA(255);
 
@@ -1049,7 +1061,7 @@ void CalibrationClass::renderCal2(int x, int y, float valM, float setM, CURRENT_
 
 void CalibrationClass::renderCal(int x, int y, float valM, float setM, CURRENT_RANGE current_range, bool reduceDetails)
 {
-
+ 
   // dac vol2cur2
   if (current_range == MILLIAMP10 && operationType == SOURCE_CURRENT)
   {

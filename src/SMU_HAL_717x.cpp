@@ -417,7 +417,9 @@ double ADCClass::measureMilliVoltage() {
   // DONT INCLUDE THESE ADJUSTMENTS WHEN TESTING ONLY DAC/ADC BOARD !!!!
   if (full_board == true) {
     
-    //v = v*2.0; // divide by 2 in measurement circuit
+    if (voltageMeasurementGainX2) {
+      v = v/2.0; // divide by 2 in measurement circuit to have 2x gain
+    }
         
     // TODO: Dont hardcode the voltage value used for 
     //       differentiating voltage ranges !

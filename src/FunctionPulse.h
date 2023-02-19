@@ -24,7 +24,7 @@ class FunctionPulseClass {
     void open(OPERATION_TYPE operationType,void (*closedFn)(OPERATION_TYPE type));
     void close();
     void handleButtonAction(int inputTag);
-    static void render(int x, int y);
+    static void render(int x, int y, bool reduceDetails);
     static void rotaryEncChanged(float changeValue);
     static void rotaryEncButtonChanged(int key, bool quickPress, bool holdAfterLongPress, bool releaseAfterLongPress);
   };

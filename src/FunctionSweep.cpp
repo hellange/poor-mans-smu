@@ -93,8 +93,11 @@ void FunctionSweepClass::handleButtonAction(int inputTag) {
     
 }
 
-void FunctionSweepClass::render(int x, int y) {
+void FunctionSweepClass::render(int x, int y, bool reduceDetails) {
 
+  if (reduceDetails == true) {
+    return;
+  }
 
   // heading
   GD.ColorRGB(operationType == SOURCE_VOLTAGE?COLOR_VOLT:COLOR_CURRENT);
@@ -173,6 +176,10 @@ void FunctionSweepClass::render(int x, int y) {
   GD.cmd_button(x+600,y,80,40,28,0,"Zero");
   GD.Tag(0);
 
+ if (reduceDetails) {
+  return;
+}
+
     GD.ColorRGB(COLOR_VOLT);
 
  
@@ -192,6 +199,8 @@ void FunctionSweepClass::render(int x, int y) {
   GD.Vertex2ii(x+560+200 ,y-20);
   */
  
+
+
   GD.ColorRGB(COLOR_VOLT);
   DIGIT_UTIL.renderValue(x + 560,  y-50-t*30 , currentSweepValue, 3, -1); 
   GD.ColorRGB(0x666666);

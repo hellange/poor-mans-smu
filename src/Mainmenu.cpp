@@ -151,12 +151,12 @@ if (toBeDisactive != true) {
       if (scrollMainMenu < 0) {
         keepActiveForAWhileTimer = millis();
         scrollMainMenu = 0;
-        //active = false;
         toBeDisactive = true;
         scrollMainMenuDir = 0;
       }
   }
-  if (toBeDisactive == true && keepActiveForAWhileTimer + 100 < millis()) {
+  // make sure it pretends to be active a some time after closed
+  if (toBeDisactive == true && keepActiveForAWhileTimer + 50 < millis()) {
     active = false;
     toBeDisactive = false;
   }

@@ -157,6 +157,7 @@ void StatsClass::renderHistogram(int x, int y, bool limitDetails) {
         GD.Vertex2ii(xpos+barWidth - 4, y); 
       }
 
+if (!limitDetails) {
       if (i==0 || i==((noOfbins-1)/2) || i==noOfbins-1){
         DIGIT_UTIL.renderValue(xpos-35, y+20, binLimits[i], 0, type);
         GD.LineWidth(10);
@@ -165,7 +166,7 @@ void StatsClass::renderHistogram(int x, int y, bool limitDetails) {
         GD.Vertex2ii(xpos, y+15); 
 
       }
-
+}
 
     }
 }

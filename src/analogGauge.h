@@ -8,7 +8,7 @@ class AnalogGaugeClass {
     void renderAnalogGauge(int x, int y, int size, float degrees, float value, const char *title);
 
   public:
-    void renderAnalogGaugePercent(int x, int y, int size, float degrees, float value, const char *title);
+    void renderAnalogGaugePercent(int x, int y, int size, float degrees, float value, const char *title, bool lessDetails);
     void renderAnalogGaugeValue(int x, int y, int size, float degrees, float value, const char *unit, const char *title);
 
 };

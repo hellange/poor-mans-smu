@@ -22,7 +22,7 @@ class FunctionSweepClass {
     void open(OPERATION_TYPE operationType, void (*closedFn)(OPERATION_TYPE type));
     void close();
     void handleButtonAction(int inputTag);
-    void render(int x, int y);
+    void render(int x, int y, bool reduceDetails);
     void handle();
     float duration = 5000;
   float step = 100.0;

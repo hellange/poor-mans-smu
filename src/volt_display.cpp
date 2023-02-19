@@ -4,7 +4,7 @@
 #include "colors.h"
 #include "digit_util.h"
 
-void VoltDisplayClass::renderMeasured(int x, int y, float rawMv, bool compliance) {
+void VoltDisplayClass::renderMeasured(int x, int y, float rawMv, bool compliance, bool reduceDetails) {
 
   int v, mv, uv;
   bool neg;

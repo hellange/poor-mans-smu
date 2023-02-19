@@ -204,7 +204,7 @@ void LoggerClass::updateViewData(int samplesPr) {
 
 }
 
-void LoggerClass::loop() {
+void LoggerClass::loop(bool lessDetails) {
 
    GD.LineWidth(5);
  GD.ColorA(255);
@@ -215,7 +215,9 @@ void LoggerClass::loop() {
   GD.Vertex2ii(150, y);
   GD.Vertex2ii(758, y);
  }
-  
+  if (lessDetails) {
+    return;
+  }
 
   if (noViewBuffer) {
     return;

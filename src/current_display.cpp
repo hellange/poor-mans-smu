@@ -25,7 +25,7 @@ void CurrentDisplayClass::renderOverflowSW(int x, int y) {
   GD.ColorRGB(COLOR_CURRENT);
   boldText(x, y, " Overflow A (sw)");
 }
-void CurrentDisplayClass::renderMeasured(int x, int y, float rawMa, boolean compliance, bool show_nA, CURRENT_RANGE current_range) {
+void CurrentDisplayClass::renderMeasured(int x, int y, float rawMa, boolean compliance, bool show_nA, CURRENT_RANGE current_range, bool reduceDetails) {
  
   int complianceColor = DIGIT_UTIL.blinkColor(0xff4522, 0x991002, 1000);
 

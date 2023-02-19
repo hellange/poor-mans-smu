@@ -60,9 +60,12 @@ void AnalogGaugeClass::renderAnalogGaugeValue(int x, int y, int width, float deg
 
 }
 
-void AnalogGaugeClass::renderAnalogGaugePercent(int x, int y, int width, float degrees, float value, const char *title) {
+void AnalogGaugeClass::renderAnalogGaugePercent(int x, int y, int width, float degrees, float value, const char *title, bool lessDetails) {
   renderAnalogGauge(x,y,width,degrees,value,title);
   
+  if (lessDetails) {
+    return;
+  }
   int gaugeRadius = width/2;
   y=y+gaugeRadius-22;
   x=x+gaugeRadius*1.2/2;

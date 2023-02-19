@@ -6,7 +6,7 @@
 
 class CurrentDisplayClass {
 public:
-  void renderMeasured(int x, int y, float rawMa, bool compliance, bool show_nA, CURRENT_RANGE current_range);
+  void renderMeasured(int x, int y, float rawMa, bool compliance, bool show_nA, CURRENT_RANGE current_range, bool reduceDetails);
   void renderOverflowSW(int x, int y);
   void renderSet(int x, int y, int64_t raw_uA, CURRENT_RANGE current_range);
   void boldText(int x, int y, const char *text);

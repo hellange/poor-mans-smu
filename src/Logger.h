@@ -56,7 +56,7 @@ public:
   void printBuffer();
   void getLastSamples(LogDataWithTimeStamp *buffer, int bufferSize, int samplesPr);
   void render();
-  void loop();
+  void loop(bool lessDetails);
   void updateViewData(int samplesPr);
   
   float percentageFull;

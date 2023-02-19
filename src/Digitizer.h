@@ -51,8 +51,8 @@ public:
   void clearMaxMin();
   void init(OPERATION_TYPE operationType_);
   void open();
-  void loopDigitize();
-  void renderGraph();
+  void loopDigitize(bool reduceDetails);
+  void renderGraph(bool reduceDetails);
   void a();
   void handleSamplingForDigitizer(int dataR);
 
