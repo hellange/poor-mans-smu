@@ -1040,7 +1040,7 @@ if (!reduceDetails) {
 
 
   x=x+350;
-  y=y+20+30;
+  y=y+50;
   GD.ColorRGB(0x000000);
     GD.ColorA(255);
 

@@ -51,6 +51,8 @@
 #include "Ada4254.h"
 #include "Vrekrer_scpi_parser.h" // TESTING OUT SCPI LIBRARY, https://github.com/Vrekrer/Vrekrer_scpi_parser
 #include "Debug.h"
+#include "Gest.h"
+#include "Widgets.h"
 //#define _SOURCE_AND_SINK 111
 
 #define _PRINT_ERROR_VOLTAGE_SOURCE_SETTING 0
@@ -59,16 +61,13 @@
 #define _PRINT_ERROR_NO_CALIBRATION_DATA_FOUND 3
 #define _PRINT_ERROR_FACTORY_CALIBRATION_RESTORE_FAILED_CATASTROPHICALLY
 
-#define GEST_NONE 0
-#define GEST_MOVE_LEFT 1
-#define GEST_MOVE_RIGHT 2
-#define GEST_MOVE_DOWN 3
+
 #define LOWER_WIDGET_Y_POS 250
 
 
 #define SAMPLING_BY_INTERRUPT
 
-#define VERSION_NUMBER "0.2.3"
+#define VERSION_NUMBER "0.2.4"
 
 SimpleStatsClass SIMPLE_STATS;
 LoggerClass LOGGER;
@@ -105,22 +104,12 @@ SMU_HAL_dummy SMU[1] = {
 };
 #endif
 
-char commandBuffer[100];
+char SCPI_CommandBuffer[100];
 
 unsigned long timeAtStartup;
 
-// Used by scrolling related to widgets (lower part of the main screen)
-int scroll = 0;
-int scrollDir = 0;
-int noOfWidgets = 7;
-int activeWidget = 0;
-
-//CURRENT_RANGE current_range = AMP1; // TODO: get rid of global
-
-
 // Used to make sure buttons are not triggered multiple times by a single touch
 uint32_t timeSinceLastChange = 0;  // TODO: get rid of global
-
 
 OPERATION_TYPE operationType = SOURCE_VOLTAGE;
 FUNCTION_TYPE functionType = SOURCE_DC_VOLTAGE;
@@ -148,75 +137,70 @@ uint32_t changeDigitTimeout;
 void rotaryChangedVoltCurrentFn(float changeVal) {
   changeDigitTimeout = millis();
 
-   if (changeDigit == 0 && !SOURCE_DIAL.isDialogOpen()) {
+    if (changeDigit == 0 && !SOURCE_DIAL.isDialogOpen()) {
        DEBUG.println("change not enabled");
        return;
-   }
+    }
 
-   if (operationType == SOURCE_VOLTAGE) {
-       DEBUG.print("rotary changeval:");
-       DEBUG.println(changeVal);
-     if(SOURCE_DIAL.isDialogOpen()) {
-       //TODO: Fix problem with resolution and selected digit to change !!!
-       float mv = SOURCE_DIAL.getMv();
-       int64_t change_uV =  changeVal*1000;
-       int64_t new_uV = mv*1000 + change_uV;
-       SOURCE_DIAL.setMv(new_uV /1000.0);
-     } else {
-       DEBUG.print("from smu setvalue mv=");
-       DIGIT_UTIL.print_uint64_t(SMU[0].getSetValue_micro());
-       DEBUG.println();
+    if (operationType == SOURCE_VOLTAGE) {
+      DEBUG.print("rotary changeval:");
+      DEBUG.println(changeVal);
+      if(SOURCE_DIAL.isDialogOpen()) {
+        //TODO: Fix problem with resolution and selected digit to change !!!
+        float mv = SOURCE_DIAL.getMv();
+        int64_t change_uV =  changeVal*1000;
+        int64_t new_uV = mv*1000 + change_uV;
+         SOURCE_DIAL.setMv(new_uV /1000.0);
+       } else {
+        DEBUG.print("from smu setvalue mv=");
+        DIGIT_UTIL.print_uint64_t(SMU[0].getSetValue_micro());
+        DEBUG.println();
 
-       int64_t change_uV =  changeVal*changeDigit;
-       DEBUG.print("change value in uV=");
-       DIGIT_UTIL.print_uint64_t(change_uV);
-       DEBUG.println();
-
-       int64_t new_uV = SMU[0].getSetValue_micro() + change_uV;
-       DEBUG.print("new uV=");
-       DIGIT_UTIL.print_uint64_t(new_uV);
-       DEBUG.println();
-
-/*
-       float newVoltage_mV = new_uV / 1000.0;
-       DEBUG.print("new mv=");
-       DEBUG.println(newVoltage_mV,5);
-*/
-       if (SMU[0].fltSetCommitVoltageSource(new_uV, true)) printError(_PRINT_ERROR_VOLTAGE_SOURCE_SETTING);
-     }
-
-   } else {
-
-     if (SMU[0].getCurrentRange() == MILLIAMP10) {
-       changeVal = changeVal / 100.0;
-     }
-
- if(SOURCE_DIAL.isDialogOpen()) {
-       float mv = SOURCE_DIAL.getMv();
-       int64_t change_uV =  changeVal*1000;
-       int64_t new_uV = mv*1000 + change_uV;
-       SOURCE_DIAL.setMv(new_uV /1000.0);
-     } else {
-              DEBUG.print("from smu setvalue mv=");
-       DIGIT_UTIL.print_uint64_t(SMU[0].getSetValue_micro());
-       DEBUG.println();
-
-       int64_t change_uV =  changeVal*changeDigit; 
+        int64_t change_uV =  changeVal*changeDigit;
         DEBUG.print("change value in uV=");
         DIGIT_UTIL.print_uint64_t(change_uV);
         DEBUG.println();
 
-       int64_t new_uV = SMU[0].getSetValue_micro() + change_uV;
-       DEBUG.print("new uV=");
-       DIGIT_UTIL.print_uint64_t(new_uV);
-       DEBUG.println();
+        int64_t new_uV = SMU[0].getSetValue_micro() + change_uV;
+        DEBUG.print("new uV=");
+        DIGIT_UTIL.print_uint64_t(new_uV);
+        DEBUG.println();
+        /*
+        float newVoltage_mV = new_uV / 1000.0;
+        DEBUG.print("new mv=");
+        DEBUG.println(newVoltage_mV,5);
+        */
+        if (SMU[0].fltSetCommitVoltageSource(new_uV, true)) printError(_PRINT_ERROR_VOLTAGE_SOURCE_SETTING);
+      }
+    } else {
+      // in source current
+      if (SMU[0].getCurrentRange() == MILLIAMP10) {
+        changeVal = changeVal / 100.0;
+      }
 
+      if(SOURCE_DIAL.isDialogOpen()) {
+        float mv = SOURCE_DIAL.getMv();
+        int64_t change_uV =  changeVal*1000;
+        int64_t new_uV = mv*1000 + change_uV;
+        SOURCE_DIAL.setMv(new_uV /1000.0);
+      } else {
+        DEBUG.print("from smu setvalue mv=");
+        DIGIT_UTIL.print_uint64_t(SMU[0].getSetValue_micro());
+        DEBUG.println();
 
-       fltCommitCurrentSourceAutoRange(new_uV, false);
-     }
+        int64_t change_uV =  changeVal*changeDigit; 
+        DEBUG.print("change value in uV=");
+        DIGIT_UTIL.print_uint64_t(change_uV);
+        DEBUG.println();
+
+        int64_t new_uV = SMU[0].getSetValue_micro() + change_uV;
+        DEBUG.print("new uV=");
+        DIGIT_UTIL.print_uint64_t(new_uV);
+        DEBUG.println();
+        fltCommitCurrentSourceAutoRange(new_uV, false);
+      }
    }
 
-      
 }
 
 bool showSettings = false;
@@ -282,14 +266,12 @@ void pushButtonInterrupt(int key, bool quickPress, bool holdAfterLongPress, bool
 }
 
 bool reduceDetails() {
-  return scrollDir != 0 || MAINMENU.active == true or anyDialogOpen();
+  return WIDGETS.isScrolling() || MAINMENU.active == true || anyDialogOpen();
 }
 
 void  disable_ADC_DAC_SPI_units() {
   SMU[0].disable_ADC_DAC_SPI_units();
 }
-
-
 
 
 void initDefaultSamplingIfByInterrupt() {
@@ -355,8 +337,8 @@ void setup()
     delay(200);
     }
 
-   DEBUG.println("Build info");
-      DEBUG.println(compile_date);
+    DEBUG.println("Build info");
+    DEBUG.println(compile_date);
 
     DEBUG.flush();
    GD.begin(0);
@@ -607,7 +589,7 @@ void sourceSweepPanel(int x, int y) {
   FUNCTION_SWEEP.render(x, y, MAINMENU.active == true);
 }
 
-int settingsCurrentAutoRange = 0;
+//int settingsCurrentAutoRange = 0;
 
 
 void sourceCurrentPanel(int x, int y) {
@@ -806,531 +788,14 @@ void closeAllOpenDialogs() {
   }
 }
 
-int maxFilterSliderValue = 50;
-int maxSamplesSliderValue = 100;
-int sliderTags[2] = {TAG_FILTER_SLIDER, TAG_FILTER_SLIDER_B};
-int trackingOngoing = 0;
-
-void handleSlidersAndClearUncalRelButtons(int x, int y, bool lessDetails) { 
-  
-  y=y+40;
-  if (!lessDetails) {
-  GD.ColorRGB(trackingOngoing==TAG_FILTER_SLIDER?0x00ff00:0xaaaaaa);
-  GD.Tag(TAG_FILTER_SLIDER);
-  GD.cmd_slider(500+x, y+30, 280,15, OPT_FLAT, V_FILTERS.filterSize * (65535/maxFilterSliderValue), 65535);
-  GD.cmd_track(500+x, y+30, 280, 20, TAG_FILTER_SLIDER);
-  GD.Tag(0);
-  
-  GD.Tag(TAG_FILTER_SLIDER_B);
-  GD.ColorRGB(trackingOngoing==TAG_FILTER_SLIDER_B?0x00ff00:0xaaaaaa);
-  GD.cmd_slider(500+x, y+90, 280,15, OPT_FLAT, V_STATS.getNrOfSamplesBeforeStore()* (65535/maxSamplesSliderValue), 65535);
-  GD.cmd_track(500+x, y+90, 280, 20, TAG_FILTER_SLIDER_B);
-  GD.Tag(0);  
-
-  GD.ColorRGB(trackingOngoing==TAG_FILTER_SLIDER?0x00ff00:0xaaaaaa);
-  GD.cmd_text(500+x,y, 27, 0, "Filter size:");
-  GD.cmd_number(580+x,y, 27, 0, V_FILTERS.filterSize);
-
-  GD.ColorRGB(trackingOngoing==TAG_FILTER_SLIDER_B?0x00ff00:0xaaaaaa);
-  GD.cmd_text(500+x,y+60, 27, 0, "Samples size:");
-  GD.cmd_number(605+x,y+60, 27, 0, V_STATS.getNrOfSamplesBeforeStore());
-  }
-  if (!anyDialogOpen()) {
-    GD.Tag(BUTTON_CLEAR_BUFFER);
-    GD.ColorRGB(DIGIT_UTIL.indicateColor(0x000000, 0x00ff00, 50, BUTTON_CLEAR_BUFFER));
-    GD.cmd_button(x+500,y+130,95,50,29,0,"CLEAR");
-    GD.Tag(0);
-  }
-  
-  if (!anyDialogOpen()) {
-    if (V_CALIBRATION.relativeValueIsSet(SMU[0].getCurrentRange())) {
-      GD.ColorRGB(0x00ff00);
-    } else {
-      GD.ColorRGB(0x000000);
-    }
-  } else {
-    //GD.ColorA(100);
-  }
-  GD.Tag(BUTTON_REL);
-  GD.cmd_button(x+700,y+130,95,50,29,0,"REL");
-  GD.Tag(0);
-
-  if (!anyDialogOpen()) {
-    if (V_CALIBRATION.useCalibratedValues == false) {
-      GD.ColorRGB(0x00ff00);
-    } else {
-      GD.ColorRGB(0x000000);
-    }
-  }
-  
-  GD.Tag(BUTTON_UNCAL);
-  GD.cmd_button(x+600,y+130,95,50,29,0,"UNCAL");
-  GD.Tag(0); // hack to avoid UNCAL button to be called when you press SET on voltage. (when the experimental widget is shown)... 
-             // Dont fully understand why this is needed...
-  
-  GD.ColorA(255);
-
-  if (lessDetails) {
-    return;
-  }
-  GD.get_inputs();
-  switch (GD.inputs.track_tag & 0xff) {
-    case TAG_FILTER_SLIDER: {
-      DEBUG.print("Set filter value:");
-      int slider_val = maxFilterSliderValue * GD.inputs.track_val / 65535.0;
-      DEBUG.println(slider_val);
-      V_FILTERS.setFilterSize(int(slider_val));
-      // currently set same as for voltage
-      C_FILTERS.setFilterSize(int(slider_val));
-
-      break;
-    }
-    case TAG_FILTER_SLIDER_B:{
-      DEBUG.print("Set samples value:");
-      int slider_val = maxSamplesSliderValue * GD.inputs.track_val / 65535.0;
-      DEBUG.println(slider_val);
-      V_STATS.setNrOfSamplesBeforeStore(int(slider_val));
-      // for now, just use same is current as for voltage
-      C_STATS.setNrOfSamplesBeforeStore(int(slider_val));
-      break;
-    }
-    default:
-      break;
-  }
-}
-
-
-void renderExperimental(int x, int y, float valM, float setM, bool cur, bool lessDetails) {
-
-  handleSlidersAndClearUncalRelButtons(x,y, lessDetails);  
-
-  y=y+65;
-  x=x+100;
-  
-  if (cur) {
-     //Special handling: set current must currently be positive even if sink/negative.
-     //                  This give error when comparing negative measured and positive set.
-     //                  Use absolute values to give "correct" comparision...
-     setM = abs(setM);
-     valM = abs(valM);
-  }
-
-  
-  float deviationInPercent = 100.0 * ((setM - valM) / setM);
-  if (setM == 0.0) {
-    deviationInPercent = 100;
-  }
-  float degrees = -deviationInPercent * 700.0;
-  ANALOG_GAUGE.renderAnalogGaugePercent(x+90,y,240, degrees, deviationInPercent, "Deviation from SET", lessDetails);
-  
-
-
-  GD.ColorRGB(0x000000);
-
-  // Visible number on button is half, because the sampling is effectlively the halv because
-  // current and voltage is not sampled simultanously in the AD converter !
-
-  int sr = SMU[0].getSamplingRate();
-
-  GD.ColorRGB(sr==5?0x00ff00:0x0000);
-  GD.Tag(BUTTON_SAMPLE_RATE_5);
-  GD.cmd_button(x-50,y-20,95,40,29,0,"2.5Hz");
-  
-  GD.ColorRGB(sr==20?0x00ff00:0x0000);
-  GD.Tag(BUTTON_SAMPLE_RATE_20);
-  GD.cmd_button(x-50,y+40-15,95,40,29,0,"10Hz");
-  
-  GD.ColorRGB(sr==50?0x00ff00:0x0000);
-  GD.Tag(BUTTON_SAMPLE_RATE_50);
-  GD.cmd_button(x-50,y+80-15+5,95,40,29,0,"25Hz");
-
-  GD.ColorRGB(sr==100?0x00ff00:0x0000);
-  GD.Tag(BUTTON_SAMPLE_RATE_100);
-  GD.cmd_button(x-50,y+120-15+10,95,40,29,0,"50Hz");
-  GD.Tag(0);
-  
-}
-
-void renderVoltageGraph(int x,int y, bool scrolling) {
-  V_STATS.renderTrend(x, y, scrolling);
-}
-void renderCurrentGraph(int x,int y, bool scrolling) {
-  C_STATS.renderTrend(x, y, scrolling);
-}
-
-void renderHistogram(int x,int y, bool scrolling) {
-  V_STATS.renderHistogram(x,y,scrolling);
-}
-
-void renderBar(int x, int y, float rawValue, uint64_t setValue_u) {
-  float setValue = setValue_u/1000.0; // logic below based on milli
-  if (reduceDetails()) {
-    return;
-  }
-  GD.Begin(RECTS);
-  GD.LineWidth(10);
-  for (int i=0;i<40;i++) {
-    int percent = 100 * (abs(rawValue) / abs(setValue));
-    if (percent > i*2.5) {
-       GD.ColorA(255);
-    } else {
-       GD.ColorA(60);
-    }
-    if (i>34) {
-       GD.ColorRGB(0xff0000);
-    } else if (i>29) {
-       GD.ColorRGB(COLOR_ORANGE);
-    }else {
-       GD.ColorRGB(0x00cc00);
-    }
-    int position_x1 = x+20 + i*14;
-    int position_x2 = position_x1 + 11;
-    if (position_x1 > 0 && position_x2 < 800) {
-      GD.Vertex2ii(position_x1 ,y);
-      GD.Vertex2ii(x+20 + (i+1)*14 - 3, y+9);
-    }
-    
-  }
-}
-
-void measureResistancePanel(int x, int y, boolean compliance) {
-  if (x >= 800) {
-    return;
-  }
-  y=y+28;
-
-  VOLT_DISPLAY.renderMeasuredResistance(x /*+ 17*/, y, V_FILTERS.mean, C_FILTERS.mean, compliance);
-  //CURRENT_DISPLAY.renderSet(x+120, y+105, SMU[0].getLimitValue_micro());
-      GD.ColorRGB(COLOR_CURRENT);
-
-  CURRENT_DISPLAY.renderSet(x + 120, y + 105, SMU[0].getLimitValue_micro(), SMU[0].getCurrentRange());
-
-  y=y+105;
-  
-  GD.ColorRGB(0,0,0);
-  GD.cmd_fgcolor(0xaaaa90);  
-  GD.Tag(BUTTON_LIM_SET);
-  GD.cmd_button(x+20,y,95,50,29,0,"LIM");
-  GD.Tag(0); 
-
-   GD.ColorRGB(0,0,0);
-  GD.cmd_fgcolor(0xaaaa90);  
-  GD.Tag(BUTTON_LIM_SET);
-  GD.cmd_button(x+20,y,95,50,29,0,"LIM");
-  GD.Tag(BUTTON_CUR_AUTO);
-    if (settingsCurrentAutoRange < 10000) { // auto range disabled
-     GD.cmd_button(x+370,y,95,50,29,0,SMU[0].getCurrentRange()==AMP1 ? "1A" : "10mA");
-  } else {
-     GD.cmd_button(x+370,y,95,50,28,0,SMU[0].getCurrentRange()==AMP1 ? "1A(A)" : "10mA(A)");
-  }
-  //GD.cmd_button(x+370,y,95,50,29,0,SMU[0].getCurrentRange()==AMP1 ? "1A" : "10mA");
-  GD.Tag(0); 
-  
-  
-}
-
-void measureVoltagePanel(int x, int y, boolean compliance) {
-  if (x >= 800) {
-    return;
-  }
-  y=y+28;
-
-  VOLT_DISPLAY.renderMeasured(x /*+ 17*/, y, V_FILTERS.mean, compliance, reduceDetails());
-  VOLT_DISPLAY.renderSet(x+120, y+105, SMU[0].getLimitValue_micro());
-
-  y=y+105;
-  
-  GD.ColorRGB(0,0,0);
-  GD.cmd_fgcolor(0xaaaa90);  
-  GD.Tag(BUTTON_LIM_SET);
-  GD.cmd_button(x+20,y,95,50,29,0,"LIM");
-  GD.Tag(0); 
-  
-}
-void measureCurrentPanel(int x, int y, boolean compliance, bool showBar) {
-  if (x >= 800) {
-    return;
-  }
-  
-  y=y+28;
-  if (SMU[0].getCurrentRange() == AMP1 && abs(C_STATS.rawValue) > SETTINGS.max_current_1A_range()) {
-    if (showBar) {
-      y=y+12; // dont show bar when overflow... just add extra space so the panel gets same size as without overflow...
-    }
-    GD.ColorA(255);
-    CURRENT_DISPLAY.renderOverflowSW(x + 17, y);
-  } else 
-   if ( (SMU[0].getCurrentRange() == MILLIAMP10 && abs(C_STATS.rawValue) > SETTINGS.max_current_10mA_range())) {
-    if (showBar) {
-      y=y+12; // dont show bar when overflow... just add extra space so the panel gets same size as without overflow...
-    }
-    GD.ColorA(255);
-    CURRENT_DISPLAY.renderOverflowSW(x + 17, y);
-  }
-  
-  else {
-    if (showBar) {
-      renderBar(x,y, C_STATS.rawValue, SMU[0].getLimitValue_micro());
-      y=y+12;
-    }
-    GD.ColorA(255);
-    bool shownA = (SMU[0].getCurrentRange() == MILLIAMP10);
-    shownA = false; // Override. Dont show nA
-    GD.ColorA(255);
-    CURRENT_DISPLAY.renderMeasured(x, y, C_FILTERS.mean, compliance, shownA, SMU[0].getCurrentRange(), reduceDetails()); 
-  }
-  CURRENT_DISPLAY.renderSet(x+120, y+105, SMU[0].getLimitValue_micro(), SMU[0].getCurrentRange());
-
-  y=y+105;
-  
-  GD.ColorRGB(0,0,0);
-  GD.cmd_fgcolor(0xaaaa90);  
-  GD.Tag(BUTTON_LIM_SET);
-  GD.cmd_button(x+20,y,95,50,29,0,"LIM");
-  GD.Tag(BUTTON_CUR_AUTO);
-    if (settingsCurrentAutoRange < 10000) { // auto range disabled
-     GD.cmd_button(x+370,y,95,50,29,0,SMU[0].getCurrentRange()==AMP1 ? "1A" : "10mA");
-  } else {
-     GD.cmd_button(x+370,y,95,50,28,0,SMU[0].getCurrentRange()==AMP1 ? "1A(A)" : "10mA(A)");
-  }
-  //GD.cmd_button(x+370,y,95,50,29,0,SMU[0].getCurrentRange()==AMP1 ? "1A" : "10mA");
-  GD.Tag(0); 
-}
-
-void drawBall(int x, int y, bool set) {
-  GD.Begin(POINTS);
-  GD.PointSize(16 * 6);  
-  if (set == true) {
-    GD.ColorRGB(255,255,255); 
-  } else {
-    GD.ColorRGB(0,0,0); 
-  }
-  GD.Vertex2ii(x, y);
-}
-
-void widgetBodyHeaderTab(int y, int activeWidget) {
-  y=y+10;
-  GD.Begin(RECTS);
-
-  // tab light shaddow
-  GD.ColorA(255);
-  GD.LineWidth(350);
-  GD.ColorRGB(0x555555);
-  GD.Vertex2ii(21,y-2);
-  GD.Vertex2ii(778, 480);
-  
-  // tab 
-  GD.ColorA(255);
-  GD.LineWidth(350);
-  GD.ColorRGB(0x2c2c2c);
-  GD.Vertex2ii(22,y);
-  GD.Vertex2ii(778, 480);
-
-  // Why does this blend to dark gray instead of being just black ?
-  // Is it because the rectangle above "shines" though ? It is not set to transparrent...
-  // must learn more about the blending....
-  GD.Begin(RECTS);
-  GD.ColorA(180); // slightly transparrent to grey shine though a bit
-  GD.LineWidth(10);
-  GD.ColorRGB(0x000000);
-  GD.Vertex2ii(0,y+15);
-  GD.Vertex2ii(799, 480);
-
-  // strip between tab heading and content
-  GD.Begin(LINE_STRIP);
-  GD.ColorA(200);
-  GD.LineWidth(10);
-  GD.ColorRGB(COLOR_CURRENT_TEXT);
-  GD.Vertex2ii(0,y+15+2);
-  GD.Vertex2ii(798, y+15+2);
-  GD.ColorA(255);
-
-
-  y=y-2;
-  int x = 400 - 30 * noOfWidgets/2;
-  if (MAINMENU.active != true) {
-    for (int i = 0; i < noOfWidgets; i++) {
-      drawBall(x+ i*30,y,activeWidget == i);
-    }
-  }
-  
-}
-
-
-void showWidget(int y, int widgetNo, int scroll) {
-  int yPos = y-6;
-  if (widgetNo ==0 && functionType == SOURCE_SWEEP) {
-     if (scroll ==0){
-       GD.ColorRGB(COLOR_VOLT);
-       GD.cmd_text(20, yPos, 29, 0, "MEASURE VOLTAGE");
-     }
-     measureCurrentPanel(scroll, yPos + 20, SMU[0].hasCompliance(), true);
-
-  } else if (widgetNo ==0 && functionType == SOURCE_PULSE) {
-     if (scroll ==0){
-       GD.ColorRGB(COLOR_CURRENT_TEXT);
-       GD.cmd_text(20, yPos, 29, 0, "MEASURE CURRENT");
-     }
-     measureCurrentPanel(scroll, yPos + 20, SMU[0].hasCompliance(), true);
-  } else if (widgetNo ==0 && functionType==MEASURE_RESISTANCE) {
-     if (scroll ==0){
-       GD.ColorRGB(COLOR_VOLT);
-       GD.cmd_text(20, yPos, 29, 0, "MEASURE RESISTANCE");
-     }
-     measureResistancePanel(scroll, yPos + 20, SMU[0].hasCompliance());
-  } else if (widgetNo ==0 && operationType == SOURCE_VOLTAGE) {
-     if (scroll ==0){
-       GD.ColorRGB(COLOR_CURRENT_TEXT);
-       GD.cmd_text(20, yPos, 29, 0, "MEASURE CURRENT");
-     }
-     measureCurrentPanel(scroll, yPos + 20, SMU[0].hasCompliance(), true);
-  } else if (widgetNo ==0 && operationType == SOURCE_CURRENT) {
-     if (scroll ==0){
-       GD.ColorRGB(COLOR_VOLT);
-       GD.cmd_text(20, yPos, 29, 0, "MEASURE VOLTAGE");
-     }
-     measureVoltagePanel(scroll, yPos + 20, SMU[0].hasCompliance());
-  }  else if (widgetNo == 1) {
-    if (!anyDialogOpen()){
-       if (scroll ==0){
-         GD.ColorRGB(COLOR_CURRENT_TEXT);
-         GD.cmd_text(20, yPos, 29, 0, "CURRENT TREND");
-       }
-       renderCurrentGraph(scroll, yPos, reduceDetails());
-    }
-  } else if (widgetNo == 2) {
-      if (!anyDialogOpen()){
-        if (scroll ==0){
-          GD.ColorRGB(COLOR_VOLT);
-          GD.cmd_text(20, yPos, 29, 0, "VOLTAGE TREND");
-        }
-        renderVoltageGraph(scroll, yPos, reduceDetails());
-      }
-  } else if (widgetNo == 3) {
-      if (scroll ==0){
-        GD.ColorRGB(COLOR_VOLT);
-        GD.cmd_text(20, yPos, 29, 0, "VOLTAGE HISTOGRAM");
-      }
-      renderHistogram(scroll, yPos, reduceDetails());
-  } else if (widgetNo == 4) {
-      if (scroll ==0){
-        GD.ColorRGB(COLOR_VOLT);
-        GD.cmd_text(20, yPos, 29, 0, "EXPERIMENTAL");
-      }
-
-      if (operationType == SOURCE_VOLTAGE) {
-        float rawM = V_FILTERS.mean;
-        float setM = SMU[0].getSetValue_micro()/1000.0;
-        renderExperimental(scroll,yPos, rawM, setM, false, reduceDetails());
-      } else {
-        float rawM = C_FILTERS.mean;
-        float setM = SMU[0].getSetValue_micro()/1000.0;
-        renderExperimental(scroll,yPos, rawM, setM, false, reduceDetails());
-      }
-  } 
-  else if (widgetNo == 5) {
-      if (scroll ==0){
-        GD.ColorRGB(COLOR_VOLT);
-        GD.cmd_text(20, yPos, 29, 0, "CAL");
-      }
-
-      if (operationType == SOURCE_VOLTAGE) {
-         float rawM = V_FILTERS.mean;
-         float setM = SMU[0].getSetValue_micro()/1000.0;
-         if (abs(setM) > 2300) {   // TODO: Hack, using MILLIAMP10 to indicate high volt range (10V). Stupid. Fix !!!!
-            V_CALIBRATION.renderCal(scroll,yPos, rawM, setM, MILLIAMP10, reduceDetails());
-         } else {
-           // TODO: Hack, using MILLIAMP10 to indicate high volt range (10V). Stupid. Fix !!!!
-            V_CALIBRATION.renderCal(scroll,yPos, rawM, setM, AMP1, reduceDetails());
-
-         }
-       } else {
-         float rawM = C_FILTERS.mean;
-        float setM = SMU[0].getSetValue_micro()*1000.0;
-        C_CALIBRATION.renderCal(scroll,yPos, rawM, setM, SMU[0].getCurrentRange(),  reduceDetails());
-      }
-      
-  }
-  else if (widgetNo == 6) {
-      if (scroll ==0){
-        GD.ColorRGB(COLOR_VOLT);
-        GD.cmd_text(20, yPos, 29, 0, "CAL 2");
-      }
-
-      if (operationType == SOURCE_VOLTAGE) {
-         float rawM = V_FILTERS.mean;
-         float setM = SMU[0].getSetValue_micro()/1000.0;
-         V_CALIBRATION.renderCal2(scroll,yPos, rawM, setM, SMU[0].getCurrentRange(), reduceDetails());
-       } else {
-         float rawM = C_FILTERS.mean;
-         float setM = SMU[0].getSetValue_micro()/1000.0;
-         C_CALIBRATION.renderCal2(scroll,yPos, rawM, setM, SMU[0].getCurrentRange(), reduceDetails());
-      }   
-  }
-  
-
-}
-
-
-
 
 int gestureDetected = GEST_NONE;
-int scrollSpeed = 70;
 void handleWidgetScrollPosition() {
-  if (gestureDetected == GEST_MOVE_LEFT) {
-    scrollDir = -1;
-  } 
-  else if (gestureDetected == GEST_MOVE_RIGHT) {
-    scrollDir = 1;
-  } 
-  
-  scroll = scroll + scrollDir * scrollSpeed;
-  if (scroll <= -800 && scrollDir != 0) {
-    activeWidget ++;
-    if (activeWidget > noOfWidgets -1) {
-      // swap arund
-      activeWidget = 0;
-    }
-    scrollDir = 0;
-    scroll = 0;
-  } else if (scroll >= 800 && scrollDir != 0) {
-    activeWidget --;
-    if (activeWidget < 0) {
-      // swap around
-      activeWidget = noOfWidgets - 1;
-    }
-    scrollDir = 0;
-    scroll = 0;
-  }
+  WIDGETS.handleWidgetScrollPosition(gestureDetected);
 }
 
 void displayWidget() {
-   widgetBodyHeaderTab(LOWER_WIDGET_Y_POS, activeWidget);
-
-  if (activeWidget >= 0) {
-    if (scrollDir == 0) {
-      showWidget(LOWER_WIDGET_Y_POS, activeWidget, 0);
-    }
-    else if (scrollDir == -1) {
-      showWidget(LOWER_WIDGET_Y_POS,activeWidget, scroll);
-      if (activeWidget == noOfWidgets - 1) {
-        // swap from last to first
-        showWidget(LOWER_WIDGET_Y_POS, 0, scroll + 800);
-      } else {
-        showWidget(LOWER_WIDGET_Y_POS,activeWidget + 1, scroll + 800);
-      }
-    } 
-    else if (scrollDir == 1) {
-      if (activeWidget == 0) { 
-        // swap from first to last
-        showWidget(LOWER_WIDGET_Y_POS,noOfWidgets -1 , scroll - 800);
-      } else {
-        showWidget(LOWER_WIDGET_Y_POS,activeWidget - 1, scroll - 800);
-      }
-      showWidget(LOWER_WIDGET_Y_POS,activeWidget, scroll + 0);
-    }   
-  }
-  
+  WIDGETS.displayWidget(functionType, operationType, SMU[0].hasCompliance(), reduceDetails(), SMU[0].getSetValue_micro(), SMU[0].getLimitValue_micro(), SMU[0].getCurrentRange(), anyDialogOpen(), LOWER_WIDGET_Y_POS);
 }
 
 void bluredBackground() {
@@ -1364,8 +829,6 @@ void handleMenuScrolldown(){
 }
 
 
-
-
 void renderMainHeader() {
 
   if (MAINMENU.active == true or anyDialogOpen()) {
@@ -1377,9 +840,6 @@ void renderMainHeader() {
   GD.ColorRGB(0x181818);
   GD.Vertex2ii(0,0);
   GD.Vertex2ii(800, 22);
-  
-
-   
   GD.ColorA(255);
 
   // TODO: Use other that deviceTypeId to "detect" analog board problem
@@ -1387,10 +847,9 @@ void renderMainHeader() {
       GD.ColorRGB(0xff0000);
       GD.cmd_text(0, 0, 27, 0, "Analog Error?");
   } else {
-          GD.ColorRGB(0xaaaaaa);
-          GD.cmd_text(0, 0, 27, 0, "ADC:");
-
-          GD.cmd_number(40,0,27,0,SMU[0].deviceTypeId);
+      GD.ColorRGB(0xaaaaaa);
+      GD.cmd_text(0, 0, 27, 0, "ADC:");
+      GD.cmd_number(40,0,27,0,SMU[0].deviceTypeId);
   }
 
   //showFanSpeed(220, 0);
@@ -1416,9 +875,10 @@ void renderMainHeader() {
   }
   if (ETHERNET2_UTIL.hasIpx) {
     GD.cmd_text(665, 0, 27, 0, ETHERNET2_UTIL.ipAddressString);
-    GD.ColorRGB(0xaaaaaa);
-    GD.cmd_number(584,27,27,5, ETHERNET2_UTIL.receivedMessages);
-    GD.cmd_text(640, 27, 27, 0, commandBuffer);
+    // Uncomment below if you want to see command buffer info SCPI
+    //GD.ColorRGB(0xaaaaaa);
+    //GD.cmd_number(584,27,27,5, ETHERNET2_UTIL.receivedMessages);
+    //GD.cmd_text(640, 27, 27, 0, commandBuffer);
   } else {
      GD.cmd_text(665, 0, 27, 0, "No IP Address");
   }
@@ -1535,14 +995,14 @@ bool ignoreGesture(int t){
   // TODO: Make more generic.
   //       The idea is to ignore swipe especially when controlling sliders !
   for (int i=0;i<2;i++) {
-    if (t == sliderTags[i]) {
+    if (t == WIDGETS.sliderTags[i]) {
       trackingDetectedTimer = millis();
-      trackingOngoing = t;
+      WIDGETS.trackingOngoing = t;
 
       return true;
     }
   }
-  trackingOngoing = 0;
+  WIDGETS.trackingOngoing = 0;
   return false;
 }
 
@@ -1572,7 +1032,7 @@ int detectGestures() {
     if (MAINMENU.active || anyDialogOpen()) {
       // dont detect swipes in lower part if dialog open
     } else {
-    if (touchX > 0 && touchY > LOWER_WIDGET_Y_POS && gestDistanceX < -20 && scrollDir == 0) {
+    if (touchX > 0 && touchY > LOWER_WIDGET_Y_POS && gestDistanceX < -20 && !WIDGETS.isScrolling()) {
       if (++gestDurationX >= 3) {
         DEBUG.println("gesture = move left");
         DEBUG.flush();
@@ -1580,7 +1040,7 @@ int detectGestures() {
         gestDurationX = 0;
       }
     }
-    else if (touchX > 0 && touchY > LOWER_WIDGET_Y_POS && gestDistanceX > 20 && scrollDir == 0) {
+    else if (touchX > 0 && touchY > LOWER_WIDGET_Y_POS && gestDistanceX > 20 && !WIDGETS.isScrolling()) {
       if (++gestDurationX >= 3) {
         DEBUG.println("gesture = move right");
         DEBUG.flush();
@@ -1589,7 +1049,7 @@ int detectGestures() {
       }
     } 
   }
-    if (touchY > 0 && touchY<150 && gestDistanceY > 10 && scrollDir == 0 && gestDistanceX<20) {
+    if (touchY > 0 && touchY<150 && gestDistanceY > 10 && !WIDGETS.isScrolling() && gestDistanceX < 20) {
        if (++gestDurationY >= 2) {
         DEBUG.println("gesture = move down from upper");
         DEBUG.flush();
@@ -1603,8 +1063,8 @@ int detectGestures() {
     gestDurationX = 0;
     gestDurationY = 0;
   }
-  gestOldX = touchX; //GD.inputs.y;  
-  gestOldY = touchY; //GD.inputs.x;  
+  gestOldX = touchX;
+  gestOldY = touchY;
   return gestureDetected;
 }
 
@@ -1756,7 +1216,7 @@ static void handleSampling() {
 }
 
 void handleAutoCurrentRange() {
-  if (settingsCurrentAutoRange < 10000) { //TODO Dont use value directly from GD toggle
+  if (WIDGETS.settingsCurrentAutoRange < 10000) { 
     return;
   }
      if (!ZEROCALIBRATION.autoNullStarted && !V_CALIBRATION.autoCalInProgress && !C_CALIBRATION.autoCalInProgress) {
@@ -1947,7 +1407,7 @@ void scpiCommandDetectionLoop() {
         Serial.print("New message ready:");
         Serial.println(ETHERNET2_UTIL.GetEthMsg());
 
-        strncpy(commandBuffer, ETHERNET2_UTIL.GetEthMsg(), 40); // TODO: don't hardcode command buffer limit
+        strncpy(SCPI_CommandBuffer, ETHERNET2_UTIL.GetEthMsg(), 40); // TODO: don't hardcode command buffer limit
       
         ETHERNET2_UTIL.clearBuffer();
         //my_instrument.Execute(commandBuffer, Serial);
@@ -2091,7 +1551,7 @@ int checkButtons() {
     }
     
    int trackTag = GD.inputs.track_tag & 0xff;
-   if (trackTag != 0 && trackingOngoing) {
+   if (trackTag != 0 && WIDGETS.trackingOngoing) {
      return 0;
    }
 
@@ -2155,22 +1615,24 @@ int checkButtons() {
       DEBUG.println("open dial to set limit, start with value ");
       DIGIT_UTIL.print_uint64_t(SMU[0].getLimitValue_micro());
       LIMIT_DIAL.open(operationType, LIMIT, closeSourceDCCallback, SMU[0].getLimitValue_micro());
-    } else if (tag == BUTTON_REL) {
-      DEBUG.println("Set relative");
-      V_CALIBRATION.toggleRelativeValue(V_STATS.rawValue, SMU[0].getCurrentRange());
-      C_CALIBRATION.toggleRelativeValue(C_STATS.rawValue, SMU[0].getCurrentRange());
-    } else if (tag == BUTTON_UNCAL) {
-      DEBUG.println("Uncal set");
-      V_CALIBRATION.toggleCalibratedValues();
-      C_CALIBRATION.toggleCalibratedValues();
-    } else if (tag == BUTTON_CLEAR_BUFFER) {
-      DEBUG.println("clearbuffer set");
+    } 
+    // else if (tag == BUTTON_REL) {
+    //   DEBUG.println("Set relative");
+    //   V_CALIBRATION.toggleRelativeValue(V_STATS.rawValue, SMU[0].getCurrentRange());
+    //   C_CALIBRATION.toggleRelativeValue(C_STATS.rawValue, SMU[0].getCurrentRange());
+    // } else if (tag == BUTTON_UNCAL) {
+    //   DEBUG.println("Uncal set");
+    //   V_CALIBRATION.toggleCalibratedValues();
+    //   C_CALIBRATION.toggleCalibratedValues();
+    // } else if (tag == BUTTON_CLEAR_BUFFER) {
+    //   DEBUG.println("clearbuffer set");
 
-      SIMPLE_STATS.clear(); // TODO: Separate clearing for this ?
-      V_STATS.clearBuffer();
-      C_STATS.clearBuffer();
-      DIGIT_UTIL.startIndicator(tag); 
-    } else if (tag == BUTTON_CUR_AUTO) { //TODO: Change name
+    //   SIMPLE_STATS.clear(); // TODO: Separate clearing for this ?
+    //   V_STATS.clearBuffer();
+    //   C_STATS.clearBuffer();
+    //   DIGIT_UTIL.startIndicator(tag); 
+    // } 
+    else if (tag == BUTTON_CUR_AUTO) { //TODO: Change name
       if (timeSinceLastChange + 500 < millis()){
         DEBUG.println("current range set");
        
@@ -2189,24 +1651,8 @@ int checkButtons() {
         GD.resume();
 
       }
-    } else if (tag == BUTTON_SAMPLE_RATE_5 or tag == BUTTON_SAMPLE_RATE_20 or tag == BUTTON_SAMPLE_RATE_50 or tag == BUTTON_SAMPLE_RATE_100) { //TODO: Change name
-      if (timeSinceLastChange + 500 < millis()){
-        timeSinceLastChange = millis();
-      } 
-     
-      if (tag == BUTTON_SAMPLE_RATE_5) {
-        SMU[0].setSamplingRate(5); 
-      }
-      if (tag == BUTTON_SAMPLE_RATE_20) {
-        SMU[0].setSamplingRate(20);
-      }
-      if (tag == BUTTON_SAMPLE_RATE_50) {
-        SMU[0].setSamplingRate(50);
-      }
-       if (tag == BUTTON_SAMPLE_RATE_100) {
-        SMU[0].setSamplingRate(100);
-      }
-
+    } else  {
+      WIDGETS.checkButtons(tag);
     } 
 
     #ifndef USE_SIMULATOR // dont want to mess up calibration while in simulation mode...
@@ -2311,36 +1757,33 @@ void loopMain()
 
 
     int lineY = 60;
-    GD.cmd_text(180, lineY -10, 29, 0, "Short ADC input");
+    GD.cmd_text(180, lineY - 7, 29, 0, "Short ADC input");
     GD.Tag(42);
     GD.cmd_toggle(50, lineY, 100, 29, OPT_FLAT, settingsShortAdc,
     "disabled" "\xff" "enabled");
-    GD.cmd_track(50, lineY, 100, 20, 42);
+    GD.cmd_track(50, lineY, 100, 40, 42);
     lineY+=60;
-    GD.cmd_text(180, lineY-10 , 29, 0, "Current auto range");
+    
+    GD.cmd_text(180, lineY - 7 , 29, 0, "Current auto range");
     GD.Tag(43);
-    GD.cmd_toggle(50, lineY, 100, 29, OPT_FLAT, settingsCurrentAutoRange,
+    GD.cmd_toggle(50, lineY, 100, 29, OPT_FLAT, WIDGETS.settingsCurrentAutoRange, // TODO: Don't fetch from widgets
     "disabled" "\xff" "enabled");
-    GD.cmd_track(50, lineY, 80, 20, 43);
-        lineY+=60;
+    GD.cmd_track(50, lineY, 80, 40, 43);
+    lineY+=60;
 
-    GD.cmd_text(180, lineY-10 , 29, 0, "Internal reference");
-     GD.Tag(44);
+    GD.cmd_text(180, lineY - 7 , 29, 0, "Internal reference");
+    GD.Tag(44);
     GD.cmd_toggle(50, lineY, 100, 29, OPT_FLAT, settingsInternalADCRef,
     "disabled" "\xff" "enabled");
-    GD.cmd_track(50, lineY, 80, 20, 44);
+    GD.cmd_track(50, lineY, 80, 40, 44);
 
     lineY+=60;
 
-    GD.cmd_text(180, lineY-10 , 29, 0, "Voltage measurement gain x2");
+    GD.cmd_text(180, lineY - 7 , 29, 0, "Voltage measurement gain x2");
     GD.Tag(45);
     GD.cmd_toggle(50, lineY, 100, 29, OPT_FLAT, voltageMeasurementGainX2,
     "disabled" "\xff" "enabled");
-    GD.cmd_track(50, lineY, 80, 20, 45);
-
-    //GD.Tag(44);
-    //GD.cmd_slider(50, lineY, 280, 15, OPT_FLAT, settingsInternalADCRef, 65535); //V_FILTERS.filterSize * (65535/maxFilterSliderValue)
-    //GD.cmd_track(50, lineY, 280, 20, 44);
+    GD.cmd_track(50, lineY, 80, 40, 45);
 
     GD.Tag(0);
 
@@ -2360,56 +1803,51 @@ void loopMain()
         if (settingsShortAdc > 30000) {
           settingsShortAdc = 65535;
           SMU[0].shortAdcInput(true);
-
         }
         else if (settingsShortAdc <= 30000) {
           settingsShortAdc = 0;
           SMU[0].shortAdcInput(false);
-
         }
         break;
       case 43:
-        settingsCurrentAutoRange = GD.inputs.track_val;
-        if (settingsCurrentAutoRange > 30000) {
-          settingsCurrentAutoRange = 65535;
+        WIDGETS.settingsCurrentAutoRange = GD.inputs.track_val;
+        if (WIDGETS.settingsCurrentAutoRange > 30000) {
+          WIDGETS.settingsCurrentAutoRange = 65535;
         }
-        else if (settingsCurrentAutoRange <= 30000) {
-          settingsCurrentAutoRange = 0;
+        else if (WIDGETS.settingsCurrentAutoRange <= 30000) {
+          WIDGETS.settingsCurrentAutoRange = 0;
         }
         break;
       case 44:
         settingsInternalADCRef = GD.inputs.track_val;
         if (settingsInternalADCRef > 30000) {
           settingsInternalADCRef = 65535;
-                              SMU[0].internalRefInput(true);
-
+          SMU[0].internalRefInput(true);
         }
         else if (settingsInternalADCRef <= 30000) {
           settingsInternalADCRef = 0;
-                    SMU[0].internalRefInput(false);
-
+          SMU[0].internalRefInput(false);
         }
-        case 45:
+        break;
+      case 45:
         voltageMeasurementGainX2 = GD.inputs.track_val;
         if (voltageMeasurementGainX2 > 30000) {
           voltageMeasurementGainX2 = 65535;
-                              SMU[0].voltageMeasurementGainX2 = true;
-
+          SMU[0].voltageMeasurementGainX2 = true;
         }
         else if (voltageMeasurementGainX2 <= 30000) {
           voltageMeasurementGainX2 = 0;
-                    SMU[0].voltageMeasurementGainX2 = false;
-
+          SMU[0].voltageMeasurementGainX2 = false;
         }
         break;
 
     }
 
 
- //   DEBUG.println(tag);
- //   GD.swap(); 
- // GD.__end();
- // return;
+   //   DEBUG.println(tag);
+   //   GD.swap(); 
+   // GD.__end();
+   // return;
   }
 
   PUSHBUTTONS.handle();
@@ -2626,5 +2064,3 @@ void closeSourceDCCallback(int set_or_limit, bool cancel) {
   }
   GD.resume();
 }
-
-

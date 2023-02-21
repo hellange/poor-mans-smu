@@ -1,4 +1,5 @@
-
+#ifndef SIMPLE_STATS_H
+#define SIMPLE_STATS_H
 class SimpleStatsClass {
 
  private:
@@ -15,3 +16,7 @@ public:
   float samples;
   
 };
+
+extern SimpleStatsClass SIMPLE_STATS;
+
+#endif

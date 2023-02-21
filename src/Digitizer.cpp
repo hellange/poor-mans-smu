@@ -12,10 +12,6 @@ int DigitizerClass::ampLevel = 1;
 
 DigitizerClass DIGITIZER;
 
-// select digitize voltage or current
-//bool digitizeVoltage = true;  
-bool digitizeVoltage = false;  
-
 void DigitizerClass::init(OPERATION_TYPE operationType_) {
 
 }
@@ -78,7 +74,7 @@ unsigned long digitizerCheckButtonTimer = millis();
 void DigitizerClass::renderGraph(bool reduceDetails) {
 
       GD.Tag(0);
-
+ 
 
 
           if (!MAINMENU.active) {
@@ -94,16 +90,23 @@ void DigitizerClass::renderGraph(bool reduceDetails) {
       GD.Tag(172);
       GD.cmd_button(50,420,140,40,29,0, "TRIGGER");
 
+      GD.Tag(173);
+      GD.cmd_button(610,420,200,40,29,0, "VOLT/CURRENT");
+
+
       GD.Tag(0);
 
       int tag = GD.inputs.tag;
       if (digitizerCheckButtonTimer+500 < millis()) {
         digitizerCheckButtonTimer = millis();
         if (tag == 171) {
-          DIGITIZER.allowTrigger = ! DIGITIZER.allowTrigger ;
+          DIGITIZER.allowTrigger = ! DIGITIZER.allowTrigger;
         }
-        if (tag == 172) {
+        else if (tag == 172) {
           continuous = !continuous;
+        }
+        else if (tag == 173) {
+          digitizeVoltage = !digitizeVoltage;
         }
       }
     
@@ -114,6 +117,14 @@ void DigitizerClass::renderGraph(bool reduceDetails) {
     //  CURRENT_DISPLAY.renderMeasured(10,350, maxDigI, false, false, current_range);
     //GD.cmd_number(210,320, 28, 6, adrAtTrigger);
     //GD.cmd_number(410,320, 28, 6, ramAdrPtr);
+
+    if (digitizeVoltage) {
+       GD.ColorRGB(COLOR_VOLT);
+       GD.cmd_text(300, 40 ,  28, 0, "VOLT");
+    } else {
+       GD.ColorRGB(COLOR_CURRENT);
+       GD.cmd_text(300, 40 ,  28, 0, "CURRENT");
+    }
 
     if (allowTrigger) {
        //GD.cmd_number(500,320, 28, 6, allowTrigger);
@@ -160,6 +171,9 @@ int height = 400;
 int width = 790;
 int xStep = 100;
 
+// avoid drawing graph outside of target area (can happen if cal values are large...)
+  GD.ScissorXY(0,30); // height of header
+  GD.ScissorSize(800,440);
 GD.ColorA(255);
 
 //GD.ColorRGB(0x00ff00);
@@ -246,7 +260,7 @@ for (int i=yStep; i<height/2; i=i+yStep) {
     */
 
     //main graph
-    GD.ColorRGB(COLOR_CURRENT);
+    GD.ColorRGB(digitizeVoltage?COLOR_VOLT:COLOR_CURRENT);
     GD.Begin(LINE_STRIP);
     int xCoordinate = 0;
     for (int x = from; x<to; x += resolution) {
@@ -259,31 +273,31 @@ for (int i=yStep; i<height/2; i=i+yStep) {
 
  GD.ColorRGB(0xaaaaaa);
 GD.cmd_text(0, yAxisPx-height/2 -10 , 27, 0, "Max:");
-GD.ColorRGB(COLOR_CURRENT);
+GD.ColorRGB(digitizeVoltage?COLOR_VOLT:COLOR_CURRENT);
 if (maxDigV < 0.0000) {
     GD.cmd_text(50, yAxisPx-height/2+20 -10 , 27, 0, "-");
   }
 if (SMU[0].getCurrentRange() == AMP1) {
   GD.cmd_number(60,yAxisPx-height/2 -10, 27, 5, maxDigV);
-  GD.cmd_text(60+55, yAxisPx-height/2 -10 , 27, 0, "mA");
+  GD.cmd_text(60+55, yAxisPx-height/2 -10 , 27, 0, digitizeVoltage?"mV":"mA");
 } else {
     GD.cmd_number(60,yAxisPx-height/2 -10, 27, 5, maxDigV*1000.0);
-    GD.cmd_text(60+55, yAxisPx-height/2 -10 , 27, 0, "uA");
+    GD.cmd_text(60+55, yAxisPx-height/2 -10 , 27, 0, digitizeVoltage?"uV":"uA");
 }
 
 GD.ColorRGB(0xaaaaaa);
 GD.cmd_text(0, yAxisPx-height/2 +20 -10, 27, 0, "Min:");
 //if (minDigV < 0.0000) {
-  GD.ColorRGB(COLOR_CURRENT);
+    GD.ColorRGB(digitizeVoltage?COLOR_VOLT:COLOR_CURRENT);
   if (minDigV < 0.0000) {
     GD.cmd_text(50, yAxisPx-height/2+20 -10 , 27, 0, "-");
   }
   if (SMU[0].getCurrentRange() == AMP1) {
     GD.cmd_number(60,yAxisPx-height/2+20 -10, 27, 5, abs(minDigV));
-    GD.cmd_text(60+55, yAxisPx-height/2+20 -10 , 27, 0, "mA");
+    GD.cmd_text(60+55, yAxisPx-height/2+20 -10 , 27, 0, digitizeVoltage?"mV":"mA");
   } else {
     GD.cmd_number(60,yAxisPx-height/2+20 -10, 27, 5, abs(minDigV)* 1000.0);
-    GD.cmd_text(60+55, yAxisPx-height/2+20 -10 , 27, 0, "uA");
+    GD.cmd_text(60+55, yAxisPx-height/2+20 -10 , 27, 0, digitizeVoltage?"uV":"uA");
   }
 
 //} 

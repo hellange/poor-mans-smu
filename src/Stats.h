@@ -1,4 +1,7 @@
 
+#ifndef STATS_H
+#define STATS_H
+
 class StatsClass {
 
 #define MAX_FULL_SAMPLES 75
@@ -42,3 +45,4 @@ public:
 
 extern StatsClass V_STATS;
 extern StatsClass C_STATS;
+#endif

@@ -46,6 +46,8 @@ public:
     static bool adjustLevel;
     static int ampLevel;
 
+bool digitizeVoltage = false; // set to true to digitize voltage 
+
   bool continuous = false;
 
   void clearMaxMin();

@@ -137,7 +137,6 @@ void ADCClass::updateSettings() {
 
 
 // -----  Internal short circuit of inputs---
-
 void ADCClass::shortAdcInput(bool setShort) {
   // for voltage measurement
   shortSetting = setShort;
@@ -146,10 +145,9 @@ void ADCClass::shortAdcInput(bool setShort) {
 void ADCClass::writeShortSetting() {
 if (shortSetting != oldShortSetting) {
     oldShortSetting = shortSetting;
-  //update shortADC here as well. TODO: Move
+    //update shortADC here as well. TODO: Move
     if (shortSetting) {
         AD7176_WriteRegister({0x10, 2, 0, 0x8000l  });
-        //    {0x10, 2, 0, 0x8000l, "Ch_Map_0 "}, //CH_Map_1  both to ain0, same as short circuit ?
     } else {
         AD7176_WriteRegister({0x10, 2, 0, 0x8001l  });
     }
@@ -161,8 +159,7 @@ if (shortSetting != oldShortSetting) {
 void ADCClass::internalRefInput(bool internalRef_) {
   internalRef = internalRef_;
 }
-//{0x20, 2, 0, 0x1f00l, "SetupCfg0"}, //Setup_Config_1   //ext ref, enable buffer
-////{0x20, 2, 0, 0x1c20l, "SetupCfg0"}, //Setup_Config_1  //int ref, unipolar 
+
 void ADCClass::writeRefInputSetting() {
 if (internalRef != oldInternalRef) {
     oldInternalRef = internalRef;
@@ -176,14 +173,7 @@ if (internalRef != oldInternalRef) {
   }
 }
 
-
-
-
-
-
 void ADCClass::writeSamplingRate() {
-
-  
 
   if (oldSamplingRate == samplingRate) {
      return;
@@ -366,7 +356,6 @@ void ADCClass::setCurrentRange(CURRENT_RANGE range, OPERATION_TYPE operationType
    digitalWrite(4, LOW);
    setGPIO(1,0); // When GPIO controls the sense relay
 
-
   } else {
     DEBUG.println("ERROR: Unknown current range !!!");
     DEBUG.flush();
@@ -377,14 +366,11 @@ void ADCClass::setCurrentRange(CURRENT_RANGE range, OPERATION_TYPE operationType
 
 double ADCClass::measureMilliVoltageRaw() {
 
-
-  
   AD7176_ReadRegister(&AD7176_regs[4]);
      
   float v = (float) ((AD7176_regs[4].value*VFSR*1000.0)/FSR);
 
-  
-  v=v-vref*1000.0;
+  v = v - vref*1000.0;
   writeSamplingRate();  // update sampling rate here seems to work. Doing randomly other places often fails.... for some reason...
 
   return v;
@@ -401,8 +387,6 @@ double ADCClass::measureMilliVoltage() {
   // Serial.print("ID:");  
   // Serial.println(r, HEX);     
 
-
-
   AD7176_ReadRegister(&AD7176_regs[4]);
 
   float v = (float) ((AD7176_regs[4].value*VFSR*1000.0)/FSR); 
@@ -410,23 +394,20 @@ double ADCClass::measureMilliVoltage() {
 
   //v = v / 0.8;  // funnel amplifiersetNullValue x0.8
   v = v / 0.4;  // funnel amplifier x0.4
-  
-  
-  //v = v / 8.0; // gain
-  
+    
   // DONT INCLUDE THESE ADJUSTMENTS WHEN TESTING ONLY DAC/ADC BOARD !!!!
   if (full_board == true) {
     
     if (voltageMeasurementGainX2) {
-      v = v/2.0; // divide by 2 in measurement circuit to have 2x gain
+      v = v / 2.0; // divide by 2 in measurement circuit to have 2x gain
     }
         
     // TODO: Dont hardcode the voltage value used for 
     //       differentiating voltage ranges !
     // WARNING: Not relevant because we dont use multiple measurement ranges.
-  //          However, it can be used as a poor mans nonlinear gain
-  //          compensation over and above a certain value....
-  // TODO: Remove this special handling ?
+    //          However, it can be used as a poor mans nonlinear gain
+    //          compensation over and above a certain value....
+    // TODO: Remove this special handling ?
     if (abs(v) > 2300) {
       if (v>0) {
         v = v * V_CALIBRATION.getAdcGainCompPos2();
@@ -458,7 +439,7 @@ double ADCClass::measureMilliVoltage() {
   writeShortSetting(); // update short setting as well
   writeRefInputSetting(); // update ref input
 
-  v=v - V_CALIBRATION.nullValueVol[current_range];
+  v = v - V_CALIBRATION.nullValueVol[current_range];
 
   return v;
 }
@@ -477,7 +458,6 @@ void ADCClass::init() {
   initDAC();
 
 }
-
 
 
 void ADCClass::initADC(){
@@ -523,8 +503,6 @@ void ADCClass::initADC(){
 }
 
 
-
-
 void ADCClass::initDAC(){
   LTC2758_write(0, LTC2758_CS, LTC2758_WRITE_SPAN_DAC, ADDRESS_DAC_ALL, 3);  // initialising all channels to -10V - 10V range
   LTC2758_write(0, LTC2758_CS, LTC2758_WRITE_CODE_UPDATE_DAC, 0, 0x0); // init to 0;
@@ -556,10 +534,7 @@ int64_t ADCClass::fltSetCommitVoltageSource(int64_t voltage_uV, bool dynamicRang
   // DONT INCLUDE THESE ADJUSTMENTS WHEN TESTING ONLY DAC/ADC BOARD !!!!
   if (full_board) {
 
-
-    
   //  dac_voltage = dac_voltage * 0.994; // crude adjustment that will differ between hardware
-
   
     if (dac_voltage>0) {
       if (dac_voltage > 2.3) {
@@ -576,8 +551,6 @@ int64_t ADCClass::fltSetCommitVoltageSource(int64_t voltage_uV, bool dynamicRang
     }
     
     dac_voltage = dac_voltage * voltageInputDividerCompensation;
-
-    
 
     //SPAN 0 = 0 to +5V
     //     1 = 0 to +10V
@@ -730,8 +703,6 @@ int64_t ADCClass::fltSetCommitVoltageSource(int64_t voltage_uV, bool dynamicRang
   return setValue_micro;
  }
  
-
-
   
 int64_t ADCClass::fltSetCommitVoltageLimit(int64_t voltage_uV, int8_t up_down_both) {
 
