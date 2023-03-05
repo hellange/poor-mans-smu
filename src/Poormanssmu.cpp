@@ -69,7 +69,7 @@
 
 #define SAMPLING_BY_INTERRUPT
 
-#define VERSION_NUMBER "0.2.4"
+#define VERSION_NUMBER "0.2.5"
 
 SimpleStatsClass SIMPLE_STATS;
 LoggerClass LOGGER;
