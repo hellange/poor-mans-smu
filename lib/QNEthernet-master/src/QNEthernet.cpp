@@ -3,6 +3,7 @@
 
 // QNEthernet.cpp contains the Teensy 4.1 Ethernet implementation.
 // This file is part of the QNEthernet library.
+#ifndef ARDUINO_TEENSY31
 
 #include "QNEthernet.h"
 
@@ -394,3 +395,4 @@ EthernetClass::operator bool() const {
 
 }  // namespace network
 }  // namespace qindesign
+#endif

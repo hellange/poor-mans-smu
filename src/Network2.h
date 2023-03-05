@@ -1,7 +1,10 @@
+
 #ifndef NETWORK2_H
 #define NETWORK2_H
 
+#ifndef ARDUINO_TEENSY31
 #include "QNEthernet.h"
+#endif
 #include "Filters.h"
 #include "Vrekrer_scpi_parser.h" // TESTING OUT SCPI LIBRARY, https://github.com/Vrekrer/Vrekrer_scpi_parser
 #include "Debug.h"

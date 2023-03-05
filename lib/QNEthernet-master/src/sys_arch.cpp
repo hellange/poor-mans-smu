@@ -3,6 +3,7 @@
 
 // sys_arch.cpp provides system function implementations for lwIP.
 // This file is part of the QNEthernet library.
+#ifndef ARDUINO_TEENSY31
 
 // C includes
 #include <unistd.h>
@@ -92,3 +93,4 @@ void sys_arch_unprotect(sys_prot_t pval) {
 }
 #endif  // SYS_LIGHTWEIGHT_PROT
 }  // extern "C"
+#endif

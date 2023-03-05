@@ -55,6 +55,9 @@ void MainMenuClass::handleButtonAction(int inputTag) {
     } else if (inputTag == MENU_BUTTON_LOGGER) {
       functionType = DATALOGGER;
       close();
+    } else if (inputTag == MENU_SHOWSETTINGS) {
+      functionType = SHOWSETTINGS;
+      close();
     }
 }
 
@@ -93,7 +96,7 @@ if (toBeDisactive != true) {
     {"SOURCE VOLT\0", "SOURCE CURRENT\0", "LOGGER\0"},
     {"ELECTRONIC LOAD\0", "VOLTMETER\0", "PULSE GENERATOR\0"},
     {"SWEEP\0", "GRAPH\0", "DIGITIZE\0"},
-    {"BATTERY SIM\0", "BATTERY MOD\0", "RESISTANCE\0"}
+    {"BATTERY SIM\0", "SETTINGS\0", "RESISTANCE\0"}
     };
     for (int y =0;y<4;y++) {
       for (int x =0;x<3;x++) {
@@ -123,6 +126,9 @@ if (toBeDisactive != true) {
 
         } else if (y==2 && x==1) {
           GD.Tag(MENU_BUTTON_GRAPH);
+          enable = true;
+        } else if (y==3 && x==1) {
+          GD.Tag(MENU_SHOWSETTINGS);
           enable = true;
         } else if (y==3 && x==2) {
           GD.Tag(MENU_BUTTON_RESISTANCE);

@@ -3,6 +3,7 @@
 
 // QNEthernetServer.cpp contains the EthernetServer implementation.
 // This file is part of the QNEthernet library.
+#ifndef ARDUINO_TEENSY31
 
 #include "QNEthernetServer.h"
 
@@ -80,3 +81,4 @@ void EthernetServer::flush() {
 
 }  // namespace network
 }  // namespace qindesign
+#endif

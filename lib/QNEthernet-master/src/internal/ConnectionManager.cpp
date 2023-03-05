@@ -3,6 +3,7 @@
 
 // ConnectionManager.cpp implements the connection manager.
 // This file is part of the QNEthernet library.
+#ifndef ARDUINO_TEENSY31
 
 #include "ConnectionManager.h"
 
@@ -442,3 +443,4 @@ int ConnectionManager::availableForWrite(uint16_t port) {
 }  // namespace internal
 }  // namespace network
 }  // namespace qindesign
+#endif

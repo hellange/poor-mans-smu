@@ -3,6 +3,7 @@
 
 // QNEthernetFrame.cpp contains an EthernetFrame implementation.
 // This file is part of the QNEthernet library.
+#ifndef ARDUINO_TEENSY31
 
 #include "QNEthernetFrame.h"
 
@@ -192,3 +193,4 @@ int EthernetFrameClass::availableForWrite() {
 
 }  // namespace network
 }  // namespace qindesign
+#endif

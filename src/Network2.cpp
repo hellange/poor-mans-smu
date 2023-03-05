@@ -1,3 +1,5 @@
+#ifndef ARDUINO_TEENSY31
+
 // Network support for Poor Man's SMU
 
 // Based on ServerWithListeners example in the QNEthernet library:
@@ -367,3 +369,4 @@ void Network2Class::loop() {
 
 
 Network2Class ETHERNET2_UTIL;
+#endif

@@ -44,7 +44,9 @@
 
 #include "utils.h"
 #include "analogGauge.h"
+#ifndef ARDUINO_TEENSY31
 #include "Network2.h"
+#endif
 #include "Digitizer.h"
 #include "ZeroCalibration.h"
 
@@ -403,21 +405,18 @@ void setup()
    DEBUG.println("");
    DEBUG.print("Found DAC type:");
    // based on datasheet...
-   //TODO: Fix this detection. Seems to read other values... 3 bytes hmm....
-   if (SMU[0].deviceTypeId == 0x0C94) {
+   if ((SMU[0].deviceTypeId & 0xfff0) == 0x0C90) { //0x0C94 ?
      DEBUG.print("AD7176-2");
-   } else if (SMU[0].deviceTypeId == 0x00D) { 
-     DEBUG.print("AD7172-2");
-   } else if (SMU[0].deviceTypeId == 0x0CD) {
+   } else if ((SMU[0].deviceTypeId & 0xfff0) == 0x00D0) { 
+     DEBUG.print("AD7172-2"); 
+   } else if ((SMU[0].deviceTypeId & 0xfff0) == 0x0CD0) {
      DEBUG.print("AD7175-2"); 
-   } else if (SMU[0].deviceTypeId == 0x4FD) {
+   } else if ((SMU[0].deviceTypeId & 0xfff0) == 0x4FD0) {
      DEBUG.print("AD7177-2");
-   } 
-
-   // TODO: My prototype shows 0xDE, wrong readout ?  Why not same as "official" ? Are samples different?
-   else if (SMU[0].deviceTypeId == 0x0DE) {
-     DEBUG.print("AD7177-(prot)?");
+   } else {
+     DEBUG.print("Unknown");
    }
+
 
      DEBUG.print("    hex:");
      DEBUG.println(SMU[0].deviceTypeId, HEX);
@@ -481,9 +480,10 @@ void setup()
   //        Altenatively find a non-blocking version of initialization...
   //  DEBUG.print("Ethernet initialization started ");
   //  DEBUG.flush();
+#ifndef ARDUINO_TEENSY31
    ETHERNET2_UTIL.setup(); 
   //  DEBUG.print("Ethernet initialization ended ");
-
+#endif
 } 
 
 void markSetDigitCur(int x, int y) {
@@ -849,6 +849,7 @@ void renderMainHeader() {
   } else {
       GD.ColorRGB(0xaaaaaa);
       GD.cmd_text(0, 0, 27, 0, "ADC:");
+      //GD.cmd_text(30, 0, 27, 0, (SMU[0].deviceTypeId & 0xfff0) == 0x00D0 ? "AD7172-2" : "?");
       GD.cmd_number(40,0,27,0,SMU[0].deviceTypeId);
   }
 
@@ -865,7 +866,7 @@ void renderMainHeader() {
   GD.ColorRGB(0xaaaaaa);
   GD.cmd_text(120, 0, 27, 0, "Uptime:");
   DIGIT_UTIL.displayTime(millis(), 190, 0);
-  
+#ifndef ARDUINO_TEENSY31
   if (ETHERNET2_UTIL.linkState) {
     GD.ColorA(100);
     GD.ColorRGB(0x00ff00);
@@ -882,6 +883,7 @@ void renderMainHeader() {
   } else {
      GD.cmd_text(665, 0, 27, 0, "No IP Address");
   }
+#endif
   //GD.cmd_text(760, 0, 27, 0, ETHERNET2_UTIL.linkState?"ON":"OFF");
   GD.ColorA(255);
   GD.ColorRGB(0xaaaadd);
@@ -1400,6 +1402,7 @@ void scpi_setup()
   //Change the hash_magic_number to solve any problem.
 }
 
+#ifndef ARDUINO_TEENSY31
 void scpiCommandDetectionLoop() {
   ETHERNET2_UTIL.loop();
    if ( ETHERNET2_UTIL.linkState ) {
@@ -1415,10 +1418,11 @@ void scpiCommandDetectionLoop() {
       }
    }
 }
-
+#endif
 void loop() {
+#ifndef ARDUINO_TEENSY31
    scpiCommandDetectionLoop();
-
+#endif
 
   if (V_CALIBRATION.autoCalInProgress) {
     V_CALIBRATION.autoCalADCfromDAC();
@@ -1662,7 +1666,7 @@ int checkButtons() {
     //      respectivly. 
     //      Currently, the code is only moved to Calibration. Just use the V_CALIBRATION for now
     //      even though it also contains current calibration
-    if (!V_CALIBRATION.handleCalibrationButtons(tag,operationType)) {
+    if (!V_CALIBRATION.handleCalibrationButtons(tag,operationType, SMU[0].getCurrentRange())) {
       return valueToReturnIfTooFast;
     }
     if (tag == BUTTON_DAC_ZERO_CALIBRATE) {
@@ -1785,6 +1789,11 @@ void loopMain()
     "disabled" "\xff" "enabled");
     GD.cmd_track(50, lineY, 80, 40, 45);
 
+
+    GD.Tag(244);
+    GD.cmd_button(300,lineY +30,120,50,29,0,"CLOSE");
+
+
     GD.Tag(0);
 
     //45 max degree ?
@@ -1839,6 +1848,9 @@ void loopMain()
           voltageMeasurementGainX2 = 0;
           SMU[0].voltageMeasurementGainX2 = false;
         }
+        break;
+      case 244: // close settings
+        showSettings = false;
         break;
 
     }
@@ -2004,6 +2016,10 @@ void closeMainMenuCallback(FUNCTION_TYPE newFunctionType) {
       ROTARY_ENCODER.init(LOGGER.rotaryChangedFn);
       PUSHBUTTON_ENC.setCallback(LOGGER.rotarySwitchFn); 
       GD.resume();
+  }
+  else if (newFunctionType == SHOWSETTINGS) {
+      // Just added to make it possible to toggle settings also when physical buttons available...
+      showSettings = true;
   }
   // else if (newFunctionType == DIGITIZE) {
   //   GD.resume();

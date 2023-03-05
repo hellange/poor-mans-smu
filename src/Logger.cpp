@@ -2,7 +2,9 @@
 #include "Arduino.h"
 #include "Debug.h"
 
+#ifndef ARDUINO_TEENSY31
 extern "C" uint8_t external_psram_size;
+#endif 
 
 int LoggerClass::rotary = 1;
 int LoggerClass::scrollRotary = 0;
@@ -15,7 +17,11 @@ void LoggerClass::init() {
 //	while (!Serial) ; // wait
 
   // Based on using Teensy 4.1 with extra RAM mounted
-  uint8_t size = external_psram_size;
+  #ifndef ARDUINO_TEENSY31
+    uint8_t size = external_psram_size;
+  #else
+    uint8_t size = 0;
+  #endif
 	DEBUG.printf("EXTMEM Memory: %d Mbyte\n", size);
 	if (size == 0) {
     notAvailable = true;

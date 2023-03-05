@@ -1,0 +1,22 @@
+{
+	"folders": [
+		{
+			"path": ".."
+		},
+		{
+			"name": "QNEthernet",
+			"path": "../../QNEthernet"
+		}
+	],
+	"settings": {
+		"files.associations": {
+			"limits": "cpp",
+			"type_traits": "cpp",
+			"*.tcc": "cpp",
+			"fstream": "cpp",
+			"istream": "cpp",
+			"ostream": "cpp",
+			"vector": "cpp"
+		}
+	}
+}

@@ -1315,7 +1315,7 @@ void CalibrationClass::renderCal(int x, int y, float valM, float setM, CURRENT_R
 }
 
 
-bool CalibrationClass::handleCalibrationButtons(int tag, OPERATION_TYPE operationType) {
+bool CalibrationClass::handleCalibrationButtons(int tag, OPERATION_TYPE operationType, CURRENT_RANGE currentRange) {
 
     int repeatDelay = 50;
     int valueToReturnIfTooFast = false;
@@ -1551,9 +1551,9 @@ bool CalibrationClass::handleCalibrationButtons(int tag, OPERATION_TYPE operatio
        } else {
          mv = C_STATS.rawValue;
          if (mv < 0) {
-            C_CALIBRATION.adjAdcGainCompNeg2(0.000001);
+            C_CALIBRATION.adjAdcGainCompNeg2(currentRange==MILLIAMP10 ? 0.000005 : 0.000002);
          } else {
-            C_CALIBRATION.adjAdcGainCompPos2(0.000001);
+            C_CALIBRATION.adjAdcGainCompPos2(currentRange==MILLIAMP10 ? 0.000005 : 0.000002);
          }
        }
       
@@ -1575,9 +1575,9 @@ bool CalibrationClass::handleCalibrationButtons(int tag, OPERATION_TYPE operatio
        } else {
         mv = C_STATS.rawValue;
         if (mv < 0) {
-            C_CALIBRATION.adjAdcGainCompNeg2(-0.000001);
+            C_CALIBRATION.adjAdcGainCompNeg2(currentRange==MILLIAMP10 ? -0.000005 : -0.000002);
          } else {
-            C_CALIBRATION.adjAdcGainCompPos2(-0.000001);
+            C_CALIBRATION.adjAdcGainCompPos2(currentRange==MILLIAMP10 ? -0.000005 : -0.000001);
          }
        }
       

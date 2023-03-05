@@ -72,7 +72,7 @@ class CalibrationClass {
   void writeAdcCalToEeprom(int nrOfPoints);
 
 public:
-  bool handleCalibrationButtons(int tag, OPERATION_TYPE operationType);
+  bool handleCalibrationButtons(int tag, OPERATION_TYPE operationType, CURRENT_RANGE currentRange);
   bool autoCalInProgress = false;
 
   void floatToEeprom(int address, float f);

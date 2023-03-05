@@ -3,6 +3,7 @@
 
 // QNEthernetUDP.cpp contains the EthernetUDP implementation.
 // This file is part of the QNEthernet library.
+#ifndef ARDUINO_TEENSY31
 
 #include "QNEthernetUDP.h"
 
@@ -343,3 +344,4 @@ size_t EthernetUDP::write(const uint8_t *buffer, size_t size) {
 
 }  // namespace network
 }  // namespace qindesign
+#endif

@@ -3,6 +3,7 @@
 
 // QNEthernetClient.cpp contains the EthernetClient implementation.
 // This file is part of the QNEthernet library.
+#ifndef ARDUINO_TEENSY31
 
 #include "QNEthernetClient.h"
 
@@ -492,3 +493,4 @@ int EthernetClient::peek() {
 
 }  // namespace network
 }  // namespace qindesign
+#endif
