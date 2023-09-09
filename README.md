@@ -17,6 +17,8 @@ Ethernet for Teensy 4.1 is a small layer on top of a copy of https://github.com/
 
 From May 2020, using PlatformIO instead of ArduinoIDE/Teensyduino. Mainly because the project has grown. Should be possible to use ArduinoIDE by renaming the main.cpp to *.ino. All files are in the src/ directory. Building and testing is only performed using PlatformIO.
 
+Rotary encoder uses a library from https://github.com/luni64/EncoderTool which works very well with my no-name cheap rotary encoder. No more debounce problems.
+
 
 Note:
 The refs/ directory contains stuff that is not relevant for the source code. Just to keep it somewhere.
