@@ -69,7 +69,7 @@
 
 #define SAMPLING_BY_INTERRUPT
 
-#define VERSION_NUMBER "0.2.5"
+#define VERSION_NUMBER "0.2.7"
 
 SimpleStatsClass SIMPLE_STATS;
 LoggerClass LOGGER;
@@ -1698,6 +1698,7 @@ int settingsShortAdc = 0;
 //int settingsCurrentAutoRange = 65000;
 int settingsInternalADCRef = 0;
 int voltageMeasurementGainX2 = 0;
+int voltageOnly = 0;
 
 void loopMain()
 {
@@ -1766,14 +1767,14 @@ void loopMain()
     GD.cmd_toggle(50, lineY, 100, 29, OPT_FLAT, settingsShortAdc,
     "disabled" "\xff" "enabled");
     GD.cmd_track(50, lineY, 100, 40, 42);
-    lineY+=60;
+    lineY+=50;
     
     GD.cmd_text(180, lineY - 7 , 29, 0, "Current auto range");
     GD.Tag(43);
     GD.cmd_toggle(50, lineY, 100, 29, OPT_FLAT, WIDGETS.settingsCurrentAutoRange, // TODO: Don't fetch from widgets
     "disabled" "\xff" "enabled");
     GD.cmd_track(50, lineY, 80, 40, 43);
-    lineY+=60;
+    lineY+=50;
 
     GD.cmd_text(180, lineY - 7 , 29, 0, "Internal reference");
     GD.Tag(44);
@@ -1781,13 +1782,22 @@ void loopMain()
     "disabled" "\xff" "enabled");
     GD.cmd_track(50, lineY, 80, 40, 44);
 
-    lineY+=60;
+    lineY+=50;
 
     GD.cmd_text(180, lineY - 7 , 29, 0, "Voltage measurement gain x2");
     GD.Tag(45);
     GD.cmd_toggle(50, lineY, 100, 29, OPT_FLAT, voltageMeasurementGainX2,
     "disabled" "\xff" "enabled");
     GD.cmd_track(50, lineY, 80, 40, 45);
+
+   lineY+=50;
+
+    GD.cmd_text(180, lineY - 7 , 29, 0, "Only voltage");
+    GD.Tag(46);
+    GD.cmd_toggle(50, lineY, 100, 29, OPT_FLAT, voltageOnly,
+    "disabled" "\xff" "enabled");
+    GD.cmd_track(50, lineY, 80, 40, 46);
+
 
 
     GD.Tag(244);
@@ -1847,6 +1857,24 @@ void loopMain()
         else if (voltageMeasurementGainX2 <= 30000) {
           voltageMeasurementGainX2 = 0;
           SMU[0].voltageMeasurementGainX2 = false;
+        }
+        break;
+      case 46:
+        voltageOnly = GD.inputs.track_val;
+        if (voltageOnly > 30000) {
+          voltageOnly = 65535;
+          //TODO: Avoid overwrite by other mechanism !
+          SMU[0].enableCurrentMeasurement = false;
+          SMU[0].enableVoltageMeasurement = true;
+           
+        }
+        else if (voltageOnly <= 30000) {
+          voltageOnly = 0; 
+          //TODO: Avoid overwrite by other mechanism !
+          SMU[0].enableCurrentMeasurement = true;
+          SMU[0].enableVoltageMeasurement = true;
+                   
+
         }
         break;
       case 244: // close settings

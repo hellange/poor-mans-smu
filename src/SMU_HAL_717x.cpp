@@ -256,7 +256,7 @@ bool gpio1 = false;
 void ADCClass::setGPIO(int nr, bool on) {
 
   AD7176_ReadRegister(&AD7176_regs[6]); // GPIO register
-  uint32_t v = AD7176_regs[6].value;
+  int32_t v = AD7176_regs[6].value;
 //  DEBUG.print("Set gpio");
 //  DEBUG.print(nr);
 //  DEBUG.print(" to ");
@@ -467,7 +467,7 @@ void ADCClass::initADC(){
   DEBUG.println("REGS:");
 
   // copy of AD7176 registers
-  enum AD7176_registers regNr;
+  //enum AD7176_registers regNr;
 
  // Gain_3
   for(int regNr = 0; regNr < Gain_3; ++regNr) {
