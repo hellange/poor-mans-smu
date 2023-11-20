@@ -146,14 +146,13 @@ void Network2Class::setup() {
     // need to know whether to stop/start/restart/etc
     // Note: When setting a static IP, the address will be set but a
     //       link might not yet exist
-        hasIpx = hasIP;
+    hasIpx = hasIP;
 
     if (hasIpx) {
     sprintf(ipAddressString, "%03u.%03u.%03u.%03u\0", ip[0], ip[1], ip[2], ip[3]);
 
     } 
-        tellServer(hasIP);
-
+    tellServer(hasIP);
 
   });
 
@@ -226,7 +225,7 @@ char copyBuffer[100];
 char* Network2Class::GetEthMsg() {
 
   strncpy(copyBuffer, buffer, 40); // TODO: Dont't hardcode buffer limit
-    DEBUG.println("GetEthMsg:");
+    DEBUG.print("GetEthMsg:");
 
     DEBUG.println(copyBuffer);
 

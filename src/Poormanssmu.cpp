@@ -3,7 +3,7 @@
  *  Initial prototype for
  *  P O O R  M A N ' s  S M U
  *  
- *  by Helge Langehaug (2018, 2019, 2020, 2021, 2022)
+ *  by Helge Langehaug (2018 - 2023)
  * 
  *****************************************************************/
 
@@ -55,7 +55,6 @@
 #include "Debug.h"
 #include "Gest.h"
 #include "Widgets.h"
-//#define _SOURCE_AND_SINK 111
 
 #define _PRINT_ERROR_VOLTAGE_SOURCE_SETTING 0
 #define _PRINT_ERROR_CURRENT_SOURCE_SETTING 1
@@ -69,7 +68,7 @@
 
 #define SAMPLING_BY_INTERRUPT
 
-#define VERSION_NUMBER "0.2.7"
+#define VERSION_NUMBER "0.2.71"
 
 SimpleStatsClass SIMPLE_STATS;
 LoggerClass LOGGER;
@@ -153,7 +152,7 @@ void rotaryChangedVoltCurrentFn(float changeVal) {
         int64_t change_uV =  changeVal*1000;
         int64_t new_uV = mv*1000 + change_uV;
          SOURCE_DIAL.setMv(new_uV /1000.0);
-       } else {
+      } else {
         DEBUG.print("from smu setvalue mv=");
         DIGIT_UTIL.print_uint64_t(SMU[0].getSetValue_micro());
         DEBUG.println();
@@ -431,7 +430,7 @@ void setup()
      DEBUG.println("Source voltage");
      //current_range = AMP1;
      SMU[0].setCurrentRange(AMP1, operationType);
-     SMU[0].fltSetCommitCurrentLimit(SETTINGS.setCurrentLimit*1000, _SOURCE_AND_SINK); 
+     SMU[0].fltSetCommitCurrentLimit(SETTINGS.setCurrentLimit*1000); 
    } 
    DEBUG.print("Default source voltage ");
    DEBUG.println(SETTINGS.setMilliVoltage);
@@ -474,12 +473,6 @@ void setup()
 
    scpi_setup();
 
-  //  Comment out to avoid delay of ethernet not connected !!!!
-  //  TODO: Move to a config page so you must activly try to enable ethernet
-  //        That can avoid startup delay.
-  //        Altenatively find a non-blocking version of initialization...
-  //  DEBUG.print("Ethernet initialization started ");
-  //  DEBUG.flush();
 #ifndef ARDUINO_TEENSY31
    ETHERNET2_UTIL.setup(); 
   //  DEBUG.print("Ethernet initialization ended ");
@@ -866,7 +859,7 @@ void renderMainHeader() {
   GD.ColorRGB(0xaaaaaa);
   GD.cmd_text(120, 0, 27, 0, "Uptime:");
   DIGIT_UTIL.displayTime(millis(), 190, 0);
-#ifndef ARDUINO_TEENSY31
+#ifdef ARDUINO_TEENSY41
   if (ETHERNET2_UTIL.linkState) {
     GD.ColorA(100);
     GD.ColorRGB(0x00ff00);
@@ -877,9 +870,9 @@ void renderMainHeader() {
   if (ETHERNET2_UTIL.hasIpx) {
     GD.cmd_text(665, 0, 27, 0, ETHERNET2_UTIL.ipAddressString);
     // Uncomment below if you want to see command buffer info SCPI
-    //GD.ColorRGB(0xaaaaaa);
-    //GD.cmd_number(584,27,27,5, ETHERNET2_UTIL.receivedMessages);
-    //GD.cmd_text(640, 27, 27, 0, commandBuffer);
+    GD.ColorRGB(0xaaaaaa);
+    GD.cmd_number(584,27,27,5, ETHERNET2_UTIL.receivedMessages);
+    GD.cmd_text(640, 27, 27, 0, SCPI_CommandBuffer);
   } else {
      GD.cmd_text(665, 0, 27, 0, "No IP Address");
   }
@@ -1172,8 +1165,9 @@ static void handleSampling() {
   else if (dataR >= 100){ // Probably no analog board (no power?)
   // Just simulate voltage/current with some noise.
   // This is NOT the same as USE_SIMULATOR !
+  // Just to make it possible to test the software even if there is no hardware...
   if (dataR == 100) {
-    float v; // = 1000.0 + random(0, 10)/1000.0 ;
+    float v;
     v = SMU[0].getSetValue_micro();
 
     int noise = 20; //20uV simulated noise
@@ -1187,22 +1181,18 @@ static void handleSampling() {
     } else{
           v = v*1.0003; 
     }
-      v = V_CALIBRATION.adc_nonlinear_compensation(v/1000.0) * 1000.0;
-
-    
-
+    v = V_CALIBRATION.adc_nonlinear_compensation(v/1000.0) * 1000.0;
     v = v + random(0, noise);
     v = v - noise / 2.0;
-
     v = v / 1000.0;
 
     V_STATS.addSample(v);    
     V_FILTERS.updateMean(v, true);
     SIMPLE_STATS.registerValue(V_FILTERS.mean);
     if (logTimer + 1000 < (int)millis()) {
-     logTimer = millis();
-     //RAM.logData(V_FILTERS.mean);
-     RAM.logDataCalculateMean(V_FILTERS.mean, 1);
+      logTimer = millis();
+      //RAM.logData(V_FILTERS.mean);
+      RAM.logDataCalculateMean(V_FILTERS.mean, 1);
     }
 
   } else {
@@ -1237,7 +1227,7 @@ void handleAutoCurrentRange() {
           DEBUG.println("switching to range 1");
            //TODO: Use getLimitValue from SMU instead of LIMIT_DIAL ?
           if (operationType == SOURCE_VOLTAGE){
-            if (SMU[0].fltSetCommitCurrentLimit(SMU[0].getLimitValue_micro()/*LIMIT_DIAL.getMv()*/, _SOURCE_AND_SINK)) printError(_PRINT_ERROR_VOLTAGE_SOURCE_SETTING);
+            if (SMU[0].fltSetCommitCurrentLimit(SMU[0].getLimitValue_micro())) printError(_PRINT_ERROR_VOLTAGE_SOURCE_SETTING);
           } 
 
         }
@@ -1252,7 +1242,7 @@ void handleAutoCurrentRange() {
           DEBUG.println("switching to range 0");
            //TODO: Use getLimitValue from SMU instead of LIMIT_DIAL ?
           if (operationType == SOURCE_VOLTAGE){
-            if (SMU[0].fltSetCommitCurrentLimit(SMU[0].getLimitValue_micro()/*LIMIT_DIAL.getMv()/1000.0*/, _SOURCE_AND_SINK)) printError(_PRINT_ERROR_VOLTAGE_SOURCE_SETTING);
+            if (SMU[0].fltSetCommitCurrentLimit(SMU[0].getLimitValue_micro())) printError(_PRINT_ERROR_VOLTAGE_SOURCE_SETTING);
           } 
 
           
@@ -1276,12 +1266,16 @@ void sourceVoltageSCPI(SCPI_C commands, SCPI_P parameters, Stream& interface) {
   DEBUG.println("SCPI Source voltage to given value (mV). MEAS:VOLT gives mV.");
   if (parameters.Size() > 0) {
     int mv = (String(parameters[0]).toInt());
-    useVoltageFeedback();
+    GD.__end();
+    useVoltageFeedback();    
     SMU[0].fltSetCommitVoltageSource(mv*1000, true);
-    //SMU[0].fltSetCommitCurrentLimit(SETTINGS.setCurrentLimit*1000, true);
+    //if (SMU[0].fltSetCommitCurrentLimit(SETTINGS.setCurrentLimit*1000)) printError(_PRINT_ERROR_VOLTAGE_SOURCE_SETTING);
+    GD.resume();
     interface.println("OK");
-    interface.flush();
+  } else {
+    interface.println("ERROR");
   }
+  interface.flush();
   functionType = SOURCE_DC_VOLTAGE; // this is used to rended correct UI
 }
 
@@ -1290,13 +1284,16 @@ void sourceCurrentSCPI(SCPI_C commands, SCPI_P parameters, Stream& interface) {
   if (parameters.Size() > 0) {
     int uA = (String(parameters[0]).toInt());
     useCurrentFeedback();
-    fltCommitCurrentSourceAutoRange(uA, true);
+    GD.__end();
+    fltCommitCurrentSourceAutoRange(uA * 1000.0, true);
+    GD.resume();
     //SMU[0].fltSetCommitVoltageLimit(SETTINGS.setVoltageLimit*1000, true);
     interface.println("OK");
   } else {
     interface.println("ERROR");
   }
   interface.flush();
+  functionType = SOURCE_DC_CURRENT; // this is used to rended correct UI
 }
 
 void measureCurrentSCPI(SCPI_C commands, SCPI_P parameters, Stream& interface) {
@@ -1338,20 +1335,19 @@ void sourceVoltageILimitSCPI(SCPI_C commands, SCPI_P parameters, Stream& interfa
   DEBUG.println("SCPI Set current limit for voltage source (uA).");
   if (parameters.Size() > 0) {
     int uA = (String(parameters[0]).toInt());
-    SMU[0].fltSetCommitCurrentLimit(uA, true);
+    SMU[0].fltSetCommitCurrentLimit(uA);
     interface.println("OK");
   } else {
     interface.println("ERROR");
   }
   interface.flush();
-
 }
 
 void sourceCurrentVLimitSCPI(SCPI_C commands, SCPI_P parameters, Stream& interface) {
   DEBUG.println("SCPI Set voltage limit for current source (mV).");
   if (parameters.Size() > 0) {
     int mV = (String(parameters[0]).toInt());
-    SMU[0].fltSetCommitVoltageLimit(mV, true);
+    SMU[0].fltSetCommitVoltageLimit(mV);
     interface.println("OK");
   } else {
     interface.println("ERROR");
@@ -1376,7 +1372,9 @@ void scpi_setup()
 
   // special
   my_instrument.SetCommandTreeBase(F("SYSTem:"));
-  my_instrument.RegisterCommand(F(":TEMPerature?"),  &systemTemperatureSCPI);
+  //my_instrument.RegisterCommand(F(":TEMPerature?"),  &systemTemperatureSCPI);
+  my_instrument.RegisterCommand(F(":TEMPerature:FIN?"),  &finTemperatureSCPI);
+  my_instrument.RegisterCommand(F(":TEMPerature:SYS?"),  &systemTemperatureSCPI);
 
   // Various supported commands
   my_instrument.SetCommandTreeBase(F("SOURce:"));
@@ -1407,7 +1405,7 @@ void scpiCommandDetectionLoop() {
   ETHERNET2_UTIL.loop();
    if ( ETHERNET2_UTIL.linkState ) {
       if (ETHERNET2_UTIL.newMessageReady()) {
-        Serial.print("New message ready:");
+        //Serial.print("New message ready:");
         Serial.println(ETHERNET2_UTIL.GetEthMsg());
 
         strncpy(SCPI_CommandBuffer, ETHERNET2_UTIL.GetEthMsg(), 40); // TODO: don't hardcode command buffer limit
@@ -2009,11 +2007,11 @@ void closeMainMenuCallback(FUNCTION_TYPE newFunctionType) {
     if (SMU[0].operationType == SOURCE_VOLTAGE) {
       // If previous SMU operation was sourcing voltage, use that voltage
       if (SMU[0].fltSetCommitVoltageSource(SETTINGS.setMilliVoltage*1000, true)) printError(_PRINT_ERROR_VOLTAGE_SOURCE_SETTING);
-      if (SMU[0].fltSetCommitCurrentLimit(SETTINGS.setCurrentLimit*1000, true)) printError(_PRINT_ERROR_VOLTAGE_SOURCE_SETTING);
+      if (SMU[0].fltSetCommitCurrentLimit(SETTINGS.setCurrentLimit*1000)) printError(_PRINT_ERROR_VOLTAGE_SOURCE_SETTING);
     } else {
       // If previous SMU operation was sourcing current, use a predefined voltage
       if (SMU[0].fltSetCommitVoltageSource(SETTINGS.setMilliVoltage*1000, true)) printError(_PRINT_ERROR_VOLTAGE_SOURCE_SETTING);
-      if (SMU[0].fltSetCommitCurrentLimit(SETTINGS.setCurrentLimit*1000, true)) printError(_PRINT_ERROR_VOLTAGE_SOURCE_SETTING);
+      if (SMU[0].fltSetCommitCurrentLimit(SETTINGS.setCurrentLimit*1000)) printError(_PRINT_ERROR_VOLTAGE_SOURCE_SETTING);
     }
     GD.resume();
   }
@@ -2029,11 +2027,11 @@ void closeMainMenuCallback(FUNCTION_TYPE newFunctionType) {
     if (SMU[0].operationType == SOURCE_CURRENT) {
       // If previous SMU operation was sourcing current, use that current
       fltCommitCurrentSourceAutoRange(SETTINGS.setMilliAmpere*1000, true);
-      if (SMU[0].fltSetCommitVoltageLimit(SETTINGS.setVoltageLimit*1000, true)) printError(_PRINT_ERROR_VOLTAGE_SOURCE_SETTING);
+      if (SMU[0].fltSetCommitVoltageLimit(SETTINGS.setVoltageLimit*1000)) printError(_PRINT_ERROR_VOLTAGE_SOURCE_SETTING);
     } else {
       // If previous SMU operation was sourcing voltage, use a predefined current
       fltCommitCurrentSourceAutoRange(SETTINGS.setMilliAmpere*1000, true);
-      if (SMU[0].fltSetCommitVoltageLimit(SETTINGS.setVoltageLimit*1000, true)) printError(_PRINT_ERROR_VOLTAGE_SOURCE_SETTING);
+      if (SMU[0].fltSetCommitVoltageLimit(SETTINGS.setVoltageLimit*1000)) printError(_PRINT_ERROR_VOLTAGE_SOURCE_SETTING);
     }
 
     GD.resume();
@@ -2101,9 +2099,9 @@ void closeSourceDCCallback(int set_or_limit, bool cancel) {
     DEBUG.print("Closed LIMIT dialog, value=");
     DEBUG.println(mv);
     if (operationType == SOURCE_VOLTAGE) {
-     if (SMU[0].fltSetCommitCurrentLimit(mv * 1000, _SOURCE_AND_SINK)) printError(_PRINT_ERROR_CURRENT_SOURCE_SETTING);
+     if (SMU[0].fltSetCommitCurrentLimit(mv * 1000)) printError(_PRINT_ERROR_CURRENT_SOURCE_SETTING);
     } else {
-     if (SMU[0].fltSetCommitVoltageLimit(mv * 1000, _SOURCE_AND_SINK)) printError(_PRINT_ERROR_CURRENT_SOURCE_SETTING);
+     if (SMU[0].fltSetCommitVoltageLimit(mv * 1000)) printError(_PRINT_ERROR_CURRENT_SOURCE_SETTING);
     }
   }
   GD.resume();

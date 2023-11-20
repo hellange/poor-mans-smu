@@ -1460,7 +1460,7 @@ bool CalibrationClass::handleCalibrationButtons(int tag, OPERATION_TYPE operatio
          //if (operationType == SOURCE_VOLTAGE) {
          GD.__end();
          //if (SMU[0].fltSetCommitCurrentLimit(mv*1000, true)) printError(_PRINT_ERROR_VOLTAGE_SOURCE_SETTING);
-         SMU[0].fltSetCommitCurrentLimit(mv, true);
+         SMU[0].fltSetCommitCurrentLimit(mv);
          GD.resume();
        }
     } 
@@ -1478,7 +1478,7 @@ bool CalibrationClass::handleCalibrationButtons(int tag, OPERATION_TYPE operatio
          //if (operationType == SOURCE_VOLTAGE) {
          GD.__end();
          //if (SMU[0].fltSetCommitCurrentLimit(mv*1000, true)) printError(_PRINT_ERROR_VOLTAGE_SOURCE_SETTING);
-         SMU[0].fltSetCommitCurrentLimit(mv, true);
+         SMU[0].fltSetCommitCurrentLimit(mv);
          GD.resume();
        }   
     } 

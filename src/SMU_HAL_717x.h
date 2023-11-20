@@ -59,8 +59,8 @@ class ADCClass {
     int64_t fltSetCommitVoltageSource(int64_t voltage_uV, bool dynamicRange);
     int64_t fltSetCommitCurrentSource(int64_t current_uA);
 
-    int64_t fltSetCommitCurrentLimit(int64_t setValue_uA, int8_t up_down_both);
-    int64_t fltSetCommitVoltageLimit(int64_t voltage_uV, int8_t up_down_both);
+    int64_t fltSetCommitCurrentLimit(int64_t setValue_uA);
+    int64_t fltSetCommitVoltageLimit(int64_t voltage_uV);
 
     double measureMilliVoltage();
     double measureMilliVoltageRaw();

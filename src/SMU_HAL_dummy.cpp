@@ -59,12 +59,12 @@ CURRENT_RANGE SMU_HAL_dummy::getCurrentRange() {
    }
  } 
  
- int64_t SMU_HAL_dummy::fltSetCommitCurrentLimit(int64_t current_uA, int8_t up_down_both) {
+ int64_t SMU_HAL_dummy::fltSetCommitCurrentLimit(int64_t current_uA) {
    setLimit_micro = current_uA;
    return setLimit_micro;
  }
 
- int64_t SMU_HAL_dummy::fltSetCommitVoltageLimit(int64_t voltage_uV, int8_t up_down_both) {
+ int64_t SMU_HAL_dummy::fltSetCommitVoltageLimit(int64_t voltage_uV) {
    setLimit_micro = voltage_uV;
    return setLimit_micro;
  }

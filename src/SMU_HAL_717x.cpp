@@ -332,7 +332,7 @@ void ADCClass::setCurrentRange(CURRENT_RANGE range, OPERATION_TYPE operationType
                //
                // I have verified that its the current limit that kicks in briefly. How to fix ?
                
-      fltSetCommitCurrentLimit(setLimit_micro, _SOURCE_AND_SINK);//printError(_PRINT_ERROR_VOLTAGE_SOURCE_SETTING);
+      fltSetCommitCurrentLimit(setLimit_micro);//printError(_PRINT_ERROR_VOLTAGE_SOURCE_SETTING);
     } 
     else {
             DEBUG.println("SMU setCurrentRange to 1A (source current)");
@@ -346,7 +346,7 @@ void ADCClass::setCurrentRange(CURRENT_RANGE range, OPERATION_TYPE operationType
    if (operationType == SOURCE_VOLTAGE) {
      DEBUG.println("SMU setCurrentRange to 10mA (source voltage)");
      DEBUG.println("Switching current range (to 10mA) while in voltage source must also update DAC output for limiting circuit.");
-     fltSetCommitCurrentLimit(setLimit_micro, _SOURCE_AND_SINK);// printError(_PRINT_ERROR_VOLTAGE_SOURCE_SETTING);
+     fltSetCommitCurrentLimit(setLimit_micro);// printError(_PRINT_ERROR_VOLTAGE_SOURCE_SETTING);
    } 
    else {
      DEBUG.println("SMU setCurrentRange to 10mA (source current)");
@@ -704,7 +704,7 @@ int64_t ADCClass::fltSetCommitVoltageSource(int64_t voltage_uV, bool dynamicRang
  }
  
   
-int64_t ADCClass::fltSetCommitVoltageLimit(int64_t voltage_uV, int8_t up_down_both) {
+int64_t ADCClass::fltSetCommitVoltageLimit(int64_t voltage_uV) {
 
   setLimit_micro = voltage_uV;
 
@@ -740,7 +740,7 @@ int64_t ADCClass::fltSetCommitVoltageLimit(int64_t voltage_uV, int8_t up_down_bo
   return setLimit_micro;
  }
  
- int64_t ADCClass::fltSetCommitCurrentLimit(int64_t current_uA , int8_t up_down_both) {
+ int64_t ADCClass::fltSetCommitCurrentLimit(int64_t current_uA) {
 
   setLimit_micro = current_uA;
 

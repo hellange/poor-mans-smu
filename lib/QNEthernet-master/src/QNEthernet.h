@@ -252,7 +252,7 @@ class EthernetClass final {
 
   uint8_t mac_[6];
 #if LWIP_NETIF_HOSTNAME
-  String hostname_{"teensy-lwip"};  // Empty means no hostname
+  String hostname_{"poormanssmu-teensy-lwip"};  // Empty means no hostname
 #endif
   struct netif *netif_ = nullptr;
 
