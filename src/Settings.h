@@ -1,12 +1,13 @@
 #ifndef Settings_h
 #define Settings_h
 
-#include "SMU_HAL_717x.h"
+#include "SMU_HAL.h"
 
 
 class SettingsClass {
 
 private:
+  SMU_HAL *SMU1;
   int maxTempAllowed = 80;
   float max_current_10ma_range = 9.0;
   float max_current_1a_range = 3300.0;
@@ -23,7 +24,7 @@ public:
   float max_current_10mA_range();
 
 
-  void init();
+  void init(SMU_HAL &SMU);
   bool lowBandWidth = false;
   void setLowBandWidth(bool t);
   void render();

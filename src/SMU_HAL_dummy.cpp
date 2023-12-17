@@ -33,15 +33,21 @@ CURRENT_RANGE SMU_HAL_dummy::getCurrentRange() {
  }
 
  void SMU_HAL_dummy::setSamplingRate(int value) {
-   samplingDur = 1000/value;      
+   DEBUG.print("Set Sampling rate for dummy ");
+   DEBUG.println(value);
+   samplingRate = value;      
  }
 
   
  int SMU_HAL_dummy::getSamplingRate() {
-  //TODO: Fix this
-  DEBUG.println("ERROR: getSampling rate has not been implemented correctly !!!!");
-  return 999;    
+  return samplingRate;    
  }
+
+ void SMU_HAL_dummy::updateSettings() {
+    DEBUG.println("WARNING: updateSettings has not been implemented correctly !!!!");
+
+ }
+
   
  int64_t SMU_HAL_dummy::fltSetCommitCurrentSource(int64_t current_uA) {
    setValue_micro = current_uA;
@@ -81,7 +87,8 @@ CURRENT_RANGE SMU_HAL_dummy::getCurrentRange() {
   // }
   // lastSampleMilli = millis();
 
-  if (lastSampleMilli + 10000 > micros()) {
+  double waitMicro = 1000000 / samplingRate;
+  if (lastSampleMilli + waitMicro > micros()) {
    return -1;
   }
   lastSampleMilli = micros();
@@ -94,14 +101,14 @@ CURRENT_RANGE SMU_HAL_dummy::getCurrentRange() {
   return volt_current;
  }
  
- float SMU_HAL_dummy::measureMilliVoltage(){
+ double SMU_HAL_dummy::measureMilliVoltage(){
 
   int inoise = 5 - random(9); // TODO: Find a better way to get random number from -x to x
   float noise = ((float)inoise)/1000.0; // use uV noise 
 
   // samplingDur gets lower as sampling speed increases.
   // simulate increasing noise for high sampling speeds
-  noise = noise * (50.0 / (float)samplingDur);
+  noise = noise * (1+samplingRate/10.0); //(50.0 / (float)samplingRate);
 
   if (driftTimer + 10000 > (int)millis()) {
     int r = random(2);
@@ -150,7 +157,7 @@ CURRENT_RANGE SMU_HAL_dummy::getCurrentRange() {
   return compliance;
  }
  
- float SMU_HAL_dummy::measureCurrent(int range){
+ double SMU_HAL_dummy::measureCurrent(CURRENT_RANGE range){
 
     float noise = random(1,10)/ 1000.0; // 10uA
     if (current_range == MILLIAMP10) {
@@ -178,9 +185,9 @@ CURRENT_RANGE SMU_HAL_dummy::getCurrentRange() {
  }
 
 
- float SMU_HAL_dummy::getLimitValue(){
-  return setValueI * 1000.0;
- }
+//  float SMU_HAL_dummy::getLimitValue(){
+//   return setValueI * 1000.0;
+//  }
 
   int64_t SMU_HAL_dummy::getSetValue_micro(){
   return setValue_micro;
@@ -190,6 +197,13 @@ CURRENT_RANGE SMU_HAL_dummy::getCurrentRange() {
    return setLimit_micro;
  }
 
+void SMU_HAL_dummy::shortAdcInput(bool setShort) {
+  // for voltage measurement
+  //shortSetting = setShort;
+}
+void SMU_HAL_dummy::internalRefInput(bool internalRef_) {
+  //internalRef = internalRef_;
+}
  
 
     

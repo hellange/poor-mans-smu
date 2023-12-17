@@ -23,7 +23,11 @@ int FunctionPulseClass::hz = 0;
 float FunctionPulseClass::duration = 1000;
 OPERATION_TYPE FunctionPulseClass::operationType = SOURCE_VOLTAGE;
     
-extern ADCClass SMU[];
+// TODO: FIX THIS REFERENCE !!!!
+extern ADCClass SMU[]; // TODO: FIX THIS REFERENCE !!!!
+// TODO: FIX THIS REFERENCE !!!!
+
+
 
 void FunctionPulseClass::init() {
   // TODO: Fetch from settings

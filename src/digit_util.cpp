@@ -165,18 +165,21 @@ void DigitUtilClass::startIndicator(int tag) {
 }
 
 void DigitUtilClass::print_uint64_t(uint64_t num) {
-  char rev[128]; 
-  char *p = rev+1;
+      DEBUG.print(num);
 
-  while (num > 0) {
-    *p++ = '0' + ( num % 10);
-    num/= 10;
-  }
-  p--;
-  /*Print the number which is now in reverse*/
-  while (p > rev) {
-    DEBUG.print(*p--);
-  }
+  // char rev[128]; 
+  // char *p = rev+1;
+
+  // while (num > 0) {
+  //   *p++ = '0' + ( num % 10);
+  //   num/= 10;
+  // }
+  // p--;
+  // /*Print the number which is now in reverse*/
+  // while (p > rev) {
+  //   DEBUG.print(*p--);
+  // }
+  
 }
 
 void DigitUtilClass::displayTime(int millis, int x, int y) {

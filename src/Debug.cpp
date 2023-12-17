@@ -45,6 +45,12 @@ void DebugClass::println() {
 }
 
 
+void DebugClass::printchar(char a) {
+    if (enabled == true) {
+        Serial.print(a);
+    }
+}
+
 void DebugClass::print(int a, int base) {
     if (enabled == true) {
         Serial.print(a, base);

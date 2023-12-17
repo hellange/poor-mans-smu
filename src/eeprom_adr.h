@@ -51,6 +51,9 @@
 //TODO: Put in right place 0x44. but need to shift other keys..
 #define EA_ADC_ZERO_COMP_VOL2 0x0108
 
+// Addresses for EEPROMAnything
+#define EA_ANYTHING 0x200
+
 
 #define EA_ADC_NONLINEAR_COMP_NR_CUR 0x500
 #define EA_ADC_NONLINEAR_COMP_START_CUR 0x504

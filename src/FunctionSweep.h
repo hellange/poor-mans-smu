@@ -1,14 +1,14 @@
-#include "SMU_HAL_717x.h"
-#include "SMU_HAL_dummy.h"
+#ifndef __FUNCTIONSWEEPCLASS_H__
+#define __FUNCTIONSWEEPCLASS_H__
 
-
+#include "SMU_HAL.h"
 
 class FunctionSweepClass {
 
   void (*closedFn)(OPERATION_TYPE type);
   
   private:
-    //ADCClass smu;
+    SMU_HAL *SMU1;
     float previousSweepValues[2];
     float currentSweepValue = 0.0;
     int currentSweepDir = 1;
@@ -18,7 +18,7 @@ class FunctionSweepClass {
     void operateSmuCurrent(float high, float low, float step, int duration);
 
   public:
-    void init(/*ADCClass& smu*/);
+    void init(SMU_HAL &SMU);
     void open(OPERATION_TYPE operationType, void (*closedFn)(OPERATION_TYPE type));
     void close();
     void handleButtonAction(int inputTag);
@@ -32,3 +32,5 @@ class FunctionSweepClass {
   };
 
 extern FunctionSweepClass FUNCTION_SWEEP;
+
+#endif

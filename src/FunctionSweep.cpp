@@ -12,11 +12,11 @@ FunctionSweepClass FUNCTION_SWEEP;
 // #ifndef USE_SIMULATOR
 //   extern SMU_HAL_dummy SMU[];
 // #else
-  extern ADCClass SMU[];
+//  extern ADCClass SMU[];
 //#endif
 
-void FunctionSweepClass::init(/*ADCClass& smu_*/) {
-  //smu = smu_;
+void FunctionSweepClass::init(SMU_HAL &SMU) {
+  SMU1 = &SMU;
   currentSweepValue = 0.0;
   currentSweepDir = 1;
 }
@@ -253,7 +253,7 @@ void FunctionSweepClass::operateSmuVoltage(float high, float low, float step, in
 
      useBestRange = true; // do it anyway. Gives better accuracy. Ok as long as the sweep is slow...
      
-     SMU[0].fltSetCommitVoltageSource(currentSweepValue*1000.0, useBestRange);
+     SMU1->fltSetCommitVoltageSource(currentSweepValue*1000.0, useBestRange);
    } 
 }
 
@@ -267,6 +267,6 @@ void FunctionSweepClass::operateSmuCurrent(float high, float low, float step, in
       currentSweepDir = +1;
      }
      currentSweepValue += step*currentSweepDir;
-     SMU[0].fltSetCommitCurrentSource(currentSweepValue*1000.0);
+     SMU1->fltSetCommitCurrentSource(currentSweepValue*1000.0);
    } 
 }

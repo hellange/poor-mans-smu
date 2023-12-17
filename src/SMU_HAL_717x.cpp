@@ -108,6 +108,9 @@ void ADCClass::disable_ADC_DAC_SPI_units(){
 }
 
 void ADCClass::setSamplingRate(int value) {
+  DEBUG.print("setSamplnit(ngRate ");
+  DEBUG.println("setSamplingRate ");
+
   samplingRate = value;
   // Make sure the value is wrote into the DAC register. For example when reading current or voltage measurement.
   // I tried to set the register directly but ended up with problems (halt, stops, exception etc.) probably due to interrupt stuff...
@@ -536,19 +539,39 @@ int64_t ADCClass::fltSetCommitVoltageSource(int64_t voltage_uV, bool dynamicRang
 
   //  dac_voltage = dac_voltage * 0.994; // crude adjustment that will differ between hardware
   
+  DEBUG.print("dac_voltage before comp: ");
+  DEBUG.println(dac_voltage,6);
+  float comp;
     if (dac_voltage>0) {
       if (dac_voltage > 2.3) {
-        dac_voltage = dac_voltage * V_CALIBRATION.getDacGainCompPos2();
+        comp = V_CALIBRATION.getDacGainCompPos2();
+        DEBUG.print("V_CALIBRATION.getDacGainCompPos2: ");
+        DEBUG.println(V_CALIBRATION.getDacGainCompPos2(),6);
+        //dac_voltage = dac_voltage * V_CALIBRATION.getDacGainCompPos2();
       } else {
-        dac_voltage = dac_voltage * V_CALIBRATION.getDacGainCompPos();
+        comp = V_CALIBRATION.getDacGainCompPos();
+        DEBUG.print("V_CALIBRATION.getDacGainCompPos: ");
+        DEBUG.println(V_CALIBRATION.getDacGainCompPos(),6);
+        //dac_voltage = dac_voltage * V_CALIBRATION.getDacGainCompPos();
       }
     } else {
       if (dac_voltage < -2.3) {
-        dac_voltage = dac_voltage * V_CALIBRATION.getDacGainCompNeg2();
+        comp = V_CALIBRATION.getDacGainCompNeg2();
+        DEBUG.print("V_CALIBRATION.getDacGainCompNeg2: ");
+        DEBUG.println(V_CALIBRATION.getDacGainCompNeg2(),6);
+        //dac_voltage = dac_voltage * V_CALIBRATION.getDacGainCompNeg2();
       } else {
-        dac_voltage = dac_voltage * V_CALIBRATION.getDacGainCompNeg();
+        comp = V_CALIBRATION.getDacGainCompNeg();
+        DEBUG.print("V_CALIBRATION.getDacGainCompNeg: ");
+        DEBUG.println(V_CALIBRATION.getDacGainCompNeg(),6);
+        //dac_voltage = dac_voltage * V_CALIBRATION.getDacGainCompNeg();
       }
     }
+  dac_voltage = dac_voltage * comp;
+
+  DEBUG.print("dac_voltage after comp: ");
+  DEBUG.println(dac_voltage,6);
+
     
     dac_voltage = dac_voltage * voltageInputDividerCompensation;
 

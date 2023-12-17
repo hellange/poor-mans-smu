@@ -3,10 +3,14 @@
 
 #include "operations.h"
 #include "Filters.h"
+#include "SMU_HAL.h"
 
 
   
 class CalibrationClass {
+
+
+
 
   union cvt {
     float val;
@@ -14,7 +18,8 @@ class CalibrationClass {
   };
 
   private:
-  
+    SMU_HAL *SMU1;
+
   FiltersClass *FILTERS;
   OPERATION_TYPE operationType;
   unsigned long timeSinceLastChange;
@@ -72,6 +77,16 @@ class CalibrationClass {
   void writeAdcCalToEeprom(int nrOfPoints);
 
 public:
+struct config_gain
+{
+    double gain_positive;
+    double gain_negative;
+};
+  void printNonlinearValues();
+
+void  saveGain(double value);
+  CalibrationClass::config_gain readGain();
+
   bool handleCalibrationButtons(int tag, OPERATION_TYPE operationType, CURRENT_RANGE currentRange);
   bool autoCalInProgress = false;
 
@@ -136,7 +151,7 @@ public:
 
 
 
-  void init(OPERATION_TYPE operation_type);
+  void init(SMU_HAL &SMU, OPERATION_TYPE operation_type);
 
   void autoCalADCfromDAC();
   void startAutoCal();

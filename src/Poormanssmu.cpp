@@ -5,6 +5,10 @@
  *  
  *  by Helge Langehaug (2018 - 2023)
  * 
+ * 
+ * Ref also:
+ *   https://poormanssmu.wordpress.com/
+ *   https://poormanssmu.wordpress.com/2020/06/05/first-prototype/
  *****************************************************************/
 
 //Uncomment the line below if you don't have the analog hardware, only processor and screen...
@@ -51,10 +55,12 @@
 #include "ZeroCalibration.h"
 
 #include "Ada4254.h"
-#include "Vrekrer_scpi_parser.h" // TESTING OUT SCPI LIBRARY, https://github.com/Vrekrer/Vrekrer_scpi_parser
+#include "Vrekrer_scpi_parser.h" // Ref: https://github.com/Vrekrer/Vrekrer_scpi_parser
 #include "Debug.h"
 #include "Gest.h"
 #include "Widgets.h"
+#include "SMU_HAL.H"
+
 
 #define _PRINT_ERROR_VOLTAGE_SOURCE_SETTING 0
 #define _PRINT_ERROR_CURRENT_SOURCE_SETTING 1
@@ -65,10 +71,9 @@
 
 #define LOWER_WIDGET_Y_POS 250
 
-
 #define SAMPLING_BY_INTERRUPT
 
-#define VERSION_NUMBER "0.2.71"
+#define VERSION_NUMBER "0.2.81"
 
 SimpleStatsClass SIMPLE_STATS;
 LoggerClass LOGGER;
@@ -96,13 +101,13 @@ void useCurrentFeedback();
 
 
 #ifndef USE_SIMULATOR
- ADCClass SMU[1] = {
-   ADCClass()
- };
+  ADCClass SMU[1] = {
+    ADCClass()
+  };
 #else
-SMU_HAL_dummy SMU[1] = {
-  SMU_HAL_dummy()
-};
+  SMU_HAL_dummy SMU[1] = {
+    SMU_HAL_dummy()
+  };
 #endif
 
 char SCPI_CommandBuffer[100];
@@ -138,15 +143,24 @@ uint32_t changeDigitTimeout;
 void rotaryChangedVoltCurrentFn(float changeVal) {
   changeDigitTimeout = millis();
 
+    // changeDigit will be 0 if rotary know has not been pushed to select decade.
+    // If so and dialog is not open, then ignore rotation !
     if (changeDigit == 0 && !SOURCE_DIAL.isDialogOpen()) {
-       DEBUG.println("change not enabled");
+       DEBUG.println("change digit not set. Ignoring rotary input.");
        return;
     }
 
+    // Dialog is open. Adhere to rotary knob independent on changeDigit
     if (operationType == SOURCE_VOLTAGE) {
       DEBUG.print("rotary changeval:");
-      DEBUG.println(changeVal);
-      if(SOURCE_DIAL.isDialogOpen()) {
+      DEBUG.print(changeVal);
+      //DEBUG.print(",rotary changedigit:");
+      //DEBUG.print(changeDigit);
+
+      DEBUG.println();
+      if(LIMIT_DIAL.isDialogOpen()) {
+        DEBUG.println("Rotaty change not implemented for current limit yet");
+      } else if(SOURCE_DIAL.isDialogOpen()) {
         //TODO: Fix problem with resolution and selected digit to change !!!
         float mv = SOURCE_DIAL.getMv();
         int64_t change_uV =  changeVal*1000;
@@ -178,8 +192,9 @@ void rotaryChangedVoltCurrentFn(float changeVal) {
       if (SMU[0].getCurrentRange() == MILLIAMP10) {
         changeVal = changeVal / 100.0;
       }
-
-      if(SOURCE_DIAL.isDialogOpen()) {
+      if(LIMIT_DIAL.isDialogOpen()) {
+        DEBUG.println("Rotaty change not implemented for voltage limit yet");
+      } else if(SOURCE_DIAL.isDialogOpen()) {
         float mv = SOURCE_DIAL.getMv();
         int64_t change_uV =  changeVal*1000;
         int64_t new_uV = mv*1000 + change_uV;
@@ -285,6 +300,9 @@ void initDefaultSamplingIfByInterrupt() {
 
 void setup()
 {
+  WIDGETS.init(SMU[0]);
+  ZEROCALIBRATION.init(SMU[0]);
+
 	//while (!Serial) ; // wait
   //delay(5000);
   LOGGER.init();
@@ -393,13 +411,17 @@ void setup()
    delay(100);
    DEBUG.println("Initializing SMU...");
    SMU[0].init();
-   SETTINGS.init();
+   SETTINGS.init(SMU[0]);
 
    SMU[0].setSamplingRate(20);
    operationType = getOperationType();
 
-   V_CALIBRATION.init(SOURCE_VOLTAGE);
-   C_CALIBRATION.init(SOURCE_CURRENT);
+   V_CALIBRATION.init(SMU[0], SOURCE_VOLTAGE);
+   C_CALIBRATION.init(SMU[0], SOURCE_CURRENT);
+
+   V_CALIBRATION.printNonlinearValues();
+   C_CALIBRATION.printNonlinearValues();
+
    DEBUG.println("SMU initialized");
    DEBUG.println("");
    DEBUG.print("Found DAC type:");
@@ -409,13 +431,14 @@ void setup()
    } else if ((SMU[0].deviceTypeId & 0xfff0) == 0x00D0) { 
      DEBUG.print("AD7172-2"); 
    } else if ((SMU[0].deviceTypeId & 0xfff0) == 0x0CD0) {
-     DEBUG.print("AD7175-2"); 
+     DEBUG.print("AD7175-2"); //0x0CDX in datasheet
    } else if ((SMU[0].deviceTypeId & 0xfff0) == 0x4FD0) {
      DEBUG.print("AD7177-2");
+   } else if (SMU[0].deviceTypeId == SMU_HAL_DUMMY_DEVICE_TYPE_ID) {
+     DEBUG.print("Sim");
    } else {
      DEBUG.print("Unknown");
    }
-
 
      DEBUG.print("    hex:");
      DEBUG.println(SMU[0].deviceTypeId, HEX);
@@ -449,8 +472,12 @@ void setup()
    SOURCE_DIAL.init();
    LIMIT_DIAL.init();
 
-   FUNCTION_PULSE.init(/*SMU[0]*/);
-   FUNCTION_SWEEP.init(/*SMU[0]*/);
+// TODO: Resolve problems with static..
+   FUNCTION_PULSE.init(/*SMU[0]*/); // TODO: Resolve problems with static...
+   // TODO: Resolve problems with static...
+
+
+   FUNCTION_SWEEP.init(SMU[0]);
 
    RAM.init();
    RAM.startLog(); // TODO: Start it after things have "warmed up" a bit ?
@@ -469,7 +496,7 @@ void setup()
    //TC74 
    Wire.begin();
 
-   DIGITIZER.init(getOperationType());
+   DIGITIZER.init(SMU[0], getOperationType());
 
    scpi_setup();
 
@@ -821,6 +848,44 @@ void handleMenuScrolldown(){
  
 }
 
+//TODO: Investigate this
+char* deviceIdToText(int deviceTypeId) {
+  //char *a = "fisk\0"
+
+// AD7175-2 is 0x0CDX from datasheet
+// AD7176-2 is 0x0C90 ?
+// AD7172-2 is 0x00D0 ?
+// AD7177-2 is 0x4FD0 ?
+
+  char* ch = new char[8] /* 11 = len of Hello Heap + 1 char for \0*/;
+
+// TODO: Avoid duplicate logic of id to string in this class !
+   if ((deviceTypeId & 0xfff0) == 0x0C90) {
+     strcpy(ch, "AD7176");
+       return ch;
+
+   } else if ((deviceTypeId & 0xfff0) == 0x00D0) {
+     strcpy(ch, "AD7172");
+       return ch;
+
+   } else if ((deviceTypeId & 0xfff0) == 0x0CD0) {
+     strcpy(ch, "AD7175");
+       return ch;
+
+   } else if ((deviceTypeId & 0xfff0) == 0x4FD0) {
+     strcpy(ch, "AD7177");
+       return ch;
+
+   } else if (deviceTypeId == SMU_HAL_DUMMY_DEVICE_TYPE_ID) {
+     strcpy(ch, "SIM");
+       return ch;
+
+   } 
+
+  itoa(deviceTypeId, ch, 10);
+
+  return ch;
+}
 
 void renderMainHeader() {
 
@@ -842,8 +907,12 @@ void renderMainHeader() {
   } else {
       GD.ColorRGB(0xaaaaaa);
       GD.cmd_text(0, 0, 27, 0, "ADC:");
-      //GD.cmd_text(30, 0, 27, 0, (SMU[0].deviceTypeId & 0xfff0) == 0x00D0 ? "AD7172-2" : "?");
+      //GD.cmd_text(40, 0, 27, 0, (SMU[0].deviceTypeId & 0xfff0) == 0x00D0 ? "AD7172-2" : "?");
+      
       GD.cmd_number(40,0,27,0,SMU[0].deviceTypeId);
+      // String handling causing restarts after a while ????
+      //GD.cmd_text(40, 0, 27, 0, deviceIdToText(SMU[0].deviceTypeId));
+
   }
 
   //showFanSpeed(220, 0);
@@ -1324,6 +1393,44 @@ void systemTemperatureSCPI(SCPI_C commands, SCPI_P parameters, Stream& interface
     interface.flush();
 }
 
+void setGainSCPI(SCPI_C commands, SCPI_P parameters, Stream& interface) {
+  DEBUG.println("SCPI set gain to given value.");
+      DEBUG.println("");
+    DEBUG.println("");
+
+  if (parameters.Size() > 0) {
+    double gain = (String(parameters[0]).toInt());
+      DEBUG.println(gain);
+
+    V_CALIBRATION.saveGain(gain);
+    interface.println("OK");
+  } else {
+    interface.println("ERROR");
+  }
+  interface.flush();
+ }
+
+ void getGainSCPI(SCPI_C commands, SCPI_P parameters, Stream& interface) {
+  DEBUG.println("SCPI get gain.");
+    DEBUG.println("");
+    DEBUG.println("");
+
+  CalibrationClass::config_gain gain =V_CALIBRATION.readGain();
+  //V_CALIBRATION.readGain(gain);
+   DEBUG.println(gain.gain_negative);
+   DEBUG.println(gain.gain_positive);
+
+    //interface.println(gain.gain_negative,1);
+        interface.println(gain.gain_positive);
+
+ //float dummy=5.5555; 
+  //    interface.println(dummy,3);
+          interface.flush();
+
+
+ }
+
+
 void finTemperatureSCPI(SCPI_C commands, SCPI_P parameters, Stream& interface) {
     DEBUG.println("SCPI Measure (cooler) fin temperature");
     float temp = UTILS.TC74_getTemperature();
@@ -1382,14 +1489,21 @@ void scpi_setup()
   my_instrument.RegisterCommand(F(":CURRent"), &sourceCurrentSCPI);
   my_instrument.RegisterCommand(F(":CURRent:VLIMit"), &sourceCurrentVLimitSCPI);
   my_instrument.RegisterCommand(F(":VOLTage:ILIMit"), &sourceVoltageILimitSCPI);
+    my_instrument.RegisterCommand(F(":SETGain"), &setGainSCPI);
+
 
   my_instrument.SetCommandTreeBase(F("MEASure:"));
   my_instrument.RegisterCommand(F(":VOLTage?"), &measureVoltageSCPI);
   my_instrument.RegisterCommand(F(":CURRent?"), &measureCurrentSCPI);
-  
+    my_instrument.RegisterCommand(F(":GETGain?"), &getGainSCPI);
+
   // Override AC to actually return temp... TODO: Find a proper SCPI command...
   //my_instrument.RegisterCommand(F(":VOLTage:AC?"), &systemTemperatureSCPI);
   //my_instrument.RegisterCommand(F(":CURRent:AC?"), &finTemperatureSCPI);
+
+  //my_instrument.SetCommandTreeBase(F("CALIbration:"));
+  //my_instrument.RegisterCommand(F(":GETGagin?"), &getGainSCPI);
+  //my_instrument.RegisterCommand(F(":SETGain"), &setGainSCPI);
 
 
   //`PrintDebugInfo` will print the registered tokens and 
@@ -1610,12 +1724,13 @@ int checkButtons() {
     prevTag = tag;
     
     if (tag == BUTTON_SOURCE_SET) {
-      DEBUG.println("open dial to set source, start with value ");
+      DEBUG.print("open dial to set source, start with value ");
       DEBUG.println((float)SMU[0].getSetValue_micro()/1000.0);
       SOURCE_DIAL.open(operationType, SET,  closeSourceDCCallback, SMU[0].getSetValue_micro());
     } else if (tag == BUTTON_LIM_SET) {
-      DEBUG.println("open dial to set limit, start with value ");
-      DIGIT_UTIL.print_uint64_t(SMU[0].getLimitValue_micro());
+      DEBUG.print("open dial to set limit, start with value ");
+      //DIGIT_UTIL.print_uint64_t(SMU[0].getLimitValue_micro());
+      DEBUG.println((float)SMU[0].getLimitValue_micro()/1000.0);
       LIMIT_DIAL.open(operationType, LIMIT, closeSourceDCCallback, SMU[0].getLimitValue_micro());
     } 
     // else if (tag == BUTTON_REL) {

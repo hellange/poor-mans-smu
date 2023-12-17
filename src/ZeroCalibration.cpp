@@ -1,13 +1,17 @@
 #include "ZeroCalibration.h"
 #include "Debug.h"
 
-extern ADCClass SMU[];
+//extern ADCClass SMU[];
 
 
 int timeBeforeAutoNull = millis() + 5000;
 int samplingRateBeforeZeroCal;
 int filterSizeBeforeZeroCalV;
 int filterSizeBeforeZeroCalC;
+
+void ZeroCalibrationlass::init(SMU_HAL &SMU) {
+   SMU1 = &SMU;
+}
 
 int ZeroCalibrationlass::getProgress() {
   int seconds = (millis() - zeroCalstartTime) / 1000;
@@ -22,7 +26,7 @@ void ZeroCalibrationlass::startNullCalibration(OPERATION_TYPE operationType_) {
   nullCalibrationDone2 = false;
   nullCalibrationDone3 = false;
   nullCalibrationReady = false;
-  samplingRateBeforeZeroCal = SMU[0].getSamplingRate();
+  samplingRateBeforeZeroCal = SMU1->getSamplingRate();
   filterSizeBeforeZeroCalV = V_FILTERS.filterSize;
   filterSizeBeforeZeroCalC = C_FILTERS.filterSize;
 
@@ -53,15 +57,15 @@ void ZeroCalibrationlass::handleAutoNull() {
     DEBUG.println("Performing auto null...");
     C_CALIBRATION.useCalibratedValues = false;
     V_CALIBRATION.useCalibratedValues = false;
-    SMU[0].setSamplingRate(10);
+    SMU1->setSamplingRate(10);
     current_range = MILLIAMP10;
-       SMU[0].setCurrentRange(current_range, operationType);
+       SMU1->setCurrentRange(current_range, operationType);
       if (operationType == SOURCE_VOLTAGE) {
         DEBUG.println("Source 0V at output (current range 10mA)");
-        SMU[0].fltSetCommitVoltageSource(0, true);
+        SMU1->fltSetCommitVoltageSource(0, true);
        } else {
         DEBUG.println("Source 0 current at output (current range 10mA)");
-        SMU[0].fltSetCommitCurrentSource(0);
+        SMU1->fltSetCommitCurrentSource(0);
        }
     
     //V_FILTERS.init();
@@ -82,7 +86,7 @@ void ZeroCalibrationlass::handleAutoNull() {
       DEBUG.println(v,3);  
     } else {
       float v = C_FILTERS.mean; 
-      //float v = SMU[0].measureCurrent(current_range);
+      //float v = SMU1->measureCurrent(current_range);
       C_CALIBRATION.setNullValueCur(v, current_range);
       DEBUG.print("Found offset when sourcing current (10mA current range):");  
       DEBUG.println(v,3);  
@@ -93,15 +97,15 @@ void ZeroCalibrationlass::handleAutoNull() {
  
   if (autoNullStarted && !nullCalibrationDone2 && zeroCalstartTime + 11000 < millis() ) {
      current_range = AMP1;
-     SMU[0].setCurrentRange(current_range, operationType);
+     SMU1->setCurrentRange(current_range, operationType);
 
     if (operationType == SOURCE_VOLTAGE) {
       DEBUG.println("Source 0V at output (current range 1A)");
-      SMU[0].fltSetCommitVoltageSource(0, true);
+      SMU1->fltSetCommitVoltageSource(0, true);
  
     } else {
       DEBUG.println("Source 0 current at output (current range 1A)");
-      SMU[0].fltSetCommitCurrentSource(current_range);
+      SMU1->fltSetCommitCurrentSource(current_range);
  
     }
     
@@ -116,7 +120,7 @@ void ZeroCalibrationlass::handleAutoNull() {
       DEBUG.println(v,3);  
     } else {
       float v = C_FILTERS.mean; 
-      //float v = SMU[0].measureCurrent(current_range);
+      //float v = SMU1->measureCurrent(current_range);
       C_CALIBRATION.setNullValueCur(v, current_range);
       DEBUG.print("Found offset when sourcing current (1A current range):");  
       DEBUG.println(v,3);  
@@ -128,7 +132,7 @@ void ZeroCalibrationlass::handleAutoNull() {
     V_FILTERS.setFilterSize(20);
     //C_FILTERS.init(2345);
     C_FILTERS.setFilterSize(20);
-    SMU[0].setSamplingRate(samplingRateBeforeZeroCal);
+    SMU1->setSamplingRate(samplingRateBeforeZeroCal);
     V_CALIBRATION.useCalibratedValues = true;
     C_CALIBRATION.useCalibratedValues = true;
 

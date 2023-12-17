@@ -19,7 +19,7 @@ void Ada4254Class::printId() {
   digitalWrite(7, LOW);
 
   delayMicroseconds(10);
-  uint8_t data =  SPI.transfer(0x2f | 0x80);
+  //uint8_t data =  SPI.transfer(0x2f | 0x80);
   uint8_t data2 =  SPI.transfer(0);
 
   DEBUG.println("ADA4254 id:");
@@ -65,7 +65,7 @@ void Ada4254Class::ada4254_check() {
     digitalWrite(7, LOW);
   delayMicroseconds(10);   //    ANALOG_ERR
   SPI.transfer(0x04 | 0x80);
-   uint8_t data2 =  SPI.transfer(0);
+  //uint8_t data2 =  SPI.transfer(0);
   //DEBUG.println("ADA4254 analog err:");
   //DEBUG.println(data2, BIN);
   delayMicroseconds(10); 
@@ -77,7 +77,7 @@ void Ada4254Class::ada4254_check() {
     digitalWrite(7, LOW);
   delayMicroseconds(10);   //    DIGITAL_ERR
   SPI.transfer(0x03 | 0x80);
-   data2 =  SPI.transfer(0);
+  //uint8_t data2 =  SPI.transfer(0);
   //DEBUG.println("ADA4254 digital err:");
   //DEBUG.println(data2, BIN);
   delayMicroseconds(10); 
@@ -440,7 +440,7 @@ void Ada4254Class::relay(bool on) {
 
 
 
-int relayTimer = millis();
+uint32_t relayTimer = millis();
 bool relayState = false;
 void Ada4254Class::indicateADA4254status() {
   //TODO: Clean up this ADA4254 prototyp/test mess !!!!

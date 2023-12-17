@@ -16,6 +16,7 @@ class DebugClass {
     void println(int a, int base);
     void println();
 
+    void printchar(char a);
     void print(char const *c);
     void print(int a, int base);
     void print(long a, int base);

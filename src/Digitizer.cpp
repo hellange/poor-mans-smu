@@ -1,7 +1,7 @@
 #include "Digitizer.h"
 #include "Debug.h"
 
-extern ADCClass SMU[];
+//extern ADCClass SMU[];
 extern VoltDisplayClass VOLT_DISPLAY;
 
 //OPERATION_TYPE operationType;
@@ -12,35 +12,35 @@ int DigitizerClass::ampLevel = 1;
 
 DigitizerClass DIGITIZER;
 
-void DigitizerClass::init(OPERATION_TYPE operationType_) {
-
+void DigitizerClass::init(SMU_HAL &SMU, OPERATION_TYPE operationType_) {
+   SMU1 = &SMU;
 }
 
 void DigitizerClass::open() {
   GD.__end();
-  prevSamplingRate = SMU[0].getSamplingRate();
-  SMU[0].disable_ADC_DAC_SPI_units();
+  prevSamplingRate = SMU1->getSamplingRate();
+  SMU1->disable_ADC_DAC_SPI_units();
   if (digitizeVoltage) {
-    SMU[0].enableVoltageMeasurement = true;
-    SMU[0].enableCurrentMeasurement = false;
+    SMU1->enableVoltageMeasurement = true;
+    SMU1->enableCurrentMeasurement = false;
   } else {
-    SMU[0].enableVoltageMeasurement = false;
-    SMU[0].enableCurrentMeasurement = true;
+    SMU1->enableVoltageMeasurement = false;
+    SMU1->enableCurrentMeasurement = true;
   }
 
-  SMU[0].updateSettings();
+  SMU1->updateSettings();
   GD.resume();
 }
 
 void DigitizerClass::close() {
     // TODO: Check that graphics are not "on" ???
     GD.__end();
-    SMU[0].disable_ADC_DAC_SPI_units();
-    //SMU[0].setSamplingRate(20); //TODO: Should get back to same as before, not a default one
-    SMU[0].enableVoltageMeasurement = true;
-    SMU[0].enableCurrentMeasurement = true;
-    SMU[0].updateSettings();
-    SMU[0].setSamplingRate(prevSamplingRate); //TODO: Should get back to same as before, not a default one
+    SMU1->disable_ADC_DAC_SPI_units();
+    //SMU1->setSamplingRate(20); //TODO: Should get back to same as before, not a default one
+    SMU1->enableVoltageMeasurement = true;
+    SMU1->enableCurrentMeasurement = true;
+    SMU1->updateSettings();
+    SMU1->setSamplingRate(prevSamplingRate); //TODO: Should get back to same as before, not a default one
 
 
     digitize = false;
@@ -54,13 +54,13 @@ void DigitizerClass::loopDigitize(bool reduceDetails) {
    // return;
   }
   if (digitize == false && !MAINMENU.active){
-        SMU[0].disable_ADC_DAC_SPI_units();
+        SMU1->disable_ADC_DAC_SPI_units();
    
     //minDigV = 1000000;
     //maxDigV = - 1000000;
     //minDigI = 1000000;
     //maxDigI = - 1000000;
-    SMU[0].setSamplingRate(31250); //31250
+    SMU1->setSamplingRate(31250); //31250
     digitize = true;
     bufferOverflow = false;     
   }
@@ -233,7 +233,7 @@ for (int i=yStep; i<height/2; i=i+yStep) {
         pixelsPrVolt = multiplyBy * 100  / 0.8;
     }
 
-    if (SMU[0].getCurrentRange() == MILLIAMP10) {
+    if (SMU1->getCurrentRange() == MILLIAMP10) {
         pixelsPrVolt=pixelsPrVolt*100; //TODO: Fix this current range scale etc !  For now just make it "visible" :-)
     }
 
@@ -277,7 +277,7 @@ GD.ColorRGB(digitizeVoltage?COLOR_VOLT:COLOR_CURRENT);
 if (maxDigV < 0.0000) {
     GD.cmd_text(50, yAxisPx-height/2+20 -10 , 27, 0, "-");
   }
-if (SMU[0].getCurrentRange() == AMP1) {
+if (SMU1->getCurrentRange() == AMP1) {
   GD.cmd_number(60,yAxisPx-height/2 -10, 27, 5, maxDigV);
   GD.cmd_text(60+55, yAxisPx-height/2 -10 , 27, 0, digitizeVoltage?"mV":"mA");
 } else {
@@ -292,7 +292,7 @@ GD.cmd_text(0, yAxisPx-height/2 +20 -10, 27, 0, "Min:");
   if (minDigV < 0.0000) {
     GD.cmd_text(50, yAxisPx-height/2+20 -10 , 27, 0, "-");
   }
-  if (SMU[0].getCurrentRange() == AMP1) {
+  if (SMU1->getCurrentRange() == AMP1) {
     GD.cmd_number(60,yAxisPx-height/2+20 -10, 27, 5, abs(minDigV));
     GD.cmd_text(60+55, yAxisPx-height/2+20 -10 , 27, 0, digitizeVoltage?"mV":"mA");
   } else {
@@ -348,7 +348,7 @@ int val = valStep;
 // positive
 for (int y= yAxisPx-step; y > yAxisPx-height/2; y=y-step) {
     GD.ColorRGB(0xaaaaaa);
-    GD.cmd_number(15, y-axisScew, 26, digits, val * (SMU[0].getCurrentRange() == MILLIAMP10 ? 1000:100));
+    GD.cmd_number(15, y-axisScew, 26, digits, val * (SMU1->getCurrentRange() == MILLIAMP10 ? 1000:100));
     
     GD.Begin(LINE_STRIP);
     GD.ColorRGB(0xbbbbee);
@@ -363,7 +363,7 @@ val = valStep;
 for (int y= yAxisPx+step; y < yAxisPx+height/2; y=y+step) {
     GD.ColorRGB(0xaaaaaa);
     GD.cmd_text(0, y-axisScew, 26, 0, "-");
-    GD.cmd_number(15, y-axisScew, 26, digits, val * (SMU[0].getCurrentRange() == MILLIAMP10 ? 1000:100));
+    GD.cmd_number(15, y-axisScew, 26, digits, val * (SMU1->getCurrentRange() == MILLIAMP10 ? 1000:100));
 
     GD.Begin(LINE_STRIP);
     GD.ColorRGB(0xbbbbee);
@@ -472,11 +472,11 @@ void DigitizerClass::handleSamplingForDigitizer(int dataR) {
   
   //float v;  
   if (digitizeVoltage) {
-      v = SMU[0].measureMilliVoltage();
+      v = SMU1->measureMilliVoltage();
   } else {
-      v = SMU[0].measureCurrent(SMU[0].getCurrentRange());
+      v = SMU1->measureCurrent(SMU1->getCurrentRange());
 
-      //v = SMU[0].measureMilliVoltage();
+      //v = SMU1->measureMilliVoltage();
 
   }
 

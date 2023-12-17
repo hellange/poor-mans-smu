@@ -1,7 +1,7 @@
 #ifndef DIGITIZER_H
 #define DIGITIZER_H
 #include "operations.h"
-#include "SMU_HAL_717x.h"
+#include "SMU_HAL.h"
 #include <SPI.h>
 #include "GD2.h"
 #include "volt_display.h"
@@ -14,6 +14,7 @@ extern MainMenuClass MAINMENU;
 class DigitizerClass {
 
 private:
+  SMU_HAL *SMU1;
   float v; 
 
   float maxDigV = -100000.00, minDigV = 100000.00;
@@ -51,7 +52,7 @@ bool digitizeVoltage = false; // set to true to digitize voltage
   bool continuous = false;
 
   void clearMaxMin();
-  void init(OPERATION_TYPE operationType_);
+  void init(SMU_HAL &SMU, OPERATION_TYPE operationType_);
   void open();
   void loopDigitize(bool reduceDetails);
   void renderGraph(bool reduceDetails);

@@ -23,17 +23,21 @@ void DialClass::open(int type, int set_or_limit_, void (*callbackFn)(int set_or_
   //DEBUG.flush();
 
 
-
-   DEBUG.println("Open dial. OperationType=");
-   DEBUG.println(type == SOURCE_VOLTAGE ? "SOURCE VOLTAGE" : "SOURCE CURRENT");
-   DEBUG.print("Input value:");
-   DEBUG.print(micro/1000.0,3);
-   DEBUG.println("milli");
-
   closedFn = callbackFn;
   vol_cur_type = type;
   set_or_limit = set_or_limit_;
-  dialog=true;  
+  dialog=true; 
+
+   DEBUG.print("Opening ");
+   DEBUG.println(set_or_limit == LIMIT ? "LIMIT DIAL" : "SOURCE DIAL");
+   DEBUG.println(type == SOURCE_VOLTAGE ? "SOURCING VOLTAGE" : "SOURCING CURRENT");
+   DEBUG.print("Input value:");
+   //DEBUG.print(micro/1000.0,3);
+   //DEBUG.println("(milli)");
+   DEBUG.println(micro/1.0,1);
+
+
+ 
 
   setMv(micro/1000.0);
   /*
@@ -72,8 +76,9 @@ void DialClass::init() {
   clear();
 }
 
+// TODO: set is also used for current. change name of mv variable ?
 void DialClass::setMv(float mv) {
-  DEBUG.print("SetmV:");
+  DEBUG.print("Set:");
   DEBUG.println(mv,3 );
   if (mv < 0.0) {
     negative = true;
@@ -99,15 +104,6 @@ void DialClass::setMv(float mv) {
   }
   int nfOfDigitsAfterComma = 2; // TODO: Adhere to the rules on number of digits "allowed" in various situations.
 
-
-//  if (mv == 0.0) {
-//    dialEntries[0] = '0';
-//    digits = 1;
-//      strncpy(voltDecade, "mV" ,2);
-//
-//    
-//  }
-
   dtostrf(mv,nrOfDigitsBeforeComma + nfOfDigitsAfterComma, 4, outstr);
   DEBUG.print("Get individual digit elements to display based on value ");
   DEBUG.println(mv,5);
@@ -115,21 +111,19 @@ void DialClass::setMv(float mv) {
   DEBUG.print("Digits: ");
   for (int i=0; i< nrOfDigitsBeforeComma + nfOfDigitsAfterComma + 1 ; i++) {
     if (outstr[i]!=0x20 && outstr[i]!='-') {
-      DEBUG.print(outstr[i]);
+      DEBUG.printchar(outstr[i]);
       DEBUG.print(",");
       if (outstr[i] == '.') {
         dialEntries[dialEntriesIndex++] = KEYBOARD_COMMA;
       } else {
         dialEntries[dialEntriesIndex++] = outstr[i] - '0';
-
       }
     }
    
   }
   digits = dialEntriesIndex;
-  DEBUG.print(" # of digit elements:");
-  DEBUG.println(dialEntriesIndex);
-  
+  DEBUG.print(" # of digit elements: ");
+  DEBUG.println(dialEntriesIndex, 10);
   strncpy(voltDecade, "mV" ,2);
 }
 

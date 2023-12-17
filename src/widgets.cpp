@@ -1,6 +1,10 @@
 #include "widgets.h"
 
-extern ADCClass SMU[];
+
+
+void WidgetsClass::init(SMU_HAL &SMU) {
+   SMU1 = &SMU;
+}
 
 bool WidgetsClass::isScrolling() {
   return scrollDir != 0;
@@ -238,7 +242,7 @@ void WidgetsClass::measureResistancePanel(int x, int y, boolean compliance, CURR
   y=y+28;
 
   VOLT_DISPLAY.renderMeasuredResistance(x /*+ 17*/, y, V_FILTERS.mean, C_FILTERS.mean, compliance);
-  //CURRENT_DISPLAY.renderSet(x+120, y+105, SMU[0].getLimitValue_micro());
+  //CURRENT_DISPLAY.renderSet(x+120, y+105, SMU1->getLimitValue_micro());
       GD.ColorRGB(COLOR_CURRENT);
 
   CURRENT_DISPLAY.renderSet(x + 120, y + 105, limitValueMicro, currentRange);
@@ -261,7 +265,7 @@ void WidgetsClass::measureResistancePanel(int x, int y, boolean compliance, CURR
   } else {
      GD.cmd_button(x+370,y,95,50,28,0,currentRange==AMP1 ? "1A(A)" : "10mA(A)");
   }
-  //GD.cmd_button(x+370,y,95,50,29,0,SMU[0].getCurrentRange()==AMP1 ? "1A" : "10mA");
+  //GD.cmd_button(x+370,y,95,50,29,0,SMU1->getCurrentRange()==AMP1 ? "1A" : "10mA");
   GD.Tag(0); 
   
   
@@ -395,7 +399,7 @@ void WidgetsClass::renderExperimental(int x, int y, float valM, float setM, bool
   // Visible number on button is half, because the sampling is effectlively the halv because
   // current and voltage is not sampled simultanously in the AD converter !
 
-  int sr = SMU[0].getSamplingRate();
+  int sr = SMU1->getSamplingRate();
 
   GD.ColorRGB(sr == 5 ? 0x00ff00 : 0x0000);
   GD.Tag(BUTTON_SAMPLE_RATE_5);
@@ -528,22 +532,29 @@ void WidgetsClass::checkButtons(int tag) {
       } 
      
       if (tag == BUTTON_SAMPLE_RATE_5) {
-        SMU[0].setSamplingRate(5); 
+              DEBUG.println("BUTTON_SAMPLE_RATE_5");
+
+        SMU1->setSamplingRate(5); 
       }
       if (tag == BUTTON_SAMPLE_RATE_20) {
-        SMU[0].setSamplingRate(20);
+                      DEBUG.println("BUTTON_SAMPLE_RATE_20");
+
+        SMU1->setSamplingRate(20);
       }
       if (tag == BUTTON_SAMPLE_RATE_50) {
-        SMU[0].setSamplingRate(50);
+                      DEBUG.println("BUTTON_SAMPLE_RATE_50");
+        SMU1->setSamplingRate(50);
       }
        if (tag == BUTTON_SAMPLE_RATE_100) {
-        SMU[0].setSamplingRate(100);
+                              DEBUG.println("BUTTON_SAMPLE_RATE_100");
+
+        SMU1->setSamplingRate(100);
       }
 
   } else if (tag == BUTTON_REL) {
       DEBUG.println("Set relative");
-      V_CALIBRATION.toggleRelativeValue(V_STATS.rawValue, SMU[0].getCurrentRange());
-      C_CALIBRATION.toggleRelativeValue(C_STATS.rawValue, SMU[0].getCurrentRange());
+      V_CALIBRATION.toggleRelativeValue(V_STATS.rawValue, SMU1->getCurrentRange());
+      C_CALIBRATION.toggleRelativeValue(C_STATS.rawValue, SMU1->getCurrentRange());
     } else if (tag == BUTTON_UNCAL) {
       DEBUG.println("Uncal set");
       V_CALIBRATION.toggleCalibratedValues();

@@ -10,12 +10,12 @@
 #include "digit_util.h"
 #include "SMU_HAL_717x.h"
 #include "Debug.h"
+#include "EEPROMAnything.h"
 
 CalibrationClass V_CALIBRATION;
 CalibrationClass C_CALIBRATION;
 
-extern ADCClass SMU[];
-
+//extern ADCClass SMU[];
   
   void float_array_init(float *a, const int ct, ...) {
   va_list args;
@@ -40,7 +40,8 @@ extern ADCClass SMU[];
 float CalibrationClass::nullValueVol[2];
 float CalibrationClass::nullValueCur[2];
 
-void CalibrationClass::init(OPERATION_TYPE operationType_) {
+void CalibrationClass::init(SMU_HAL &SMU,OPERATION_TYPE operationType_) {
+  SMU1 = &SMU;
   operationType = operationType_;
 
   if (operationType == SOURCE_VOLTAGE) {
@@ -385,8 +386,8 @@ int autoCalArrayPointer = 0;
  //float set_adc[100]; 
  //float meas_adc[100];
  //int adc_cal_points=0;
- float maxValueCal = 16000.00;
- float minValueCal = -16000.00;
+ float maxValueCal = 10000.00;
+ float minValueCal = -10000.00;
  float stepValueCal = 1000.00;
  
 void CalibrationClass::startAutoCal() {
@@ -405,7 +406,7 @@ void CalibrationClass::startAutoCal() {
     autoCalV = minValueCal;
     useCalibratedValues = false;
     autoCalArrayPointer = 0;
-    SMU[0].setSamplingRate(20);
+    SMU1->setSamplingRate(20);
     FILTERS->setFilterSize(5);
 
     // clear existing cals from ram
@@ -466,7 +467,31 @@ void CalibrationClass::readAdcCalFromEeprom() {
   DEBUG.print(" to ");
   DEBUG.println(ea_adc_nonlinear_comp_start + nrOfPoints*8);
   useCalibratedValues = true;
+
+   //this->saveGain(10);
+     this->readGain();
+
   }
+
+void CalibrationClass::saveGain(double value) {
+  config_gain g;
+  g.gain_negative = -value;
+  g.gain_positive = value;
+  EEPROM_writeAnything(0, g);
+  DEBUG.println("saved gain ");
+
+}
+
+CalibrationClass::config_gain CalibrationClass::readGain()  {
+  config_gain g;
+    DEBUG.println("read gain ");
+
+   EEPROM_readAnything(0, g);
+      DEBUG.println(g.gain_negative);
+            DEBUG.println(g.gain_positive);
+  return g;
+
+}
 
 void CalibrationClass::writeAdcCalToEeprom(int nrOfPoints) {
   int dataPtr = 0;
@@ -503,9 +528,9 @@ void CalibrationClass::autoCalADCfromDAC() {
     DEBUG.println(autoCalV);
     GD.__end();
     if (operationType == SOURCE_VOLTAGE) {
-       SMU[0].fltSetCommitVoltageSource(autoCalV*1000.0, true);
+       SMU1->fltSetCommitVoltageSource(autoCalV*1000.0, true);
     } else {
-       SMU[0].fltSetCommitCurrentSource(autoCalV*1000.0);
+       SMU1->fltSetCommitCurrentSource(autoCalV*1000.0);
     }
     GD.resume();
 
@@ -922,7 +947,30 @@ float CalibrationClass::getDacZeroComp2() {
 }
 
 
+void CalibrationClass::printNonlinearValues() {
+       DEBUG.print("Nonlinear ADC data ");
+       if (operationType == SOURCE_VOLTAGE) {
+        DEBUG.println("Voltage");
 
+       } else {
+        DEBUG.println("Current");
+
+       }
+
+     DEBUG.print("adc_cal_points=");
+    DEBUG.println(adc_cal_points);
+
+   for (int i=0;i<adc_cal_points;i++) {
+      float diff = set_adc[i] - meas_adc[i];
+      DEBUG.print("Set ");
+      DEBUG.print(set_adc[i]);
+      DEBUG.print("mV, meas ");
+      DEBUG.print(meas_adc[i]);
+      DEBUG.print("mV, diff ");
+      DEBUG.print(diff*1000.0);
+      DEBUG.println("uV");
+   }
+}
 
 void CalibrationClass::renderCal2(int x, int y, float valM, float setM, CURRENT_RANGE current_range, bool reduceDetails) {
 
@@ -948,6 +996,7 @@ if (!reduceDetails) {
   GD.ColorA(255);
   GD.ColorRGB(0xff0000);
 
+
   float max_set_value = set_adc[adc_cal_points-1];
   float min_set_value = set_adc[0];
 
@@ -965,8 +1014,9 @@ if (!reduceDetails) {
   float correction_display_factor = 80000.0; // TODO: Make it show as ppm ?  uV ?
 
   // avoid drawing graph outside of target area (can happen if cal values are large...)
-  GD.ScissorXY(0,280);
-  GD.ScissorSize(640,150);
+  // Comment out the lines below if you need see "way-off" values while debugging/developing...
+//  GD.ScissorXY(0,280);
+//  GD.ScissorSize(640,150);
 
 
   y=y+10;
@@ -974,18 +1024,18 @@ if (!reduceDetails) {
   if (!reduceDetails) {
     for (int i=0;i<adc_cal_points;i++) {
         float diff = set_adc[i] - meas_adc[i];
-//        DEBUG.print("adc_cal_points=");
-//        DEBUG.print(adc_cal_points);
-//        DEBUG.print(", min_set_value=");
-//        DEBUG.print(min_set_value);
-//        DEBUG.print("max_set_value=");
-//        DEBUG.print(max_set_value);
-//        DEBUG.print(", Cal points ");
-//        DEBUG.print(adc_cal_points);
-//        DEBUG.print(" - Rendering set ");
-//        DEBUG.print(set_adc[i]);
-//        DEBUG.print(" meas ");
-//        DEBUG.println(meas_adc[i]);
+      //  DEBUG.print("adc_cal_points=");
+      //  DEBUG.print(adc_cal_points);
+      //  DEBUG.print(", min_set_value=");
+      //  DEBUG.print(min_set_value);
+      //  DEBUG.print("max_set_value=");
+      //  DEBUG.print(max_set_value);
+      //  DEBUG.print(", Cal points ");
+      //  DEBUG.print(adc_cal_points);
+      //  DEBUG.print(" - Rendering set ");
+      //  DEBUG.print(set_adc[i]);
+      //  DEBUG.print(" meas ");
+      //  DEBUG.println(meas_adc[i]);
         int xv = pixelsPrVolt *(set_adc[i] / max_set_value);
         int yv = /*150 *(meas_adc[i] / max_meas_value) - */(diff/max_meas_value) * correction_display_factor;
         GD.Vertex2ii(x+x_null_position+xv, y + 100 - yv);
@@ -1326,7 +1376,7 @@ bool CalibrationClass::handleCalibrationButtons(int tag, OPERATION_TYPE operatio
        } 
        timeSinceLastChange = millis();
        DIGIT_UTIL.startIndicator(tag);
-       float mv = SMU[0].getSetValue_micro()/1000.0;
+       float mv = SMU1->getSetValue_micro()/1000.0;
        if (operationType == SOURCE_VOLTAGE) {
          if (mv < 0) {
             V_CALIBRATION.adjDacGainCompNeg(0.000005);
@@ -1334,8 +1384,8 @@ bool CalibrationClass::handleCalibrationButtons(int tag, OPERATION_TYPE operatio
             V_CALIBRATION.adjDacGainCompPos(0.000005);
          }
          GD.__end();
-         //if (SMU[0].fltSetCommitVoltageSource(mv*1000, true)) printError(_PRINT_ERROR_VOLTAGE_SOURCE_SETTING);
-         SMU[0].fltSetCommitVoltageSource(mv*1000, true);
+         //if (SMU1->fltSetCommitVoltageSource(mv*1000, true)) printError(_PRINT_ERROR_VOLTAGE_SOURCE_SETTING);
+         SMU1->fltSetCommitVoltageSource(mv*1000, true);
 
          GD.resume();
        } else {
@@ -1345,8 +1395,8 @@ bool CalibrationClass::handleCalibrationButtons(int tag, OPERATION_TYPE operatio
             C_CALIBRATION.adjDacGainCompPos(0.00001);
          }
          GD.__end();
-         //if (SMU[0].fltSetCommitCurrentSource(mv*1000)) printError(_PRINT_ERROR_VOLTAGE_SOURCE_SETTING);
-         SMU[0].fltSetCommitCurrentSource(mv*1000);
+         //if (SMU1->fltSetCommitCurrentSource(mv*1000)) printError(_PRINT_ERROR_VOLTAGE_SOURCE_SETTING);
+         SMU1->fltSetCommitCurrentSource(mv*1000);
 
          GD.resume();
        }
@@ -1358,7 +1408,7 @@ bool CalibrationClass::handleCalibrationButtons(int tag, OPERATION_TYPE operatio
        } 
        timeSinceLastChange = millis();
        DIGIT_UTIL.startIndicator(tag);
-       float mv = SMU[0].getSetValue_micro()/1000.0;
+       float mv = SMU1->getSetValue_micro()/1000.0;
        if (operationType == SOURCE_VOLTAGE) {
          if (mv < 0) {
             V_CALIBRATION.adjDacGainCompNeg2(0.000005);
@@ -1366,8 +1416,8 @@ bool CalibrationClass::handleCalibrationButtons(int tag, OPERATION_TYPE operatio
             V_CALIBRATION.adjDacGainCompPos2(0.000005);
          }
          GD.__end();
-         //if (SMU[0].fltSetCommitVoltageSource(mv*1000, true)) printError(_PRINT_ERROR_VOLTAGE_SOURCE_SETTING);
-         SMU[0].fltSetCommitVoltageSource(mv*1000, true);
+         //if (SMU1->fltSetCommitVoltageSource(mv*1000, true)) printError(_PRINT_ERROR_VOLTAGE_SOURCE_SETTING);
+         SMU1->fltSetCommitVoltageSource(mv*1000, true);
 
          GD.resume();
        } else {
@@ -1377,8 +1427,8 @@ bool CalibrationClass::handleCalibrationButtons(int tag, OPERATION_TYPE operatio
             C_CALIBRATION.adjDacGainCompPos2(0.000005);
          }
          GD.__end();
-         //if (SMU[0].fltSetCommitCurrentSource(mv*1000)) printError(_PRINT_ERROR_VOLTAGE_SOURCE_SETTING);
-         SMU[0].fltSetCommitCurrentSource(mv*1000);
+         //if (SMU1->fltSetCommitCurrentSource(mv*1000)) printError(_PRINT_ERROR_VOLTAGE_SOURCE_SETTING);
+         SMU1->fltSetCommitCurrentSource(mv*1000);
 
          GD.resume();
        }
@@ -1390,7 +1440,7 @@ bool CalibrationClass::handleCalibrationButtons(int tag, OPERATION_TYPE operatio
       } 
        timeSinceLastChange = millis();
        DIGIT_UTIL.startIndicator(tag);
-       float mv = SMU[0].getSetValue_micro()/1000.0;
+       float mv = SMU1->getSetValue_micro()/1000.0;
        if (operationType == SOURCE_VOLTAGE) {
          if (mv < 0) {
             V_CALIBRATION.adjDacGainCompNeg(-0.000005);
@@ -1399,8 +1449,8 @@ bool CalibrationClass::handleCalibrationButtons(int tag, OPERATION_TYPE operatio
          }
          //if (operationType == SOURCE_VOLTAGE) {
          GD.__end();
-         //if (SMU[0].fltSetCommitVoltageSource(mv*1000, true)) printError(_PRINT_ERROR_VOLTAGE_SOURCE_SETTING);
-         SMU[0].fltSetCommitVoltageSource(mv*1000, true);
+         //if (SMU1->fltSetCommitVoltageSource(mv*1000, true)) printError(_PRINT_ERROR_VOLTAGE_SOURCE_SETTING);
+         SMU1->fltSetCommitVoltageSource(mv*1000, true);
 
          GD.resume();
        } else {
@@ -1410,8 +1460,8 @@ bool CalibrationClass::handleCalibrationButtons(int tag, OPERATION_TYPE operatio
             C_CALIBRATION.adjDacGainCompPos(-0.00001 );
          }
          GD.__end();
-         //if (SMU[0].fltSetCommitCurrentSource(mv*1000.0)) printError(_PRINT_ERROR_VOLTAGE_SOURCE_SETTING);
-         SMU[0].fltSetCommitCurrentSource(mv*1000.0);
+         //if (SMU1->fltSetCommitCurrentSource(mv*1000.0)) printError(_PRINT_ERROR_VOLTAGE_SOURCE_SETTING);
+         SMU1->fltSetCommitCurrentSource(mv*1000.0);
          GD.resume();
        }   
     } 
@@ -1422,7 +1472,7 @@ bool CalibrationClass::handleCalibrationButtons(int tag, OPERATION_TYPE operatio
       } 
        timeSinceLastChange = millis();
        DIGIT_UTIL.startIndicator(tag);
-       float mv = SMU[0].getSetValue_micro()/1000.0;
+       float mv = SMU1->getSetValue_micro()/1000.0;
        if (operationType == SOURCE_VOLTAGE) {
          if (mv < 0) {
             V_CALIBRATION.adjDacGainCompNeg2(-0.000005);
@@ -1431,8 +1481,8 @@ bool CalibrationClass::handleCalibrationButtons(int tag, OPERATION_TYPE operatio
          }
          //if (operationType == SOURCE_VOLTAGE) {
          GD.__end();
-         //if (SMU[0].fltSetCommitVoltageSource(mv*1000, true)) printError(_PRINT_ERROR_VOLTAGE_SOURCE_SETTING);
-         SMU[0].fltSetCommitVoltageSource(mv*1000, true);
+         //if (SMU1->fltSetCommitVoltageSource(mv*1000, true)) printError(_PRINT_ERROR_VOLTAGE_SOURCE_SETTING);
+         SMU1->fltSetCommitVoltageSource(mv*1000, true);
          GD.resume();
        } else {
           if (mv < 0) {
@@ -1441,8 +1491,8 @@ bool CalibrationClass::handleCalibrationButtons(int tag, OPERATION_TYPE operatio
             C_CALIBRATION.adjDacGainCompPos2(-0.000005);
          }
          GD.__end();
-         //if (SMU[0].fltSetCommitCurrentSource(mv*1000)) printError(_PRINT_ERROR_VOLTAGE_SOURCE_SETTING);
-         SMU[0].fltSetCommitCurrentSource(mv*1000);
+         //if (SMU1->fltSetCommitCurrentSource(mv*1000)) printError(_PRINT_ERROR_VOLTAGE_SOURCE_SETTING);
+         SMU1->fltSetCommitCurrentSource(mv*1000);
          GD.resume();
        }   
     } 
@@ -1453,14 +1503,14 @@ bool CalibrationClass::handleCalibrationButtons(int tag, OPERATION_TYPE operatio
       } 
        timeSinceLastChange = millis();
        DIGIT_UTIL.startIndicator(tag);
-       float mv = SMU[0].getLimitValue_micro();
+       float mv = SMU1->getLimitValue_micro();
        if (operationType == SOURCE_VOLTAGE) {
          V_CALIBRATION.adjDacGainCompLim(+0.000005*10.0);
          
          //if (operationType == SOURCE_VOLTAGE) {
          GD.__end();
-         //if (SMU[0].fltSetCommitCurrentLimit(mv*1000, true)) printError(_PRINT_ERROR_VOLTAGE_SOURCE_SETTING);
-         SMU[0].fltSetCommitCurrentLimit(mv);
+         //if (SMU1->fltSetCommitCurrentLimit(mv*1000, true)) printError(_PRINT_ERROR_VOLTAGE_SOURCE_SETTING);
+         SMU1->fltSetCommitCurrentLimit(mv);
          GD.resume();
        }
     } 
@@ -1471,14 +1521,14 @@ bool CalibrationClass::handleCalibrationButtons(int tag, OPERATION_TYPE operatio
       } 
        timeSinceLastChange = millis();
        DIGIT_UTIL.startIndicator(tag);
-       float mv = SMU[0].getLimitValue_micro();
+       float mv = SMU1->getLimitValue_micro();
        if (operationType == SOURCE_VOLTAGE) {
          V_CALIBRATION.adjDacGainCompLim(-0.000005*10.0);
          
          //if (operationType == SOURCE_VOLTAGE) {
          GD.__end();
-         //if (SMU[0].fltSetCommitCurrentLimit(mv*1000, true)) printError(_PRINT_ERROR_VOLTAGE_SOURCE_SETTING);
-         SMU[0].fltSetCommitCurrentLimit(mv);
+         //if (SMU1->fltSetCommitCurrentLimit(mv*1000, true)) printError(_PRINT_ERROR_VOLTAGE_SOURCE_SETTING);
+         SMU1->fltSetCommitCurrentLimit(mv);
          GD.resume();
        }   
     } 
@@ -1490,7 +1540,7 @@ bool CalibrationClass::handleCalibrationButtons(int tag, OPERATION_TYPE operatio
        } 
        timeSinceLastChange = millis();
        DIGIT_UTIL.startIndicator(tag);
-       float mv = SMU[0].getSetValue_micro()/1000.0;
+       float mv = SMU1->getSetValue_micro()/1000.0;
        if (operationType == SOURCE_VOLTAGE) {
          mv = V_STATS.rawValue;
          if (mv < 0) {
@@ -1514,7 +1564,7 @@ bool CalibrationClass::handleCalibrationButtons(int tag, OPERATION_TYPE operatio
        } 
        timeSinceLastChange = millis();
        DIGIT_UTIL.startIndicator(tag);
-       float mv = SMU[0].getSetValue_micro()/1000.0;
+       float mv = SMU1->getSetValue_micro()/1000.0;
        if (operationType == SOURCE_VOLTAGE) {
          mv = V_STATS.rawValue;
          if (mv < 0) {
@@ -1540,7 +1590,7 @@ bool CalibrationClass::handleCalibrationButtons(int tag, OPERATION_TYPE operatio
        } 
        timeSinceLastChange = millis();
        DIGIT_UTIL.startIndicator(tag);
-       float mv = SMU[0].getSetValue_micro()/1000.0;
+       float mv = SMU1->getSetValue_micro()/1000.0;
        if (operationType == SOURCE_VOLTAGE) {
          mv = V_STATS.rawValue;
          if (mv < 0) {
@@ -1564,7 +1614,7 @@ bool CalibrationClass::handleCalibrationButtons(int tag, OPERATION_TYPE operatio
        } 
        timeSinceLastChange = millis();
        DIGIT_UTIL.startIndicator(tag);
-       float mv = SMU[0].getSetValue_micro()/1000.0;
+       float mv = SMU1->getSetValue_micro()/1000.0;
        if (operationType == SOURCE_VOLTAGE) {
          mv = V_STATS.rawValue;
          if (mv < 0) {
@@ -1591,12 +1641,12 @@ bool CalibrationClass::handleCalibrationButtons(int tag, OPERATION_TYPE operatio
       } 
       timeSinceLastChange = millis();
        DIGIT_UTIL.startIndicator(tag);
-       float mv = SMU[0].getSetValue_micro()/1000.0;
+       float mv = SMU1->getSetValue_micro()/1000.0;
        if (operationType == SOURCE_VOLTAGE) {
           V_CALIBRATION.adjDacZeroComp(+0.000002);
           GD.__end();
-         //if (SMU[0].fltSetCommitVoltageSource(mv*1000, true)) printError(_PRINT_ERROR_VOLTAGE_SOURCE_SETTING);
-         SMU[0].fltSetCommitVoltageSource(mv*1000, true);
+         //if (SMU1->fltSetCommitVoltageSource(mv*1000, true)) printError(_PRINT_ERROR_VOLTAGE_SOURCE_SETTING);
+         SMU1->fltSetCommitVoltageSource(mv*1000, true);
          GD.resume();
          
        } else {
@@ -1606,8 +1656,8 @@ bool CalibrationClass::handleCalibrationButtons(int tag, OPERATION_TYPE operatio
             C_CALIBRATION.adjDacZeroComp2(+0.000002);
           }
           GD.__end();
-         //if (SMU[0].fltSetCommitCurrentSource(mv*1000)) printError(_PRINT_ERROR_VOLTAGE_SOURCE_SETTING);
-         SMU[0].fltSetCommitCurrentSource(mv*1000);
+         //if (SMU1->fltSetCommitCurrentSource(mv*1000)) printError(_PRINT_ERROR_VOLTAGE_SOURCE_SETTING);
+         SMU1->fltSetCommitCurrentSource(mv*1000);
 
          GD.resume();    
        }
@@ -1618,12 +1668,12 @@ bool CalibrationClass::handleCalibrationButtons(int tag, OPERATION_TYPE operatio
        } 
        timeSinceLastChange = millis();
        DIGIT_UTIL.startIndicator(tag);
-       float mv = SMU[0].getSetValue_micro()/1000.0;
+       float mv = SMU1->getSetValue_micro()/1000.0;
        if (operationType == SOURCE_VOLTAGE) {
          V_CALIBRATION.adjDacZeroComp(-0.000002);
          GD.__end();
-         //if (SMU[0].fltSetCommitVoltageSource(mv*1000, true)) printError(_PRINT_ERROR_VOLTAGE_SOURCE_SETTING);
-         SMU[0].fltSetCommitVoltageSource(mv*1000, true);
+         //if (SMU1->fltSetCommitVoltageSource(mv*1000, true)) printError(_PRINT_ERROR_VOLTAGE_SOURCE_SETTING);
+         SMU1->fltSetCommitVoltageSource(mv*1000, true);
          GD.resume();
        } else {
          if (tag == BUTTON_DAC_ZERO_COMP_DOWN) {
@@ -1632,8 +1682,8 @@ bool CalibrationClass::handleCalibrationButtons(int tag, OPERATION_TYPE operatio
            C_CALIBRATION.adjDacZeroComp2(-0.000002);
          }
          GD.__end();
-         //if (SMU[0].fltSetCommitCurrentSource(mv*1000)) printError(_PRINT_ERROR_VOLTAGE_SOURCE_SETTING);
-         SMU[0].fltSetCommitCurrentSource(mv*1000);
+         //if (SMU1->fltSetCommitCurrentSource(mv*1000)) printError(_PRINT_ERROR_VOLTAGE_SOURCE_SETTING);
+         SMU1->fltSetCommitCurrentSource(mv*1000);
          GD.resume(); 
        }
     }

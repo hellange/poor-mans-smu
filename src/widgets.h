@@ -20,9 +20,11 @@
 #include "Settings.h"
 #include "Gest.h"
 #include "SimpleStats.h"
+#include "SMU_HAL.h"
 
 class WidgetsClass {
 public:
+  void init(SMU_HAL &SMU);
   void displayWidget( FUNCTION_TYPE functionType, OPERATION_TYPE operationType, bool hasCompliance, bool reduceDetails, float getSetValue_micro , float limitValue_micro, CURRENT_RANGE currentRange, bool anyDialogOpen, int yPosLowerPart);
   void showWidget(int y, int widgetNo, int scroll, FUNCTION_TYPE functionType, OPERATION_TYPE operationType, bool hasCompliance, bool reduceDetails, float getSetValue_micro,float limitValue_micro, CURRENT_RANGE currentRange, bool anyDialogOpen);
   void handleWidgetScrollPosition(int gestureDetected);
@@ -40,6 +42,8 @@ public:
                            // TODO: Should be solved differently
 
 private:
+  SMU_HAL *SMU1;
+
   int maxFilterSliderValue = 50;
   int maxSamplesSliderValue = 100;
 
@@ -62,7 +66,7 @@ private:
   void renderBar(int x, int y, float rawValue, uint64_t setValue_u, bool reduceDetails);
   void drawBall(int x, int y, bool set);
 
-  int timeSinceLastChange = 0;
+  uint32_t timeSinceLastChange = 0;
 };
 
 extern WidgetsClass WIDGETS;

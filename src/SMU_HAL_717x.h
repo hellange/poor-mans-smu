@@ -9,12 +9,12 @@
 #include "AD7176.h"
 #include "LTC2758.h"
 #include "operations.h"
-
+#include "SMU_HAL.h"
 //#define FSR (((long int)1<<23)-1)
 
 // goal is to be "compatible" with the Poor Mans SMU hardware abstraction layer API
 // to make it easy to test different ADC without changing the application software...
-class ADCClass {
+class ADCClass: public SMU_HAL {
 
   long int FSR = (((long int)1<<23)-1);
   unsigned long lastSampleMilli;
@@ -41,9 +41,10 @@ class ADCClass {
     void writeShortSetting();
     void writeRefInputSetting();
 
-  
+     void initADC();
+    void initDAC();
   public:
-    int deviceTypeId = 0;
+    int deviceTypeId = 0; // Identifying ADC type
     OPERATION_TYPE operationType;
 
     // TODO: Why public ? Indicates poor architecture
@@ -53,8 +54,7 @@ class ADCClass {
     void setVrefMv(double mV);
 
     void init();
-    void initADC();
-    void initDAC();
+ 
     void disable_ADC_DAC_SPI_units();
     int64_t fltSetCommitVoltageSource(int64_t voltage_uV, bool dynamicRange);
     int64_t fltSetCommitCurrentSource(int64_t current_uA);
@@ -77,13 +77,15 @@ class ADCClass {
     void setGPIO(int nr, bool on);
 
     bool use100uVSetResolution();
-    void shortAdcInput(bool setShort);
-        void internalRefInput(bool setInternalRef);
 
     void updateSettings();
+    CURRENT_RANGE getCurrentRange();
+
+    void shortAdcInput(bool setShort);
+    void internalRefInput(bool setInternalRef);
+
     bool enableVoltageMeasurement = true;
     bool enableCurrentMeasurement = true;
-    CURRENT_RANGE getCurrentRange();
 
     bool voltageMeasurementGainX2 = false;
 
