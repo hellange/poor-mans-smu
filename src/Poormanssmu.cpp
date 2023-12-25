@@ -73,7 +73,7 @@
 
 #define SAMPLING_BY_INTERRUPT
 
-#define VERSION_NUMBER "0.2.86"
+#define VERSION_NUMBER "0.2.87"
 
 SimpleStatsClass SIMPLE_STATS;
 LoggerClass LOGGER;
@@ -496,7 +496,7 @@ void setup()
    //TC74 
    Wire.begin();
 
-   DIGITIZER.init(SMU[0], getOperationType());
+   DIGITIZER.init(SMU[0]/*, getOperationType()*/);
 
    scpi_setup();
 

@@ -57,13 +57,14 @@ public:
     static int ampLevel;
     static float triggerLevel;
     static int multiplyBy;
+    static int triggerType; // 0=continous, 1=level; 2=edge ???
 
   bool digitizeVoltage = true; // set to true to digitize voltage 
 
   bool continuous = true; // default continous sampling, not trigger
 
   void clearMaxMin();
-  void init(SMU_HAL &SMU, OPERATION_TYPE operationType_);
+  void init(SMU_HAL &SMU);
   void open();
   void loopDigitize(bool reduceDetails);
   void renderGraph(bool reduceDetails);

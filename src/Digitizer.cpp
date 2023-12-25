@@ -11,11 +11,16 @@ int DigitizerClass::adjustLevel = 0;
 int DigitizerClass::ampLevel = 1;
 float DigitizerClass::triggerLevel = 1000.0;
 int DigitizerClass::multiplyBy = 1;
+int DigitizerClass::triggerType = 0;
 
 DigitizerClass DIGITIZER;
 
-void DigitizerClass::init(SMU_HAL &SMU, OPERATION_TYPE operationType_) {
+void DigitizerClass::init(SMU_HAL &SMU) {
    SMU1 = &SMU;
+
+   if (digitizeVoltage == false) {
+     triggerLevel = 100.0;
+   }
 }
 
 void DigitizerClass::updateSmuWhenVoltageCurrentFocusChange() {
@@ -124,10 +129,24 @@ void DigitizerClass::renderGraph(bool reduceDetails) {
           DIGITIZER.allowTrigger = ! DIGITIZER.allowTrigger;
         }
         else if (tag == 172) {
-          continuous = !continuous;
+          triggerType ++;
+          if (triggerType >2) {
+            triggerType = 0;
+          }
+          if (triggerType ==0) {
+            continuous = true;
+          } else {
+            continuous = false;
+          }
         }
         else if (tag == 173) {
           digitizeVoltage = !digitizeVoltage;
+          //TODO: Set trigger level to same as before switching between voltage and current !
+          if (digitizeVoltage == false) {
+            triggerLevel = 100.0;
+          } else {
+            triggerLevel = 1000.0;
+          }
         }
       }
     
@@ -158,19 +177,24 @@ void DigitizerClass::renderGraph(bool reduceDetails) {
      
      if (adjustLevel == 0) {
        GD.ColorRGB(0x00ff00);
-       GD.cmd_text(400, 380 ,  28, 0, "ADJ VOLT");
+       GD.cmd_text(380, 380 ,  28, 0, "MEAS SCALE");
        GD.cmd_number(550, 380, 28, 6, ampLevel);
      } if (adjustLevel == 1) {
-       GD.ColorRGB(0xff0000);
-       GD.cmd_text(400, 380 ,  28, 0, "ADJ TIME");
+       GD.ColorRGB(0xaaaaaa);
+       GD.cmd_text(380, 380 ,  28, 0, "TIME SCALE");
        GD.cmd_number(550, 380, 28, 6, zoomed);
      } if (adjustLevel == 2) {
-       GD.ColorRGB(0xff0000);
-       GD.cmd_text(400, 380 ,  28, 0, "TRIG LEV");       
+       GD.ColorRGB(0xffff00);
+       GD.cmd_text(380, 380 ,  28, 0, "TRIG LEVEL");       
        GD.cmd_number(550, 380, 28, 6, triggerLevel);
        int trigLevel0y = 240;
        int trigLevelAbjustedy = trigLevel0y - (triggerLevel/100.0)*multiplyBy;
-
+       if (digitizeVoltage == false) {
+         trigLevelAbjustedy = trigLevel0y - ((triggerLevel/100.0)*multiplyBy)*10.0*1.20;
+         if (trigLevelAbjustedy < 0) {
+          trigLevelAbjustedy = 0;
+         }
+       }
        // This will just somethimes seen as a green flash.
        // TODO: How to show that the trigger has occured and
        //       waveform has been acquired. 
@@ -195,13 +219,19 @@ void DigitizerClass::renderGraph(bool reduceDetails) {
 
 
 
-     if (continuous) {
+     if (triggerType == 0) {
        //GD.cmd_number(500,320, 28, 6, allowTrigger);
        GD.ColorRGB(0x0000ff);
        GD.cmd_text(50, 380 ,  28, 0, "CONTINOUS");
-     } else  {
+     } else if (triggerType == 1) {
+      GD.ColorRGB(0xffff00);
+       GD.cmd_text(50, 380 ,  28, 0, "LEVEL");
+     }  else if (triggerType == 2) {
        GD.ColorRGB(0x00ff00);
        GD.cmd_text(50, 380 ,  28, 0, "EDGE");
+     } else {
+          GD.ColorRGB(0xff0000);
+       GD.cmd_text(50, 380 ,  28, 0, "???");
      }
 
 
@@ -525,12 +555,13 @@ void DigitizerClass::handleSamplingForDigitizer(int dataR) {
   }
 
   // edge or level trig
-  bool edgeDetect = false;  // change to false for level trigg
+  bool edgeDetect = (triggerType == 2);
 
-  float edgeSteepnessToDetect = 1.0;
   bool trigg = false;
   if (edgeDetect == true) {
     // ----- edge trigger hack-----
+      float edgeSteepnessToDetect = 1.0;
+
     bool positiveEdge = v > lastVoltage + edgeSteepnessToDetect 
          && lastVoltage > lastVoltageOld + edgeSteepnessToDetect
          && lastVoltageOld > lastVoltageOld2 + edgeSteepnessToDetect
@@ -554,11 +585,15 @@ void DigitizerClass::handleSamplingForDigitizer(int dataR) {
     else if (trigg && waitForLower == true) {
       trigg = false;
     }
+    int delta = 100;
+    if (digitizeVoltage == false) {
+      delta = 10;
+    }
     // Must go below it again to trigger again
-    bool lower = lastVoltage < triggerLevel -100.0
-               && lastVoltageOld <triggerLevel -100.0
-               && lastVoltageOld2 <triggerLevel -100.0
-               && lastVoltageOld3 <triggerLevel -100.0;
+    bool lower = lastVoltage < triggerLevel -delta
+               && lastVoltageOld <triggerLevel -delta
+               && lastVoltageOld2 <triggerLevel -delta
+               && lastVoltageOld3 <triggerLevel -delta;
     if (lower==true && waitForLower == true) {
       waitForLower = false;
     }
