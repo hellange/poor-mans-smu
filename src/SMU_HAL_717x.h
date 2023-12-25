@@ -37,6 +37,9 @@ class ADCClass: public SMU_HAL {
     bool oldInternalRef = false;
     bool internalRef = false;
 
+    bool voltageMeasurementEnabled = true;
+    bool currentMeasurementEnabled = true;
+
     void writeSamplingRate();
     void writeShortSetting();
     void writeRefInputSetting();
@@ -84,9 +87,12 @@ class ADCClass: public SMU_HAL {
     void shortAdcInput(bool setShort);
     void internalRefInput(bool setInternalRef);
 
-    bool enableVoltageMeasurement = true;
-    bool enableCurrentMeasurement = true;
 
+   void enableVoltageMeasurement(bool enable);
+    void enableCurrentMeasurement(bool enable);
+  bool isVoltageMeasurementEnabled();
+    bool isCurrentMeasurementEnabled();
+    // TODO make as method
     bool voltageMeasurementGainX2 = false;
 
 };

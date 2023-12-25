@@ -23,6 +23,8 @@ private:
     float simulatedLoad = 100.0; // ohm
     float simulatedOffset = 0.110; // simulate some uV offset
 
+    bool voltageMeasurementEnabled = true;
+    bool currentMeasurementEnabled = true;
   public:
 
     int deviceTypeId = SMU_HAL_DUMMY_DEVICE_TYPE_ID; // // Identifying ADC type. For simulator, just set something else that 0
@@ -69,9 +71,13 @@ private:
     void shortAdcInput(bool setShort);
     void internalRefInput(bool setInternalRef);
 
-    bool enableVoltageMeasurement = true;
-    bool enableCurrentMeasurement = true;
 
+
+    void enableVoltageMeasurement(bool enable);
+    void enableCurrentMeasurement(bool enable);
+    bool isVoltageMeasurementEnabled();
+    bool isCurrentMeasurementEnabled();
+    // TODO make as method
     bool voltageMeasurementGainX2 = false;
 
 };

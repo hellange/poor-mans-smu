@@ -28,14 +28,23 @@ private:
   float lastVoltage = 0.0;
   float lastVoltageOld = 0.0;
   float lastVoltageOld2 = 0.0;
-  
+    float lastVoltageOld3 = 0.0;
+
+bool waitForLower = false;
+
   float ramEmulator[1000];
   float ramEmulator2[1000];
+
+
+
 
   // for test
   float simulatedWaveform;
 
   void copyDataBufferToDisplayBuffer();
+
+  void updateSmuWhenVoltageCurrentFocusChange();
+
 
   // for test
   void updateModulation();
@@ -44,12 +53,14 @@ private:
   int prevSamplingRate;
 public:
     static bool zoomed;
-    static bool adjustLevel;
+    static int adjustLevel;
     static int ampLevel;
+    static float triggerLevel;
+    static int multiplyBy;
 
-bool digitizeVoltage = false; // set to true to digitize voltage 
+  bool digitizeVoltage = true; // set to true to digitize voltage 
 
-  bool continuous = false;
+  bool continuous = true; // default continous sampling, not trigger
 
   void clearMaxMin();
   void init(SMU_HAL &SMU, OPERATION_TYPE operationType_);

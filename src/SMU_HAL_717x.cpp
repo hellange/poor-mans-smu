@@ -121,20 +121,25 @@ int ADCClass::getSamplingRate() {
 }
 
 void ADCClass::updateSettings() {
-  if (enableCurrentMeasurement && enableVoltageMeasurement) {
+
+
+  if (isCurrentMeasurementEnabled() && isVoltageMeasurementEnabled()) {
       AD7176_WriteRegister({0x10, 2, 0, 0x8001l  }); // Channel 1 enable input 0,1 voltage
       AD7176_WriteRegister({0x11, 2, 0, 0x8043l  }); // Channel 2 enable input 2,3 current
   } else {
-    if (enableCurrentMeasurement) {
+    if (isCurrentMeasurementEnabled()) {
       AD7176_WriteRegister({0x10, 2, 0, 0x8043l  });  // select input 2,3 (current) input for channel 1
       AD7176_WriteRegister({0x11, 2, 0, 0x0001l  });  // disable channel 2
     } 
-    else if (enableVoltageMeasurement) {
+    else if (isVoltageMeasurementEnabled()) {
       AD7176_WriteRegister({0x10, 2, 0, 0x8001l  }); // select input 0,1 (voltage) input for channel 1
       AD7176_WriteRegister({0x11, 2, 0, 0x0043l  }); // disable channel 2
 
-    } 
-  }
+     } 
+   }
+
+   
+   
 
 }
 
@@ -895,6 +900,20 @@ int64_t ADCClass::fltSetCommitVoltageLimit(int64_t voltage_uV) {
   return setLimit_micro;
  }
 
- 
+void ADCClass::enableVoltageMeasurement(bool enable) {
+  voltageMeasurementEnabled = enable;
+}
+
+void ADCClass::enableCurrentMeasurement(bool enable) {
+  currentMeasurementEnabled = enable;
+}
+
+bool ADCClass::isVoltageMeasurementEnabled() {
+  return voltageMeasurementEnabled;
+}
+
+bool ADCClass::isCurrentMeasurementEnabled() {
+  return currentMeasurementEnabled;
+}
 
     

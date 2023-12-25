@@ -204,6 +204,23 @@ void SMU_HAL_dummy::shortAdcInput(bool setShort) {
 void SMU_HAL_dummy::internalRefInput(bool internalRef_) {
   //internalRef = internalRef_;
 }
+
+void SMU_HAL_dummy::enableVoltageMeasurement(bool enable) {
+  voltageMeasurementEnabled = enable;
+}
+
+void SMU_HAL_dummy::enableCurrentMeasurement(bool enable) {
+  currentMeasurementEnabled = enable;
+}
+
+bool SMU_HAL_dummy::isVoltageMeasurementEnabled() {
+  return voltageMeasurementEnabled;
+}
+
+bool SMU_HAL_dummy::isCurrentMeasurementEnabled() {
+  return currentMeasurementEnabled;
+}
+
  
 
     

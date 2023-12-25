@@ -7,8 +7,10 @@ extern VoltDisplayClass VOLT_DISPLAY;
 //OPERATION_TYPE operationType;
 
 bool DigitizerClass::zoomed = false;
-bool DigitizerClass::adjustLevel = false;
+int DigitizerClass::adjustLevel = 0;
 int DigitizerClass::ampLevel = 1;
+float DigitizerClass::triggerLevel = 1000.0;
+int DigitizerClass::multiplyBy = 1;
 
 DigitizerClass DIGITIZER;
 
@@ -16,19 +18,33 @@ void DigitizerClass::init(SMU_HAL &SMU, OPERATION_TYPE operationType_) {
    SMU1 = &SMU;
 }
 
+void DigitizerClass::updateSmuWhenVoltageCurrentFocusChange() {
+   if (digitizeVoltage) {
+    SMU1->enableVoltageMeasurement(true);
+    SMU1->enableCurrentMeasurement(false);
+  } else {
+    SMU1->enableVoltageMeasurement(false);
+    SMU1->enableCurrentMeasurement(true);
+  }
+    SMU1->updateSettings();
+
+}
 void DigitizerClass::open() {
   GD.__end();
   prevSamplingRate = SMU1->getSamplingRate();
   SMU1->disable_ADC_DAC_SPI_units();
-  if (digitizeVoltage) {
-    SMU1->enableVoltageMeasurement = true;
-    SMU1->enableCurrentMeasurement = false;
-  } else {
-    SMU1->enableVoltageMeasurement = false;
-    SMU1->enableCurrentMeasurement = true;
-  }
+  SMU1->setSamplingRate(31250); //31250
 
-  SMU1->updateSettings();
+  updateSmuWhenVoltageCurrentFocusChange();
+  // if (digitizeVoltage) {
+  //   SMU1->enableVoltageMeasurement(true);
+  //   SMU1->enableCurrentMeasurement(false);
+  // } else {
+  //   SMU1->enableVoltageMeasurement(false);
+  //   SMU1->enableCurrentMeasurement(true);
+  // }
+
+  //SMU1->updateSettings();
   GD.resume();
 }
 
@@ -37,8 +53,8 @@ void DigitizerClass::close() {
     GD.__end();
     SMU1->disable_ADC_DAC_SPI_units();
     //SMU1->setSamplingRate(20); //TODO: Should get back to same as before, not a default one
-    SMU1->enableVoltageMeasurement = true;
-    SMU1->enableCurrentMeasurement = true;
+    SMU1->enableVoltageMeasurement(true);
+    SMU1->enableCurrentMeasurement(true);
     SMU1->updateSettings();
     SMU1->setSamplingRate(prevSamplingRate); //TODO: Should get back to same as before, not a default one
 
@@ -60,7 +76,12 @@ void DigitizerClass::loopDigitize(bool reduceDetails) {
     //maxDigV = - 1000000;
     //minDigI = 1000000;
     //maxDigI = - 1000000;
-    SMU1->setSamplingRate(31250); //31250
+    //SMU1->setSamplingRate(31250); //31250
+    
+    // Make sure smu is updated according
+    // to current or voltage used for digitizing
+    updateSmuWhenVoltageCurrentFocusChange();
+
     digitize = true;
     bufferOverflow = false;     
   }
@@ -135,14 +156,41 @@ void DigitizerClass::renderGraph(bool reduceDetails) {
        GD.cmd_text(200, 380 ,  28, 0, "STOPPED");
      }
      
-     if (adjustLevel) {
+     if (adjustLevel == 0) {
        GD.ColorRGB(0x00ff00);
        GD.cmd_text(400, 380 ,  28, 0, "ADJ VOLT");
        GD.cmd_number(550, 380, 28, 6, ampLevel);
-     } else {
+     } if (adjustLevel == 1) {
        GD.ColorRGB(0xff0000);
        GD.cmd_text(400, 380 ,  28, 0, "ADJ TIME");
        GD.cmd_number(550, 380, 28, 6, zoomed);
+     } if (adjustLevel == 2) {
+       GD.ColorRGB(0xff0000);
+       GD.cmd_text(400, 380 ,  28, 0, "TRIG LEV");       
+       GD.cmd_number(550, 380, 28, 6, triggerLevel);
+       int trigLevel0y = 240;
+       int trigLevelAbjustedy = trigLevel0y - (triggerLevel/100.0)*multiplyBy;
+
+       // This will just somethimes seen as a green flash.
+       // TODO: How to show that the trigger has occured and
+       //       waveform has been acquired. 
+       //       Check with not normal oscilloscopes shows triggering...
+       if (triggered == true) {
+         GD.ColorRGB(0x00ff00);
+       } else {
+          GD.ColorRGB(0xff0000);
+       }
+
+              GD.cmd_text(392, trigLevelAbjustedy -26,  31, 0, "-");
+
+
+        GD.ColorRGB(0xffff00); // yellowish
+        // show trigger voltage line
+        GD.LineWidth(10);
+        GD.Begin(LINE_STRIP);
+        GD.Vertex2ii(0, trigLevelAbjustedy);
+        GD.Vertex2ii(800, trigLevelAbjustedy);
+
      }
 
 
@@ -171,7 +219,7 @@ int height = 400;
 int width = 790;
 int xStep = 100;
 
-// avoid drawing graph outside of target area (can happen if cal values are large...)
+// avoid drawing graph outside of target area (can happen if values are large...)
   GD.ScissorXY(0,30); // height of header
   GD.ScissorSize(800,440);
 GD.ColorA(255);
@@ -220,7 +268,7 @@ for (int i=yStep; i<height/2; i=i+yStep) {
     GD.ColorA(255);
     //GD.ColorRGB(0x00ff00);
     //clearMaxMin();
-    int multiplyBy = 1;
+    //int multiplyBy = 1;
     if (ampLevel ==2) {
         multiplyBy = 2;
     } else if (ampLevel ==3) {
@@ -237,7 +285,9 @@ for (int i=yStep; i<height/2; i=i+yStep) {
         pixelsPrVolt=pixelsPrVolt*100; //TODO: Fix this current range scale etc !  For now just make it "visible" :-)
     }
 
-    int resolution = 2; // 1 is best
+
+    // calculate to and from values for main graph based on buffer and reolution 
+    int resolution = 2; // 1 is best (using all samples)
     int from = 0;
     int to = nrOfFloats;
     if (zoomed) {
@@ -245,28 +295,16 @@ for (int i=yStep; i<height/2; i=i+yStep) {
         to = nrOfFloats*0.75;
         resolution = 1;
     }
-
-    // experimental small graph with higher resolution
-    /*
-    GD.ColorRGB(0x0000ff);
-    GD.Begin(LINE_STRIP);
-    int xCoordinate2 = 330;
-    int from2 = nrOfFloats*0.30;
-    int to2 = nrOfFloats*0.70;
-    for (int x = from2; x<to2; x += 1) {
-      GD.Vertex2ii(xCoordinate2, -100 + yAxisPx - mva[x]/1000.0 * pixelsPrVolt);
-      xCoordinate2 +=1;
-    }
-    */
-
-    //main graph
+    //Render main graph
+    //Note that number of lines must not be too high.
+    //If will overflow the command buffer of the graphics chip.
+    //That's one of the drawbacks with using FT8xx chip...
     GD.ColorRGB(digitizeVoltage?COLOR_VOLT:COLOR_CURRENT);
     GD.Begin(LINE_STRIP);
     int xCoordinate = 0;
     for (int x = from; x<to; x += resolution) {
       GD.Vertex2ii(xCoordinate, yAxisPx - mva[x]/1000.0 * pixelsPrVolt);
-      xCoordinate +=4;
-      //updateMaxMin(mva[x]);
+      xCoordinate +=4; 
     }
 
     if (!MAINMENU.active) {
@@ -306,14 +344,14 @@ GD.cmd_text(0, yAxisPx-height/2 +20 -10, 27, 0, "Min:");
  // render scale digits
 int time = 0;
 int digits = 0;
-int step =50;
+int step = 4 * 10; //TODO: Adjust according to sampling speed etc
 int axisScew = 5;
 int yAxis = yAxisPx + 20;
 GD.ColorRGB(0xaaaaaa);
 // x-axis digits (minus time)
 for (int x = xAxisPx; x > xAxisPx-width/2; x=x-step) {
     if (time != 0) {
-        GD.cmd_text(x-20 - axisScew, yAxis, 26, 0, "-");
+        GD.cmd_text(x-10 - axisScew, yAxis, 26, 0, "-");
     }
     GD.cmd_number(x -axisScew,yAxis, 26, digits, time);
     time = time + resolution;
@@ -348,8 +386,11 @@ int val = valStep;
 // positive
 for (int y= yAxisPx-step; y > yAxisPx-height/2; y=y-step) {
     GD.ColorRGB(0xaaaaaa);
+       if (digitizeVoltage) {
+    GD.cmd_number(15, y-axisScew, 26, digits, val * 5000 / 4);
+    } else {
     GD.cmd_number(15, y-axisScew, 26, digits, val * (SMU1->getCurrentRange() == MILLIAMP10 ? 1000:100));
-    
+    }
     GD.Begin(LINE_STRIP);
     GD.ColorRGB(0xbbbbee);
     GD.LineWidth(3);
@@ -363,7 +404,11 @@ val = valStep;
 for (int y= yAxisPx+step; y < yAxisPx+height/2; y=y+step) {
     GD.ColorRGB(0xaaaaaa);
     GD.cmd_text(0, y-axisScew, 26, 0, "-");
-    GD.cmd_number(15, y-axisScew, 26, digits, val * (SMU1->getCurrentRange() == MILLIAMP10 ? 1000:100));
+    if (digitizeVoltage) {
+      GD.cmd_number(15, y-axisScew, 26, digits, val* 5000 / 4);
+    } else {
+      GD.cmd_number(15, y-axisScew, 26, digits, val * (SMU1->getCurrentRange() == MILLIAMP10 ? 1000:100));
+    }
 
     GD.Begin(LINE_STRIP);
     GD.ColorRGB(0xbbbbee);
@@ -391,6 +436,7 @@ void DigitizerClass::copyDataBufferToDisplayBuffer() {
        mva[x] = 0.0;
    }
    clearMaxMin();
+   // Before trigger 
    for (int x=0; x<=nrOfFloats/2;x++) {
        mva[x+nrOfFloats/2] = ramEmulator2[x];
        updateMaxMin(ramEmulator2[x]); // Note: uses all samples, but extreme may be masked out by display only some
@@ -398,6 +444,7 @@ void DigitizerClass::copyDataBufferToDisplayBuffer() {
    }
 
    int adr = adrAtTrigger;
+      // After trigger 
    for (int x=nrOfFloats/2; x>=0 ;x--) {
        //mva[x] = 0.0;
         mva[x] = ramEmulator[adr];
@@ -475,18 +522,51 @@ void DigitizerClass::handleSamplingForDigitizer(int dataR) {
       v = SMU1->measureMilliVoltage();
   } else {
       v = SMU1->measureCurrent(SMU1->getCurrentRange());
-
-      //v = SMU1->measureMilliVoltage();
-
   }
 
-  
+  // edge or level trig
+  bool edgeDetect = false;  // change to false for level trigg
+
   float edgeSteepnessToDetect = 1.0;
-  bool positiveEdge = v > lastVoltage + edgeSteepnessToDetect 
-        && lastVoltage > lastVoltageOld + edgeSteepnessToDetect
-        && lastVoltageOld > lastVoltageOld2 + edgeSteepnessToDetect;
-  
-  bool trigg = positiveEdge || continuous;
+  bool trigg = false;
+  if (edgeDetect == true) {
+    // ----- edge trigger hack-----
+    bool positiveEdge = v > lastVoltage + edgeSteepnessToDetect 
+         && lastVoltage > lastVoltageOld + edgeSteepnessToDetect
+         && lastVoltageOld > lastVoltageOld2 + edgeSteepnessToDetect
+         && lastVoltageOld2 > lastVoltageOld3 + edgeSteepnessToDetect;
+     trigg = positiveEdge; //|| continuous;
+
+  }
+  else 
+  {
+
+
+    // ----- level trigger hack-----
+
+    trigg = (lastVoltage > triggerLevel 
+               && lastVoltageOld >triggerLevel 
+               && lastVoltageOld2 >triggerLevel 
+               && lastVoltageOld3 >triggerLevel);//  || continuous;
+    if (trigg && waitForLower == false) {
+      waitForLower=true;
+    }
+    else if (trigg && waitForLower == true) {
+      trigg = false;
+    }
+    // Must go below it again to trigger again
+    bool lower = lastVoltage < triggerLevel -100.0
+               && lastVoltageOld <triggerLevel -100.0
+               && lastVoltageOld2 <triggerLevel -100.0
+               && lastVoltageOld3 <triggerLevel -100.0;
+    if (lower==true && waitForLower == true) {
+      waitForLower = false;
+    }
+  }
+  trigg = trigg | continuous;
+
+
+
 
 
 
@@ -519,6 +599,8 @@ void DigitizerClass::handleSamplingForDigitizer(int dataR) {
       } 
     }
 
+    lastVoltageOld3 = lastVoltageOld2;
+
     lastVoltageOld2 = lastVoltageOld;
     lastVoltageOld = lastVoltage;
     lastVoltage = v;
@@ -538,6 +620,7 @@ void DigitizerClass::handleSamplingForDigitizer(int dataR) {
       lastVoltage=0.0;
       lastVoltageOld=0.0;
       lastVoltageOld2=0.0;
+      lastVoltageOld3=0.0;
 
       copyDataBufferToDisplayBuffer();
 
@@ -552,15 +635,23 @@ void DigitizerClass::handleSamplingForDigitizer(int dataR) {
 void DigitizerClass::rotaryEncChanged(float changeValue) {
   DEBUG.print("DigitizerClass rotaryEncChanged, value:");
   DEBUG.println(changeValue);
-  if (!adjustLevel) {
+  if (adjustLevel == 1) {
     zoomed = !zoomed;
     DEBUG.print("zoomed=");
     DEBUG.println(zoomed);
-  } else {
+  } else if (adjustLevel == 0) {
     if (changeValue < 0) {
       ampLevel = (ampLevel>1)?ampLevel - 1 : 1;
     } else {
       ampLevel = (ampLevel<4)?ampLevel + 1 : 4;
+    }
+     DEBUG.print("ampLevel=");
+    DEBUG.println(ampLevel);
+  } else if (adjustLevel == 2) {
+    if (changeValue < 0) {
+      triggerLevel = triggerLevel + 100.0 / multiplyBy; // make adjustment also dependent of volt scale
+    } else {
+      triggerLevel = triggerLevel - 100.0 / multiplyBy; // make adjustment also dependent of volt scale
     }
      DEBUG.print("ampLevel=");
     DEBUG.println(ampLevel);
@@ -571,7 +662,10 @@ void DigitizerClass::rotaryEncChanged(float changeValue) {
 };
 void DigitizerClass::rotaryEncButtonChanged(int key, bool quickPress, bool holdAfterLongPress, bool releaseAfterLongPress) {
   DEBUG.println("DigitizerClass rotaryEncChanged");
-  adjustLevel = !adjustLevel;
+  adjustLevel = adjustLevel + 1;
+  if (adjustLevel > 2) {
+    adjustLevel = 0;
+  }
   DEBUG.print("adjustLevel=");
   DEBUG.println(adjustLevel);
 };

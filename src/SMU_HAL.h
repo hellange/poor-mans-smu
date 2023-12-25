@@ -46,8 +46,13 @@ class SMU_HAL
     virtual void shortAdcInput(bool setShort) = 0;
     virtual void internalRefInput(bool setInternalRef) = 0;
 
-    bool enableVoltageMeasurement = true;
-    bool enableCurrentMeasurement = true;
+    virtual void enableVoltageMeasurement(bool enable) = 0;
+    virtual void enableCurrentMeasurement(bool enable) = 0;
+    
+    virtual bool isVoltageMeasurementEnabled() = 0;
+    virtual bool isCurrentMeasurementEnabled() = 0;
+
+    // TODO: Make method
     bool voltageMeasurementGainX2 = false;
 
 };

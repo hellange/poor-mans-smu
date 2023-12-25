@@ -73,7 +73,7 @@
 
 #define SAMPLING_BY_INTERRUPT
 
-#define VERSION_NUMBER "0.2.81"
+#define VERSION_NUMBER "0.2.86"
 
 SimpleStatsClass SIMPLE_STATS;
 LoggerClass LOGGER;
@@ -1977,15 +1977,15 @@ void loopMain()
         if (voltageOnly > 30000) {
           voltageOnly = 65535;
           //TODO: Avoid overwrite by other mechanism !
-          SMU[0].enableCurrentMeasurement = false;
-          SMU[0].enableVoltageMeasurement = true;
+          SMU[0].enableCurrentMeasurement(false);
+          SMU[0].enableVoltageMeasurement(true);
            
         }
         else if (voltageOnly <= 30000) {
           voltageOnly = 0; 
           //TODO: Avoid overwrite by other mechanism !
-          SMU[0].enableCurrentMeasurement = true;
-          SMU[0].enableVoltageMeasurement = true;
+          SMU[0].enableCurrentMeasurement(true);
+          SMU[0].enableVoltageMeasurement(true);
                    
 
         }
