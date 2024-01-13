@@ -52,6 +52,8 @@ class SMU_HAL
     virtual bool isVoltageMeasurementEnabled() = 0;
     virtual bool isCurrentMeasurementEnabled() = 0;
 
+    virtual void handleAutoCurrentRange(bool enabled) = 0;
+
     // TODO: Make method
     bool voltageMeasurementGainX2 = false;
 

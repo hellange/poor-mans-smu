@@ -3,7 +3,7 @@
  *  Initial prototype for
  *  P O O R  M A N ' s  S M U
  *  
- *  by Helge Langehaug (2018 - 2023)
+ *  by Helge Langehaug (2018 - 2024)
  * 
  * 
  * Ref also:
@@ -73,7 +73,7 @@
 
 #define SAMPLING_BY_INTERRUPT
 
-#define VERSION_NUMBER "0.2.87"
+#define VERSION_NUMBER "0.2.89"
 
 SimpleStatsClass SIMPLE_STATS;
 LoggerClass LOGGER;
@@ -98,6 +98,7 @@ void closeSourceDCCallback(int set_or_limit, bool cancel);
 void scpi_setup();
 void useVoltageFeedback();
 void useCurrentFeedback();
+void renderSetingsPage();
 
 
 #ifndef USE_SIMULATOR
@@ -292,7 +293,12 @@ void  disable_ADC_DAC_SPI_units() {
 
 void initDefaultSamplingIfByInterrupt() {
 #ifdef SAMPLING_BY_INTERRUPT
-  normalSamplingTimer.begin(handleSampling, 10); // in microseconds.Too low value gives problems... 
+  #ifndef ARDUINO_TEENSY31
+    normalSamplingTimer.begin(handleSampling, 10); // in microseconds.Too low value gives problems... 
+  #else 
+    // not so fast for teensy 3.1 !  Will "hang"
+    normalSamplingTimer.begin(handleSampling, 500); // in microseconds.Too low value gives problems... 
+  #endif
   SPI.usingInterrupt(normalSamplingTimer);
 #endif
 }
@@ -609,7 +615,6 @@ void sourceSweepPanel(int x, int y) {
   FUNCTION_SWEEP.render(x, y, MAINMENU.active == true);
 }
 
-//int settingsCurrentAutoRange = 0;
 
 
 void sourceCurrentPanel(int x, int y) {
@@ -849,7 +854,9 @@ void handleMenuScrolldown(){
 }
 
 //TODO: Investigate this
-char* deviceIdToText(int deviceTypeId) {
+void deviceIdToText(int deviceTypeId, char *ch) {
+
+
   //char *a = "fisk\0"
 
 // AD7175-2 is 0x0CDX from datasheet
@@ -857,34 +864,37 @@ char* deviceIdToText(int deviceTypeId) {
 // AD7172-2 is 0x00D0 ?
 // AD7177-2 is 0x4FD0 ?
 
-  char* ch = new char[8] /* 11 = len of Hello Heap + 1 char for \0*/;
+ // char* ch = new char[8] /* 11 = len of Hello Heap + 1 char for \0*/;
 
 // TODO: Avoid duplicate logic of id to string in this class !
    if ((deviceTypeId & 0xfff0) == 0x0C90) {
-     strcpy(ch, "AD7176");
-       return ch;
-
+     strncpy(ch, "AD7176", 6);
+     *(ch + 6) = 0;
+ 
    } else if ((deviceTypeId & 0xfff0) == 0x00D0) {
-     strcpy(ch, "AD7172");
-       return ch;
+     strncpy(ch, "AD7172", 6);
+     *(ch + 6) = 0;
 
+ 
    } else if ((deviceTypeId & 0xfff0) == 0x0CD0) {
-     strcpy(ch, "AD7175");
-       return ch;
+     strncpy(ch, "AD7175", 6);
+     *(ch + 6) = 0;
 
+ 
    } else if ((deviceTypeId & 0xfff0) == 0x4FD0) {
-     strcpy(ch, "AD7177");
-       return ch;
+     strncpy(ch, "AD7177", 6);
+     *(ch + 6) = 0;
 
+ 
    } else if (deviceTypeId == SMU_HAL_DUMMY_DEVICE_TYPE_ID) {
-     strcpy(ch, "SIM");
-       return ch;
+     strncpy(ch, "SIM", 3);
+     *(ch + 3) = 0;
 
-   } 
+   }
 
-  itoa(deviceTypeId, ch, 10);
+  //itoa(deviceTypeId, ch, 6);
+  //*(ch + 6) = 0;
 
-  return ch;
 }
 
 void renderMainHeader() {
@@ -909,9 +919,11 @@ void renderMainHeader() {
       GD.cmd_text(0, 0, 27, 0, "ADC:");
       //GD.cmd_text(40, 0, 27, 0, (SMU[0].deviceTypeId & 0xfff0) == 0x00D0 ? "AD7172-2" : "?");
       
-      GD.cmd_number(40,0,27,0,SMU[0].deviceTypeId);
-      // String handling causing restarts after a while ????
-      //GD.cmd_text(40, 0, 27, 0, deviceIdToText(SMU[0].deviceTypeId));
+      //GD.cmd_number(40,30,27,0,SMU[0].deviceTypeId);
+      // No need to convert this every time. Do it only once...
+       char name[8] = "xxxxxxx";  
+       deviceIdToText(SMU[0].deviceTypeId , name);
+       GD.cmd_text(40, 0, 27, 0, name );
 
   }
 
@@ -1276,48 +1288,6 @@ static void handleSampling() {
   }
 }
 
-void handleAutoCurrentRange() {
-  if (WIDGETS.settingsCurrentAutoRange < 10000) { 
-    return;
-  }
-     if (!ZEROCALIBRATION.autoNullStarted && !V_CALIBRATION.autoCalInProgress && !C_CALIBRATION.autoCalInProgress) {
-      float milliAmpere = C_STATS.rawValue;
-//      DEBUG.print(milliAmpere,5);
-//      DEBUG.print("mA, current range:");
-//      DEBUG.println(current_range);
-
-      // auto current range switch. TODO: Move to hardware ? Note that range switch also requires change in limit
-      float hysteresis = 0.5;
-      float switchAt = SETTINGS.max_current_10mA_range();
-      
-        if (SMU[0].getCurrentRange() == AMP1 && abs(milliAmpere) < switchAt - hysteresis) {
-          //current_range = MILLIAMP10;
-          SMU[0].setCurrentRange(MILLIAMP10,operationType);
-          DEBUG.println("switching to range 1");
-           //TODO: Use getLimitValue from SMU instead of LIMIT_DIAL ?
-          if (operationType == SOURCE_VOLTAGE){
-            if (SMU[0].fltSetCommitCurrentLimit(SMU[0].getLimitValue_micro())) printError(_PRINT_ERROR_VOLTAGE_SOURCE_SETTING);
-          } 
-
-        }
-        // TODO: Make separate function to calculate current based on shunt and voltage!
-//        DEBUG.print("Check 10mA range and if it should switch to 1A... ma=");
-//        DEBUG.print(milliAmpere);
-//        DEBUG.print(" ");
-//        DEBUG.println(switchAt);
-        if (SMU[0].getCurrentRange() == MILLIAMP10 && abs(milliAmpere) > switchAt) {
-          //current_range = AMP1;
-          SMU[0].setCurrentRange(AMP1,operationType);
-          DEBUG.println("switching to range 0");
-           //TODO: Use getLimitValue from SMU instead of LIMIT_DIAL ?
-          if (operationType == SOURCE_VOLTAGE){
-            if (SMU[0].fltSetCommitCurrentLimit(SMU[0].getLimitValue_micro())) printError(_PRINT_ERROR_VOLTAGE_SOURCE_SETTING);
-          } 
-
-          
-        }
-    }
-}
 
 int displayUpdateTimer = millis();
 int samplesUpdateTimer = millis();
@@ -1573,6 +1543,9 @@ void loop() {
       detectGestures();
       showStatusIndicator(700, 40, "COMP", SMU[0].hasCompliance(), true);
 
+  //showStatusIndicator(700, 40+85, "1AMP", SMU[0].getCurrentRange() == AMP1, false);
+    //showStatusIndicator(780, 40+85, "10mA", SMU[0].getCurrentRange() == MILLIAMP10, false);
+  
       if (MAINMENU.active) {
         int tag = GD.inputs.tag;
         // TODO: don't need to check buttons for inactive menus or functions...
@@ -1587,6 +1560,7 @@ void loop() {
 
       GD.swap();
       GD.__end();
+
       DIGITIZER.rendering = false;
     }
 
@@ -1808,7 +1782,6 @@ void handleFunctionSpecifcButtonAction(FUNCTION_TYPE functionType, int tag, int 
 
 
 int settingsShortAdc = 0;
-//int settingsCurrentAutoRange = 65000;
 int settingsInternalADCRef = 0;
 int voltageMeasurementGainX2 = 0;
 int voltageOnly = 0;
@@ -1827,7 +1800,7 @@ void loopMain()
   // Note that this gives small glitches in voltage.
   // TODO: Find out how large glitches and if it's a real problem...
   if (operationType == SOURCE_VOLTAGE || operationType == SOURCE_CURRENT) {
-      handleAutoCurrentRange();
+      SMU[0].handleAutoCurrentRange(WIDGETS.settingsCurrentAutoRange >= 10000);
   }
 
   #ifndef SAMPLING_BY_INTERRUPT 
@@ -1865,142 +1838,10 @@ void loopMain()
     renderMainHeader();
 
   } else {
-      renderMainHeader();
-
-    // Special page without widgets etc...
-    //renderUpperDisplay(operationType, functionType); 
-   
-
-//GD.cmd_track(360, 62, 80, 20, 42);
-
-
-    int lineY = 60;
-    GD.cmd_text(180, lineY - 7, 29, 0, "Short ADC input");
-    GD.Tag(42);
-    GD.cmd_toggle(50, lineY, 100, 29, OPT_FLAT, settingsShortAdc,
-    "disabled" "\xff" "enabled");
-    GD.cmd_track(50, lineY, 100, 40, 42);
-    lineY+=50;
-    
-    GD.cmd_text(180, lineY - 7 , 29, 0, "Current auto range");
-    GD.Tag(43);
-    GD.cmd_toggle(50, lineY, 100, 29, OPT_FLAT, WIDGETS.settingsCurrentAutoRange, // TODO: Don't fetch from widgets
-    "disabled" "\xff" "enabled");
-    GD.cmd_track(50, lineY, 80, 40, 43);
-    lineY+=50;
-
-    GD.cmd_text(180, lineY - 7 , 29, 0, "Internal reference");
-    GD.Tag(44);
-    GD.cmd_toggle(50, lineY, 100, 29, OPT_FLAT, settingsInternalADCRef,
-    "disabled" "\xff" "enabled");
-    GD.cmd_track(50, lineY, 80, 40, 44);
-
-    lineY+=50;
-
-    GD.cmd_text(180, lineY - 7 , 29, 0, "Voltage measurement gain x2");
-    GD.Tag(45);
-    GD.cmd_toggle(50, lineY, 100, 29, OPT_FLAT, voltageMeasurementGainX2,
-    "disabled" "\xff" "enabled");
-    GD.cmd_track(50, lineY, 80, 40, 45);
-
-   lineY+=50;
-
-    GD.cmd_text(180, lineY - 7 , 29, 0, "Only voltage");
-    GD.Tag(46);
-    GD.cmd_toggle(50, lineY, 100, 29, OPT_FLAT, voltageOnly,
-    "disabled" "\xff" "enabled");
-    GD.cmd_track(50, lineY, 80, 40, 46);
-
-
-
-    GD.Tag(244);
-    GD.cmd_button(300,lineY +30,120,50,29,0,"CLOSE");
-
-
-    GD.Tag(0);
-
-    //45 max degree ?
-    float degreeV = (V_FILTERS.mean) * 45.0/10000.0; 
-    ANALOG_GAUGE.renderAnalogGaugeValue(25,300,350, degreeV, V_FILTERS.mean, "mV", "+/-10V");
-    
-    float degreeC = (C_FILTERS.mean) * 45.0/1000.0; 
-    ANALOG_GAUGE.renderAnalogGaugeValue(425,300,350, degreeC, C_FILTERS.mean, "mA", "+/-1000mA");
-
-    //detectGestures();
-    GD.get_inputs();
-    int tag = GD.inputs.tag;
-    switch (tag & 0xff) {
-      case 42:
-        settingsShortAdc = GD.inputs.track_val;
-        if (settingsShortAdc > 30000) {
-          settingsShortAdc = 65535;
-          SMU[0].shortAdcInput(true);
-        }
-        else if (settingsShortAdc <= 30000) {
-          settingsShortAdc = 0;
-          SMU[0].shortAdcInput(false);
-        }
-        break;
-      case 43:
-        WIDGETS.settingsCurrentAutoRange = GD.inputs.track_val;
-        if (WIDGETS.settingsCurrentAutoRange > 30000) {
-          WIDGETS.settingsCurrentAutoRange = 65535;
-        }
-        else if (WIDGETS.settingsCurrentAutoRange <= 30000) {
-          WIDGETS.settingsCurrentAutoRange = 0;
-        }
-        break;
-      case 44:
-        settingsInternalADCRef = GD.inputs.track_val;
-        if (settingsInternalADCRef > 30000) {
-          settingsInternalADCRef = 65535;
-          SMU[0].internalRefInput(true);
-        }
-        else if (settingsInternalADCRef <= 30000) {
-          settingsInternalADCRef = 0;
-          SMU[0].internalRefInput(false);
-        }
-        break;
-      case 45:
-        voltageMeasurementGainX2 = GD.inputs.track_val;
-        if (voltageMeasurementGainX2 > 30000) {
-          voltageMeasurementGainX2 = 65535;
-          SMU[0].voltageMeasurementGainX2 = true;
-        }
-        else if (voltageMeasurementGainX2 <= 30000) {
-          voltageMeasurementGainX2 = 0;
-          SMU[0].voltageMeasurementGainX2 = false;
-        }
-        break;
-      case 46:
-        voltageOnly = GD.inputs.track_val;
-        if (voltageOnly > 30000) {
-          voltageOnly = 65535;
-          //TODO: Avoid overwrite by other mechanism !
-          SMU[0].enableCurrentMeasurement(false);
-          SMU[0].enableVoltageMeasurement(true);
-           
-        }
-        else if (voltageOnly <= 30000) {
-          voltageOnly = 0; 
-          //TODO: Avoid overwrite by other mechanism !
-          SMU[0].enableCurrentMeasurement(true);
-          SMU[0].enableVoltageMeasurement(true);
-                   
-
-        }
-        break;
-      case 244: // close settings
-        showSettings = false;
-        break;
-
-    }
-
-
-   //   DEBUG.println(tag);
-   //   GD.swap(); 
-   // GD.__end();
-   // return;
+    //       Idea is that in this mode, the operation currently running shall NOT be stopped...
+    //       Maybe there should a separate operation type for this kind of mode...
+    renderMainHeader();
+    renderSetingsPage();
   }
 
   PUSHBUTTONS.handle();
@@ -2121,8 +1962,8 @@ void closeMainMenuCallback(FUNCTION_TYPE newFunctionType) {
     
     if (SMU[0].operationType == SOURCE_VOLTAGE) {
       // If previous SMU operation was sourcing voltage, use that voltage
-      if (SMU[0].fltSetCommitVoltageSource(SETTINGS.setMilliVoltage*1000, true)) printError(_PRINT_ERROR_VOLTAGE_SOURCE_SETTING);
-      if (SMU[0].fltSetCommitCurrentLimit(SETTINGS.setCurrentLimit*1000)) printError(_PRINT_ERROR_VOLTAGE_SOURCE_SETTING);
+      if (SMU[0].fltSetCommitVoltageSource(SMU[0].getSetValue_micro()/*SETTINGS.setMilliVoltage*1000*/, true)) printError(_PRINT_ERROR_VOLTAGE_SOURCE_SETTING);
+      if (SMU[0].fltSetCommitCurrentLimit(SMU[0].getLimitValue_micro()/*SETTINGS.setCurrentLimit*1000*/)) printError(_PRINT_ERROR_VOLTAGE_SOURCE_SETTING);
     } else {
       // If previous SMU operation was sourcing current, use a predefined voltage
       if (SMU[0].fltSetCommitVoltageSource(SETTINGS.setMilliVoltage*1000, true)) printError(_PRINT_ERROR_VOLTAGE_SOURCE_SETTING);
@@ -2141,8 +1982,8 @@ void closeMainMenuCallback(FUNCTION_TYPE newFunctionType) {
 
     if (SMU[0].operationType == SOURCE_CURRENT) {
       // If previous SMU operation was sourcing current, use that current
-      fltCommitCurrentSourceAutoRange(SETTINGS.setMilliAmpere*1000, true);
-      if (SMU[0].fltSetCommitVoltageLimit(SETTINGS.setVoltageLimit*1000)) printError(_PRINT_ERROR_VOLTAGE_SOURCE_SETTING);
+      fltCommitCurrentSourceAutoRange(SMU[0].getSetValue_micro()/*SETTINGS.setMilliAmpere*1000*/, true);
+      if (SMU[0].fltSetCommitVoltageLimit(SMU[0].getLimitValue_micro()/*SETTINGS.setVoltageLimit*1000*/)) printError(_PRINT_ERROR_VOLTAGE_SOURCE_SETTING);
     } else {
       // If previous SMU operation was sourcing voltage, use a predefined current
       fltCommitCurrentSourceAutoRange(SETTINGS.setMilliAmpere*1000, true);
@@ -2220,4 +2061,144 @@ void closeSourceDCCallback(int set_or_limit, bool cancel) {
     }
   }
   GD.resume();
+}
+
+
+void renderSetingsPage() {
+  int lineY = 60;
+    GD.cmd_text(180, lineY - 7, 29, 0, "Short ADC input");
+    GD.Tag(42);
+    GD.cmd_toggle(50, lineY, 100, 29, OPT_FLAT, settingsShortAdc,
+    "disabled" "\xff" "enabled");
+    GD.cmd_track(50, lineY, 100, 40, 42);
+    lineY+=50;
+    
+    GD.cmd_text(180, lineY - 7 , 29, 0, "Current auto range");
+    GD.Tag(43);
+    GD.cmd_toggle(50, lineY, 100, 29, OPT_FLAT, WIDGETS.settingsCurrentAutoRange, // TODO: Don't fetch from widgets
+    "disabled" "\xff" "enabled");
+    GD.cmd_track(50, lineY, 80, 40, 43);
+    lineY+=50;
+
+    GD.cmd_text(180, lineY - 7 , 29, 0, "Internal reference");
+    GD.Tag(44);
+    GD.cmd_toggle(50, lineY, 100, 29, OPT_FLAT, settingsInternalADCRef,
+    "disabled" "\xff" "enabled");
+    GD.cmd_track(50, lineY, 80, 40, 44);
+
+    lineY+=50;
+
+    GD.cmd_text(180, lineY - 7 , 29, 0, "Voltage measurement gain x2");
+    GD.Tag(45);
+    GD.cmd_toggle(50, lineY, 100, 29, OPT_FLAT, voltageMeasurementGainX2,
+    "disabled" "\xff" "enabled");
+    GD.cmd_track(50, lineY, 80, 40, 45);
+
+    lineY+=50;
+
+    GD.cmd_text(180, lineY - 7 , 29, 0, "Only voltage");
+    GD.Tag(46);
+    GD.cmd_toggle(50, lineY, 100, 29, OPT_FLAT, voltageOnly,
+    "disabled" "\xff" "enabled");
+    GD.cmd_track(50, lineY, 80, 40, 46);
+
+    GD.Tag(244);
+    GD.cmd_button(600,lineY -40,120,50,29,0,"CLOSE");
+    GD.Tag(0);
+
+
+    // Just indicate measurement type currently used, beause the knob
+    // could still be operating in this mode...
+    if (functionType == SOURCE_DC_CURRENT) {
+      GD.ColorRGB(COLOR_CURRENT);
+      GD.cmd_text(540, lineY - 200 , 29, 0, "Sourcing DC current");
+      int64_t i = SMU[0].getSetValue_micro();
+      DIGIT_UTIL.renderValue(470,  lineY - 160 , i/1000.0, 4, DigitUtilClass::typeCurrent); 
+    } else if (functionType == SOURCE_DC_VOLTAGE) {
+      GD.ColorRGB(COLOR_VOLT);
+      GD.cmd_text(540, lineY - 200 , 29, 0, "Sourcing DC voltage");
+      int64_t v = SMU[0].getSetValue_micro();
+      DIGIT_UTIL.renderValue(470,  lineY - 160 , v/1000.0, 4, DigitUtilClass::typeVoltage); 
+    } else {
+      // TODO: Add more ?
+      GD.cmd_text(500, lineY - 200 , 29, 0, "SOURCE/MEAS ?");
+    }
+
+
+
+    //45 max degree ?
+    float degreeV = (V_FILTERS.mean) * 45.0/10000.0; 
+    ANALOG_GAUGE.renderAnalogGaugeValue(25,300,350, degreeV, V_FILTERS.mean, "mV", "+/-10V");
+    
+    float degreeC = (C_FILTERS.mean) * 45.0/1000.0; 
+    ANALOG_GAUGE.renderAnalogGaugeValue(425,300,350, degreeC, C_FILTERS.mean, "mA", "+/-1000mA");
+
+    //detectGestures();
+    GD.get_inputs();
+    int tag = GD.inputs.tag;
+    switch (tag & 0xff) {
+      case 42:
+        settingsShortAdc = GD.inputs.track_val;
+        if (settingsShortAdc > 30000) {
+          settingsShortAdc = 65535;
+          SMU[0].shortAdcInput(true);
+        }
+        else if (settingsShortAdc <= 30000) {
+          settingsShortAdc = 0;
+          SMU[0].shortAdcInput(false);
+        }
+        break;
+      case 43:
+        WIDGETS.settingsCurrentAutoRange = GD.inputs.track_val;
+        if (WIDGETS.settingsCurrentAutoRange > 30000) {
+          WIDGETS.settingsCurrentAutoRange = 65535;
+        }
+        else if (WIDGETS.settingsCurrentAutoRange <= 30000) {
+          WIDGETS.settingsCurrentAutoRange = 0;
+        }
+        break;
+      case 44:
+        settingsInternalADCRef = GD.inputs.track_val;
+        if (settingsInternalADCRef > 30000) {
+          settingsInternalADCRef = 65535;
+          SMU[0].internalRefInput(true);
+        }
+        else if (settingsInternalADCRef <= 30000) {
+          settingsInternalADCRef = 0;
+          SMU[0].internalRefInput(false);
+        }
+        break;
+      case 45:
+        voltageMeasurementGainX2 = GD.inputs.track_val;
+        if (voltageMeasurementGainX2 > 30000) {
+          voltageMeasurementGainX2 = 65535;
+          SMU[0].voltageMeasurementGainX2 = true;
+        }
+        else if (voltageMeasurementGainX2 <= 30000) {
+          voltageMeasurementGainX2 = 0;
+          SMU[0].voltageMeasurementGainX2 = false;
+        }
+        break;
+      case 46:
+        voltageOnly = GD.inputs.track_val;
+        if (voltageOnly > 30000) {
+          voltageOnly = 65535;
+          //TODO: Avoid overwrite by other mechanism !
+          SMU[0].enableCurrentMeasurement(false);
+          SMU[0].enableVoltageMeasurement(true);
+           
+        }
+        else if (voltageOnly <= 30000) {
+          voltageOnly = 0; 
+          //TODO: Avoid overwrite by other mechanism !
+          SMU[0].enableCurrentMeasurement(true);
+          SMU[0].enableVoltageMeasurement(true);
+                   
+
+        }
+        break;
+      case 244: // close settings
+        showSettings = false;
+        break;
+   }
 }

@@ -49,6 +49,9 @@ void DigitUtilClass::separate64t(int *v, int *mv, int *uv, int *nv, bool *neg, i
 
 void DigitUtilClass::renderValue(int x,int y,float val, int size = 0, int type = 0) {
 
+    //  Value input in mA and mV ???
+
+
     int font = 26;
     int fontWidth = 10; 
     

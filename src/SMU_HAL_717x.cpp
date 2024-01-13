@@ -1,6 +1,9 @@
 
 #include "SMU_HAL_717x.h"
 #include "Calibration.h"
+#include "ZeroCalibration.h"
+#include "Settings.h"
+
 #include "Stats.h"
 #include "Filters.h"
 #include "Debug.h"
@@ -917,3 +920,52 @@ bool ADCClass::isCurrentMeasurementEnabled() {
 }
 
     
+
+    void ADCClass::handleAutoCurrentRange(bool enabled) {
+  // if (WIDGETS.settingsCurrentAutoRange < 10000) { 
+  //   return;
+  // }
+  if (!enabled) {
+    return;
+  }
+     if (!ZEROCALIBRATION.autoNullStarted && !V_CALIBRATION.autoCalInProgress && !C_CALIBRATION.autoCalInProgress) {
+      float milliAmpere = C_STATS.rawValue;
+//      DEBUG.print(milliAmpere,5);
+//      DEBUG.print("mA, current range:");
+//      DEBUG.println(current_range);
+
+      // auto current range switch. TODO: Move to hardware ? Note that range switch also requires change in limit
+      float hysteresis = 0.5;
+      float switchAt = SETTINGS.max_current_10mA_range();
+      
+        if (/*SMU[0].*/getCurrentRange() == AMP1 && abs(milliAmpere) < switchAt - hysteresis) {
+          //current_range = MILLIAMP10;
+          /*SMU[0].*/setCurrentRange(MILLIAMP10,operationType);
+          DEBUG.println("switching to range 1");
+           //TODO: Use getLimitValue from SMU instead of LIMIT_DIAL ?
+          if (operationType == SOURCE_VOLTAGE){
+            //if (SMU[0].fltSetCommitCurrentLimit(SMU[0].getLimitValue_micro())) printError(_PRINT_ERROR_VOLTAGE_SOURCE_SETTING);
+            fltSetCommitCurrentLimit(getLimitValue_micro());
+
+          } 
+
+        }
+        // TODO: Make separate function to calculate current based on shunt and voltage!
+//        DEBUG.print("Check 10mA range and if it should switch to 1A... ma=");
+//        DEBUG.print(milliAmpere);
+//        DEBUG.print(" ");
+//        DEBUG.println(switchAt);
+        if (/*SMU[0].*/getCurrentRange() == MILLIAMP10 && abs(milliAmpere) > switchAt) {
+          //current_range = AMP1;
+          /*SMU[0].*/setCurrentRange(AMP1,operationType);
+          DEBUG.println("switching to range 0");
+           //TODO: Use getLimitValue from SMU instead of LIMIT_DIAL ?
+          if (operationType == SOURCE_VOLTAGE){
+            //if (SMU[0].fltSetCommitCurrentLimit(SMU[0].getLimitValue_micro())) printError(_PRINT_ERROR_VOLTAGE_SOURCE_SETTING);
+             fltSetCommitCurrentLimit(getLimitValue_micro());
+          } 
+
+          
+        }
+    }
+}

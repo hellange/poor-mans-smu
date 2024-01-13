@@ -70,6 +70,7 @@ void DigitizerClass::close() {
 }
 
 void DigitizerClass::loopDigitize(bool reduceDetails) {
+  
   //operationType = getOperationType();
   if (reduceDetails) {
    // return;
@@ -370,7 +371,6 @@ GD.cmd_text(0, yAxisPx-height/2 +20 -10, 27, 0, "Min:");
 
 //} 
 }
-    
  // render scale digits
 int time = 0;
 int digits = 0;

@@ -80,6 +80,8 @@ private:
     // TODO make as method
     bool voltageMeasurementGainX2 = false;
 
+    void handleAutoCurrentRange(bool enabled);
+
 };
 
 #endif 

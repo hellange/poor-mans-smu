@@ -52,9 +52,9 @@ void VoltDisplayClass::renderMeasured(int x, int y, float rawMv, bool compliance
 void VoltDisplayClass::renderMeasuredResistance(int x, int y, float rawMv, float rawMa, bool compliance) {
 
   float ohm = rawMv / rawMa;
-  int v, mv, uv;
-  bool neg;
-  DIGIT_UTIL.separate(&v, &mv, &uv, &neg, ohm * 1000.0);
+ // int v, mv, uv;
+ // bool neg;
+ // DIGIT_UTIL.separate(&v, &mv, &uv, &neg, ohm * 1000.0);
 
   int complianceColor = DIGIT_UTIL.blinkColor(0xff4522, 0x991002, 1000);
 
@@ -63,17 +63,36 @@ void VoltDisplayClass::renderMeasuredResistance(int x, int y, float rawMv, float
 
   x = x + 55;
 
-  if (ohm < 999.0) {
+    GD.cmd_number(x + 194, y+2, 1, 8, ohm);
+/*
+  if (ohm >= 1000000) {
+    GD.cmd_number(x + 194, y+2, 1, 3, ohm/1000000.0);
+    GD.cmd_text(x + 360, y+2,  1, 0, "MOhm");
+
+  //GD.cmd_number(x + 194, y+2, 1, 8, 9999);
+  }
+  else if (ohm > 100000) {
+    GD.cmd_number(x + 194, y+2, 1, 3, ohm/1000.0);
+    GD.cmd_text(x + 360, y+2,  1, 0, "KOhm");
+  } 
+  else if (ohm < 999.0) {
+    int v, mv, uv;
+    bool neg;
+    DIGIT_UTIL.separate(&v, &mv, &uv, &neg, ohm * 1000.0);
     boldNumber(x + 4,y, 3, ohm);
     boldText(x+164,y, ".");
     GD.cmd_number(x + 194, y+2, 1, 3, mv);
     GD.cmd_text(x + 360, y+2,  1, 0, "Ohm");
   } else {
+    int v, mv, uv;
+    bool neg;
+    DIGIT_UTIL.separate(&v, &mv, &uv, &neg, ohm * 1000.0);
     boldNumber(x+104-100,y, 5, ohm);
     boldText(x+164+100,y, ".");
     GD.cmd_number(x + 294, y+2 , 1, 2, mv/10.0);
     GD.cmd_text(x + 410, y+2,  1, 0, "Ohm");
   }
+  */
   GD.ColorRGB(COLOR_VOLT);
 }
 

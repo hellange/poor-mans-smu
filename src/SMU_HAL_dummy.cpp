@@ -221,6 +221,11 @@ bool SMU_HAL_dummy::isCurrentMeasurementEnabled() {
   return currentMeasurementEnabled;
 }
 
+    void SMU_HAL_dummy::handleAutoCurrentRange(bool enabled) {
+      // Not handled 
+      return;
+    }
+
  
 
     

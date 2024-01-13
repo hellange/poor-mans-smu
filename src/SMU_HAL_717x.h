@@ -95,6 +95,8 @@ class ADCClass: public SMU_HAL {
     // TODO make as method
     bool voltageMeasurementGainX2 = false;
 
+    void handleAutoCurrentRange(bool enabled);
+
 };
 
 #endif

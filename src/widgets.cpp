@@ -240,12 +240,19 @@ void WidgetsClass::measureResistancePanel(int x, int y, boolean compliance, CURR
     return;
   }
   y=y+28;
+  
 
   VOLT_DISPLAY.renderMeasuredResistance(x /*+ 17*/, y, V_FILTERS.mean, C_FILTERS.mean, compliance);
   //CURRENT_DISPLAY.renderSet(x+120, y+105, SMU1->getLimitValue_micro());
       GD.ColorRGB(COLOR_CURRENT);
 
   CURRENT_DISPLAY.renderSet(x + 120, y + 105, limitValueMicro, currentRange);
+  
+  // show current measurement
+  DIGIT_UTIL.renderValue(x + 480,  y + 105 - 30, C_FILTERS.mean, 4, DigitUtilClass::typeCurrent); 
+  DIGIT_UTIL.renderValue(x + 480,  y + 105 + 10, V_FILTERS.mean, 4, DigitUtilClass::typeCurrent); 
+  DIGIT_UTIL.renderValue(x + 480,  y + 105 + 30, (V_FILTERS.mean /  C_FILTERS.mean*1000.0) / 1000.000, 4, DigitUtilClass::typeCurrent); 
+
 
   y=y+105;
   

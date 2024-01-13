@@ -55,9 +55,11 @@ void AnalogGaugeClass::renderAnalogGaugeValue(int x, int y, int width, float deg
   x=x+gaugeRadius*1.2/2;
   x=x-10;
   int font = 29;
-    GD.cmd_number(x+30, y, font, 5, value);
-    GD.cmd_text(x+100, y, font, 0, unit);
-
+  if (value < 0) {
+        GD.cmd_text(x+15, y, font, 0, "-");
+  }
+  GD.cmd_number(x+30, y, font, 5, abs(value));
+  GD.cmd_text(x+100, y, font, 0, unit);
 }
 
 void AnalogGaugeClass::renderAnalogGaugePercent(int x, int y, int width, float degrees, float value, const char *title, bool lessDetails) {
