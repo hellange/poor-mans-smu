@@ -16,6 +16,7 @@ class FunctionPulseClass {
     static int hz;
     static float duration;
     static OPERATION_TYPE operationType;
+    static int knobOperation; //TODO: enum ?
   public:
     static float max;
     static float min;

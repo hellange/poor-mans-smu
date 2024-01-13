@@ -21,8 +21,10 @@ float FunctionPulseClass::measuredHigh = 0.0;
 float FunctionPulseClass::measuredLow = 0.0;
 int FunctionPulseClass::hz = 0;
 float FunctionPulseClass::duration = 1000;
+int FunctionPulseClass::knobOperation = 0;
 OPERATION_TYPE FunctionPulseClass::operationType = SOURCE_VOLTAGE;
     
+
 // TODO: FIX THIS REFERENCE !!!!
 extern ADCClass SMU[]; // TODO: FIX THIS REFERENCE !!!!
 // TODO: FIX THIS REFERENCE !!!!
@@ -33,9 +35,8 @@ void FunctionPulseClass::init() {
   // TODO: Fetch from settings
   min = -2000.0;
   max = 2000.0;
-  hz = 9;
-  
-
+  hz = 5;
+  knobOperation = 0;
 }
 
 void FunctionPulseClass::open(OPERATION_TYPE operationType_, void (*closedFn_)(OPERATION_TYPE type)) {
@@ -181,7 +182,7 @@ if (reduceDetails) {
     GD.ColorRGB(COLOR_CURRENT);
   }
   
-  GD.ColorA(120);
+  GD.ColorA(200);
   if (operationType == SOURCE_VOLTAGE) {
     GD.cmd_text(x+20, y + 2 ,   29, 0, "SOURCE VOLTAGE PULSE");
     GD.cmd_text(x+20 + 1, y + 2 + 1 ,   29, 0, "SOURCE VOLTAGE PULSE");
@@ -191,8 +192,11 @@ if (reduceDetails) {
   }
   
 
-GD.ColorRGB(0xaaaaaa);
-  GD.ColorA(255);
+  if (knobOperation == 0) {
+        GD.ColorRGB(0xffffff);
+  } else {
+        GD.ColorRGB(0xaaaaaa);
+  } 
   y=y+10;
   GD.cmd_number(x+242, y+5, 1, 3, hz);
   GD.cmd_text(x+410, y+5 ,  1, 0, "Hz");
@@ -204,7 +208,11 @@ GD.ColorRGB(0xaaaaaa);
 //  GD.cmd_number(x+242, y, 31, 4, abs(min));
 
   
-  
+  if (knobOperation == 1) {
+        GD.ColorRGB(0xffffff);
+  } else {
+        GD.ColorRGB(0xaaaaaa);
+  }
   DIGIT_UTIL.renderValue(x + 220,  y, min, 4, operationType == SOURCE_VOLTAGE ? DigitUtilClass::typeVoltage : DigitUtilClass::typeCurrent); 
 
 if (operationType == SOURCE_VOLTAGE) {
@@ -223,6 +231,11 @@ if (operationType == SOURCE_VOLTAGE) {
 //  }
 //  GD.cmd_number(x+242, y, 31, 4, abs(max));
 
+  if (knobOperation == 2) {
+        GD.ColorRGB(0xffffff);
+  } else {
+        GD.ColorRGB(0xaaaaaa);
+  }
   DIGIT_UTIL.renderValue(x + 220,  y, max, 4, operationType == SOURCE_VOLTAGE ? DigitUtilClass::typeVoltage : DigitUtilClass::typeCurrent); 
 
 if (operationType == SOURCE_VOLTAGE) {
@@ -305,18 +318,33 @@ void FunctionPulseClass::sourcePulse() {
 
 
 void FunctionPulseClass::rotaryEncChanged(float changeValue) {
-  hz = hz + changeValue * 10;
-  hz = hz < 1? 1: hz;
+  if (knobOperation == 0) {
+    hz = hz + changeValue * 10;
+    hz = hz < 1? 1: hz;
 
-  updateSamplingPeriod(hz);
-  DEBUG.print("PULSE rotaryEncChanged, value:");
-  DEBUG.print(changeValue);
-  DEBUG.print(",hz:");
-  DEBUG.println(hz);
+    updateSamplingPeriod(hz);
+    DEBUG.print("PULSE rotaryEncChanged, value:");
+    DEBUG.print(changeValue);
+    DEBUG.print(",hz:");
+    DEBUG.println(hz);
+  } else if (knobOperation == 1) {
+    min = min + changeValue * 100.0;
+  } else if (knobOperation == 2) {
+    max = max + changeValue * 100.0;
+  }
+
 
 };
 void FunctionPulseClass::rotaryEncButtonChanged(int key, bool quickPress, bool holdAfterLongPress, bool releaseAfterLongPress) {
-  DEBUG.println("PULSE rotaryEncChanged NOT IMPLEMENTED");
+  DEBUG.println("PULSE rotaryEncChanged");
+  if (knobOperation > 2) {
+    knobOperation = 0;
+  } else {
+    knobOperation ++;
+  }
+    DEBUG.print("PULSE knobOperation");
+    DEBUG.println(knobOperation);
+
 };
 
 
