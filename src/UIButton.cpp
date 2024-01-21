@@ -8,9 +8,11 @@ int UIButtonClass::noOfButtons = 0;
 bool UIButtonClass::pressed = false;
 int UIButtonClass::pressedId = 999;
 bool UIButtonClass::released = false;
-bool UIButtonClass::longPress = false;
+bool UIButtonClass::hasBeenPressedLong = false;
 bool UIButtonClass::needReleaseFirst = false;
 int UIButtonClass::current_pressed_color = 0x0000ff; //0x888890; //BUTTON_PRESSED_COLOR;
+
+uint32_t UIButtonClass::statusTimerXX = millis();
 
 uint32_t UIButtonClass::pressedAt = 0;
 uint32_t UIButtonClass::debouceTimer = 0;
@@ -18,7 +20,7 @@ uint32_t UIButtonClass::debouceTimeoutButton = 0;
 //function<int(int, int)> func
 //void UIButtonClass::init(int id_, int x_, int y_, int width_, int height_, const char* text_, auto (*handlerFn_)(bool longPress), bool singleClick) {
 
-void UIButtonClass::init(int id_, int x_, int y_, int width_, int height_, const char* text_, std::function<void(bool)> handlerFn_, bool singleClick) {
+void UIButtonClass::init(int id_, int x_, int y_, int width_, int height_, const char* text_, std::function<bool(PressType)> handlerFn_, bool singleClick) {
    handlerFn = handlerFn_;
    singlePressMode = singleClick;
    id = id_;
@@ -94,9 +96,27 @@ GD.ColorA(255);
 
 void UIButtonClass::handle() {
   int tag = GD.inputs.tag;
+
+  if (statusTimerXX + 1000 < millis()) {
+            //     DEBUG.print("status");
+            //     DEBUG.print("pressed=");
+            // DEBUG.print(pressed);
+            // DEBUG.print(", pressedId=");
+            // DEBUG.print(pressedId);
+            // DEBUG.print(",id=");
+            // DEBUG.print(id);
+            // DEBUG.print(",tag=");
+            // DEBUG.println(tag);
+statusTimerXX = millis();
+  }
+
+
   if (tag == id) {
+            //DEBUG.print("xxxxxx tag == id, id=");
+            //DEBUG.println(id);
+           // relasedByOtherThanButtonRelease = false;
     checkPressType(id);
-  } else if (tag == 0 && pressedId == id) {
+  } else if (tag == 0 && pressedId == id /*&& !relasedByOtherThanButtonRelease */) {
 
     // Button is released.
     // For operations that can be determined only after button has been released...
@@ -119,18 +139,13 @@ void UIButtonClass::handle() {
         released = true;
         pressed = false;
         // This means that button has been released after press, so now we can do operation
-        if (longPress) {
-            // Include stuff here that shall be done AFTER a longpress has been released
-            //DEBUG.println("!!! DO LONGPRESS OPERATION AFTER RELEASE !!!!");
+        if (hasBeenPressedLong) {
+            preCallbackFn(PressType::LongPressAfterRelease);
         } else {
-            // Include stuff here that shall be done after normal button press
-            //DEBUG.print("!!!! DO PRESS OPERATION !!!! ID=");
-            //DEBUG.print(pressedId);
-            //DEBUG.print(",id=");
-            //DEBUG.println(id);
-            preCallbackFn(false);
+            //pressed = false;
+            preCallbackFn(PressType::ShortPressAfterRelease);
         }
-        longPress = false;
+        hasBeenPressedLong = false;
     } else if (pressed && !singlePressMode) {
         released = true;
         pressed = false;
@@ -142,38 +157,40 @@ void UIButtonClass::handle() {
 }
 
 void UIButtonClass::checkPressType(int id) {
-
-    // Button was detected as newly pressed
-    // Now start debouce and singlePress or long press handling setup
     if (!pressed) {
-        //DEBUG.print("PRESSED UI BUTTON FIRST");
-        //DEBUG.print(id);
         current_pressed_color = BUTTON_PRESSED_COLOR;
-        
+        bool doResetOfButtons = false;
         if (singlePressMode) {
-            DEBUG.print("PRESSING UI BUTTON INITIALLY (SINGLE PRESS MODE)");
+            DEBUG.println("PRESSING UI BUTTON INITIALLY (SINGLE PRESS MODE)");
             debouceTimeoutButton = 50;
-
+            doResetOfButtons = preCallbackFn(PressType::InitialPress);
         } else {
-            DEBUG.print("PRESSING UI BUTTON INITIALLY (NOT IN SINGLE PRESS MODE. CALL CALLBACK...");
+            DEBUG.println("PRESSING UI BUTTON INITIALLY");
             debouceTimeoutButton = 250; // Initial debounce before decreasing
-            preCallbackFn(false); // Just hardcode longPress boolean to false
+            preCallbackFn(PressType::InitialPress);
+            doResetOfButtons = false; // not relevant when not in single press mode ?
         }
 
-        longPress = false;
-        pressed = true;
-        pressedId = id;
-        released = false;
-        pressedAt = millis();
-        debouceTimer = millis();
+        // reset if button state is important if the button callback
+        // results in buttons disappear before they are released.
+        // For example if button press causes a completely new UI.
+        if (doResetOfButtons) {
+          pressed = false;
+          pressedId = 0;
+          pressedAt = 0;
+          released = true;
+        } else  {
+          hasBeenPressedLong = false;
+          pressed = true;
+          pressedId = id;
+          released = false;
+          pressedAt = millis();
+          debouceTimer = millis();
+        } 
+        
     } else if (pressed && debouceTimer + debouceTimeoutButton < millis() /* debouce time*/) {
         debouceTimer = millis();
         if (!singlePressMode) {
-          //DEBUG.print("PRESSING UI BUTTON AFTER HOLDING IT FOR A WHILE at ");
-          //DEBUG.print(millis());
-          //DEBUG.print(",Debouce timeout is ");
-          //DEBUG.println(debouceTimeoutButton, DEC);
-
           // blinking...
           //TODO When blinking too fast, it will not show... How to fix that ?
           if (current_pressed_color == BUTTON_PRESSED_COLOR) {
@@ -182,8 +199,9 @@ void UIButtonClass::checkPressType(int id) {
             current_pressed_color = BUTTON_PRESSED_COLOR;
           }
 
-          preCallbackFn(false); // Just hardcode longPress boolean to false
+          preCallbackFn(PressType::ShortPressHolding);
           // Determine how fast button function shall be called depending on how long its held
+          // Faster and faster the longer the button is pressed...
           if (pressedAt + 4000 < millis()) {
             debouceTimeoutButton = 10;
           } else if (pressedAt + 3000 < millis()) {
@@ -194,35 +212,48 @@ void UIButtonClass::checkPressType(int id) {
             debouceTimeoutButton = 150;
           }  
         }
-        else if (pressedAt + 1000 < millis()  /* long hold time*/ && needReleaseFirst == false) {
-            longPress = true;
+        else if (pressedAt + 1000 < millis() && needReleaseFirst == false) {
+            hasBeenPressedLong = true;
             //DEBUG.println(id);
-            DEBUG.println("!!! DO LONGPRESS OPERATION DURING KEY PRESS !!!!");
-            preCallbackFn(true);
+            //DEBUG.println("!!! DO LONGPRESS OPERATION DURING KEY PRESS !!!!");
+            preCallbackFn(PressType::LongPressHolding);
             needReleaseFirst = true; // to prevent another long press before being released first!
         }
     } 
 
 }
 
-void UIButtonClass::preCallbackFn(bool longPress) {
-    if (longPress) {
-        DEBUG.print("LONG BUTTON CLICK, id=");
-        pressed = false; // Clear state. Needed if for example a previous press has caused a new UI page 
-                         // so button was never detected as released !
+void UIButtonClass::pressTypePrint(UIButtonClass::PressType pressType) {
+   if (pressType == PressType::LongPressHolding) {
+        DEBUG.print("BUTTON LongPress");
+    } else if (pressType == PressType::InitialPress) {
+        DEBUG.print("BUTTON InitialPress");
+    } else if (pressType == PressType::LongPressAfterRelease) {
+        DEBUG.print("BUTTON LongPressAfterRelease");
+    } else if (pressType == PressType::ShortPressAfterRelease) {
+        DEBUG.print("BUTTON ShortPressAfterRelease");
+    } else if (pressType == PressType::ShortPressHolding) {
+        DEBUG.print("BUTTON ShortPressHolding");
     } else {
-        DEBUG.print("SHORT BUTTON CLICK, id=");
+        DEBUG.print("BUTTON unknown pressType");
     }
+}
+
+// The callback function parameter contains what type of button press that was detected.
+//
+// Important:
+//   For single press mode, the callback should return true if
+//   the callback function results in UI changes that rearrange, add or remove buttons !
+//   Else the state might result in strange behaviour afterwords...
+//
+//   If the callback does not result in such changes, it should return false. Else it could
+//   result in multiple callbacks because the states have been reset...
+
+bool UIButtonClass::preCallbackFn(PressType pressType) {
+    UIButtonClass::pressTypePrint(pressType);
+    DEBUG.print(", id:");
     DEBUG.println(id, DEC);
-
-    //DEBUG.print(id);
-    // DEBUG.print(", text");
-    // DEBUG.print(text);
-    // DEBUG.print(", millis:");
-    // DEBUG.println(millis());
-
     // Actual function to call
-
-    //current_pressed_color = BUTTON_PRESSED_COLOR; 
-    handlerFn(longPress);
+    bool done = handlerFn(pressType);
+    return done;
 }

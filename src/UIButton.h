@@ -9,7 +9,6 @@
 
 class UIButtonClass {
 
-  //enum class PressType{ InitialPress, ShortPressAfterRelease, LongPress, LongPressAfterRelease};
 
   int BUTTON_DEFAULT_COLOR = 0xaaaa90;
   int BUTTON_PRESSED_COLOR = 0x889088;
@@ -21,7 +20,6 @@ class UIButtonClass {
 
   float PRSM = 0.90; // button pressed size adjustment
 
-  std::function<void(bool)> handlerFn;
 private:
   bool singlePressMode = false; // Set to true if holding button shall give only one function call. With boolean indicating if long or short click.
                                 // Set to false of multiple velocity adjusted function calls while holding button
@@ -33,7 +31,6 @@ private:
   int width;
   int height;
   void checkPressType(int id);
-  void preCallbackFn(bool longPress);
   void render();
   void drawButton(int x, int y, int width, int height, const char* text_, bool pressed, bool initialTouch);
 
@@ -44,19 +41,29 @@ private:
 
 public:
 
+
+  enum class PressType{ InitialPress, ShortPressAfterRelease, ShortPressHolding, LongPressHolding, LongPressAfterRelease};
+  std::function<bool(PressType)> handlerFn;
+  bool preCallbackFn(PressType pressType);
+
+static void pressTypePrint(PressType pressType);
   static int noOfButtons;
+  //static bool relasedByOtherThanButtonRelease;
 
   static bool pressed;
   static int pressedId;
   static bool released;
-  static bool longPress;
+  static bool hasBeenPressedLong;
   static bool needReleaseFirst;
 
   static uint32_t pressedAt;
   static uint32_t debouceTimer;
   static uint32_t debouceTimeoutButton;
 
-  void init(int id, int x, int y, int width, int height, const char* text, std::function<void(bool)> handlerFn_, bool singleClick);
+static uint32_t statusTimerXX;
+
+
+  void init(int id, int x, int y, int width, int height, const char* text, std::function<bool(PressType pressType)> handlerFn_, bool singleClick);
 };
 
 #endif
